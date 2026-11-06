@@ -23,9 +23,9 @@ npm test
 `npm test` runs Playwright and axe on every route in all four themes, so run the build first. Use
 [conventional commits](https://www.conventionalcommits.org) (`feat:`, `fix:`, `chore:`).
 
-Changelog lines go in [CHANGELOG.md](CHANGELOG.md) under the newest version until it's tagged, and after that under a
-new `## Unreleased`. A breaking change or a rename says what a consumer has to change. A released section stays as it
-shipped, because it's the record of what that version did.
+Add your lines to [CHANGELOG.md](CHANGELOG.md) under `## Unreleased` at the top, and create it if it isn't there. A
+release renames it to the version. A breaking change or a rename says what a consumer has to change, and a released
+section stays as it shipped, because it's the record of what that version did.
 
 A new or changed test or gate is shown failing once. Break the code it guards (a mutant), watch the check fail, put the
 code back and name the mutant in the pull request. A check seen only passing can pass whatever the code does.
