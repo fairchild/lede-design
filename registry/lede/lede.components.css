@@ -69,6 +69,8 @@
   -webkit-tap-highlight-color: transparent;
   transition: transform var(--ld-dur) var(--ld-spring), background-color var(--ld-dur) var(--ld-ease), opacity var(--ld-dur) var(--ld-ease);
 }
+/* With enlarged text on a narrow window a word can be wider than the line, so there a label also breaks inside one. */
+@media (width < 20em) { .ld-btn { overflow-wrap: anywhere; } }
 .ld-btn:active:not(:disabled, [aria-disabled="true"]) { transform: scale(var(--scale-pressed)); }
 .ld-btn-sm { --ld-btn-control: var(--size-control-sm); padding: 0 var(--space-3); font-size: var(--text-footnote-size); line-height: var(--text-footnote-line-height); }
 /* A small Button answers a press over `--size-hit-absolute-min` where its height falls short of it, as in `touch`. */
@@ -158,6 +160,8 @@
 
 /* Switch — Base UI Switch in an enclosing `<label>` */
 .ld-switch { display: inline-flex; align-items: center; gap: var(--space-3); font-family: var(--font-sans); font-size: var(--text-body-size); line-height: var(--text-body-line-height); color: var(--foreground); cursor: pointer; }
+/* A label can break inside a word, so at enlarged text the switch fits a narrow window beside its label. */
+.ld-switch-label { overflow-wrap: anywhere; }
 .ld-switch-disabled { color: var(--foreground-disabled); cursor: default; }
 .ld-switch-track {
   --ld-switch-knob: calc(var(--size-switch-height) - 2 * var(--size-switch-inset));
@@ -440,6 +444,11 @@
   display: inline-flex; align-items: center; justify-content: center; gap: var(--space-1);
   min-width: var(--size-hit-min); min-height: var(--size-hit-min); padding: 0 var(--space-3); border-radius: var(--radius-capsule);
   font-size: var(--text-subheadline-size); line-height: var(--text-subheadline-line-height); font-weight: var(--weight-medium); cursor: pointer;
+}
+/* GlassToolbar wraps its parts when they don't fit on one line. One line is a capsule; more keep its ends' curve. */
+.ld-bar-tools {
+  flex-wrap: wrap; justify-content: center; max-width: 100%;
+  border-radius: calc(max(var(--size-hit-min), var(--text-subheadline-line-height)) / 2 + var(--space-1));
 }
 .ld-bar-tool-icon { padding: 0; }
 .ld-bar-tool svg { width: var(--size-icon); height: var(--size-icon); }

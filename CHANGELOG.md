@@ -162,6 +162,16 @@ From 0.2.0, do the same, and check the places 0.3.0 changed, which this file doe
   out of the card.
 - A word too long for a ListGroup's header, such as a long identifier in its title or summary, breaks. At any text size
   it used to make the page scroll sideways.
+- At 300% text on a 320px phone, no page scrolls sideways, and a control's label stays inside the control. On `/blocks`
+  the page scrolled 88px sideways and EmptyState's “Open demo inbox” ran out of its card. At the default text size every
+  page looks as it did.
+  - AppShell's page breaks a word wider than its line, such as a long component name in prose.
+  - EmptyState's title, text and action break a word too long for their line.
+  - Under `breakpoint-reflow`, a Button's label breaks a word too long for the Button.
+  - A Switch's label breaks a word too long for the room beside the switch.
+  - GlassToolbar wraps its parts when they don't fit on one line, as SelectionBar's already did.
+  - AppearanceFlow's accent names and InboxFlow's dates break a word too long for their place.
+  - Under `breakpoint-reflow`, a message's time in InboxFlow's thread wraps.
 - InboxFlow keeps focus off `<body>` when Archive or Delete (on a row, the selection or the open message), Undo or
   SelectionBar's Done takes the focused control away. Focus moves to its landing in the same task, when the callback
   renders its result at once, and a notice is announced after that move, so the move doesn't cut it off. An Undo whose
