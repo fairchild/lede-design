@@ -72,7 +72,7 @@ export function Components() {
         </div>
       </Demo>
       <Demo id="c-card" title="Card" summary={<>A surface for grouped content, rendered as a <code>{'<div>'}</code> or the element you pass to <code>render</code>. A child with the <code>ld-concentric</code> class keeps its corners concentric with the card’s.</>}>
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Card render={<article />} padding="sm">
             <div className="ld-concentric bg-primary h-24" />
             <h3 className="text-headline px-2 pt-3 m-0">Concentric by default</h3>

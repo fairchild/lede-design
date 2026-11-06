@@ -67,7 +67,7 @@ html, body { margin: 0; background: var(--background-grouped); color: var(--fore
 /* Code in prose keeps to one line, so a name like `--radius` doesn't break at its hyphens. Where enlarged text leaves the
    window under `20em` of it, a long path would be wider than the line, so there it wraps. */
 :where(p, li, dd, td) > code { white-space: nowrap; }
-@media (width < 20em) { :where(p, li, dd, td) > code { white-space: normal; } }
+@media (width < 20em) { :where(p, li, dd, td) > code, .docs-regions code { white-space: normal; overflow-wrap: anywhere; } }
 /* Foundations: a token's name stays on one line, and a token table keeps room for its usage text. On a phone the table
    scrolls sideways instead. */
 .docs-table th[scope="row"] code { white-space: nowrap; }
