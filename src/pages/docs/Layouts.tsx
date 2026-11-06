@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { PageHeader } from '@lede/blocks/page-header';
+import { RouterLink } from '@/router-link';
 import { SegmentedControl } from '@lede/segmented-control';
 import { Button } from '@lede/button';
 import { CodeExample } from './CodeExample';
@@ -99,6 +100,7 @@ export function Layouts() {
   return (
     <div className="ld-flow">
       <PageHeader title="Layouts" summary={`${LAYOUTS.length} page structures, each one a block you can install.`} />
+      <p className="docs-intro">Each install command below needs Lede’s registry in your project first, as <RouterLink href="/#install">Overview → Install</RouterLink> shows.</p>
       {LAYOUTS.map((layout) => (
         <section key={layout.id} id={layout.id} aria-labelledby={`${layout.id}-title`} className="docs-section">
           <h2 id={`${layout.id}-title`} className="text-title-3">{layout.title}</h2>

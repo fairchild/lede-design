@@ -9,7 +9,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { deepStrictEqual } from 'node:assert';
 
 // src/styles/globals.css keeps Tailwind from scanning what these two match, so a path added here is added there too.
-const TEXT = /^(?:(?:README|CHANGELOG|CONTRIBUTING|CLAUDE)\.md|(?:docs|\.claude)\/.+\.md)$/;
+const TEXT = /^(?:(?:CHANGELOG|CONTRIBUTING|CLAUDE)\.md|(?:docs|\.claude)\/.+\.md)$/;
 const TEST = /^tests\/.+\.ts$/;
 
 /**
@@ -25,7 +25,8 @@ export function tier(paths, base, exists = existsSync) {
 
 const CASES = [
   [[], 3],
-  [['README.md'], 1],
+  // Overview renders the README's install steps.
+  [['README.md'], 3],
   [['CHANGELOG.md', 'CONTRIBUTING.md', 'CLAUDE.md', 'docs/proposals/data-table.md', '.claude/skills/x/SKILL.md'], 1],
   [['docs/diagram.png'], 3],
   [['.claude/settings.json'], 3],
@@ -36,14 +37,14 @@ const CASES = [
   [['tests/routes.ts', 'tests/inbox.spec.ts'], 2],
   [['tests/deleted.spec.ts'], 3],
   [['tests/data.json'], 3],
-  [['tests/inbox.spec.ts', 'README.md'], 3],
-  [['README.md', 'src/main.tsx'], 3],
+  [['tests/inbox.spec.ts', 'CHANGELOG.md'], 3],
+  [['CHANGELOG.md', 'src/main.tsx'], 3],
   [['playwright.config.ts'], 3],
   [['.github/workflows/ci.yml'], 3],
   [['package-lock.json'], 3],
-  [['README.md'], 3, 'ci-speed'],
+  [['CHANGELOG.md'], 3, 'ci-speed'],
   [['tests/inbox.spec.ts'], 3, 'ci-speed'],
-  [['README.md'], 3, ''],
+  [['CHANGELOG.md'], 3, ''],
 ];
 
 if (process.argv.includes('--self-test')) {
