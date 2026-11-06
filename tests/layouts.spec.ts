@@ -19,11 +19,11 @@ async function openPreview(page: Page, title: string) {
 
 test('Layouts is one of five navigation places, and the demo stays reachable', async ({ page, isMobile }) => {
   await page.goto('/');
-  await expect(docsNav(page).getByRole('listitem')).toHaveText(['Overview', 'Foundations', 'Components', 'Blocks', 'Layouts']);
+  await expect(docsNav(page).getByRole('list').first().getByRole('listitem')).toHaveText(['Overview', 'Foundations', 'Components', 'Blocks', 'Layouts']);
   const footer = page.locator('.ld-shell-footer').getByRole('link', { name: 'Demo app' });
   if (isMobile) {
     await expect(footer).toBeHidden();
-    await page.getByRole('main').getByRole('link', { name: 'Demo app' }).click();
+    await page.locator('.docs-page-foot').getByRole('link', { name: 'Demo app' }).click();
   } else {
     await footer.click();
   }

@@ -1,4 +1,4 @@
-export type Language = 'tsx' | 'shell';
+export type Language = 'tsx' | 'shell' | 'css';
 type TokenKind = 'comment' | 'string' | 'keyword' | 'tag';
 interface Token { text: string; kind?: TokenKind }
 
@@ -25,6 +25,14 @@ const RULES: Record<Language, RegExp> = {
       String.raw`(?<!\S)(?<tag>--?[\w-]+)`,
     ].join('|'),
     'gm',
+  ),
+  css: new RegExp(
+    [
+      String.raw`(?<comment>\/\*[\s\S]*?\*\/)`,
+      `(?<string>${QUOTED})`,
+      String.raw`(?<keyword>@[\w-]+)`,
+    ].join('|'),
+    'g',
   ),
 };
 
