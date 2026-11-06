@@ -243,6 +243,16 @@ const GROUPS: Group[] = [
           <><code>tests/contrast-gate.spec.ts</code> and <code>tests/literal-gate.spec.ts</code> run their gates on altered copies of their inputs, so those two keep their mutants in the suite.</>,
         ],
       },
+      {
+        title: 'Docs samples are code that compiles',
+        summary: 'Each section on Components and Blocks ends with its item’s install command and, where it has one, the smallest working code for it.',
+        why: 'A reader pastes a sample into an app, so it has to run there: with its imports and nothing the docs page defines for itself. Each sample is a file the typecheck reads, so a prop that changes breaks the build before it breaks the docs.',
+        cost: <>A new component or block needs a section with its install command, and usually a file in <code>src/pages/docs/samples/</code> named for its registry item.</>,
+        heldBy: [
+          <><code>npm run typecheck</code>, where <code>tsconfig.json</code> maps the install path <code>@/components/lede/*</code> to <code>registry/lede/*</code>.</>,
+          <><code>tests/usage.spec.ts</code>: every component and block in <code>registry.json</code> has an install command on its page, each command names real items, and each sample shows its file character for character.</>,
+        ],
+      },
     ],
   },
   {

@@ -88,6 +88,9 @@ From 0.2.0, do the same, and check the places 0.3.0 changed, which this file doe
 - Switch submits its form on Enter, as a native checkbox does. Outside a form, Enter still toggles it.
 - OnboardingFlow's Account fields label the on-screen Enter key `next`, and ProfileFlow's one-line fields label it
   `done`.
+- Each section on the Components and Blocks pages ends with two closed panels: the item's `npx shadcn add` command and
+  the smallest working code for it, with its imports. The samples typecheck against the registry files with the site.
+- Components has sections for Checkbox and Table, so it shows all 12 components, and Blocks has one for useServerRows.
 
 ### Changed
 
@@ -129,6 +132,9 @@ From 0.2.0, do the same, and check the places 0.3.0 changed, which this file doe
 
 ### Fixed
 
+- The data table guide's client-mode code runs as pasted. It declares a three-field `WorkItem` and formats amounts
+  itself, and uses nothing from the demo app.
+- The AccentPicker demo on Blocks starts at the site's accent, blue unless the reader changed it.
 - SelectionBar wraps at large text. When its count and actions don't fit on one line they wrap, and on a phone at 200%
   text or more the count takes a line of its own, so no label runs into the next or off the screen.
 - GlassBar is as tall as its items at large text. Its list items had a line box that added the page's text height
