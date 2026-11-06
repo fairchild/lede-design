@@ -132,6 +132,9 @@ From 0.2.0, do the same, and check the places 0.3.0 changed, which this file doe
 
 ### Fixed
 
+- useServerRows keeps a list open when `fetchCount` answers below the rows it holds from the first row: those rows
+  win, so the table no longer reads "2 of 1" with Load more gone. A page with `nextCursor: null` ends the list and
+  settles the count at the rows through it, so a cursor chain no longer ends on "4 of 4+".
 - SelectionBar wraps at large text. When its count and actions don't fit on one line they wrap, and on a phone at 200%
   text or more the count takes a line of its own, so no label runs into the next or off the screen.
 - GlassBar is as tall as its items at large text. Its list items had a line box that added the page's text height
