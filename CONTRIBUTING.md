@@ -23,7 +23,7 @@ npm test
 `npm test` runs Playwright and axe on every route in all four themes, so run the build first. Use
 [conventional commits](https://www.conventionalcommits.org) (`feat:`, `fix:`, `chore:`).
 
-Add your lines to [CHANGELOG.md](CHANGELOG.md) under `## Unreleased` at the top, and create it if it isn't there. A
+In [CHANGELOG.md](CHANGELOG.md), add your lines under `## Unreleased` at the top, and create it if it isn't there. A
 release renames it to the version. A breaking change or a rename says what a consumer has to change, and a released
 section stays as it shipped, because it's the record of what that version did.
 
