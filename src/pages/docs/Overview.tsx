@@ -76,7 +76,7 @@ export function Overview() {
           <li><SummaryCard title="Components" figure={COMPONENTS} summary="Primitives on Base UI and native elements." href="/components" /></li>
           <li><SummaryCard title="Blocks" figure={BLOCKS} summary="Layouts and the larger parts of a screen." href="/blocks" /></li>
           <li><SummaryCard title="Layouts" figure={LAYOUTS.length} summary={LAYOUT_LINE} href="/layouts" /></li>
-          <li><SummaryCard title="Demo app" figure={FLOWS.length} summary={`Flows: ${listed(FLOWS)}.`} href="/app" /></li>
+          <li><SummaryCard title="Demo app" figure={FLOWS.length} summary={`Hero flows, whole screens built from blocks: ${listed(FLOWS)}.`} href="/app" /></li>
           <li><SummaryCard title="Decisions" figure={decisionCount} summary="How Lede is built and what keeps it that way." href="/decisions" /></li>
         </ul>
       </section>

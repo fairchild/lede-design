@@ -2,49 +2,10 @@
 
 ## 0.4.0
 
-0.4.0 is the first public release, installed from `https://lede.cloudcompute.com/r/v0.4.0/{name}.json`. It removes
-the names 0.3.0 deprecated and `clear` glass, and `SettingsGroup`'s `title` and AppearanceFlow's `onValueChange` are
-now required. Escape and Enter act, focus lands where the person acts next in every flow, a `touch` density sizes
-controls for a finger and breakpoints follow the browser's text size.
-
-### Upgrading
-
-From 0.3.0, rename what the Removed table lists, pass the props that are now required and replace `glass="clear"`.
-TypeScript reports each of them.
-
-From 0.2.0, do the same, and check the places 0.3.0 changed, which this file doesn't repeat:
-
-- DataTable's parts `Cards`, `DataRow` and `Pager`, rendered on their own, require `locale`. Pass `undefined` for the
-  browser's locale.
-- Type is in rem, so text follows the browser's text size and a project's own `html { font-size }`. A smaller root
-  shrinks Lede's text.
-- Button, TextField and GlassToolbarButton set a minimum height in place of a fixed one, and a label can wrap, so
-  larger text makes them taller.
-- Some of Lede's text changed, so a test that matches it can need an update.
-
-### Removed
-
-0.3.0 deprecated these names, and 0.4.0 removes them.
-
-| Removed | Use |
-| --- | --- |
-| DailyBrief | DailyBriefFlow |
-| `DailyBriefProps` | `DailyBriefFlowProps` |
-| SettingsHome | SettingsFlow |
-| `SettingsHomeProps` | `SettingsFlowProps` |
-| AppearanceSettings | AppearanceFlow |
-| `AppearanceSettingsProps` | `AppearanceFlowProps` |
-| ListGroup `header` | `title` |
-| `SettingsGroup` `header` | `title`, now required |
-| AppearanceFlow `onChange` | `onValueChange`, now required |
-| ThemeProvider `onAccent` | `accentForeground` |
-| OnboardingFlow `initial` | `defaultValue` |
-
-### Breaking
-
-- `SettingsGroup`'s `title` and AppearanceFlow's `onValueChange` are required.
-- ThemeProvider's `glass` takes `'regular'` or `'solid'`. `'clear'` is gone: in every theme little could be read on it
-  over content of any color, so a leftover `data-glass="clear"` draws as `regular`.
+0.4.0 is the first public release, installed from `https://lede.cloudcompute.com/r/v0.4.0/{name}.json`. It ships 12
+components, 12 blocks and 5 hero flows, which are whole screens built from blocks, on tokens for color in four themes,
+type, spacing and more. Escape and Enter act, focus lands where the person acts next in every flow, a `touch` density
+sizes controls for a finger and breakpoints follow the browser's text size.
 
 ### Added
 
@@ -115,8 +76,9 @@ From 0.2.0, do the same, and check the places 0.3.0 changed, which this file doe
 - A text field, the data table's select, a switch's off track and the selected segment draw a 1px `--input` edge in
   every theme, and the switch knob draws one from `shadow-knob`. Dark `--input` lightens to `#8c8c94` so the selected
   segment's edge holds 3:1 on its track.
-- In -hc a gray or Tinted Button, the SegmentedControl track, the current ListRow, the current GlassBar item and
-  AppShell link and a pressed toolbar tool draw an `--input` edge. The -hc glass stroke is 1px, `#48484e` and `#b6b6bc`.
+- In the high-contrast themes (`light-hc` and `dark-hc`) a gray or Tinted Button, the SegmentedControl track, the
+  current ListRow, the current GlassBar item and AppShell link and a pressed toolbar tool draw an `--input` edge. The
+  -hc glass stroke is 1px, `#48484e` and `#b6b6bc`.
 - A disabled control takes `fill-control` and a `foreground-disabled` label in place of dimming to `opacity-disabled`.
   Plain and glass Buttons keep their background, and forced colors use `GrayText`.
 - Text on a tint or gray fill mixes 60% of its color with `foreground`, down from 80%. `destructive`, `success`,
@@ -126,6 +88,9 @@ From 0.2.0, do the same, and check the places 0.3.0 changed, which this file doe
 - InboxFlow's notice takes `radius-md`, as DataTable's does.
 - A ListRow value that wraps under its title sits 2px below it, down from 22px.
 - Under `breakpoint-reflow` a Disclosure's meta moves under its title, which keeps its words whole.
+- The docs site defines its terms where they first appear: the high-contrast themes on Foundations, glass on
+  Components and Foundations and hero flows on Overview. The Decisions page links each file it names to GitHub and
+  gathers its rules for contributors under a final Contributing heading.
 
 ### Fixed
 
@@ -197,3 +162,38 @@ From 0.2.0, do the same, and check the places 0.3.0 changed, which this file doe
   to land on the list's heading. Each row writes its message's ID to `data-row-id`.
 - WorkbenchShell focuses its heading in the commit that mounts it, so a route change no longer paints a frame with
   focus on `<body>`.
+
+### From pre-release versions
+
+0.2.0 and 0.3.0 were pre-release versions. Moving from either takes the changes below.
+
+#### Upgrading
+
+From 0.3.0, rename what the Removed table lists, pass the props that are now required and replace `glass="clear"`.
+TypeScript reports each of them.
+
+From 0.2.0, do the same.
+
+#### Removed
+
+0.3.0 deprecated these names, and 0.4.0 removes them.
+
+| Removed | Use |
+| --- | --- |
+| DailyBrief | DailyBriefFlow |
+| `DailyBriefProps` | `DailyBriefFlowProps` |
+| SettingsHome | SettingsFlow |
+| `SettingsHomeProps` | `SettingsFlowProps` |
+| AppearanceSettings | AppearanceFlow |
+| `AppearanceSettingsProps` | `AppearanceFlowProps` |
+| ListGroup `header` | `title` |
+| `SettingsGroup` `header` | `title`, now required |
+| AppearanceFlow `onChange` | `onValueChange`, now required |
+| ThemeProvider `onAccent` | `accentForeground` |
+| OnboardingFlow `initial` | `defaultValue` |
+
+#### Breaking
+
+- `SettingsGroup`'s `title` and AppearanceFlow's `onValueChange` are required.
+- ThemeProvider's `glass` takes `'regular'` or `'solid'`. `'clear'` is gone: in every theme little could be read on it
+  over content of any color, so a leftover `data-glass="clear"` draws as `regular`.

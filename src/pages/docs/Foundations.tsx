@@ -99,6 +99,10 @@ export function Foundations() {
         title="Foundations"
         summary={`${colors.length} color tokens × ${tokens.color.themes.length} themes, ${styles.length} type styles and ${families.length} more token families`}
       />
+      <p className="docs-intro">
+        The four themes are <code>light</code>, <code>dark</code> and their high-contrast versions, <code>light-hc</code> and{' '}
+        <code>dark-hc</code>. The tables call the high-contrast pair -hc.
+      </p>
       {tokens.color.groups.map((group, i) => {
         const list = colors.filter((t) => t.group === group.id);
         return (
