@@ -162,6 +162,10 @@ export const ARRIVALS: Arrival[] = [
     tabs: [link('Foundations', main), link('Components', main), link('Blocks', main)],
   },
   {
+    route: '/#install', arrival: h2('Install'),
+    via: { from: '/layouts', link: link('Overview → Install', main), back: link('Overview → Install', main) },
+  },
+  {
     route: '/foundations', arrival: h1('Foundations'),
     via: { from: '/', link: link('Foundations', main), back: link('Foundations', main) },
   },

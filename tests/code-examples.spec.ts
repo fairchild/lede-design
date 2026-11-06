@@ -7,7 +7,7 @@ const { version } = JSON.parse(readFileSync('package.json', 'utf8')) as { versio
 const CLIENT = 'Code for a client-mode table';
 const SERVER = 'Code for a server-mode table';
 const PAGES = { '/': 'Overview', '/components': 'Components', '/blocks/data-table': 'DataTablePage' };
-const OPEN_ON_ARRIVAL = { '/': ['Install commands'], '/components': ['Theming a local overlay'], '/blocks/data-table': [CLIENT] };
+const OPEN_ON_ARRIVAL = { '/': ['Install commands', 'CSS import', 'Import a component', 'Wrap your app', 'React Router adapter'], '/components': ['Theming a local overlay'], '/blocks/data-table': [CLIENT] };
 const ROUTES = Object.keys(PAGES) as (keyof typeof PAGES)[];
 
 const example = (page: Page, label: string) => page.locator('.docs-code-example').filter({ has: page.getByRole('button', { name: label }) });
@@ -28,7 +28,18 @@ function sourceExamples(route: keyof typeof PAGES) {
       text.replaceAll('${REGISTRY}', `https://lede.cloudcompute.com/r/v${version}/{name}.json`).replace(/\\([`$\\])/g, '$1').trim(),
     ]),
   );
-  return [...source.matchAll(/label="([^"]+)"[^\n]*?\b(\w+_CODE)\b/g)].map(([, label, name]) => [label, constants.get(name)!] as const);
+  const fromSource = [...source.matchAll(/label="([^"]+)"[^\n]*?\b(\w+_CODE)\b/g)].map(([, label, name]) => [label, constants.get(name)!] as const);
+  return route === '/' ? [...fromSource, ...readmeExamples()] : fromSource;
+}
+
+/** Overview shows the README's install steps after its first: each fenced block from step 2 on, dedented, by its label. */
+function readmeExamples() {
+  const steps = readFileSync('README.md', 'utf8').split('## Use it in a shadcn project')[1].split('\nTo move to a later release')[0];
+  const fences = [...steps.split(/^2\. /m)[1].matchAll(/^ {3}```(\w*)\n([\s\S]*?)\n {3}```$/gm)].map(([, language, code]) => ({ language, code: code.replace(/^ {3}/gm, '') }));
+  const labels = ['CSS import', 'Import a component', 'Wrap your app', 'React Router adapter'];
+  // Overview names each block by its step, so the README's order is part of what the labels describe.
+  expect(fences.map((f) => f.language)).toEqual(['css', 'tsx', 'tsx', 'tsx']);
+  return fences.map(({ code }, i) => [labels[i], code] as const);
 }
 
 for (const route of ROUTES) {
@@ -69,7 +80,7 @@ test('The tokenizer keeps every character of awkward input', () => {
     "/it's/.test(s)", '/"/g', '/`/', '/\\/\\//', '/[/*]/; a; /* b */', "<p>Don't stop, won't stop</p>",
     "echo 'open", 'echo "open', 'echo "a\\"b" \'c\\\'d', "echo 'multi\nline'", 'echo a#b # c', 'curl -fsSL https://example.com/#a --b=c',
   ];
-  for (const language of ['tsx', 'shell'] as const) {
+  for (const language of ['tsx', 'shell', 'css'] as const) {
     for (const code of awkward) expect(tokenize(code, language).map((t) => t.text).join('')).toBe(code);
   }
 });

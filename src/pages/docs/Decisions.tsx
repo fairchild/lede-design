@@ -269,6 +269,13 @@ const GROUPS: Group[] = [
         cost: <>Once the newest version is tagged, new lines start a <code>## Unreleased</code> section, and a correction to a released note is a line there.</>,
         heldBy: [<>The “Before you open a pull request” section of <Path to="CONTRIBUTING.md" />, in review.</>],
       },
+      {
+        title: 'The README writes the install steps',
+        summary: 'Overview renders the install steps from the README, so the site and the repository give one set of steps.',
+        why: 'A newcomer meets the steps on the site or on GitHub, and two copies of them drift apart.',
+        cost: <>A README change can change the site, so it runs the whole suite in CI. Step 1’s commands stay the site’s own, because they pin the version from <code>package.json</code>.</>,
+        heldBy: [<><code>tests/code-examples.spec.ts</code> reads each fenced block from step 2 of the README on and expects Overview to show it, character for character.</>],
+      },
     ],
   },
 ];
