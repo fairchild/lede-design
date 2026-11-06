@@ -217,7 +217,7 @@ const GROUPS: Group[] = [
         cost: <>Moving to a later tag runs the same <code>add</code> with <code>-o</code>, which overwrites your copies, edits included.</>,
         heldBy: [
           <>Review. Each item lists its packages under <code>dependencies</code> in <code>registry.json</code>, which this page reads: {codeList(PACKAGES)}.</>,
-          <><code>scripts/check-registry.mjs</code>, part of every build, fails a registry file that imports a package its item doesn’t list, so an install never misses one. React and React DOM are in every project and need no line.</>,
+          <><code>scripts/check-registry.mjs</code>, part of every build, fails a registry file that imports a package, or references its types, when the file’s own item doesn’t list it, so each item stands alone. React and React DOM are in every project and need no line.</>,
         ],
       },
       {

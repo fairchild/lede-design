@@ -1,9 +1,10 @@
 // A registry file's relative imports have to land on files the CLI installs alongside it: its own item's, or those of
 // its registryDependencies, transitively. `shadcn build` reads no imports and `tsc` sees the whole repo at once, so
 // neither notices a missing dependency. Paths resolve from each file's `target`, the place it lands in a project.
-// The repo-only aliases `@/` and `@lede/` go through the same walk, where they can't resolve. A bare import names an npm
-// package, and the CLI installs it only when the item's own `dependencies` list it. React is in every project, so
-// `react` and `react-dom` need no line.
+// The repo-only aliases `@/` and `@lede/` go through the same walk, where they can't resolve. A bare import, or a
+// `/// <reference types>` directive, names an npm package: the CLI installs it from `dependencies`; the gate asks for it
+// on the importing file's own item, so each item stands alone. React is in every project, so `react` and `react-dom`
+// need no line, and a reference to `x` is met by `x` or `@types/x`.
 import { readFileSync } from 'node:fs';
 import { posix } from 'node:path';
 import ts from 'typescript';
@@ -35,6 +36,8 @@ const importsOf = (path) => {
     ? [...text.replace(/\/\*[\s\S]*?\*\//g, '').matchAll(/@import\s+(?:url\()?["']([^"']+)/g)].map((match) => match[1])
     : ts.preProcessFile(text, true, true).importedFiles.map((file) => file.fileName);
 };
+const typeReferencesOf = (path) => ts.preProcessFile(readFileSync(path, 'utf8'), true, true).typeReferenceDirectives
+  .map((file) => file.fileName);
 
 for (const item of items) {
   if (!item.files?.length) problems.push(`${item.name}: lists no files`);
@@ -55,6 +58,12 @@ for (const item of items) {
         bare += 1;
         if (!IN_EVERY_PROJECT.has(name) && !declared.has(name)) {
           problems.push(`${item.name}: ${file.path} imports ${name}, which isn't in the item's dependencies`);
+        }
+      }
+      for (const name of new Set(typeReferencesOf(file.path).map(packageName))) {
+        bare += 1;
+        if (!declared.has(name) && !declared.has(`@types/${name}`)) {
+          problems.push(`${item.name}: ${file.path} references types ${name}, which isn't in the item's dependencies`);
         }
       }
     }
