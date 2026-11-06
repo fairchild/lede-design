@@ -1,9 +1,9 @@
 import * as React from 'react';
 import type { Paging, TableState, Total } from './use-data-table';
-import { ServerRowsStore, type ServerRowsConfig } from './server-rows-store';
+import { ServerRowsStore, type ServerRowsConfig } from '@fairchild/table-core';
 
-export type { ServerRowsRequest, ServerRowsResponse, ServerCountRequest } from './server-rows-store';
-export { pageKey } from './server-rows-store';
+export type { ServerRowsRequest, ServerRowsResponse, ServerCountRequest } from '@fairchild/table-core';
+export { pageKey } from '@fairchild/table-core';
 
 export type UseServerRowsOptions<Row> = Omit<ServerRowsConfig<Row>, 'now'>;
 
@@ -22,7 +22,7 @@ export interface ServerRows<Row> {
  * merged, requests that go out of date are aborted, load-more pages chain their cursors and `{ atLeast }` totals are
  * followed by an exact count, asked for again when the rows are refetched or the count ages. While a new view loads,
  * the previous rows stay on screen (`rows: 'previous'`), so the layout doesn't jump. The work is done by
- * `ServerRowsStore`, which has no React; this hook connects it.
+ * `ServerRowsStore` from `@fairchild/table-core`, which has no React; this hook connects it.
  */
 export function useServerRows<Row>(options: UseServerRowsOptions<Row>): ServerRows<Row> {
   const [store] = React.useState(() => new ServerRowsStore<Row>(options));

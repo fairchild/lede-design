@@ -1,7 +1,7 @@
 // Findings from the data table's stage 8 review. Each test was shown failing before its fix.
 import { test } from '@playwright/test';
 import assert from 'node:assert/strict';
-import { ServerRowsStore, type ServerRowsConfig, type ServerRowsRequest } from '../registry/lede/blocks/server-rows-store';
+import { ServerRowsStore, type ServerRowsConfig, type ServerRowsRequest } from '@fairchild/table-core';
 
 test.skip(({ isMobile }) => isMobile, 'Pure logic: one project is enough.');
 

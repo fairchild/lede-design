@@ -1,7 +1,7 @@
 // Consistency between refreshed data, totals and paging, from a review of the data table. Each test checks rows, total
 // and paging together, because the bugs were in how they drifted apart.
 import { test, expect } from '@playwright/test';
-import { ServerRowsStore, type ServerRowsConfig, type ServerRowsRequest } from '../registry/lede/blocks/server-rows-store';
+import { ServerRowsStore, type ServerRowsConfig, type ServerRowsRequest } from '@fairchild/table-core';
 import type { TableView } from '../registry/lede/blocks/use-data-table';
 
 test.skip(({ isMobile }) => isMobile, 'Pure logic: one project is enough.');

@@ -1,7 +1,7 @@
 // The server row model on its own: no browser, no timers. Each request is a deferred promise the test resolves or
 // rejects, so the order of events is exact rather than a matter of latency.
 import { test, expect } from '@playwright/test';
-import { ServerRowsStore, pageKey, type ServerRowsConfig, type ServerRowsRequest } from '../registry/lede/blocks/server-rows-store';
+import { ServerRowsStore, pageKey, type ServerRowsConfig, type ServerRowsRequest } from '@fairchild/table-core';
 import type { TableView } from '../registry/lede/blocks/use-data-table';
 
 test.skip(({ isMobile }) => isMobile, 'Pure logic: one project is enough.');

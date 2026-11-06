@@ -3,83 +3,18 @@ import { createSortedRowModel, rowSortingFeature, tableFeatures, useTable } from
 import { announce } from '@react-aria/live-announcer';
 import type { ColumnWidth, SortDirection } from '../table';
 import type { Noun } from './selection-bar';
+import { isSelected, selectionCount, setSelected, type Selection, type SortItem, type TableState, type TableView, type Total } from '@fairchild/table-core';
 
 // ---------------------------------------------------------------------------------------------------------------
-// Public types. Lede's own: TanStack types never cross this boundary, so a TanStack major is absorbed in here.
+// Public types. The view, selection, state and total come from `@fairchild/table-core`, which the server row model
+// shares. TanStack types never cross this boundary, so a TanStack major is absorbed in here.
 // ---------------------------------------------------------------------------------------------------------------
 
 export type { SortDirection };
-export type SortItem = { columnId: string; direction: SortDirection };
-
-/** Everything a saved view stores. Later versions add optional keys; none is ever renamed or removed. */
-export type TableView = {
-  /** Zero or one item: the table sorts by one column. */
-  sort: SortItem[];
-  /**
-   * What the rows are narrowed to, such as a search term or a status: your own keys and plain JSON values, which the
-   * table doesn't interpret and a view can carry into a URL. A new filter, compared by its JSON, clears the selection,
-   * so an action never reaches rows that aren't shown. A selection whose content changes in the same render as the
-   * filter is kept, so a saved view can be restored. In server mode the filter is part of the view the fetchers are
-   * given and of each page's cache key, so put every filter here: one closed over in `fetchRows` starts no new visit
-   * and keeps the old filter's cached pages. In client mode it does nothing to the rows: filter `rows` yourself. The
-   * same filter written another way (key order, `{}` for none) counts as new and refetches.
-   */
-  filter?: TableFilter;
-};
-/** A filter's values: plain JSON, so a view serializes. */
-export type FilterValue = string | number | boolean | null | readonly (string | number | boolean | null)[];
-export type TableFilter = { readonly [key: string]: FilterValue | undefined };
+export type { SortItem, TableView, TableFilter, FilterValue, Selection, TableState, Total } from '@fairchild/table-core';
+export { isSelected, removeFromSelection } from '@fairchild/table-core';
 /** What changed in the view. Later versions add members, so keep a default branch when you switch on `type`. */
 export type ViewChange = { type: 'sort'; sort: SortItem[] };
-
-/**
- * Clearing a row's checkbox after "Select all N" adds it to `except`. When rows are deleted on the server, update the
- * selection with `removeFromSelection`: a deleted row leaves `ids` and `except` alike.
- */
-export type Selection =
-  | { kind: 'ids'; ids: ReadonlySet<string> }
-  | { kind: 'all-matching'; except: ReadonlySet<string> };
-
-/**
- * What the table is showing and doing, as independent parts: whose rows, whether more are coming, what failed and
- * when the rows were fetched. Every field is optional: `{}` is a table showing its own, settled rows.
- * - `rows`: whose rows are on screen. `'current'`, the default, are this view's. `'previous'` are the last view's, kept
- *   while this one loads so the layout doesn't jump. `'none'` means nothing is on screen yet.
- * - `fetching`: rows are on the way. With current rows the table shows "Updating…" and stays usable. Otherwise it is
- *   `aria-busy`.
- * - `since`: when the rows on screen were fetched. Shown when refreshing them failed.
- * - `failure`: the last request failed. `scope` says what failed: `'load'` (this view's or page's rows: an alert, and
- *   previous rows are hidden so they never pass as this view's), `'refresh'` (rows on screen could not be refreshed:
- *   a quiet notice with their age), or `'more'` (the next page: an alert, and Load more retries).
- */
-export interface TableState {
-  rows?: 'current' | 'previous' | 'none';
-  fetching?: boolean;
-  since?: Date;
-  failure?: { message?: string; retry: () => void; scope: 'load' | 'refresh' | 'more' };
-}
-
-/** A count, or a lower bound while the exact figure is computed ("50 of 1,000+"). */
-export type Total = number | { atLeast: number };
-
-export function isSelected(selection: Selection, id: string): boolean {
-  return selection.kind === 'ids' ? selection.ids.has(id) : !selection.except.has(id);
-}
-
-/**
- * The selection after rows were deleted on the server. A deleted row is no longer a member of anything: it leaves
- * an explicit selection, and it leaves an `all-matching` selection's `except` too. Adding it to `except` instead would
- * count it twice once the server's new total arrives (the total already excludes it).
- */
-export function removeFromSelection(selection: Selection, deleted: Iterable<string>): Selection {
-  const gone = new Set(deleted);
-  if (selection.kind === 'ids') {
-    if (![...gone].some((id) => selection.ids.has(id))) return selection;
-    return { kind: 'ids', ids: new Set([...selection.ids].filter((id) => !gone.has(id))) };
-  }
-  if (![...gone].some((id) => selection.except.has(id))) return selection;
-  return { kind: 'all-matching', except: new Set([...selection.except].filter((id) => !gone.has(id))) };
-}
 
 export type Column<Row> = {
   /** Stable: views key on it. */
@@ -157,7 +92,11 @@ export interface DataTableOptions<Row> {
   /** The column whose cells are `<th scope="row">`. */
   rowHeader: string;
   noun: Noun;
-  /** Controlled view. */
+  /**
+   * Controlled view. A new `filter`, compared by its JSON, clears the selection, unless the selection changes in the
+   * same render, as when a saved view is restored. In client mode the filter does nothing to the rows: filter `rows`
+   * yourself.
+   */
   view?: TableView;
   /** Uncontrolled starting view. */
   defaultView?: TableView;
@@ -402,16 +341,7 @@ export function useDataTable<Row>(options: DataTableOptions<Row>): DataTableMode
   const setMany = React.useCallback(
     (ids: readonly string[], on: boolean) => {
       if (latest.current.inert) return;
-      const sel = latest.current.selection;
-      if (sel.kind === 'ids') {
-        const next = new Set(sel.ids);
-        for (const id of ids) if (on) next.add(id); else next.delete(id);
-        commit({ kind: 'ids', ids: next });
-      } else {
-        const next = new Set(sel.except);
-        for (const id of ids) if (on) next.delete(id); else next.add(id);
-        commit({ kind: 'all-matching', except: next });
-      }
+      commit(setSelected(latest.current.selection, ids, on));
     },
     [commit],
   );
@@ -434,14 +364,7 @@ export function useDataTable<Row>(options: DataTableOptions<Row>): DataTableMode
   for (const r of visible) if (isRowSelected(r.id)) onPage++;
   const page = onPage === 0 ? 'none' : onPage === visible.length ? 'all' : 'some';
   const bound = lowerBound(total);
-  const count: Total =
-    selection.kind === 'ids'
-      ? selection.ids.size
-      : total == null
-        ? Math.max(0, visible.length - selection.except.size)
-        : typeof total === 'number'
-          ? Math.max(0, total - selection.except.size)
-          : { atLeast: Math.max(0, total.atLeast - selection.except.size) };
+  const count = selectionCount(selection, total, visible.length);
 
   const selectionModel: SelectionModel = {
     enabled: selectionMode === 'multiple',

@@ -4,6 +4,8 @@ Lede is a design system: Base UI primitives, semantic HTML, tokens as shadcn var
 registry, with layouts (blocks) and hero flows. The docs site and demo app are the test bed.
 
 ## Layers (dependencies only point down)
+0. `@fairchild/table-core` — an npm package (repo fairchild/table-core): the data table's types, selection helpers and
+   server row model, with no React. DataTable and `useServerRows` import it, and their registry items pin its version.
 1. `tokens/tokens.json` — the single source for color (4 themes), type, weight, spacing, radius, stroke, shadow, blur,
    size, layout, opacity, motion, layers and breakpoints. `npm run tokens`
    writes `src/styles/lede.tokens.css` and `registry/lede/lede.tokens.css` (generated, git-ignored).

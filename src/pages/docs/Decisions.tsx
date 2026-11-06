@@ -217,6 +217,17 @@ const GROUPS: Group[] = [
         cost: <>Moving to a later tag runs the same <code>add</code> with <code>-o</code>, which overwrites your copies, edits included.</>,
         heldBy: [
           <>Review. Each item lists its packages under <code>dependencies</code> in <code>registry.json</code>, which this page reads: {codeList(PACKAGES)}.</>,
+          <><code>scripts/check-registry.mjs</code>, part of every build, fails a registry file that imports a package its item doesn’t list, so an install never misses one. React and React DOM are in every project and need no line.</>,
+        ],
+      },
+      {
+        title: 'The table core is a package',
+        summary: <>DataTable and useServerRows import their view, selection and server row model from <code>@fairchild/table-core</code>, an npm package with no React and no DOM.</>,
+        why: 'The core is plain data and functions, so it runs and is tested on its own, in Node, and any framework can use it. Its own repo holds its unit tests.',
+        cost: <>It installs from npm, so <code>add -o</code> doesn’t update it and you can’t edit it as your own source. Each Lede release pins one exact version.</>,
+        heldBy: [
+          <>The <code>data-table</code> and <code>use-server-rows</code> items list the pinned version under <code>dependencies</code>, and <code>scripts/check-registry.mjs</code> fails either one without it.</>,
+          <>The <code>tests/server-rows-*.spec.ts</code> files run the package’s store against the scenarios DataTable depends on.</>,
         ],
       },
       {

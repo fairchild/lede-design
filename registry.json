@@ -537,7 +537,8 @@
       "dependencies": [
         "@tanstack/react-table@^9.3.1",
         "@react-aria/live-announcer@^3.5.1",
-        "@base-ui/react@^1.9.0"
+        "@base-ui/react@^1.9.0",
+        "@fairchild/table-core@0.1.0"
       ],
       "categories": [
         "blocks"
@@ -548,6 +549,9 @@
       "type": "registry:block",
       "title": "useServerRows",
       "description": "The server-side row model for DataTable: pages fetched on demand and cached per view and page size, shown with Load more or as numbered pages. Duplicate requests merge and out-of-date ones are aborted, and an `{ atLeast }` total becomes exact once `fetchCount` answers or a short last page arrives.",
+      "dependencies": [
+        "@fairchild/table-core@0.1.0"
+      ],
       "registryDependencies": [
         "@lede/lede-theme",
         "@lede/lede-utils",
@@ -558,11 +562,6 @@
           "path": "registry/lede/blocks/use-server-rows.ts",
           "type": "registry:hook",
           "target": "components/lede/blocks/use-server-rows.ts"
-        },
-        {
-          "path": "registry/lede/blocks/server-rows-store.ts",
-          "type": "registry:lib",
-          "target": "components/lede/blocks/server-rows-store.ts"
         }
       ],
       "categories": [

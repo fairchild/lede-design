@@ -3,7 +3,7 @@
 // never reads lower than the rows shown, and a page that has rows is never thrown back for being "past the end".
 import { test } from '@playwright/test';
 import assert from 'node:assert/strict';
-import { ServerRowsStore, type ServerRowsConfig, type ServerRowsRequest } from '../registry/lede/blocks/server-rows-store';
+import { ServerRowsStore, type ServerRowsConfig, type ServerRowsRequest } from '@fairchild/table-core';
 
 test.skip(({ isMobile }) => isMobile, 'Pure logic: one project is enough.');
 

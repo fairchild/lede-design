@@ -45,6 +45,9 @@ From 0.2.0, do the same, and check the places 0.3.0 changed, which this file doe
 - `SettingsGroup`'s `title` and AppearanceFlow's `onValueChange` are required.
 - ThemeProvider's `glass` takes `'regular'` or `'solid'`. `'clear'` is gone: in every theme little could be read on it
   over content of any color, so a leftover `data-glass="clear"` draws as `regular`.
+- `components/lede/blocks/server-rows-store.ts` is no longer installed. DataTable and useServerRows import the store,
+  the selection helpers and the table types from the npm package `@fairchild/table-core`, which `add` installs. A copy
+  from an earlier install can be deleted once nothing imports it.
 
 ### Added
 

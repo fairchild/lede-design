@@ -1,18 +1,25 @@
 // A registry file's relative imports have to land on files the CLI installs alongside it: its own item's, or those of
 // its registryDependencies, transitively. `shadcn build` reads no imports and `tsc` sees the whole repo at once, so
 // neither notices a missing dependency. Paths resolve from each file's `target`, the place it lands in a project.
-// The repo-only aliases `@/` and `@lede/` go through the same walk, where they can't resolve.
+// The repo-only aliases `@/` and `@lede/` go through the same walk, where they can't resolve. A bare import names an npm
+// package, and the CLI installs it only when the item's own `dependencies` list it. React is in every project, so
+// `react` and `react-dom` need no line.
 import { readFileSync } from 'node:fs';
 import { posix } from 'node:path';
 import ts from 'typescript';
 
 const NAMESPACE = '@lede/';
 const ENDINGS = ['', '.ts', '.tsx'];
+const IN_EVERY_PROJECT = new Set(['react', 'react-dom']);
+
+/** `@scope/name/sub` → `@scope/name`, `name/sub` → `name`, and the same for a `dependencies` entry's `@version`. */
+const packageName = (specifier) => specifier.match(/^(@[^/@]+\/[^/@]+|[^/@]+)/)?.[1];
 
 const { items } = JSON.parse(readFileSync('registry.json', 'utf8'));
 const byAddress = new Map(items.map((item) => [`${NAMESPACE}${item.name}`, item]));
 const problems = [];
 let checked = 0;
+let bare = 0;
 
 /** Every item a CLI install of `item` brings in, itself included. */
 function closure(item, seen = new Set()) {
@@ -34,13 +41,24 @@ for (const item of items) {
   for (const dep of item.registryDependencies ?? []) {
     if (!byAddress.has(dep)) problems.push(`${item.name}: unknown registry dependency ${dep}`);
   }
+  const declared = new Set((item.dependencies ?? []).map(packageName));
   const installed = new Set([...closure(item)].flatMap(({ files = [] }) => files.map((file) => file.target)));
   for (const file of item.files ?? []) {
     if (!file.target) {
       problems.push(`${item.name}: ${file.path} has no target`);
       continue;
     }
-    for (const specifier of importsOf(file.path).filter((name) => /^(\.|@\/|@lede\/)/.test(name))) {
+    const imports = importsOf(file.path);
+    if (!file.path.endsWith('.css')) {
+      const packages = new Set(imports.filter((name) => !/^(\.|@\/|@lede\/)/.test(name)).map(packageName));
+      for (const name of packages) {
+        bare += 1;
+        if (!IN_EVERY_PROJECT.has(name) && !declared.has(name)) {
+          problems.push(`${item.name}: ${file.path} imports ${name}, which isn't in the item's dependencies`);
+        }
+      }
+    }
+    for (const specifier of imports.filter((name) => /^(\.|@\/|@lede\/)/.test(name))) {
       const resolved = posix.join(posix.dirname(file.target), specifier);
       checked += 1;
       if (!ENDINGS.some((ending) => installed.has(resolved + ending))) {
@@ -54,4 +72,4 @@ if (problems.length) {
   console.error(`check-registry: ${problems.length} problem(s)\n${problems.map((problem) => `  ${problem}`).join('\n')}`);
   process.exit(1);
 }
-console.log(`check-registry: ${items.length} items, ${checked} relative imports resolved`);
+console.log(`check-registry: ${items.length} items, ${checked} relative imports resolved, ${bare} package imports checked`);

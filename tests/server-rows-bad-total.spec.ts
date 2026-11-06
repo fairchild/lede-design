@@ -3,7 +3,7 @@
 // review: a malformed refresh of a page already on screen keeps that page, in both modes.
 import { test } from '@playwright/test';
 import assert from 'node:assert/strict';
-import { ServerRowsStore, type ServerRowsConfig, type ServerRowsRequest } from '../registry/lede/blocks/server-rows-store';
+import { ServerRowsStore, type ServerRowsConfig, type ServerRowsRequest } from '@fairchild/table-core';
 
 test.skip(({ isMobile }) => isMobile, 'Pure logic: one project is enough.');
 

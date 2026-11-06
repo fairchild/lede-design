@@ -3,7 +3,7 @@
 // only, a lower bound, no total, a number that stays too high, and cursors.
 import { test } from '@playwright/test';
 import assert from 'node:assert/strict';
-import { ServerRowsStore, type ServerRowsConfig, type ServerRowsRequest } from '../registry/lede/blocks/server-rows-store';
+import { ServerRowsStore, type ServerRowsConfig, type ServerRowsRequest } from '@fairchild/table-core';
 
 test.skip(({ isMobile }) => isMobile, 'Pure logic: one project is enough.');
 

@@ -2,7 +2,7 @@
 // page, and changing it starts again at the first page. The key is the view's JSON, so the same filter written another
 // way (another key order, `{}` for none) is a new entry too: a missed match costs a refetch, never another filter's rows.
 import { test, expect } from '@playwright/test';
-import { ServerRowsStore, pageKey, type ServerRowsRequest } from '../registry/lede/blocks/server-rows-store';
+import { ServerRowsStore, pageKey, type ServerRowsRequest } from '@fairchild/table-core';
 import type { TableView } from '../registry/lede/blocks/use-data-table';
 
 test.skip(({ isMobile }) => isMobile, 'Pure logic: one project is enough.');
