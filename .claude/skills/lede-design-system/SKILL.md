@@ -8,7 +8,7 @@ description: Use when building, designing or reviewing UI with the Lede design s
 Lede is a content-first design system inspired by Apple's Human Interface Guidelines. Its principles are **Hierarchy, Harmony, Consistency** and **Progressive disclosure**. It's built on Base UI with semantic HTML, uses shadcn/ui variable names, and has four themes: `light`, `dark`, `light-hc` and `dark-hc`.
 
 ## Where it lives
-- **Source repository:** the repo that holds `tokens/tokens.json`. Its public address is github.com/fairchild/lede, and the docs site and hosted registry are at lede.cloudcompute.com.
+- **Source repository:** the repo that holds `tokens/tokens.json`. Its public address is github.com/fairchild/lede-design, and the docs site and hosted registry are at lede.cloudcompute.com.
   - `tokens/tokens.json`: the single source for every token.
   - `registry/lede/`: primitives. `blocks/` holds layouts and higher-level components; `flows/` holds the hero flows.
   - `src/`: the docs site and demo app.
