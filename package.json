@@ -1,11 +1,11 @@
 {
-  "name": "lede",
+  "name": "lede-design",
   "private": true,
   "version": "0.4.0",
   "description": "Summary first, depth on request. A content-first design system for React, shipped as a shadcn registry.",
   "license": "MIT",
   "homepage": "https://lede.cloudcompute.com/",
-  "bugs": "https://github.com/fairchild/lede/issues",
+  "bugs": "https://github.com/fairchild/lede-design/issues",
   "keywords": [
     "design-system",
     "react",
@@ -20,7 +20,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/fairchild/lede.git"
+    "url": "https://github.com/fairchild/lede-design.git"
   },
   "type": "module",
   "scripts": {
