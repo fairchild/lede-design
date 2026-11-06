@@ -11,6 +11,8 @@ const OPEN_ON_ARRIVAL = { '/': ['Install commands', 'CSS import', 'Import a comp
 const ROUTES = Object.keys(PAGES) as (keyof typeof PAGES)[];
 
 const example = (page: Page, label: string) => page.locator('.docs-code-example').filter({ has: page.getByRole('button', { name: label }) });
+/** The examples a page writes itself. Each section's install command and sample come from `usage.spec.ts`'s sources. */
+const OWN = '.docs-code-example:not(.docs-usage > *)';
 const trigger = (block: Locator) => block.getByRole('button');
 
 async function openAll(page: Page) {
@@ -19,7 +21,10 @@ async function openAll(page: Page) {
   while (await closed.count()) await closed.first().click();
 }
 
-/** The examples a page's source passes in, as [label, code]: `label="…"` and an `…_CODE` constant on one line. */
+/**
+ * The examples a page's source passes in, as [label, code]: `label="…"` and an `…_CODE` constant on one line. The
+ * constant is a template literal, or a sample file imported as text.
+ */
 function sourceExamples(route: keyof typeof PAGES) {
   const source = readFileSync(`src/pages/docs/${PAGES[route]}.tsx`, 'utf8');
   const constants = new Map(
@@ -28,6 +33,9 @@ function sourceExamples(route: keyof typeof PAGES) {
       text.replaceAll('${REGISTRY}', `https://lede.cloudcompute.com/r/v${version}/{name}.json`).replace(/\\([`$\\])/g, '$1').trim(),
     ]),
   );
+  for (const [, name, file] of source.matchAll(/^import (\w+_CODE) from '\.\/(samples\/[\w-]+\.tsx)\?raw';$/gm)) {
+    constants.set(name, readFileSync(`src/pages/docs/${file}`, 'utf8').trim());
+  }
   const fromSource = [...source.matchAll(/label="([^"]+)"[^\n]*?\b(\w+_CODE)\b/g)].map(([, label, name]) => [label, constants.get(name)!] as const);
   return route === '/' ? [...fromSource, ...readmeExamples()] : fromSource;
 }
@@ -47,7 +55,7 @@ for (const route of ROUTES) {
     await page.goto(route);
     const expected = sourceExamples(route);
     expect(expected.length).toBeGreaterThan(0);
-    await expect(page.locator('.docs-code-example')).toHaveCount(expected.length);
+    await expect(page.locator(OWN)).toHaveCount(expected.length);
     for (const [label, code] of expected) expect(await example(page, label).locator('code').textContent()).toBe(code);
   });
 

@@ -59,6 +59,8 @@ html, body { margin: 0; background: var(--background-grouped); color: var(--fore
 .docs-steps p code { font-family: var(--font-mono); font-size: var(--text-code-size); }
 .docs-demo { display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: center; padding: var(--space-4); border-radius: var(--radius-lg); background: var(--card); }
 [data-theme$="-hc"] .docs-demo { box-shadow: 0 0 0 1px var(--input); }
+.docs-check { display: inline-flex; align-items: center; gap: var(--space-2); }
+.docs-usage { margin-top: var(--space-4); }
 .docs-demo-col { display: grid; gap: var(--space-4); align-items: stretch; }
 .docs-theme-panel { display: grid; gap: var(--space-4); padding: var(--space-4); border-radius: var(--radius-lg); }
 /* Code examples: one surface, the Disclosure's card, so a syntax color is measured against one background. */

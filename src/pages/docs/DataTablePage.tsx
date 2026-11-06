@@ -13,6 +13,7 @@ import { allWorkItems, bigWorkItems, createWorkServer, type WorkItem } from '@/d
 import { workColumns, formatMoney, StatusChip } from '@/work-columns';
 import { isExample, itemHref, type Example } from './DataTableItemPage';
 import { CodeExample } from './CodeExample';
+import CLIENT_CODE from './samples/data-table.tsx?raw';
 import { restoreFocus } from '@/focus-restoration';
 
 /**
@@ -71,53 +72,6 @@ function Code({ label, defaultOpen, children }: { label: string; defaultOpen?: b
 
 const clientRows = allWorkItems.slice(0, 24);
 const narrowRows = allWorkItems.slice(0, 8);
-
-const CLIENT_CODE = `
-import { DataTable } from '@/components/lede/blocks/data-table';
-import { defineColumns } from '@/components/lede/blocks/use-data-table';
-import type { RowAction } from '@/components/lede/list';
-
-// Module scope (or useMemo): rows are memoized against the column list. Development builds warn if it changes on
-// every render. Each column's card option places it in the narrow layout (see Narrow containers).
-const STATUS_ORDER = ['Open', 'In progress', 'Blocked', 'Done'];
-const columns = defineColumns<WorkItem>([
-  { id: 'id', label: 'ID', value: (r) => r.id, sortable: true, width: { min: 104 }, card: 1 },
-  { id: 'title', label: 'Title', value: (r) => r.title, sortable: true, truncate: true, card: 'title' },
-  {
-    id: 'status', label: 'Status', value: (r) => r.status, cell: (r) => <StatusChip status={r.status} />, sortable: true,
-    compare: (a, b) => STATUS_ORDER.indexOf(a.status) - STATUS_ORDER.indexOf(b.status), card: 'status',
-  },
-  { id: 'assignee', label: 'Assignee', value: (r) => r.assignee.name, sortable: true, truncate: true },
-  // With a time, an ISO date parses as local time, so it shows the same day everywhere.
-  { id: 'due', label: 'Due', value: (r) => new Date(\`\${r.due}T00:00:00\`), sortable: true, card: 2 },
-  // Cards show value as text, so it's the formatted amount; compare keeps the sort numeric.
-  {
-    id: 'amount', label: 'Amount', value: (r) => formatMoney(r.amount), compare: (a, b) => a.amount - b.amount,
-    align: 'end', sortable: true, card: 3,
-  },
-]);
-
-// Also stable: the card layout's rows are memoized against it.
-const rowActions = (r: WorkItem): RowAction[] => [
-  {
-    label: 'Archive', tone: 'neutral', onSelect: () => archiveItem(r.id),
-    disabled: r.locked, disabledReason: 'Locked items can’t be archived',
-  },
-];
-
-<DataTable
-  caption="Work items"
-  noun={{ one: 'work item', other: 'work items' }}
-  columns={columns}
-  rows={items}
-  getRowId={(r) => r.id}
-  rowHeader="id"
-  defaultView={{ sort: [{ columnId: 'due', direction: 'ascending' }] }}
-  selectionMode="multiple"
-  bulkActions={[{ label: 'Archive', onSelect: (selection) => archive(selection) }]}
-  rowHref={(r) => \`/work/\${r.id}\`}
-  rowActions={rowActions}
-/>`;
 
 const SERVER_CODE = `
 import { DataTable } from '@/components/lede/blocks/data-table';
