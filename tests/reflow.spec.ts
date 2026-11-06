@@ -138,8 +138,9 @@ for (const route of ROUTES) {
 
 // At triple the text size on a 320px phone, every route still fits its width: a word longer than the line breaks, and a
 // control's label wraps inside the control, where a word too long for it would otherwise spill past its edge. A native
-// select draws its chosen option on one line, so an option wider than the screen at this size is the one cut allowed.
-async function inspectAt300(page: Page) {
+// select draws its chosen option on one line, and the work list's sort option “Due, ascending” is wider than the screen
+// at this size, so that one cut on `/app/work` is the one allowed.
+async function inspectAt300(page: Page, route: string) {
   const found = await page.evaluate(inspect);
   const spilled = await page.evaluate(() => [...document.querySelectorAll<HTMLElement>('.ld-btn, .ld-bar-tool, .ld-bar-item, .ld-accent, .ld-switch')].flatMap((control) => {
     if (!control.checkVisibility()) return [];
@@ -154,7 +155,7 @@ async function inspectAt300(page: Page) {
     }
     return out ? [`“${control.textContent?.trim().slice(0, 40)}” (${control.className}) spills past its edge`] : [];
   }));
-  return { ...found, truncated: found.truncated.filter((t) => !t.includes('(select)')), spilled };
+  return { ...found, truncated: found.truncated.filter((t) => !(route === '/app/work' && t.startsWith('“Due, ascending” (select)'))), spilled };
 }
 for (const route of ROUTES) {
   test(`${route} · at 300% text on a 320px phone, nothing scrolls sideways and nothing is cut off`, async ({ page, isMobile }) => {
@@ -162,10 +163,10 @@ for (const route of ROUTES) {
     await atTextSize(page, 3);
     await page.setViewportSize({ width: 320, height: 800 });
     await settle(page, route, 3);
-    expect(await inspectAt300(page)).toEqual({ overflow: 0, overlaps: [], squeezed: [], clipped: [], truncated: [], spilled: [] });
+    expect(await inspectAt300(page, route)).toEqual({ overflow: 0, overlaps: [], squeezed: [], clipped: [], truncated: [], spilled: [] });
     if (!(await openPanels(page))) return;
     await steady(page);
-    expect(await inspectAt300(page), 'with every panel open').toEqual({ overflow: 0, overlaps: [], squeezed: [], clipped: [], truncated: [], spilled: [] });
+    expect(await inspectAt300(page, route), 'with every panel open').toEqual({ overflow: 0, overlaps: [], squeezed: [], clipped: [], truncated: [], spilled: [] });
   });
 }
 

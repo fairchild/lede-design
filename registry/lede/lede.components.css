@@ -447,7 +447,7 @@
 }
 /* GlassToolbar wraps its parts when they don't fit on one line. One line is a capsule; more keep its ends' curve. */
 .ld-bar-tools {
-  flex-wrap: wrap; justify-content: center; max-width: 100%;
+  flex-wrap: wrap; justify-content: center;
   border-radius: calc(max(var(--size-hit-min), var(--text-subheadline-line-height)) / 2 + var(--space-1));
 }
 .ld-bar-tool-icon { padding: 0; }
