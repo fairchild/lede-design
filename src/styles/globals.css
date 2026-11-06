@@ -1,0 +1,182 @@
+@import "tailwindcss";
+/* Tailwind skips the files that CI's tiers 1 and 2 check without the whole suite (scripts/ci-tier.mjs): the Markdown
+   the site doesn't render and tests/. A text-only or tests-only change can't add or drop a rule in the site's CSS. */
+@source not "../../README.md";
+@source not "../../CHANGELOG.md";
+@source not "../../CONTRIBUTING.md";
+@source not "../../CLAUDE.md";
+@source not "../../docs/**/*.md";
+@source not "../../.claude/**/*.md";
+@source not "../../tests";
+@import "./lede.tokens.css";
+@import "../../registry/lede/lede.components.css";
+@import "../../registry/lede/lede.blocks.css";
+
+html, body { margin: 0; background: var(--background-grouped); color: var(--foreground); font-family: var(--font-sans); -webkit-font-smoothing: antialiased; }
+.app-root { min-height: 100dvh; }
+
+/* Docs-only helpers */
+/* The mark is 1.6em, 32px beside the 20px brand at the default text size: twice its 16px grid, so its lines stay sharp. */
+.docs-brand { display: inline-flex; align-items: center; gap: var(--space-2); }
+.docs-mark { flex: none; width: 1.6em; height: 1.6em; }
+.docs-mark-tile { fill: var(--primary); }
+.docs-mark-line { fill: var(--primary-foreground); }
+@media (forced-colors: active) { .docs-mark-tile { fill: CanvasText; } .docs-mark-line { fill: Canvas; } }
+
+.docs-section { margin: 0 0 var(--space-8); }
+.docs-section > h2 { margin: 0 0 var(--space-1); overflow-wrap: break-word; }
+/* Overview: six cards in three even rows of two, or one column in a narrow container. A container's margins don't
+   collapse through it, so the grid drops its own bottom margin. */
+.docs-explore { container-type: inline-size; }
+.docs-explore .ld-summary-grid { grid-template-columns: minmax(0, 1fr); margin-bottom: 0; }
+@container (min-width: 20.75rem) { .docs-explore .ld-summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.docs-target { scroll-margin-top: var(--space-4); }
+.docs-target:focus, .docs-anchor:focus { outline: none; }
+/* A guide shows several tables at once, so each one's selection bar stays with its own example: sticky at the foot of
+   its table while that table is on screen, never fixed over the next example. At the table's end it takes its own
+   room below the last row rather than covering it. */
+.docs-section .ld-selection-bar { position: sticky; left: auto; right: auto; }
+.docs-intro { margin: 0 0 var(--space-4); color: var(--muted-foreground); font-size: var(--text-subheadline-size); line-height: var(--text-subheadline-line-height); max-width: 68ch; }
+.docs-note { margin: var(--space-3) 0 0; }
+.docs-demo { display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: center; padding: var(--space-4); border-radius: var(--radius-lg); background: var(--card); }
+[data-theme$="-hc"] .docs-demo { box-shadow: 0 0 0 1px var(--input); }
+.docs-demo-col { display: grid; gap: var(--space-4); align-items: stretch; }
+.docs-theme-panel { display: grid; gap: var(--space-4); padding: var(--space-4); border-radius: var(--radius-lg); }
+/* Code examples: one surface, the Disclosure's card, so a syntax color is measured against one background. */
+.docs-code-example { min-width: 0; }
+.docs-code-example .ld-disc-body { padding: 0; }
+.docs-code { margin: 0; padding: var(--space-1) var(--space-4) var(--space-4); border-radius: 0 0 var(--radius-lg) var(--radius-lg); font-family: var(--font-mono); font-size: var(--text-code-size); line-height: var(--text-code-line-height); overflow-x: auto; }
+.docs-code:focus-visible { outline: 2px solid var(--ring); outline-offset: -2px; }
+.docs-tk-comment { color: var(--muted-foreground); }
+.docs-tk-keyword { color: var(--primary); }
+.docs-tk-string { color: var(--success); }
+.docs-tk-tag { color: var(--warning); }
+/* Paper can't open a panel or scroll a line, and the fixed bar would repeat over the code on every page. */
+@media print {
+  .docs-code-example .ld-disc-panel { content-visibility: visible; height: auto; overflow: visible; }
+  .docs-code-example .ld-disc-chevron, .ld-shell-tabbar { display: none; }
+  .docs-code { overflow: visible; white-space: pre-wrap; overflow-wrap: anywhere; }
+}
+/* Five one-word options still fit at 320px (WCAG 1.4.10 reflow). */
+@media (width <= 25em) { .docs-seg-compact .ld-seg-label { padding: 0 var(--space-1); } }
+.docs-table { width: 100%; border-collapse: collapse; font-size: var(--text-subheadline-size); line-height: var(--text-subheadline-line-height); }
+.docs-table caption { text-align: left; padding: 0 0 var(--space-2); color: var(--muted-foreground); font-size: var(--text-footnote-size); }
+.docs-table th, .docs-table td { text-align: left; vertical-align: top; padding: var(--space-2) var(--space-3); border-top: 0.5px solid var(--border); }
+.docs-table th[scope="col"] { font-size: var(--text-footnote-size); color: var(--muted-foreground); font-weight: 500; border-top: 0; }
+.docs-table code { font-family: var(--font-mono); font-size: var(--text-code-size); }
+/* Code in prose keeps to one line, so a name like `--radius` doesn't break at its hyphens. Where enlarged text leaves the
+   window under `20em` of it, a long path would be wider than the line, so there it wraps. */
+:where(p, li, dd, td) > code { white-space: nowrap; }
+@media (width < 20em) { :where(p, li, dd, td) > code { white-space: normal; } }
+/* Foundations: a token's name stays on one line, and a token table keeps room for its usage text. On a phone the table
+   scrolls sideways instead. */
+.docs-table th[scope="row"] code { white-space: nowrap; }
+.docs-table-scroll { overflow-x: auto; }
+.docs-table-scroll:focus-visible { outline: var(--stroke-ring) solid var(--ring); outline-offset: calc(-1 * var(--stroke-ring)); }
+.docs-table-wide { min-width: 44rem; }
+.docs-swatch { display: block; width: 44px; height: 28px; border-radius: var(--radius-xs); box-shadow: inset 0 0 0 0.5px var(--border); }
+.docs-rules { margin: 0; padding-left: 1.2em; display: grid; gap: var(--space-2); font-size: var(--text-subheadline-size); line-height: var(--text-callout-line-height); overflow-wrap: anywhere; }
+.docs-type-sample { margin: 0; }
+.docs-concentric { padding: var(--space-2); border-radius: var(--radius-xl); background: var(--primary); width: min(100%, 360px); box-sizing: border-box; }
+.docs-concentric > div { padding: var(--space-2); border-radius: var(--radius-lg); background: color-mix(in srgb, var(--card) 30%, var(--primary)); }
+.docs-concentric > div > div { padding: var(--space-2); border-radius: var(--radius-md); background: color-mix(in srgb, var(--card) 60%, var(--primary)); }
+.docs-concentric > div > div > div { height: 64px; border-radius: var(--radius-xs); background: var(--card); }
+.onboarding-main { min-height: 100dvh; padding: var(--space-8) var(--space-4); box-sizing: border-box; display: grid; justify-content: center; align-content: start; outline: none; }
+.onboarding-main > * { width: min(560px, calc(100vw - 2 * var(--space-4))); }
+.docs-onboarding-error { margin: var(--space-4) 0 0; padding: 0 var(--space-4); color: var(--destructive); overflow-wrap: anywhere; }
+/* Room below Cancel for its focus ring (stroke-ring outside a stroke-ring-offset gap), clear of the progress list. */
+.docs-onboarding-cancel { margin: 0 0 var(--space-2); }
+
+/* Data table docs */
+.docs-narrow { width: min(100%, 380px); }
+.docs-parts { max-width: 520px; }
+.docs-log { font-size: var(--text-footnote-size); line-height: var(--text-footnote-line-height); color: var(--muted-foreground); }
+.docs-log-title { margin: 0 0 var(--space-1); font-size: var(--text-footnote-size); line-height: var(--text-footnote-line-height); font-weight: 600; color: var(--foreground); }
+.docs-log ol { margin: 0; padding-left: 1.4em; font-family: var(--font-mono); }
+.docs-facts { display: grid; gap: 0; margin: 0; padding: var(--space-2) var(--space-4); border-radius: var(--radius-lg); background: var(--card); }
+[data-theme$="-hc"] .docs-facts { box-shadow: 0 0 0 1px var(--input); }
+/* A value sits at the end of its term's line, and moves under the term when the two don't fit side by side. */
+.docs-facts > div { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0 var(--space-4); padding: var(--space-3) 0; border-top: 0.5px solid var(--border); }
+.docs-facts > div:first-child { border-top: 0; }
+.docs-facts dt { color: var(--muted-foreground); }
+.docs-facts dd { margin: 0; }
+.docs-facts .ld-status { margin: 0; }
+[role="alert"] + .docs-facts { margin-top: var(--space-4); }
+/* In flight, the dot turns into a ring. The status word stays: a wider one would rewrap a card and move the rows below it. */
+.docs-status-working .ld-status-dot { box-sizing: border-box; border: 2px solid currentColor; background: none; }
+@media (prefers-reduced-motion: no-preference) {
+  .docs-status-working .ld-status-dot { animation: ld-skel 0.7s ease-in-out infinite alternate; }
+}
+/* The notice sits in the page header's bottom margin, so it can come and go without moving the table. */
+.docs-notice { margin: calc(-1 * var(--space-6)) 0 0; min-height: max(var(--space-6), var(--text-subheadline-line-height)); font-size: var(--text-subheadline-size); line-height: var(--text-subheadline-line-height); }
+/* A failure floats over the page instead of pushing it down: no height of its own, pinned near the top of the viewport. */
+.docs-float { position: sticky; top: var(--space-6); z-index: 40; display: flex; justify-content: flex-end; height: 0; }
+.docs-float .ld-dt-error {
+  flex: 0 1 640px; align-self: flex-start; margin-top: calc(var(--space-2) - var(--space-6));
+  box-shadow: inset 0 0 0 1.5px var(--destructive), var(--shadow-float); outline: 1px solid transparent;
+}
+/* While it's up, the table's controls and rows scroll to below it. Its own buttons don't, so tabbing to them moves nothing. */
+.ld-flow:has(.docs-float .ld-dt-error) .ld-dt :is(a, button, input, select, [data-row-id]) { scroll-margin-top: var(--docs-float-bottom); }
+/* On a phone's cards, at the top of the page, there's no room to scroll focus clear of it, so it fades for the controls above
+   the rows. It stays in the tab order, so Shift+Tab from them reaches it. */
+.ld-flow:has(.ld-dt[data-layout="cards"] :is(.ld-dt-top, .ld-dt-cardbar) :focus-visible) .docs-float { opacity: 0; pointer-events: none; }
+.docs-failure { flex: 1 1 320px; display: grid; gap: var(--space-1); }
+.docs-failure ul { margin: 0; padding: 0; list-style: none; display: grid; gap: var(--space-1); font-size: var(--text-subheadline-size); line-height: var(--text-subheadline-line-height); }
+.docs-failure-actions { display: flex; align-items: center; gap: var(--space-1); }
+
+/* Layouts docs */
+.docs-subhead { margin: var(--space-4) 0 var(--space-2); font-size: var(--text-subheadline-size); line-height: var(--text-subheadline-line-height); font-weight: 600; }
+.docs-regions { display: grid; gap: var(--space-2); margin: 0; font-size: var(--text-subheadline-size); line-height: var(--text-callout-line-height); max-width: 76ch; }
+.docs-regions > div { display: grid; gap: 0 var(--space-4); }
+@media (width >= 40em) { .docs-regions > div { grid-template-columns: 22ch minmax(0, 1fr); } }
+.docs-regions code { font-family: var(--font-mono); font-size: var(--text-code-size); }
+.docs-regions dd { margin: 0; }
+.docs-regions + .docs-code-example { margin-top: var(--space-4); }
+.docs-actions { margin: var(--space-4) 0 0; }
+.docs-preview { display: grid; justify-items: start; gap: var(--space-3); min-width: 0; }
+.docs-preview-stage { position: relative; width: 100%; overflow: hidden; border-radius: var(--radius-md); background: var(--muted); }
+/* The frame's edge sits over the frame: its page can share the docs' background, and then only this shows where it ends. */
+.docs-preview-stage::after { content: ""; position: absolute; inset: 0; border: 0.5px solid var(--border); border-radius: inherit; pointer-events: none; }
+[data-theme$="-hc"] .docs-preview-stage::after { border: 1px solid var(--input); }
+.docs-preview-frame { position: absolute; top: 0; border: 0; transform-origin: 0 0; opacity: 0; }
+.docs-preview-frame[data-loaded] { opacity: 1; }
+.docs-anchor { scroll-margin-top: var(--space-8); }
+/* In a preview frame, a panel at its end passes the swipe on, or the frame would trap the docs page's scrolling. */
+html[data-embedded] .ld-wb-panel, html[data-embedded] .ld-wb-content { overscroll-behavior: auto; }
+
+/* Workbench example */
+.docs-wb-back { display: inline-flex; align-items: center; min-height: var(--size-control-md); color: var(--primary); text-decoration: none; border-radius: var(--radius-xs); }
+.docs-wb-back::before { content: "‹"; margin-right: var(--space-1); }
+.docs-wb-back:focus-visible, .docs-wb-file:focus-visible { outline: 2px solid var(--ring); outline-offset: -2px; }
+.docs-wb-heading { margin: 0 0 var(--space-2); padding: 0 var(--space-2); font-size: var(--text-footnote-size); line-height: var(--text-footnote-line-height); font-weight: 600; color: var(--muted-foreground); }
+.docs-wb-tree { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; font-size: var(--text-footnote-size); line-height: var(--text-footnote-line-height); }
+.docs-wb-nested { padding-left: var(--space-4); }
+.docs-wb-file, .docs-wb-folder { display: flex; align-items: center; gap: var(--space-2); min-height: max(var(--size-control-sm), var(--size-hit-absolute-min)); padding: 0 var(--space-2); }
+.docs-wb-file { color: var(--foreground); text-decoration: none; border-radius: var(--radius-xs); }
+.docs-wb-file:hover { background: var(--accent); }
+.docs-wb-file[aria-current="page"] { background: var(--card); font-weight: 600; box-shadow: var(--shadow-raised); outline: 1px solid transparent; outline-offset: -1px; }
+.docs-wb-file[aria-current="page"]:focus-visible { outline: 2px solid var(--ring); outline-offset: -2px; }
+[data-theme$="-hc"] .docs-wb-file[aria-current="page"] { box-shadow: 0 0 0 1px var(--input); }
+.docs-wb-folder { color: var(--muted-foreground); }
+.docs-wb-icon { display: flex; flex: none; width: 16px; height: 16px; }
+.docs-wb-icon svg { width: 100%; height: 100%; }
+@media (any-pointer: coarse) { .docs-wb-file, .docs-wb-folder { min-height: var(--size-hit-min); } }
+.docs-wb-doc-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--space-1) var(--space-3); margin-bottom: var(--space-3); padding-bottom: var(--space-2); border-bottom: 0.5px solid var(--border); }
+.docs-wb-path { margin: 0 auto 0 0; font-family: var(--font-mono); font-size: var(--text-code-size); line-height: var(--text-code-line-height); font-weight: 600; }
+.docs-wb-meta { margin: 0; font-size: var(--text-footnote-size); line-height: var(--text-footnote-line-height); color: var(--muted-foreground); }
+.docs-wb-code { width: max-content; min-width: 100%; margin: 0; font-family: var(--font-mono); font-size: var(--text-code-size); line-height: var(--text-subheadline-line-height); counter-reset: line; }
+.docs-wb-line { display: block; counter-increment: line; }
+.docs-wb-line::before { content: counter(line); display: inline-block; width: 3ch; margin-right: var(--space-4); text-align: right; color: var(--muted-foreground); }
+.docs-wb-assistant { display: flex; flex-direction: column; min-height: 100%; gap: var(--space-2); }
+.docs-wb-assistant [role="log"] { flex: 1; }
+.docs-wb-chat { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-3); font-size: var(--text-subheadline-size); line-height: var(--text-callout-line-height); }
+.docs-wb-message { padding: var(--space-2) var(--space-3); border-radius: var(--radius-sm); background: var(--card); color: var(--card-foreground); }
+[data-theme$="-hc"] .docs-wb-message { box-shadow: 0 0 0 1px var(--input); }
+.docs-wb-message p { margin: 0; }
+.docs-wb-message .docs-wb-who { font-size: var(--text-footnote-size); line-height: var(--text-footnote-line-height); font-weight: 600; color: var(--muted-foreground); }
+.docs-wb-composer { position: sticky; bottom: calc(-1 * var(--space-4)); display: grid; justify-items: end; gap: var(--space-2); margin-bottom: calc(-1 * var(--space-4)); padding-block: var(--space-2) var(--space-4); background: var(--background-grouped); }
+.docs-wb-composer .ld-field { width: 100%; }
+/* Demo: the sidebar's person link, a shell link with an avatar where its icon goes */
+/* Clear of the footer link's hit area under it, which grows past `--space-2` in `touch`. */
+.docs-person-link { margin: 0 calc(-1 * var(--space-3)) max(var(--space-2), calc((var(--size-hit-absolute-min) - var(--text-footnote-line-height)) / 2)); }
+.docs-person-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

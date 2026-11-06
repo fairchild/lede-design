@@ -1,0 +1,19 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "lede-design",
+  "account_id": "9d1a8fe235b13dcab0fa3bcb6181ab0c",
+  "main": "worker/index.ts",
+  "compatibility_date": "2026-11-01",
+  "workers_dev": true,
+  "preview_urls": true,
+  // The site is the build in dist/. Registry and media requests run the Worker first; every other path is an asset,
+  // or the SPA shell when no asset matches.
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/r/*", "/media/*"]
+  },
+  // Registry releases (r/v<semver>/), r/next/ and media, kept apart from deploys so a release outlives them.
+  "r2_buckets": [{ "binding": "BUCKET", "bucket_name": "lede-design" }]
+}

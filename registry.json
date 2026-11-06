@@ -1,0 +1,713 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry.json",
+  "name": "lede",
+  "homepage": "https://lede.cloudcompute.com/",
+  "items": [
+    {
+      "name": "lede-theme",
+      "type": "registry:style",
+      "title": "Lede theme",
+      "description": "Lede's tokens as shadcn variables in four themes (`light`, `dark`, `light-hc` and `dark-hc`), with Tailwind v4's `@theme` mapping and dark variant, the `.text-*` type classes and the component and block styles. Import `styles/lede/index.css` after your shadcn globals.",
+      "files": [
+        {
+          "path": "registry/lede/lede.tokens.css",
+          "type": "registry:file",
+          "target": "styles/lede/tokens.css"
+        },
+        {
+          "path": "registry/lede/lede.components.css",
+          "type": "registry:file",
+          "target": "styles/lede/components.css"
+        },
+        {
+          "path": "registry/lede/lede.blocks.css",
+          "type": "registry:file",
+          "target": "styles/lede/blocks.css"
+        },
+        {
+          "path": "registry/lede/lede.index.css",
+          "type": "registry:file",
+          "target": "styles/lede/index.css"
+        }
+      ]
+    },
+    {
+      "name": "lede-utils",
+      "type": "registry:lib",
+      "title": "Lede utils",
+      "description": "`cn()`, LinkProvider (route Lede's anchors through your router), the tone types (`Tone`, `StatusTone` and `ToneSubset`) and the input helpers `focusLanding()` and `lastInputWasTouch()`.",
+      "files": [
+        {
+          "path": "registry/lede/cn.ts",
+          "type": "registry:lib",
+          "target": "components/lede/cn.ts"
+        },
+        {
+          "path": "registry/lede/link.tsx",
+          "type": "registry:lib",
+          "target": "components/lede/link.tsx"
+        },
+        {
+          "path": "registry/lede/tone.ts",
+          "type": "registry:lib",
+          "target": "components/lede/tone.ts"
+        },
+        {
+          "path": "registry/lede/input-modality.ts",
+          "type": "registry:lib",
+          "target": "components/lede/input-modality.ts"
+        }
+      ]
+    },
+    {
+      "name": "theme-provider",
+      "type": "registry:component",
+      "title": "ThemeProvider",
+      "description": "ThemeProvider sets scheme, contrast, accent, shape, density and glass for a subtree, and ThemeScope carries them into a portal. It also exports the accent `presets` and `pickOnColor`.",
+      "registryDependencies": [
+        "@lede/lede-theme",
+        "@lede/lede-utils"
+      ],
+      "files": [
+        {
+          "path": "registry/lede/theme-provider.tsx",
+          "type": "registry:component",
+          "target": "components/lede/theme-provider.tsx"
+        }
+      ],
+      "dependencies": [
+        "@base-ui/react@^1.9.0"
+      ]
+    },
+    {
+      "name": "button",
+      "type": "registry:component",
+      "title": "Button",
+      "description": "A native `<button>`, or an `<a>` when given `href`, in five variants. `buttonClass` gives an element of your own the same classes.",
+      "registryDependencies": [
+        "@lede/lede-theme",
+        "@lede/lede-utils"
+      ],
+      "files": [
+        {
+          "path": "registry/lede/button.tsx",
+          "type": "registry:component",
+          "target": "components/lede/button.tsx"
+        }
+      ]
+    },
+    {
+      "name": "segmented-control",
+      "type": "registry:component",
+      "title": "SegmentedControl",
+      "description": "A native `<fieldset>` of radio inputs, with a thumb that slides to the checked option.",
+      "registryDependencies": [
+        "@lede/lede-theme",
+        "@lede/lede-utils"
+      ],
+      "files": [
+        {
+          "path": "registry/lede/segmented-control.tsx",
+          "type": "registry:component",
+          "target": "components/lede/segmented-control.tsx"
+        }
+      ]
+    },
+    {
+      "name": "switch",
+      "type": "registry:component",
+      "title": "Switch",
+      "description": "A Base UI Switch in an enclosing `<label>`. Enter submits its form, as a checkbox's does. Given a `name`, it submits with a form through a hidden native input.",
+      "registryDependencies": [
+        "@lede/lede-theme",
+        "@lede/lede-utils"
+      ],
+      "files": [
+        {
+          "path": "registry/lede/switch.tsx",
+          "type": "registry:component",
+          "target": "components/lede/switch.tsx"
+        }
+      ],
+      "dependencies": [
+        "@base-ui/react@^1.9.0"
+      ]
+    },
+    {
+      "name": "text-field",
+      "type": "registry:component",
+      "title": "TextField",
+      "description": "A labeled `<input>`, or a `<textarea>` when given `rows`, on Base UI Field, with its hint and error wired up for assistive tech.",
+      "registryDependencies": [
+        "@lede/lede-theme",
+        "@lede/lede-utils"
+      ],
+      "files": [
+        {
+          "path": "registry/lede/text-field.tsx",
+          "type": "registry:component",
+          "target": "components/lede/text-field.tsx"
+        }
+      ],
+      "dependencies": [
+        "@base-ui/react@^1.9.0"
+      ]
+    },
+    {
+      "name": "avatar",
+      "type": "registry:component",
+      "title": "Avatar",
+      "description": "An `<img>` with alt text, or initials on a tint when there's no picture or it fails to load.",
+      "registryDependencies": [
+        "@lede/lede-theme",
+        "@lede/lede-utils"
+      ],
+      "files": [
+        {
+          "path": "registry/lede/avatar.tsx",
+          "type": "registry:component",
+          "target": "components/lede/avatar.tsx"
+        }
+      ]
+    },
+    {
+      "name": "card",
+      "type": "registry:component",
+      "title": "Card",
+      "description": "A surface for grouped content, rendered as a `<div>` or the element you pass to `render`. A child with the `ld-concentric` class keeps its corners concentric with the card's.",
+      "registryDependencies": [
+        "@lede/lede-theme",
+        "@lede/lede-utils"
+      ],
+      "files": [
+        {
+          "path": "registry/lede/card.tsx",
+          "type": "registry:component",
+          "target": "components/lede/card.tsx"
+        }
+      ],
+      "dependencies": [
+        "@base-ui/react@^1.9.0"
+      ]
+    },
+    {
+      "name": "list",
+      "type": "registry:component",
+      "title": "ListGroup, ListRow",
+      "description": "ListGroup is a `<section>` with a heading and a `<ul>` of ListRows. A ListRow is a link, a button or a static row, with leading and trailing slots and up to three actions in a \u2022\u2022\u2022 menu and a touch swipe, where a disabled action shows its reason.",
+      "registryDependencies": [
+        "@lede/lede-theme",
+        "@lede/lede-utils",
+        "@lede/theme-provider"
+      ],
+      "files": [
+        {
+          "path": "registry/lede/list.tsx",
+          "type": "registry:component",
+          "target": "components/lede/list.tsx"
+        }
+      ],
+      "dependencies": [
+        "@base-ui/react@^1.9.0",
+        "@react-aria/interactions@^3.28.1"
+      ]
+    },
+    {
+      "name": "disclosure",
+      "type": "registry:component",
+      "title": "Disclosure",
+      "description": "A `<section>` whose heading opens and closes its body, with a summary that reads while it's closed. Built on Base UI Collapsible.",
+      "registryDependencies": [
+        "@lede/lede-theme",
+        "@lede/lede-utils"
+      ],
+      "files": [
+        {
+          "path": "registry/lede/disclosure.tsx",
+          "type": "registry:component",
+          "target": "components/lede/disclosure.tsx"
+        }
+      ],
+      "dependencies": [
+        "@base-ui/react@^1.9.0"
+      ]
+    },
+    {
+      "name": "glass-bar",
+      "type": "registry:component",
+      "title": "GlassBar, GlassToolbar",
+      "description": "GlassBar, a `<nav>` of links between places that marks the current one with `aria-current`, and GlassToolbar, a Base UI Toolbar of actions, both on glass. GlassToolbarButton and GlassToolbarSeparator fill the toolbar.",
+      "registryDependencies": [
+        "@lede/lede-theme",
+        "@lede/lede-utils"
+      ],
+      "files": [
+        {
+          "path": "registry/lede/glass-bar.tsx",
+          "type": "registry:component",
+          "target": "components/lede/glass-bar.tsx"
+        }
+      ],
+      "dependencies": [
+        "@base-ui/react@^1.9.0"
+      ]
+    },
+    {
+      "name": "checkbox",
+      "type": "registry:component",
+      "title": "Checkbox",
+      "description": "A native `<input type=\"checkbox\">` that is its own hit target, sized by density, with an `indeterminate` state.",
+      "registryDependencies": [
+        "@lede/lede-theme",
+        "@lede/lede-utils"
+      ],
+      "files": [
+        {
+          "path": "registry/lede/checkbox.tsx",
+          "type": "registry:component",
+          "target": "components/lede/checkbox.tsx"
+        }
+      ]
+    },
+    {
+      "name": "table",
+      "type": "registry:component",
+      "title": "Table",
+      "description": "The stateless Table parts for a real `<table>`, with a sticky header and an optional sticky first column. A table wider than its box becomes a named scroll region, and a captioned one can collapse to its caption.",
+      "registryDependencies": [
+        "@lede/lede-theme",
+        "@lede/lede-utils"
+      ],
+      "files": [
+        {
+          "path": "registry/lede/table.tsx",
+          "type": "registry:component",
+          "target": "components/lede/table.tsx"
+        }
+      ]
+    },
+    {
+      "name": "accent-picker",
+      "type": "registry:block",
+      "title": "AccentPicker",
+      "description": "Native radio inputs for ThemeProvider's accent presets, each with a swatch and a visible name.",
+      "registryDependencies": [
+        "@lede/lede-theme",
+        "@lede/lede-utils",
+        "@lede/theme-provider"
+      ],
+      "files": [
+        {
+          "path": "registry/lede/blocks/accent-picker.tsx",
+          "type": "registry:component",
+          "target": "components/lede/blocks/accent-picker.tsx"
+        }
+      ],
+      "categories": [
+        "blocks"
+      ]
+    },
+    {
+      "name": "app-shell",
+      "type": "registry:block",
+      "title": "AppShell",
+      "description": "A page layout: a skip link, one primary `<nav>` and a `<main>`, where the nav is a sidebar on wide screens and a floating GlassBar on narrow ones. It fits an app with three to five places, each a whole screen.",
+      "registryDependencies": [
+        "@lede/lede-theme",
+        "@lede/lede-utils",
+        "@lede/glass-bar"
+      ],
+      "files": [
+        {
+          "path": "registry/lede/blocks/app-shell.tsx",
+          "type": "registry:component",
+          "target": "components/lede/blocks/app-shell.tsx"
+        }
+      ],
+      "categories": [
+        "blocks"
+      ]
+    },
+    {
+      "name": "empty-state",
+      "type": "registry:block",
+      "title": "EmptyState",
+      "description": "A quiet `<section>` for a place with nothing in it: a heading, one sentence and at most one action.",
+      "registryDependencies": [
+        "@lede/lede-theme",
+        "@lede/lede-utils"
+      ],
+      "files": [
+        {
+          "path": "registry/lede/blocks/empty-state.tsx",
+          "type": "registry:component",
+          "target": "components/lede/blocks/empty-state.tsx"
+        }
+      ],
+      "categories": [
+        "blocks"
+      ]
+    },
+    {
+      "name": "form-section",
+      "type": "registry:block",
+      "title": "FormSection",
+      "description": "A native `<fieldset>` and `<legend>` on a card surface, grouping and naming related fields.",
+      "registryDependencies": [
+        "@lede/lede-theme",
+        "@lede/lede-utils"
+      ],
+      "files": [
+        {
+          "path": "registry/lede/blocks/form-section.tsx",
+          "type": "registry:component",
+          "target": "components/lede/blocks/form-section.tsx"
+        }
+      ],
+      "categories": [
+        "blocks"
+      ]
+    },
+    {
+      "name": "master-detail",
+      "type": "registry:block",
+      "title": "MasterDetail",
+      "description": "A list and its detail as two named regions, side by side on wide screens. On narrow screens the route picks one to show, and `useStackedPanes` says which layout is on.",
+      "registryDependencies": [
+        "@lede/lede-theme",
+        "@lede/lede-utils"
+      ],
+      "files": [
+        {
+          "path": "registry/lede/blocks/master-detail.tsx",
+          "type": "registry:component",
+          "target": "components/lede/blocks/master-detail.tsx"
+        }
+      ],
+      "categories": [
+        "blocks"
+      ]
+    },
+    {
+      "name": "page-header",
+      "type": "registry:block",
+      "title": "PageHeader",
+      "description": "A screen's `<h1>` and its one-line summary, with an optional back link and actions. The heading takes focus on mount unless `focusOnMount` is false.",
+      "registryDependencies": [
+        "@lede/lede-theme",
+        "@lede/lede-utils"
+      ],
+      "files": [
+        {
+          "path": "registry/lede/blocks/page-header.tsx",
+          "type": "registry:component",
+          "target": "components/lede/blocks/page-header.tsx"
+        }
+      ],
+      "categories": [
+        "blocks"
+      ]
+    },
+    {
+      "name": "selection-bar",
+      "type": "registry:block",
+      "title": "SelectionBar",
+      "description": "Bulk actions on glass that appear when something is selected, with the count announced through a live region. `formatCount` writes a count with a `Noun`'s singular or plural.",
+      "registryDependencies": [
+        "@lede/lede-theme",
+        "@lede/lede-utils",
+        "@lede/glass-bar"
+      ],
+      "files": [
+        {
+          "path": "registry/lede/blocks/selection-bar.tsx",
+          "type": "registry:component",
+          "target": "components/lede/blocks/selection-bar.tsx"
+        }
+      ],
+      "categories": [
+        "blocks"
+      ]
+    },
+    {
+      "name": "step-indicator",
+      "type": "registry:block",
+      "title": "StepIndicator",
+      "description": "An `<ol>` of steps that marks the current one with `aria-current=\"step\"`. Narrow screens show only its summary, such as \"Step 2 of 3 \u00b7 Preferences\".",
+      "registryDependencies": [
+        "@lede/lede-theme",
+        "@lede/lede-utils"
+      ],
+      "files": [
+        {
+          "path": "registry/lede/blocks/step-indicator.tsx",
+          "type": "registry:component",
+          "target": "components/lede/blocks/step-indicator.tsx"
+        }
+      ],
+      "categories": [
+        "blocks"
+      ]
+    },
+    {
+      "name": "summary-card",
+      "type": "registry:block",
+      "title": "SummaryCard",
+      "description": "An `<article>` whose heading is a link that covers the card, with a figure, a one-line takeaway and a status in words.",
+      "registryDependencies": [
+        "@lede/lede-theme",
+        "@lede/lede-utils"
+      ],
+      "files": [
+        {
+          "path": "registry/lede/blocks/summary-card.tsx",
+          "type": "registry:component",
+          "target": "components/lede/blocks/summary-card.tsx"
+        }
+      ],
+      "categories": [
+        "blocks"
+      ]
+    },
+    {
+      "name": "workbench-shell",
+      "type": "registry:block",
+      "title": "WorkbenchShell",
+      "description": "A top bar over three panels that fill the window, for tools where people keep several things in view. Side panels collapse and resize, and narrow screens show one panel at a time.",
+      "registryDependencies": [
+        "@lede/lede-theme",
+        "@lede/lede-utils",
+        "@lede/button",
+        "@lede/master-detail",
+        "@lede/segmented-control"
+      ],
+      "files": [
+        {
+          "path": "registry/lede/blocks/workbench-shell.tsx",
+          "type": "registry:component",
+          "target": "components/lede/blocks/workbench-shell.tsx"
+        }
+      ],
+      "categories": [
+        "blocks"
+      ]
+    },
+    {
+      "name": "data-table",
+      "type": "registry:block",
+      "title": "DataTable",
+      "description": "A `<table>` with sorting, selection up to every matching row, row links, row actions and paging, plus loading, empty, error and stale states and an optional card layout for narrow containers. `useDataTable` is its model, on TanStack Table behind Lede's own types, for a layout of your own.",
+      "registryDependencies": [
+        "@lede/lede-theme",
+        "@lede/lede-utils",
+        "@lede/table",
+        "@lede/checkbox",
+        "@lede/list",
+        "@lede/button",
+        "@lede/selection-bar",
+        "@lede/theme-provider"
+      ],
+      "files": [
+        {
+          "path": "registry/lede/blocks/data-table.tsx",
+          "type": "registry:component",
+          "target": "components/lede/blocks/data-table.tsx"
+        },
+        {
+          "path": "registry/lede/blocks/data-table-row.tsx",
+          "type": "registry:component",
+          "target": "components/lede/blocks/data-table-row.tsx"
+        },
+        {
+          "path": "registry/lede/blocks/data-table-cards.tsx",
+          "type": "registry:component",
+          "target": "components/lede/blocks/data-table-cards.tsx"
+        },
+        {
+          "path": "registry/lede/blocks/data-table-pager.tsx",
+          "type": "registry:component",
+          "target": "components/lede/blocks/data-table-pager.tsx"
+        },
+        {
+          "path": "registry/lede/blocks/use-data-table.ts",
+          "type": "registry:hook",
+          "target": "components/lede/blocks/use-data-table.ts"
+        }
+      ],
+      "dependencies": [
+        "@tanstack/react-table@^9.3.1",
+        "@react-aria/live-announcer@^3.5.1",
+        "@base-ui/react@^1.9.0"
+      ],
+      "categories": [
+        "blocks"
+      ]
+    },
+    {
+      "name": "use-server-rows",
+      "type": "registry:block",
+      "title": "useServerRows",
+      "description": "The server-side row model for DataTable: pages fetched on demand and cached per view and page size, shown with Load more or as numbered pages. Duplicate requests merge and out-of-date ones are aborted, and an `{ atLeast }` total becomes exact once `fetchCount` answers or a short last page arrives.",
+      "registryDependencies": [
+        "@lede/lede-theme",
+        "@lede/lede-utils",
+        "@lede/data-table"
+      ],
+      "files": [
+        {
+          "path": "registry/lede/blocks/use-server-rows.ts",
+          "type": "registry:hook",
+          "target": "components/lede/blocks/use-server-rows.ts"
+        },
+        {
+          "path": "registry/lede/blocks/server-rows-store.ts",
+          "type": "registry:lib",
+          "target": "components/lede/blocks/server-rows-store.ts"
+        }
+      ],
+      "categories": [
+        "blocks"
+      ]
+    },
+    {
+      "name": "daily-brief",
+      "type": "registry:block",
+      "title": "DailyBriefFlow",
+      "description": "A hero flow for a daily brief: the day's summary, then cards that link onward, then sections that open in place to their rows.",
+      "registryDependencies": [
+        "@lede/lede-theme",
+        "@lede/lede-utils",
+        "@lede/disclosure",
+        "@lede/list",
+        "@lede/page-header",
+        "@lede/summary-card"
+      ],
+      "files": [
+        {
+          "path": "registry/lede/flows/daily-brief.tsx",
+          "type": "registry:component",
+          "target": "components/lede/flows/daily-brief.tsx"
+        }
+      ],
+      "categories": [
+        "flows"
+      ]
+    },
+    {
+      "name": "inbox",
+      "type": "registry:block",
+      "title": "InboxFlow",
+      "description": "A hero flow from a message list to the open message: row actions in a \u2022\u2022\u2022 menu and a swipe, bulk actions in a Select mode and threads that open on their latest message. It shows the last action's outcome with an optional Undo, and says so when a linked message is gone.",
+      "registryDependencies": [
+        "@lede/lede-theme",
+        "@lede/lede-utils",
+        "@lede/button",
+        "@lede/checkbox",
+        "@lede/disclosure",
+        "@lede/empty-state",
+        "@lede/list",
+        "@lede/master-detail",
+        "@lede/page-header",
+        "@lede/selection-bar"
+      ],
+      "files": [
+        {
+          "path": "registry/lede/flows/inbox.tsx",
+          "type": "registry:component",
+          "target": "components/lede/flows/inbox.tsx"
+        }
+      ],
+      "dependencies": [
+        "@react-aria/live-announcer@^3.5.1"
+      ],
+      "categories": [
+        "flows"
+      ]
+    },
+    {
+      "name": "onboarding",
+      "type": "registry:block",
+      "title": "OnboardingFlow",
+      "description": "A hero flow for a three-step sign-up that runs on Enter: native forms with inline errors, a review of every answer and a done screen.",
+      "registryDependencies": [
+        "@lede/lede-theme",
+        "@lede/lede-utils",
+        "@lede/accent-picker",
+        "@lede/button",
+        "@lede/form-section",
+        "@lede/list",
+        "@lede/page-header",
+        "@lede/segmented-control",
+        "@lede/step-indicator",
+        "@lede/switch",
+        "@lede/text-field",
+        "@lede/theme-provider"
+      ],
+      "files": [
+        {
+          "path": "registry/lede/flows/onboarding.tsx",
+          "type": "registry:component",
+          "target": "components/lede/flows/onboarding.tsx"
+        }
+      ],
+      "categories": [
+        "flows"
+      ]
+    },
+    {
+      "name": "profile",
+      "type": "registry:block",
+      "title": "ProfileFlow",
+      "description": "A hero flow for a profile: who this is, then the details, edited on the same page. A save is announced, and a failed save keeps the edits with an inline error.",
+      "registryDependencies": [
+        "@lede/lede-theme",
+        "@lede/lede-utils",
+        "@lede/avatar",
+        "@lede/button",
+        "@lede/form-section",
+        "@lede/list",
+        "@lede/page-header",
+        "@lede/text-field"
+      ],
+      "files": [
+        {
+          "path": "registry/lede/flows/profile.tsx",
+          "type": "registry:component",
+          "target": "components/lede/flows/profile.tsx"
+        }
+      ],
+      "categories": [
+        "flows"
+      ]
+    },
+    {
+      "name": "settings",
+      "type": "registry:block",
+      "title": "SettingsFlow, AppearanceFlow",
+      "description": "A hero flow for settings: SettingsFlow lists grouped settings, each with its value or a switch, and AppearanceFlow is a screen for scheme, accent, corners and accessibility that reports each choice as it's made.",
+      "registryDependencies": [
+        "@lede/lede-theme",
+        "@lede/lede-utils",
+        "@lede/accent-picker",
+        "@lede/button",
+        "@lede/card",
+        "@lede/form-section",
+        "@lede/list",
+        "@lede/page-header",
+        "@lede/segmented-control",
+        "@lede/switch",
+        "@lede/theme-provider"
+      ],
+      "files": [
+        {
+          "path": "registry/lede/flows/settings.tsx",
+          "type": "registry:component",
+          "target": "components/lede/flows/settings.tsx"
+        }
+      ],
+      "categories": [
+        "flows"
+      ]
+    }
+  ]
+}

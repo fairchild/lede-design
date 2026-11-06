@@ -1,0 +1,404 @@
+/* Lede blocks: layouts and higher-level components. Composes tokens only. */
+
+/* Skip link: invisible until focused */
+.ld-skip {
+  position: absolute; left: var(--space-4); top: var(--space-4); z-index: var(--z-skip-link); transform: translateY(-200%);
+  padding: var(--space-2) var(--space-4); border-radius: var(--radius-capsule);
+  background: var(--primary); color: var(--primary-foreground); font-weight: var(--weight-semibold); text-decoration: none;
+}
+.ld-skip:focus-visible { transform: none; outline: var(--stroke-ring) solid var(--ring); outline-offset: var(--stroke-ring-offset); }
+
+/* AppShell */
+.ld-shell { min-height: 100dvh; display: grid; grid-template-columns: 1fr; background: var(--background-grouped); color: var(--foreground); font-family: var(--font-sans); }
+.ld-shell-sidebar { display: none; }
+.ld-shell-main { min-width: 0; padding: var(--space-4) var(--space-4) calc(var(--size-control-lg) + var(--space-12)); outline: none; }
+/* A page title scrolled into view, as InboxFlow's is after an action, keeps the shell's top padding above it. */
+.ld-shell-main .ld-page-title { scroll-margin-top: var(--space-4); }
+/* Below the sidebar's breakpoint the tab bar floats over the page's foot, above the home indicator where there is one,
+   so whatever focus lands on, such as the row that kept the reader's place, scrolls to clear it. A part's own margin,
+   such as a message body's, wins. */
+@media (width < 56.25em) {
+  :where(.ld-shell-main :is(a[href], button, input, select, textarea, [tabindex])) {
+    scroll-margin-bottom: calc(var(--size-control-lg) + max(var(--space-4), env(safe-area-inset-bottom)) + var(--space-2));
+  }
+}
+.ld-shell-tabbar { position: fixed; left: 0; right: 0; bottom: max(var(--space-4), env(safe-area-inset-bottom)); box-sizing: border-box; padding-inline: var(--space-2); display: flex; justify-content: center; z-index: var(--z-tabbar); pointer-events: none; }
+.ld-shell-tabbar > * { pointer-events: auto; max-width: 100%; }
+@media (width >= 56.25em) {
+  .ld-shell { grid-template-columns: var(--layout-sidebar-width) minmax(0, 1fr); }
+  .ld-shell-sidebar {
+    display: flex; flex-direction: column; gap: var(--space-4); position: sticky; top: 0; height: 100dvh; box-sizing: border-box; overflow-y: auto;
+    padding: var(--space-6) var(--space-3); border-right: 0.5px solid var(--border); background: var(--background-grouped);
+  }
+  .ld-shell-tabbar { display: none; }
+  .ld-shell-main { padding: var(--space-8) var(--space-8) var(--space-12); }
+  .ld-shell-main .ld-page-title { scroll-margin-top: var(--space-8); }
+}
+.ld-shell-brand { padding: 0 var(--space-3); font-size: var(--text-title-3-size); line-height: var(--text-title-3-line-height); font-weight: var(--weight-bold); letter-spacing: var(--text-title-2-letter-spacing); }
+.ld-shell-nav { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-0_5); }
+.ld-shell-link {
+  display: flex; align-items: center; gap: var(--space-3); min-height: var(--size-hit-min); padding: 0 var(--space-3);
+  border-radius: var(--radius-sm); color: var(--foreground); text-decoration: none; font-size: var(--text-subheadline-size); line-height: var(--text-subheadline-line-height); font-weight: var(--weight-medium);
+}
+.ld-shell-link:hover { background: var(--accent); color: var(--accent-foreground); }
+.ld-shell-link[aria-current="page"] { background: var(--card); color: var(--primary); font-weight: var(--weight-semibold); box-shadow: var(--shadow-raised); }
+[data-theme$="-hc"] .ld-shell-link[aria-current="page"] { box-shadow: inset 0 0 0 1px var(--input); }
+.ld-shell-link:focus-visible { outline: var(--stroke-ring) solid var(--ring); outline-offset: var(--stroke-ring-offset); }
+.ld-shell-icon { display: flex; width: var(--size-icon); height: var(--size-icon); }
+.ld-shell-icon svg { width: 100%; height: 100%; }
+.ld-shell-footer { margin-top: auto; padding: 0 var(--space-3); font-size: var(--text-footnote-size); line-height: var(--text-footnote-line-height); color: var(--muted-foreground); }
+/* A footer link is a line of footnote text, so a press reaches it over `--size-hit-absolute-min` from a pseudo-element. */
+.ld-shell-footer a:not(.ld-shell-link) { position: relative; display: inline-block; }
+.ld-shell-footer a:not(.ld-shell-link)::after { content: ""; position: absolute; inset: min(0px, calc((var(--text-footnote-line-height) - var(--size-hit-absolute-min)) / 2)) 0; }
+[data-theme$="-hc"] .ld-shell-sidebar { border-right: 1px solid var(--input); }
+
+/* PageHeader */
+.ld-page-header { margin: 0 0 var(--space-6); }
+.ld-page-header-row { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--space-4); flex-wrap: wrap; }
+.ld-page-header-text { min-width: 0; overflow-wrap: break-word; }
+.ld-page-header-lead { min-width: 0; display: flex; align-items: center; gap: var(--space-4); }
+.ld-page-title { margin: 0; outline: none; }
+.ld-page-title:focus-visible { outline: var(--stroke-ring) solid var(--ring); outline-offset: var(--stroke-ring-offset); border-radius: var(--radius-xs); }
+.ld-page-summary { margin: var(--space-1) 0 0; font-size: var(--text-body-size); line-height: var(--text-body-line-height); color: var(--muted-foreground); }
+.ld-page-actions { display: flex; gap: var(--space-2); align-items: center; }
+.ld-back {
+  display: inline-flex; align-items: center; gap: var(--space-1_5); min-height: var(--size-hit-min); margin-left: calc(-1 * var(--space-1));
+  padding: 0 var(--space-1);
+  color: var(--primary); text-decoration: none; font-size: var(--text-body-size); line-height: var(--text-body-line-height); border-radius: var(--radius-xs);
+}
+.ld-back:focus-visible { outline: var(--stroke-ring) solid var(--ring); outline-offset: var(--stroke-ring-offset); }
+
+/* SummaryCard */
+/* A word too long for the card, in its title, figure or text, breaks. */
+.ld-summary-card {
+  position: relative; display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-1); align-content: start; overflow-wrap: break-word;
+  padding: var(--space-4) var(--space-8) var(--space-4) var(--space-4); border-radius: var(--radius-lg);
+  background: var(--card); color: var(--card-foreground);
+}
+[data-theme$="-hc"] .ld-summary-card { box-shadow: 0 0 0 1px var(--input); }
+.ld-summary-title { margin: 0; font-size: var(--text-subheadline-size); line-height: var(--text-subheadline-line-height); font-weight: var(--weight-semibold); color: var(--muted-foreground); }
+.ld-summary-target { color: inherit; text-decoration: none; }
+.ld-summary-target::after { content: ""; position: absolute; inset: 0; border-radius: inherit; }
+.ld-summary-target:focus-visible { outline: none; }
+.ld-summary-card:has(.ld-summary-target:focus-visible) { outline: var(--stroke-ring) solid var(--ring); outline-offset: var(--stroke-ring-offset); }
+.ld-summary-card-link:active { background-image: linear-gradient(var(--fill-control), var(--fill-control)); }
+.ld-summary-figure { margin: 0; font-family: var(--font-rounded); font-size: var(--text-large-title-size); line-height: var(--text-large-title-line-height); font-weight: var(--weight-semibold); }
+/* With enlarged text on a narrow window (see the subtitle's rule in `lede.components.css`), the figure takes `title-1`,
+   so "$1,730" fits a 320px phone at 200% text. */
+@media (width < 20em) { .ld-summary-figure { font-size: var(--text-title-1-size); line-height: var(--text-title-1-line-height); } }
+.ld-summary-text { margin: 0; font-size: var(--text-subheadline-size); line-height: var(--text-subheadline-line-height); }
+.ld-summary-chevron {
+  position: absolute; right: var(--space-4); top: 50%; width: auto; height: var(--size-chevron); margin-top: calc(var(--size-chevron) / -2);
+  color: var(--muted-foreground); opacity: var(--opacity-resting);
+}
+.ld-status { display: inline-flex; align-items: center; gap: var(--space-1_5); margin: var(--space-1) 0 0; font-size: var(--text-footnote-size); line-height: var(--text-footnote-line-height); font-weight: var(--weight-semibold); }
+.ld-status-dot { width: var(--size-status-dot); height: var(--size-status-dot); border-radius: 999px; background: currentColor; }
+.ld-status-neutral { color: var(--muted-foreground); }
+.ld-status-positive { color: var(--success); }
+.ld-status-caution { color: var(--warning); }
+.ld-status-critical { color: var(--destructive); }
+.ld-summary-grid { list-style: none; margin: 0 0 var(--space-6); padding: 0; display: grid; gap: var(--space-3); grid-template-columns: repeat(auto-fill, minmax(min(var(--layout-summary-min-width), 100%), 1fr)); }
+@media (width >= 56.25em) { .ld-summary-grid { grid-template-columns: repeat(auto-fill, minmax(min(var(--layout-summary-wide-min-width), 100%), 1fr)); } }
+.ld-summary-grid > li { display: grid; }
+
+/* MasterDetail */
+/* Under 68.75em (1100px at the default text size), one column as wide as its container, so what's inside wraps to fit it. */
+.ld-md { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-6); }
+.ld-md-detail { display: none; }
+.ld-md[data-detail-open] .ld-md-list { display: none; }
+.ld-md[data-detail-open] .ld-md-detail { display: block; }
+@media (width >= 68.75em) {
+  .ld-md { grid-template-columns: minmax(var(--layout-list-min-width), var(--layout-list-max-width)) minmax(0, 1fr); align-items: start; }
+  .ld-md .ld-md-list, .ld-md[data-detail-open] .ld-md-list { display: block; }
+  .ld-md .ld-md-detail { display: block; position: sticky; top: var(--space-8); }
+}
+
+/* WorkbenchShell: a top bar over three panels that fill the window. Each panel scrolls alone; the page doesn't.
+   Dividers are real tracks, so neither a scrollbar nor a panel's edge sits under their hit area. */
+.ld-wb {
+  --ld-wb-hit: max(var(--size-control-sm), var(--size-hit-absolute-min));
+  height: 100dvh; display: flex; flex-direction: column; overflow: hidden;
+  background: var(--background-grouped); color: var(--foreground); font-family: var(--font-sans);
+}
+@media (any-pointer: coarse) { .ld-wb { --ld-wb-hit: var(--size-hit-min); } }
+.ld-wb-bar { flex: none; display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-2); padding: var(--space-2) var(--space-3); border-bottom: 0.5px solid var(--border); }
+/* When the actions don't fit beside the brand, they move to a line of their own, at its end. */
+.ld-wb-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); min-width: 0; min-height: var(--size-control-md); }
+.ld-wb-brand { flex: none; margin-inline-end: var(--space-2); font-size: var(--text-subheadline-size); line-height: var(--text-subheadline-line-height); font-weight: var(--weight-semibold); }
+.ld-wb-title { flex: 1; min-width: 0; margin: 0; overflow: hidden; font-size: var(--text-subheadline-size); line-height: var(--text-subheadline-line-height); font-weight: var(--text-subheadline-weight); text-overflow: ellipsis; white-space: nowrap; outline: none; }
+.ld-wb-title:focus-visible { outline: var(--stroke-ring) solid var(--ring); outline-offset: var(--stroke-ring-offset); border-radius: var(--radius-xs); }
+.ld-wb-actions { flex: none; display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); max-width: 100%; margin-inline-start: auto; }
+/* With enlarged text on a narrow window (see the subtitle's rule in `lede.components.css`), the title keeps its full
+   width, on a line of its own when it doesn't fit beside the brand. */
+@media (width < 20em) { .ld-wb-title { flex-basis: auto; } }
+.ld-wb-toggle { display: none; }
+.ld-wb-body { flex: 1; min-height: 0; display: flex; }
+.ld-wb-panel, .ld-wb-content { flex: 1; min-width: 0; box-sizing: border-box; padding: var(--space-4); overflow: auto; overscroll-behavior: contain; }
+.ld-wb-panel:focus-visible, .ld-wb-content:focus-visible { outline: var(--stroke-ring) solid var(--ring); outline-offset: calc(-1 * var(--stroke-ring)); }
+.ld-wb-main { flex: 1; min-width: 0; display: flex; outline: none; }
+.ld-wb-content { background: var(--card); color: var(--card-foreground); }
+.ld-wb-panel[hidden], .ld-wb-content[hidden] { display: none; }
+/* Narrow, with a side panel showing: the landmark stays, so a page always has its one `<main>`, and gives up its width. */
+.ld-wb-main:has(> .ld-wb-content[hidden]) { flex: none; }
+.ld-wb-sep { display: none; }
+@media (width >= 68.75em) {
+  .ld-wb-toggle { display: inline-flex; }
+  .ld-wb-switch { display: none; }
+  .ld-wb-panel { flex: 0 1 var(--ld-wb-width); padding-inline: var(--space-3); }
+  .ld-wb-content { border-inline: 0.5px solid var(--border); }
+  .ld-wb-sep { position: relative; flex: none; display: block; width: var(--ld-wb-hit); cursor: col-resize; touch-action: none; user-select: none; -webkit-user-select: none; outline: none; }
+  .ld-wb-sep::after {
+    content: ""; position: absolute; left: 50%; top: 50%; width: var(--stroke-marker); height: var(--size-control-md); transform: translate(-50%, -50%);
+    border-radius: var(--radius-capsule); background: var(--muted-foreground);
+  }
+  .ld-wb-sep:hover::after, .ld-wb-sep:active::after { background: var(--primary); }
+  .ld-wb-sep:focus-visible { outline: var(--stroke-ring) solid var(--ring); outline-offset: calc(-1 * var(--stroke-ring)); border-radius: var(--radius-xs); }
+}
+[data-theme$="-hc"] .ld-wb-bar { border-bottom: 1px solid var(--input); }
+@media (width >= 68.75em) { [data-theme$="-hc"] .ld-wb-content { border-inline: 1px solid var(--input); } }
+@media (forced-colors: active) {
+  .ld-wb-sep::after { forced-color-adjust: none; background: CanvasText; }
+  .ld-wb-sep:hover::after, .ld-wb-sep:active::after { background: Highlight; }
+}
+
+/* FormSection */
+.ld-form-section { margin: 0 0 var(--space-6); padding: 0; border: 0; min-width: 0; }
+.ld-form-legend { padding: 0 var(--space-4); margin-bottom: var(--space-1_5); font-size: var(--text-footnote-size); line-height: var(--text-footnote-line-height); color: var(--muted-foreground); }
+.ld-form-description { margin: 0 0 var(--space-2); padding: 0 var(--space-4); font-size: var(--text-footnote-size); line-height: var(--text-footnote-line-height); color: var(--muted-foreground); }
+.ld-form-body { display: grid; gap: var(--space-4); padding: var(--space-4); border-radius: var(--radius-lg); background: var(--card); }
+[data-theme$="-hc"] .ld-form-body { box-shadow: 0 0 0 1px var(--input); }
+
+/* StepIndicator */
+.ld-steps { margin: 0 0 var(--space-4); }
+.ld-steps-summary { margin: 0; font-size: var(--text-footnote-size); line-height: var(--text-footnote-line-height); font-weight: var(--weight-semibold); color: var(--muted-foreground); }
+.ld-steps-list { display: none; list-style: none; margin: 0; padding: 0; gap: var(--space-4); }
+@media (width >= 40em) {
+  .ld-steps-summary { display: none; }
+  .ld-steps-list { display: flex; }
+}
+.ld-step { display: flex; align-items: center; gap: var(--space-2); font-size: var(--text-subheadline-size); line-height: var(--text-subheadline-line-height); color: var(--muted-foreground); }
+/* A circle: as wide as it is tall, and taller than its token only when larger text needs a line and an inset. */
+.ld-step-mark {
+  --ld-step-mark: max(var(--size-step-mark), var(--text-footnote-line-height) + var(--space-1));
+  display: inline-flex; align-items: center; justify-content: center; width: var(--ld-step-mark); height: var(--ld-step-mark); border-radius: 999px;
+  font-size: var(--text-footnote-size); line-height: var(--text-footnote-line-height); font-weight: var(--weight-semibold);
+  background: var(--fill-control); color: var(--foreground);
+}
+.ld-step[data-state="current"] { color: var(--foreground); font-weight: var(--weight-semibold); }
+.ld-step[data-state="current"] .ld-step-mark { background: var(--primary); color: var(--primary-foreground); }
+.ld-step[data-state="done"] .ld-step-mark { background: color-mix(in srgb, var(--primary) 14%, transparent); color: var(--ld-primary-on-tint); }
+
+/* EmptyState */
+.ld-empty { display: grid; justify-items: center; gap: var(--space-2); padding: var(--space-12) var(--space-4); text-align: center; color: var(--muted-foreground); }
+.ld-empty-title { margin: 0; color: var(--foreground); }
+.ld-empty-text { margin: 0; max-width: var(--layout-measure-short-max-width); font-size: var(--text-subheadline-size); line-height: var(--text-subheadline-line-height); }
+.ld-empty-action { margin-top: var(--space-2); }
+
+/* SelectionBar */
+.ld-selection-bar { position: fixed; left: 0; right: 0; bottom: calc(var(--size-control-lg) + var(--space-8)); box-sizing: border-box; padding-inline: var(--space-2); display: flex; justify-content: center; z-index: var(--z-selection-bar); pointer-events: none; }
+.ld-selection-bar > * { pointer-events: auto; max-width: 100%; }
+/* When its parts don't fit on one line, the bar wraps them. One line is a capsule; more keep its ends' curve. */
+.ld-selection-bar .ld-bar {
+  flex-wrap: wrap; justify-content: center;
+  border-radius: calc(max(var(--size-hit-min), var(--text-subheadline-line-height)) / 2 + var(--space-1));
+}
+@media (width >= 56.25em) { .ld-selection-bar { bottom: var(--space-6); left: var(--layout-sidebar-width); } }
+.ld-selection-count { padding: 0 var(--space-3); font-size: var(--text-subheadline-size); line-height: var(--text-subheadline-line-height); font-weight: var(--weight-semibold); white-space: nowrap; }
+.ld-bar-tool-critical { color: var(--ld-destructive-on-tint); }
+/* With enlarged text on a narrow window the count takes a line of its own, over the actions. */
+@media (width < 20em) {
+  .ld-selection-count { flex-basis: 100%; text-align: center; }
+  .ld-selection-bar .ld-bar-sep { display: none; }
+}
+@media (width <= 26.25em) {
+  .ld-selection-noun { display: none; }
+  .ld-selection-count { padding-inline: var(--space-2); }
+  .ld-selection-bar .ld-bar-tool { padding-inline: var(--space-1); }
+}
+
+/* Prose for detail views */
+.ld-prose { max-width: var(--layout-measure-max-width); font-size: var(--text-body-size); line-height: calc(var(--text-body-line-height) + var(--space-1)); overflow-wrap: anywhere; }
+.ld-prose p { margin: 0 0 var(--space-4); }
+.ld-prose > :last-child { margin-bottom: 0; }
+.ld-quote { margin: 0 0 var(--space-4); padding-left: var(--space-3); border-left: var(--stroke-ring) solid var(--border); font-size: var(--text-subheadline-size); line-height: var(--text-body-line-height); color: var(--muted-foreground); }
+.ld-quote figcaption { font-weight: var(--weight-semibold); }
+.ld-quote blockquote { margin: 0; }
+[data-theme$="-hc"] .ld-quote { border-left-color: var(--input); }
+
+/* AccentPicker */
+.ld-accents { display: grid; grid-template-columns: repeat(auto-fill, minmax(var(--layout-swatch-min-width), 1fr)); gap: var(--space-2); }
+.ld-accent { position: relative; display: grid; justify-items: center; gap: var(--space-1_5); padding: var(--space-2); border-radius: var(--radius-md); cursor: pointer; }
+.ld-accent-input { position: absolute; inset: 0; margin: 0; opacity: 0; cursor: inherit; }
+/* Checked, a ring at the focus ring's offset and width; at rest the same ring is transparent. Focus draws 1px outside it. */
+.ld-accent-swatch {
+  --ld-accent-ring: calc(var(--stroke-ring-offset) + var(--stroke-ring));
+  width: var(--size-swatch); height: var(--size-swatch); border-radius: 999px;
+  box-shadow: 0 0 0 var(--stroke-ring-offset) var(--card), 0 0 0 var(--ld-accent-ring) transparent;
+}
+.ld-accent-name { font-size: var(--text-footnote-size); line-height: var(--text-footnote-line-height); color: var(--muted-foreground); }
+.ld-accent-input:checked ~ .ld-accent-swatch { box-shadow: 0 0 0 var(--stroke-ring-offset) var(--card), 0 0 0 var(--ld-accent-ring) var(--foreground); }
+.ld-accent-input:checked ~ .ld-accent-name { color: var(--foreground); font-weight: var(--weight-semibold); }
+.ld-accent-input:focus-visible ~ .ld-accent-swatch { outline: var(--stroke-ring) solid var(--ring); outline-offset: calc(var(--ld-accent-ring) + 1px); }
+.ld-accent:hover { background: var(--accent); }
+
+/* Flows */
+.ld-flow { max-width: var(--layout-flow-max-width); }
+.ld-flow-narrow { max-width: var(--layout-flow-narrow-max-width); }
+.ld-flow-actions { display: flex; justify-content: space-between; align-items: center; gap: var(--space-3); margin-top: var(--space-2); }
+.ld-flow-actions > :only-child { margin-left: auto; }
+.ld-flow-stack > * + * { margin-top: var(--space-6); }
+.ld-unread-dot { width: var(--size-unread-dot); height: var(--size-unread-dot); border-radius: 999px; background: var(--primary); }
+.ld-inbox-row .ld-row-title { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; overflow-wrap: break-word; }
+/* An inbox row's subtitle previews the message, which holds the full text, so it keeps to one line at any text size. */
+@media (width < 20em) { .ld-inbox-row .ld-row-subtitle { white-space: nowrap; } }
+.ld-inbox-date { display: grid; justify-items: end; gap: var(--space-0_5); }
+.ld-inbox-count { padding: 0 var(--space-2); border-radius: var(--radius-capsule); background: var(--fill-control); color: var(--foreground); font-size: var(--text-footnote-size); line-height: var(--text-footnote-line-height); font-weight: var(--weight-semibold); }
+/* The outcome of the last action, and its Undo. It is a hit target tall with or without the action, so it holds still once
+   Undo is used, and it wraps under larger text. The action's label lines up with the text when it wraps: the Button
+   steps back by its own inline padding, and the gap gives that back on one row. */
+.ld-inbox-notice {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 0 var(--space-4); box-sizing: border-box; min-height: var(--size-hit-min);
+  margin: 0 0 var(--space-4); padding: var(--space-1) var(--space-2) var(--space-1) var(--space-4);
+  border-radius: var(--radius-md); background: var(--card); font-size: var(--text-subheadline-size); line-height: var(--text-subheadline-line-height);
+}
+/* While it's up, the notice holds the top of the list pane as the list scrolls, so Undo stays in view wherever focus
+   kept the place, and it comes before every row in tab order. It sits flush with the pane's top, with an edge, so the
+   rows that scroll under it stay apart from it. The row lands clear of it, up to two lines of the notice's text, at
+   any text size. */
+.ld-md-list .ld-inbox-notice { position: sticky; top: 0; z-index: 4; box-shadow: 0 0 0 1px var(--border), var(--shadow-raised); }
+.ld-md-list:has(.ld-inbox-notice) .ld-row-primary {
+  scroll-margin-top: calc(max(var(--size-hit-min), 2 * var(--text-subheadline-line-height) + var(--space-2)) + 2 * var(--space-2));
+}
+[data-theme$="-hc"] .ld-inbox-notice { box-shadow: inset 0 0 0 1px var(--input); }
+.ld-inbox-notice .ld-btn-plain { margin-inline-start: calc(-1 * var(--space-2)); color: var(--ld-primary-on-tint); }
+.ld-message { --ld-message-pad: var(--space-6); background: var(--card); color: var(--card-foreground); border-radius: var(--radius-xl); padding: var(--ld-message-pad); overflow: clip; }
+[data-theme$="-hc"] .ld-message { box-shadow: 0 0 0 1px var(--input); }
+/* Stacked, the page scrolls, so the way back and the actions stay at the top of the screen. */
+.ld-message-bar {
+  position: sticky; top: 0; z-index: 1; display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2);
+  margin: calc(-1 * var(--ld-message-pad)) calc(-1 * var(--ld-message-pad)) 0; padding: var(--space-2) var(--ld-message-pad);
+  background: var(--card);
+}
+.ld-message-actions { display: flex; gap: var(--space-2); flex-wrap: wrap; margin-left: auto; }
+.ld-message-header { display: grid; gap: var(--space-2); margin-top: var(--space-2); padding-bottom: var(--space-4); border-bottom: 0.5px solid var(--border); }
+.ld-message-title { margin: 0; outline: none; overflow-wrap: anywhere; }
+.ld-message-title:focus-visible { outline: var(--stroke-ring) solid var(--ring); outline-offset: var(--stroke-ring-offset); border-radius: var(--radius-xs); }
+.ld-message-meta { margin: 0; font-size: var(--text-subheadline-size); line-height: var(--text-subheadline-line-height); color: var(--muted-foreground); overflow-wrap: anywhere; }
+.ld-message-body { margin-top: var(--space-6); }
+/* Where the page scrolls, focus moved by keyboard lands clear of the pinned bar above, which can wrap to two rows, and the
+   tab bar below. */
+@media (width < 68.75em), (height < 35em) {
+  .ld-message-body :is(a, button) { scroll-margin-block: calc(2 * var(--size-hit-min) + var(--space-6)) calc(var(--size-control-lg) + var(--space-12)); }
+}
+.ld-md-back { display: inline-flex; }
+@media (width >= 68.75em) {
+  .ld-md-back { display: none; }
+  .ld-message { max-width: var(--layout-message-max-width); }
+}
+/* Side by side, the message is one screen tall: the bar and subject stay put and the text scrolls inside. A very short
+   window has no room for that, so there the page scrolls, as it does when stacked. */
+@media (width >= 68.75em) and (height >= 35em) {
+  .ld-message { display: flex; flex-direction: column; box-sizing: border-box; max-height: calc(100dvh - var(--space-8) - var(--space-12)); padding-bottom: 0; }
+  .ld-message-bar { position: static; padding-block: var(--space-4) 0; }
+  .ld-message-body {
+    flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; margin: 0 calc(-1 * var(--ld-message-pad));
+    padding: var(--space-6) var(--ld-message-pad); border-radius: 0 0 var(--radius-xl) var(--radius-xl);
+  }
+  .ld-message-body:focus-visible { outline: var(--stroke-ring) solid var(--ring); outline-offset: calc(-1 * var(--stroke-ring)); }
+}
+@media (width <= 26.25em) { .ld-message { --ld-message-pad: var(--space-4); } }
+.ld-thread { margin: calc(-1 * var(--space-3)) calc(-1 * var(--space-4)); }
+/* One summary line per message: sender and time, then the first words across the full width. */
+.ld-thread .ld-disc-head { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: var(--space-0_5) var(--space-3); }
+.ld-thread .ld-disc-text { display: contents; }
+.ld-thread .ld-disc-title { overflow-wrap: anywhere; }
+.ld-thread .ld-disc-summary { grid-row: 2; grid-column: 1 / -1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ld-thread .ld-disc-head[data-panel-open] .ld-disc-summary { display: none; }
+@media (width < 20em) {
+  .ld-thread .ld-disc-head { grid-template-columns: minmax(0, 1fr) auto; }
+  .ld-thread .ld-disc-summary { grid-row: 3; }
+}
+.ld-preview-card { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); }
+
+.ld-form-body > .ld-switch { display: flex; justify-content: space-between; }
+
+/* Profile */
+.ld-profile-role { display: block; color: var(--foreground); }
+.ld-profile-status:has(.ld-status) { margin-bottom: var(--space-4); padding: 0 var(--space-4); }
+.ld-profile-status .ld-status { margin: 0; font-size: var(--text-subheadline-size); line-height: var(--text-subheadline-line-height); }
+.ld-profile-error { margin: 0 0 var(--space-4); padding: 0 var(--space-4); font-size: var(--text-subheadline-size); line-height: var(--text-subheadline-line-height); color: var(--destructive); overflow-wrap: anywhere; }
+.ld-profile-details .ld-row-subtitle { white-space: normal; }
+
+/* DataTable */
+.ld-dt { display: grid; gap: var(--space-3); min-width: 0; font-family: var(--font-sans); }
+.ld-dt-top { display: grid; gap: var(--space-2); }
+.ld-dt-top:empty { display: none; }
+.ld-dt-summary { margin: 0; font-size: var(--text-subheadline-size); line-height: var(--text-subheadline-line-height); color: var(--muted-foreground); outline: none; }
+.ld-dt-summary:focus-visible { outline: var(--stroke-ring) solid var(--ring); outline-offset: var(--stroke-ring-offset); }
+.ld-dt-notice {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 0 var(--space-2); margin: 0; padding: 0 var(--space-2) 0 var(--space-4);
+  border-radius: var(--radius-md); background: var(--card); font-size: var(--text-subheadline-size); line-height: var(--text-subheadline-line-height);
+}
+[data-theme$="-hc"] .ld-dt-notice { box-shadow: inset 0 0 0 1px var(--input); }
+.ld-dt-notice .ld-btn-plain { color: var(--ld-primary-on-tint); }
+.ld-dt-notice:has(> [role="status"]:empty) { position: absolute; padding: 0; border: 0; background: none; box-shadow: none; }
+.ld-dt-btn { min-height: var(--ld-table-hit); }
+.ld-dt-error {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-3);
+  padding: var(--space-3) var(--space-3) var(--space-3) var(--space-4); border-radius: var(--radius-lg);
+  background: var(--card); box-shadow: inset 0 0 0 var(--stroke-control) var(--destructive);
+}
+.ld-dt-error-text { margin: 0; font-size: var(--text-subheadline-size); line-height: var(--text-subheadline-line-height); }
+.ld-dt-empty { background: var(--card); border-radius: var(--radius-lg); }
+.ld-dt-pager { display: flex; justify-content: center; align-items: center; gap: var(--space-3); flex-wrap: wrap; }
+.ld-dt-page { font-size: var(--text-subheadline-size); line-height: var(--text-subheadline-line-height); color: var(--muted-foreground); font-variant-numeric: tabular-nums; }
+.ld-dt-cards .ld-table-caption { display: block; padding: 0 var(--space-4) var(--space-2); }
+.ld-dt-cards .ld-row-more { width: var(--ld-table-hit); height: var(--ld-table-hit); margin-right: calc(-1 * var(--space-2)); }
+.ld-dt-card-selected .ld-row { background: color-mix(in srgb, var(--primary) 10%, var(--card)); }
+.ld-dt-card-selected .ld-btn-plain:not(.ld-btn-critical) { color: var(--ld-primary-on-tint); }
+.ld-dt-card-skeleton .ld-row { display: grid; gap: var(--space-2); align-content: center; min-height: 64px; }
+.ld-dt .ld-status { margin: 0; }
+.ld-dt-cards .ld-row-subtitle { white-space: normal; }
+/* A field keeps to one line and a line breaks between fields; a field wider than the line wraps inside itself, so
+   nothing is cut off. */
+.ld-dt-card-field { display: inline-block; max-width: 100%; }
+/* In a card narrower than 440px the status moves under the text, which then has the card's whole width. */
+.ld-dt-cards { container: ld-dt-cards / inline-size; }
+@container ld-dt-cards (max-width: 439.98px) {
+  .ld-dt-cards .ld-row-main { flex-basis: 100%; }
+}
+.ld-dt-cardbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-2) var(--space-4); padding: 0 var(--space-2) var(--space-2); }
+.ld-dt-cardbar-check { display: inline-flex; align-items: center; margin-left: calc(-1 * var(--space-2)); font-size: var(--text-subheadline-size); line-height: var(--text-subheadline-line-height); cursor: pointer; }
+/* A select that doesn't fit beside its label takes the next line, up to the bar's width. */
+.ld-dt-cardbar-sort { display: inline-flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); max-width: 100%; font-size: var(--text-subheadline-size); line-height: var(--text-subheadline-line-height); color: var(--muted-foreground); }
+.ld-dt-select {
+  min-height: var(--ld-table-hit); min-width: 0; max-width: 100%; padding: 0 var(--space-3); box-sizing: border-box;
+  border: 0; border-radius: var(--radius-sm); background: var(--fill-control); color: var(--foreground); font: inherit; font-size: var(--text-subheadline-size);
+  box-shadow: inset 0 0 0 1px var(--input);
+}
+.ld-dt-select:focus-visible { outline: var(--stroke-ring) solid var(--ring); outline-offset: var(--stroke-ring-offset); }
+
+/* Forced colors: the same drawing as in `components.css`. */
+@media (forced-colors: active) {
+  .ld-skip { border: 1px solid currentColor; }
+  .ld-shell-link:hover { text-decoration: underline; }
+  .ld-step-mark { box-sizing: border-box; border: 1px solid CanvasText; }
+  .ld-shell-link[aria-current="page"], .ld-step[aria-current="step"] .ld-step-mark {
+    forced-color-adjust: none; background: Highlight; color: HighlightText; border-color: Highlight; outline-color: Highlight; box-shadow: none;
+  }
+
+  .ld-summary-card, .ld-form-body, .ld-message, .ld-inbox-notice, .ld-dt-notice, .ld-dt-empty, .ld-dt-select { border: 1px solid CanvasText; }
+  .ld-dt-error { border: var(--stroke-ring) solid CanvasText; }
+  .ld-dt-card-selected .ld-row { border-inline-start: var(--stroke-marker) solid Highlight; padding-inline-start: calc(var(--space-4) - var(--stroke-marker)); }
+
+  .ld-summary-chevron { opacity: 1; color: inherit; }
+  .ld-summary-card:has(.ld-summary-target:focus-visible) { outline-color: Highlight; }
+  .ld-status-dot, .ld-unread-dot { background: CanvasText; }
+
+  /* Hue can't show here, so the name says which accent it is and the fill says it's chosen. The swatch's own color is
+     inline, so the fill is a border as thick as its radius. */
+  .ld-accent-swatch { box-sizing: border-box; border: 1px solid CanvasText; }
+  .ld-accent:hover .ld-accent-swatch { border-color: Highlight; }
+  .ld-accent-input:checked ~ .ld-accent-swatch { border: calc(var(--size-swatch) / 2) solid Highlight; }
+  .ld-accent-input:focus-visible ~ .ld-accent-swatch { outline-color: Highlight; }
+}

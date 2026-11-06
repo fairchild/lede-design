@@ -1,0 +1,690 @@
+/* Lede components. Color, space, size and type values come from `tokens.css`, and this file composes them.
+   State is styled from native state (`:checked`, `:disabled`, `aria-current`) and Base UI data attributes
+   (`data-checked`, `data-panel-open`, `data-starting-style`, `data-highlighted`). */
+
+/* Concentric radius chain, derived from shadcn's `--radius` and from `--radius-step`. Re-declared wherever a theme or
+   ThemeProvider can override either, so the chain recomputes there. */
+:root, [data-theme], .dark, .ld-theme {
+  --radius-xl: calc(var(--radius) + var(--radius-step));
+  --radius-lg: var(--radius);
+  --radius-md: max(var(--radius-step) / 4, var(--radius) - var(--radius-step));
+  --radius-sm: max(var(--radius-step) / 4, var(--radius) - var(--radius-step) - var(--radius-step) / 2);
+  --radius-xs: max(var(--radius-step) / 4, var(--radius) - 2 * var(--radius-step));
+}
+:root, [data-theme], .dark, .ld-theme {
+  /* Text on a tint or gray fill of its own color, mixed toward `--foreground` to keep 4.5:1 (7:1 in -hc) there, over
+     `--muted` and a hovered fill too. The primary one also sits on `--card` and a selected row. The destructive one also
+     sits on gray, glass and a highlighted menu item. */
+  --ld-primary-on-tint: color-mix(in srgb, var(--primary) 60%, var(--foreground));
+  --ld-destructive-on-tint: color-mix(in srgb, var(--destructive) 60%, var(--foreground));
+}
+/* Motion, from the tokens, which take their reduced-motion values in `tokens.css`. Declared on `:root` only, so a
+   value set there after this file still wins, and these still win over one set before it. */
+:root {
+  --ld-ease: var(--easing-standard);
+  --ld-spring: var(--easing-spring);
+  --ld-dur: var(--duration-standard);
+  --ld-dur-quick: var(--duration-quick);
+}
+
+.ld-sr-only {
+  position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden;
+  clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+/* ThemeProvider */
+.dark, [data-theme^="dark"] { color-scheme: dark; }
+.light, [data-theme^="light"] { color-scheme: light; }
+.ld-theme { color: var(--foreground); font-family: var(--font-sans); -webkit-font-smoothing: antialiased; }
+.ld-theme[data-surface="base"] { background: var(--background); }
+.ld-theme[data-surface="grouped"] { background: var(--background-grouped); }
+
+/* Glass material — controls float above content */
+.ld-glass {
+  background: var(--glass-tint);
+  -webkit-backdrop-filter: blur(var(--blur-regular)) saturate(var(--blur-saturation));
+  backdrop-filter: blur(var(--blur-regular)) saturate(var(--blur-saturation));
+  box-shadow: inset 0 0.5px 0 var(--glass-highlight), 0 0 0 0.5px var(--glass-stroke), var(--shadow-float);
+}
+/* In -hc the stroke is a full pixel, so it doesn't blend away at a device pixel ratio of 1. */
+[data-theme$="-hc"] .ld-glass { box-shadow: 0 0 0 1px var(--glass-stroke), var(--shadow-float); }
+[data-glass="solid"] .ld-glass { background: var(--card); -webkit-backdrop-filter: none; backdrop-filter: none; }
+@media (prefers-reduced-transparency: reduce) {
+  .ld-glass { background: var(--card); -webkit-backdrop-filter: none; backdrop-filter: none; }
+}
+
+/* Focus — one ring everywhere */
+.ld-btn:focus-visible, .ld-switch-track:focus-visible, .ld-bar-item:focus-visible, .ld-bar-tool:focus-visible,
+.ld-row-target:focus-visible, .ld-row-more:focus-visible, .ld-row-action:focus-visible {
+  outline: var(--stroke-ring) solid var(--ring); outline-offset: var(--stroke-ring-offset);
+}
+
+/* Button — native `<button>` or `<a>`. It keeps its label's width beside other items, and a label wider than the container wraps. */
+.ld-btn {
+  appearance: none; border: 0; margin: 0; font: inherit; font-family: var(--font-sans); text-decoration: none;
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2); box-sizing: border-box;
+  --ld-btn-control: var(--size-control-md); min-height: var(--ld-btn-control); padding: 0 var(--space-4);
+  font-size: var(--text-subheadline-size); line-height: var(--text-subheadline-line-height); font-weight: var(--weight-semibold); letter-spacing: normal;
+  border-radius: var(--radius-capsule); cursor: pointer; flex-shrink: 0; max-width: 100%; text-align: center;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform var(--ld-dur) var(--ld-spring), background-color var(--ld-dur) var(--ld-ease), opacity var(--ld-dur) var(--ld-ease);
+}
+.ld-btn:active:not(:disabled, [aria-disabled="true"]) { transform: scale(var(--scale-pressed)); }
+.ld-btn-sm { --ld-btn-control: var(--size-control-sm); padding: 0 var(--space-3); font-size: var(--text-footnote-size); line-height: var(--text-footnote-line-height); }
+/* A small Button answers a press over `--size-hit-absolute-min` where its height falls short of it, as in `touch`. */
+.ld-btn-sm { position: relative; }
+.ld-btn-sm::after { content: ""; position: absolute; inset: min(0px, calc((var(--size-control-sm) - var(--size-hit-absolute-min)) / 2)) 0; }
+.ld-btn-lg { --ld-btn-control: var(--size-control-lg); padding: 0 var(--space-5); font-size: var(--text-headline-size); line-height: var(--text-headline-line-height); }
+.ld-btn-rounded { border-radius: var(--radius-sm); }
+.ld-btn-rounded.ld-btn-sm { border-radius: var(--radius-xs); }
+.ld-btn-rounded.ld-btn-lg { border-radius: var(--radius-md); }
+.ld-btn-block { display: flex; width: 100%; }
+.ld-btn-filled { background: var(--primary); color: var(--primary-foreground); }
+.ld-btn-filled:hover:not(:disabled) { background: color-mix(in srgb, var(--primary) 90%, var(--foreground)); }
+.ld-btn-tinted { background: color-mix(in srgb, var(--primary) 14%, transparent); color: var(--ld-primary-on-tint); }
+.ld-btn-tinted:hover:not(:disabled) { background: color-mix(in srgb, var(--primary) 20%, transparent); }
+.ld-btn-gray { background: var(--secondary); color: var(--secondary-foreground); }
+.ld-btn-gray:hover:not(:disabled) { background: var(--fill-control-strong); }
+.ld-btn-plain { background: transparent; color: var(--primary); padding-left: var(--space-2); padding-right: var(--space-2); }
+.ld-btn-glass { color: var(--foreground); }
+.ld-btn-critical.ld-btn-filled { background: var(--destructive); color: var(--destructive-foreground); }
+.ld-btn-critical.ld-btn-tinted { background: color-mix(in srgb, var(--destructive) 14%, transparent); color: var(--ld-destructive-on-tint); }
+.ld-btn-critical.ld-btn-filled:hover:not(:disabled, [aria-disabled="true"]) { background: color-mix(in srgb, var(--destructive) 90%, var(--foreground)); }
+.ld-btn-critical.ld-btn-tinted:hover:not(:disabled, [aria-disabled="true"]) { background: color-mix(in srgb, var(--destructive) 20%, transparent); }
+.ld-btn-critical.ld-btn-gray, .ld-btn-critical.ld-btn-glass { color: var(--ld-destructive-on-tint); }
+.ld-btn-critical.ld-btn-plain { color: var(--destructive); }
+/* In -hc a fill alone can't show where a control is, so each one a Button paints has an edge. */
+[data-theme$="-hc"] .ld-btn-gray, [data-theme$="-hc"] .ld-btn-tinted { box-shadow: inset 0 0 0 1px var(--input); }
+/* Disabled: a gray fill and a faint label, as HIG draws it, so a disabled Button doesn't show its color or what's behind
+   it. A Plain or glass Button keeps its background. `aria-disabled` keeps a Button focusable, and looks the same. */
+.ld-btn:is(:disabled, [aria-disabled="true"]) { color: var(--foreground-disabled); cursor: default; }
+.ld-btn:is(.ld-btn-filled, .ld-btn-tinted, .ld-btn-gray):is(:disabled, [aria-disabled="true"]) { background: var(--fill-control); }
+/* A disabled Button drops its -hc edge, so it can't pass for an enabled one. */
+[data-theme$="-hc"] .ld-btn:is(:disabled, [aria-disabled="true"]) { box-shadow: none; }
+.ld-btn-icon { display: inline-flex; width: var(--size-icon-inline); height: var(--size-icon-inline); }
+.ld-btn-icon svg { width: 100%; height: 100%; }
+/* Icon-only: square, and as tall as the same Button with a label, which is its control height or, with larger text,
+   its line. A browser without the `lh` unit keeps the control height. That takes `@supports`: a declaration with
+   `var()` in it passes parsing, so a later one with `lh` would replace an earlier fallback and then fail. */
+.ld-btn-icononly { padding: 0; width: var(--ld-btn-control); height: var(--ld-btn-control); }
+@supports (width: 1lh) {
+  .ld-btn-icononly { width: max(var(--ld-btn-control), 1lh); height: max(var(--ld-btn-control), 1lh); }
+}
+
+/* SegmentedControl — native `<fieldset>` of radios. A fieldset's grid stretches its row to a definite `height` and
+   ignores `min-height`, so a row is the control's height or, if larger text needs more, a label's line and the
+   inset. */
+.ld-seg {
+  --ld-seg-control: var(--size-control-md);
+  --ld-seg-row: max(var(--ld-seg-control), var(--text-footnote-line-height) + 2 * var(--space-0_5));
+  display: inline-grid; grid-auto-flow: column; grid-auto-columns: 1fr; position: relative;
+  margin: 0; min-width: 0; max-width: 100%; border: 0; padding: var(--space-0_5); border-radius: var(--radius-capsule);
+  background: var(--fill-control); height: var(--ld-seg-row); box-sizing: border-box; font-family: var(--font-sans);
+}
+[data-theme$="-hc"] .ld-seg { box-shadow: inset 0 0 0 1px var(--input); }
+.ld-seg-block { display: grid; width: 100%; }
+.ld-seg-sm { --ld-seg-control: var(--size-control-sm); }
+/* The thumb covers the checked segment's measured box (`--ld-seg-x`, `-y`, `-w`, `-h`), or an equal share until it's measured. */
+.ld-seg-thumb {
+  position: absolute; top: var(--space-0_5); bottom: var(--space-0_5); left: var(--space-0_5); border-radius: var(--radius-capsule);
+  width: var(--ld-seg-w, calc((100% - 2 * var(--space-0_5)) / var(--ld-seg-n)));
+  transform: translate(var(--ld-seg-x, calc(var(--ld-seg-i) * 100%)), var(--ld-seg-y, 0px));
+  background: var(--fill-selected); box-shadow: inset 0 0 0 1px var(--input), var(--shadow-raised);
+  transition: transform var(--ld-dur) var(--ld-spring), width var(--ld-dur) var(--ld-spring);
+}
+/* `shadow-raised` is `none` in -hc, which a list of shadows can't hold. */
+[data-theme$="-hc"] .ld-seg-thumb { box-shadow: inset 0 0 0 1px var(--input); }
+.ld-seg-item { position: relative; z-index: 1; display: flex; border-radius: var(--radius-capsule); cursor: pointer; }
+/* The radio is the hit area. Where an option is shorter than `--size-hit-absolute-min`, as in `touch`, it overhangs the
+   option into the control's inset and past it. */
+.ld-seg-input { position: absolute; inset: min(0px, calc((var(--ld-seg-row) - 2 * var(--space-0_5) - var(--size-hit-absolute-min)) / 2)) 0; margin: 0; opacity: 0; cursor: inherit; }
+.ld-seg-label {
+  flex: 1; display: flex; align-items: center; justify-content: center; min-width: var(--size-hit-absolute-min); padding: 0 var(--space-3);
+  border-radius: var(--radius-capsule); font-size: var(--text-footnote-size); line-height: var(--text-footnote-line-height); font-weight: var(--weight-medium); color: var(--foreground); white-space: nowrap;
+}
+/* When the labels don't fit side by side, the component sets `data-fit`: `"tight"` narrows their insets, and if that
+   isn't enough, `"stacked"` gives each a row of its own, where a label longer than the row wraps. */
+.ld-seg[data-fit="tight"] .ld-seg-label { padding: 0 var(--space-1); }
+.ld-seg[data-fit="stacked"] { grid-auto-flow: row; height: auto; border-radius: min(var(--radius-capsule), calc(var(--ld-seg-row) / 2)); }
+.ld-seg[data-fit="stacked"] .ld-seg-item { min-height: calc(var(--ld-seg-row) - 2 * var(--space-0_5)); }
+.ld-seg[data-fit="stacked"] .ld-seg-label { white-space: normal; overflow-wrap: anywhere; text-align: center; }
+.ld-seg[data-fit="stacked"] .ld-seg-thumb { bottom: auto; height: var(--ld-seg-h); }
+.ld-seg-input:checked + .ld-seg-label { font-weight: var(--weight-semibold); }
+/* The ring goes around the thumb when the checked segment has focus, and around the label of one that isn't checked. */
+.ld-seg-input:focus-visible:not(:checked) + .ld-seg-label { outline: var(--stroke-ring) solid var(--ring); outline-offset: 0; }
+.ld-seg:has(.ld-seg-input:checked:focus-visible) .ld-seg-thumb { outline: var(--stroke-ring) solid var(--ring); outline-offset: var(--stroke-ring-offset); }
+.ld-seg:disabled .ld-seg-item { cursor: default; }
+.ld-seg:disabled .ld-seg-label { color: var(--foreground-disabled); }
+
+/* Switch — Base UI Switch in an enclosing `<label>` */
+.ld-switch { display: inline-flex; align-items: center; gap: var(--space-3); font-family: var(--font-sans); font-size: var(--text-body-size); line-height: var(--text-body-line-height); color: var(--foreground); cursor: pointer; }
+.ld-switch-disabled { color: var(--foreground-disabled); cursor: default; }
+.ld-switch-track {
+  --ld-switch-knob: calc(var(--size-switch-height) - 2 * var(--size-switch-inset));
+  position: relative; flex: none; display: inline-block; box-sizing: border-box;
+  width: var(--size-switch-width); height: var(--size-switch-height); border-radius: var(--radius-capsule); background: var(--fill-control-strong); cursor: inherit;
+  box-shadow: inset 0 0 0 1px var(--input); transition: background-color var(--ld-dur) var(--ld-ease);
+}
+.ld-switch-track[data-checked] { background: var(--primary); box-shadow: none; }
+.ld-switch-track[data-disabled] { background: var(--fill-control); }
+.ld-switch-knob {
+  position: absolute; top: var(--size-switch-inset); left: var(--size-switch-inset); width: var(--ld-switch-knob); height: var(--ld-switch-knob);
+  border-radius: var(--radius-capsule);
+  background: var(--fill-knob); box-shadow: var(--shadow-knob);
+  transition: left var(--ld-dur) var(--ld-spring), width var(--ld-dur) var(--ld-spring);
+}
+/* Pressed, the knob stretches as wide as the track is tall. Checked, its right edge is an inset from the track's end,
+   pressed or not. */
+.ld-switch-knob[data-checked] { left: calc(var(--size-switch-width) - var(--size-switch-inset) - var(--ld-switch-knob)); }
+.ld-switch-track:not([data-disabled]):active .ld-switch-knob { width: var(--size-switch-height); }
+.ld-switch-track:not([data-disabled]):active .ld-switch-knob[data-checked] {
+  left: calc(var(--size-switch-width) - var(--size-switch-inset) - var(--size-switch-height));
+}
+
+/* TextField — Base UI Field */
+.ld-field { display: grid; gap: var(--space-1_5); font-family: var(--font-sans); }
+.ld-field-label { font-size: var(--text-subheadline-size); line-height: var(--text-subheadline-line-height); color: var(--muted-foreground); }
+.ld-field-input {
+  appearance: none; margin: 0; font: inherit; font-size: var(--text-callout-size); line-height: var(--text-callout-line-height); color: var(--foreground);
+  min-height: var(--size-control-md); padding: 0 var(--space-3); box-sizing: border-box; width: 100%;
+  border: 0; border-radius: var(--radius-sm); background: var(--fill-control);
+  box-shadow: inset 0 0 0 1px var(--input); outline: none;
+  transition: box-shadow var(--ld-dur) var(--ld-ease);
+}
+.ld-field-lg .ld-field-input { min-height: var(--size-control-lg); font-size: var(--text-body-size); }
+.ld-field textarea.ld-field-input { display: block; height: auto; padding-block: var(--space-2); resize: vertical; }
+.ld-field-input::placeholder { color: var(--muted-foreground); }
+.ld-field-input:focus { box-shadow: inset 0 0 0 var(--stroke-ring) var(--ring); }
+.ld-field-input[data-invalid] { box-shadow: inset 0 0 0 var(--stroke-ring) var(--destructive); }
+.ld-field-input:disabled { color: var(--foreground-disabled); }
+.ld-field-hint { margin: 0; font-size: var(--text-footnote-size); line-height: var(--text-footnote-line-height); color: var(--muted-foreground); }
+.ld-field[data-invalid] .ld-field-hint { color: var(--destructive); }
+
+/* Avatar — `<img>`, or initials on a tint. The circle is a picture's slot and keeps its size, so initials follow the
+   text size only up to half the circle. */
+.ld-avatar {
+  --ld-avatar: var(--size-leading);
+  flex: none; display: inline-flex; align-items: center; justify-content: center; object-fit: cover;
+  width: var(--ld-avatar); height: var(--ld-avatar); border-radius: var(--radius-capsule);
+  background: color-mix(in srgb, var(--primary) 14%, var(--card)); color: var(--ld-primary-on-tint);
+  font-family: var(--font-rounded); font-size: min(var(--text-footnote-size), var(--ld-avatar) / 2);
+  line-height: 1; font-weight: var(--weight-semibold);
+}
+.ld-avatar-lg { --ld-avatar: var(--size-avatar-lg); font-size: min(var(--text-title-2-size), var(--ld-avatar) / 2); }
+[data-theme$="-hc"] .ld-avatar { box-shadow: 0 0 0 1px var(--input); }
+
+/* Card — concentric container */
+.ld-card {
+  --ld-outer: var(--radius-lg); --ld-pad: var(--space-2);
+  background: var(--card); color: var(--card-foreground); border-radius: var(--ld-outer);
+  padding: var(--ld-pad); font-family: var(--font-sans); box-sizing: border-box;
+}
+.ld-card-xl { --ld-outer: var(--radius-xl); }
+.ld-card-pad-md { --ld-pad: var(--space-4); }
+.ld-card-pad-lg { --ld-pad: var(--space-6); }
+.ld-card-muted { background: var(--muted); }
+.ld-card-glass { background: var(--glass-tint); }
+[data-theme$="-hc"] .ld-card { box-shadow: 0 0 0 1px var(--input); }
+.ld-concentric { border-radius: max(var(--radius-xs), calc(var(--ld-outer, var(--radius-lg)) - var(--ld-pad, var(--space-2)))); overflow: hidden; }
+
+/* ListGroup and ListRow — a `<section>`, a heading and a `<ul>` of `<li>` */
+.ld-list { font-family: var(--font-sans); }
+.ld-list-header { display: flex; justify-content: space-between; align-items: baseline; gap: var(--space-3); padding: 0 var(--space-4); margin-bottom: var(--space-1_5); }
+.ld-list-title, .ld-list-summary, .ld-list-footer { margin: 0; font-size: var(--text-footnote-size); line-height: var(--text-footnote-line-height); font-weight: var(--text-footnote-weight); color: var(--muted-foreground); }
+/* A word too long for the header, such as a long identifier, breaks, so it can't widen the list. */
+.ld-list-title, .ld-list-summary { overflow-wrap: anywhere; }
+.ld-list-summary { text-align: right; }
+/* With enlarged text on a narrow window (see the subtitle's rule below), a summary that doesn't fit beside its title
+   moves under it. It wraps only on a line of its own there, so it reads from the start. */
+@media (width < 20em) {
+  .ld-list-header { flex-wrap: wrap; row-gap: 0; }
+  .ld-list-summary { text-align: start; }
+}
+.ld-list-footer { padding: 0 var(--space-4); margin-top: var(--space-1_5); }
+.ld-list-body { list-style: none; margin: 0; padding: 0; background: var(--card); border-radius: var(--radius-lg); overflow: hidden; }
+[data-theme$="-hc"] .ld-list-body { box-shadow: 0 0 0 1px var(--input); }
+.ld-row-wrap { position: relative; overflow: hidden; }
+.ld-row-wrap + .ld-row-wrap::before {
+  content: ""; position: absolute; z-index: 3; top: 0; right: 0; left: var(--ld-row-inset, var(--space-4));
+  border-top: 0.5px solid var(--border);
+}
+[data-theme$="-hc"] .ld-row-wrap + .ld-row-wrap::before { border-top-width: 1px; }
+/* Beside a leading slot or a Checkbox, the line between rows starts where the title does. */
+.ld-row-lead { --ld-row-inset: calc(var(--space-4) + var(--size-leading) + var(--space-3)); }
+.ld-row-lead:has(.ld-row-control > .ld-checkbox) { --ld-row-inset: calc(var(--space-4) - var(--space-2) + var(--ld-table-hit) + var(--space-3)); }
+/* One line of title centers in a hit target, and larger text keeps `--space-1` above and below. */
+.ld-row {
+  --ld-row-pad: max(var(--space-1), (var(--size-hit-min) - var(--text-body-line-height)) / 2);
+  position: relative; z-index: 1; display: flex; align-items: center; gap: var(--space-3);
+  min-height: var(--size-hit-min); padding: 0 var(--space-4); background: var(--card); color: var(--card-foreground);
+  transition: transform var(--ld-dur) var(--ld-spring); touch-action: pan-y;
+}
+.ld-row-dragging { transition: none; }
+/* The line holds the row's inset, so a value that wraps under its title sits `--space-0_5` below it. The leading slot
+   hangs into the inset, so one line of title still makes a row one hit target tall. */
+.ld-row-primary {
+  flex: 1; min-width: 0; display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-0_5) var(--space-3);
+  appearance: none; border: 0; margin: 0; padding: var(--ld-row-pad) 0; background: none; font: inherit; color: inherit; text-align: left; text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.ld-row-target { cursor: pointer; }
+/* The whole row is the target of its link or button, and trailing controls sit above it. */
+.ld-row-target::after { content: ""; position: absolute; inset: 0; }
+.ld-row:has(.ld-row-target:active) { background-image: linear-gradient(var(--fill-control), var(--fill-control)); }
+/* The ring sits inside the row, which clips it, so the target reaches past its content to keep the ring clear of it. */
+.ld-row-primary.ld-row-target { margin-inline: calc(-1 * var(--space-2)); padding-inline: var(--space-2); }
+.ld-row-target:focus-visible { outline-offset: calc(-1 * var(--stroke-ring)); border-radius: var(--radius-xs); }
+.ld-row-trailing, .ld-row-more { position: relative; z-index: 2; }
+.ld-row-leading { flex: none; display: flex; width: var(--size-leading); height: var(--size-leading); margin-block: calc(-1 * var(--ld-row-pad)); align-items: center; justify-content: center; }
+/* Beside a leading slot, a value on a line of its own starts under the title: the slot hangs into an inset as wide as
+   itself and its gap. */
+.ld-row-primary:has(> .ld-row-leading ~ .ld-row-value) { --ld-row-hang: calc(var(--size-leading) + var(--space-3)); padding-inline-start: var(--ld-row-hang); }
+.ld-row-primary.ld-row-target:has(> .ld-row-leading ~ .ld-row-value) { padding-inline-start: calc(var(--space-2) + var(--ld-row-hang)); }
+.ld-row-primary:has(> .ld-row-leading ~ .ld-row-value) > .ld-row-leading { margin-inline-start: calc(-1 * var(--ld-row-hang)); }
+/* Beside a value, the text keeps room for the title's longest word, and the value moves to the next line when both don't
+   fit. Only a word too long for its line breaks. */
+.ld-row-main { flex: 1; min-width: 0; display: grid; gap: 1px; overflow-wrap: break-word; }
+.ld-row-main:not(:last-child) { display: flex; flex-direction: column; min-width: auto; max-width: 100%; }
+.ld-row-main:not(:last-child) > .ld-row-subtitle { contain: inline-size; }
+.ld-row-main:last-child { grid-template-columns: minmax(0, 1fr); }
+.ld-row-title { font-size: var(--text-body-size); line-height: var(--text-body-line-height); }
+.ld-row-subtitle { font-size: var(--text-subheadline-size); line-height: var(--text-subheadline-line-height); color: var(--muted-foreground); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* A query's `em` is the browser's text size. Where enlarged text leaves the window under `20em` of it, a subtitle wraps
+   so none of it is lost. At the default size, no window 320px or wider matches. */
+@media (width < 20em) { .ld-row-subtitle { white-space: normal; } }
+.ld-row-target[aria-current="page"] { font-weight: var(--weight-semibold); }
+.ld-row:has(.ld-row-target[aria-current="page"]) { background-image: linear-gradient(var(--fill-control), var(--fill-control)); }
+[data-theme$="-hc"] .ld-row:has(.ld-row-target[aria-current="page"]) { box-shadow: inset 0 0 0 1px var(--input); }
+/* Beside the text a value is as wide as its words, and on a line of its own it wraps. */
+.ld-row-value {
+  min-width: 0; font-size: var(--text-body-size); line-height: var(--text-body-line-height);
+  color: var(--muted-foreground); overflow-wrap: break-word;
+}
+.ld-row-chevron { flex: none; width: auto; height: var(--size-chevron); color: var(--muted-foreground); pointer-events: none; }
+.ld-tile { width: var(--size-leading); height: var(--size-leading); border-radius: var(--radius-xs); display: flex; align-items: center; justify-content: center; background: var(--primary); color: var(--primary-foreground); }
+.ld-tile svg { width: calc(var(--size-leading) - var(--space-3)); height: calc(var(--size-leading) - var(--space-3)); }
+/* The ••• glyph lines up with the row's inset, and its round button reaches past it. */
+.ld-row-more {
+  appearance: none; border: 0; margin: 0 calc((var(--size-icon) - var(--size-row-button)) / 2) 0 0; padding: 0; flex: none;
+  width: var(--size-row-button); height: var(--size-row-button);
+  display: inline-flex; align-items: center; justify-content: center; border-radius: var(--radius-capsule);
+  background: transparent; color: var(--muted-foreground); cursor: pointer; opacity: 0;
+  transition: opacity var(--ld-dur) var(--ld-ease), background-color var(--ld-dur) var(--ld-ease);
+}
+.ld-row-wrap:hover .ld-row-more, .ld-row-wrap:focus-within .ld-row-more, .ld-row-more[data-popup-open] { opacity: 1; }
+.ld-row-more:hover, .ld-row-more[data-popup-open] { background: var(--accent); }
+.ld-row-more svg, .ld-table-more svg { width: var(--size-icon); height: var(--size-icon); }
+/* Wherever a finger can be used, the ••• is always shown, as the visible twin of the swipe: touch screens, and
+   laptops with a touch screen, whose main pointer still hovers. */
+@media (hover: none), (any-pointer: coarse) { .ld-row-more { opacity: 1; } }
+/* Where a finger can be used, the ••• answers a press over `--size-hit-min` around its center, whatever its drawn size. */
+@media (any-pointer: coarse) {
+  .ld-row-more::after { content: ""; position: absolute; inset: min(0px, calc((var(--size-row-button) - var(--size-hit-min)) / 2)); }
+}
+.ld-row-actions { position: absolute; top: 0; right: 0; bottom: 0; display: flex; width: max-content; max-width: 100%; visibility: hidden; transition: visibility 0s linear var(--ld-dur); }
+.ld-row-revealed .ld-row-actions { visibility: visible; transition: none; }
+/* An action is at least a hit target with the row's inset on each side (76px) and as wide as its longest word, and a
+   longer label wraps between words. The actions are never wider than the row, and the row slides by their measured
+   width. */
+.ld-row-action {
+  appearance: none; border: 0; margin: 0; flex: none; width: min-content; min-width: calc(var(--size-hit-min) + 2 * var(--space-4));
+  padding: 0 var(--space-2); font: inherit; font-family: var(--font-sans);
+  font-size: var(--text-subheadline-size); line-height: var(--text-subheadline-line-height); font-weight: var(--weight-semibold); cursor: pointer;
+  background: var(--primary); color: var(--primary-foreground);
+}
+/* When the actions at the current text size don't fit the row, across or down, the component sets `data-fit="tight"`:
+   their labels and lines grow no larger than `--size-row-action-max` and `--size-row-action-line-max` (15px and 20px,
+   the default size), where three actions fit a 288px row. If that doesn't fit either, `"menu"` hides them, the row
+   doesn't open and the ••• menu lists every action. */
+.ld-row-actions[data-fit="tight"] .ld-row-action { font-size: min(var(--text-subheadline-size), var(--size-row-action-max)); line-height: min(var(--text-subheadline-line-height), var(--size-row-action-line-max)); }
+.ld-row-actions[data-fit="menu"] { display: none; }
+.ld-row-action-neutral { background: var(--preset-graphite); }
+.ld-row-action-critical { background: var(--destructive); color: var(--destructive-foreground); }
+.ld-row-action:focus-visible { outline-color: currentColor; outline-offset: calc(-2 * var(--stroke-ring)); }
+
+/* Menu — Base UI Menu (ListRow ••• actions) */
+.ld-menu-positioner { z-index: var(--z-menu); outline: 0; }
+.ld-menu {
+  min-width: var(--size-menu-min-width); padding: var(--space-1_5); box-sizing: border-box; border-radius: var(--radius-md);
+  background: var(--popover); color: var(--popover-foreground); font-family: var(--font-sans);
+  box-shadow: 0 0 0 0.5px var(--glass-stroke), var(--shadow-float); outline: 0;
+  transform-origin: var(--transform-origin);
+  transition: transform var(--ld-dur) var(--ld-spring), opacity var(--ld-dur) var(--ld-ease);
+}
+.ld-menu[data-starting-style], .ld-menu[data-ending-style] { opacity: 0; transform: scale(var(--scale-pressed)); }
+[data-theme$="-hc"] .ld-menu { box-shadow: 0 0 0 1px var(--input); }
+.ld-menu-item {
+  display: flex; align-items: center; min-height: var(--size-control-md); padding: 0 var(--space-3);
+  border-radius: var(--radius-xs); font-size: var(--text-subheadline-size); line-height: var(--text-subheadline-line-height); cursor: default; outline: 0; user-select: none;
+}
+.ld-menu-item[data-highlighted] { background: var(--accent); color: var(--accent-foreground); }
+.ld-menu-item-critical { color: var(--destructive); }
+.ld-menu-item-critical[data-highlighted] { color: var(--ld-destructive-on-tint); }
+
+/* Disclosure — Base UI Collapsible: a `<section>`, `heading > <button aria-expanded>` and a `hidden="until-found"` panel */
+.ld-disc { background: var(--card); color: var(--card-foreground); border-radius: var(--radius-lg); font-family: var(--font-sans); }
+[data-theme$="-hc"] .ld-disc { box-shadow: 0 0 0 1px var(--input); }
+.ld-disc-plain, [data-theme$="-hc"] .ld-disc-plain { background: transparent; border-radius: 0; box-shadow: none; }
+.ld-disc-heading { margin: 0; font: inherit; }
+.ld-disc-head {
+  appearance: none; border: 0; margin: 0; background: transparent; font: inherit; color: inherit; text-align: left;
+  display: flex; align-items: center; gap: var(--space-3); width: 100%; min-height: var(--size-hit-min);
+  padding: var(--space-3) var(--space-4); border-radius: inherit; cursor: pointer; box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+.ld-disc-head:focus-visible { outline: var(--stroke-ring) solid var(--ring); outline-offset: calc(-1 * var(--stroke-ring)); }
+.ld-disc-head:active { background: var(--fill-control); }
+/* The text has what's left of the heading beside its chevron, and only a word too long for that breaks. */
+.ld-disc-text { flex: 1; min-width: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-0_5); overflow-wrap: break-word; }
+.ld-disc-title { font-size: var(--text-headline-size); line-height: var(--text-headline-line-height); font-weight: var(--text-headline-weight); }
+.ld-disc-summary { font-size: var(--text-subheadline-size); line-height: var(--text-subheadline-line-height); color: var(--muted-foreground); }
+.ld-disc-meta { font-size: var(--text-subheadline-size); line-height: var(--text-subheadline-line-height); color: var(--muted-foreground); white-space: nowrap; }
+/* Where enlarged text leaves the window under `20em` of it, the meta moves under the title, which keeps its words whole. */
+@media (width < 20em) {
+  .ld-disc-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--space-0_5) var(--space-3); }
+  .ld-disc-meta { grid-row: 2; grid-column: 1; }
+  .ld-disc-chevron { grid-row: 1 / span 2; grid-column: 2; }
+}
+.ld-disc-chevron {
+  flex: none; width: auto; height: var(--size-chevron); color: var(--muted-foreground); opacity: var(--opacity-resting);
+  transition: transform var(--ld-dur) var(--ld-spring), opacity var(--ld-dur) var(--ld-ease);
+}
+.ld-disc-head:hover .ld-disc-chevron, .ld-disc-head:focus-visible .ld-disc-chevron { opacity: 1; }
+.ld-disc-head[data-panel-open] .ld-disc-chevron { transform: rotate(90deg); }
+.ld-disc-panel {
+  height: var(--collapsible-panel-height); overflow: hidden; display: flex; flex-direction: column; justify-content: end;
+  transition: height var(--ld-dur) var(--ld-ease);
+}
+.ld-disc-panel[hidden]:not([hidden="until-found"]) { display: none; }
+.ld-disc-panel[data-starting-style], .ld-disc-panel[data-ending-style] { height: 0; }
+.ld-disc-body { padding: 0 var(--space-4) var(--space-4); }
+.ld-disc + .ld-disc { margin-top: var(--space-2); }
+.ld-disc-plain + .ld-disc-plain { margin-top: 0; border-top: 0.5px solid var(--border); }
+[data-theme$="-hc"] .ld-disc-plain + .ld-disc-plain { border-top-width: 1px; }
+.ld-disc .ld-disc { background: var(--muted); }
+/* Concentric: a list inside a Disclosure sits `--space-2` from the edge, so `--radius-lg` − `--space-2` = `--radius-md`. */
+.ld-disc-body > .ld-list:only-child { margin: 0 calc(-1 * var(--space-2)) calc(-1 * var(--space-2)); }
+.ld-disc .ld-list-body { background: var(--muted); border-radius: var(--radius-md); }
+.ld-disc .ld-list-body .ld-row { background: var(--muted); }
+
+/* GlassBar — `<nav><ul>` of links with `aria-current`. GlassToolbar — Base UI Toolbar. */
+.ld-bar {
+  display: inline-flex; align-items: center; gap: var(--space-0_5); padding: var(--space-1); border-radius: var(--radius-capsule);
+  font-family: var(--font-sans); color: var(--foreground); box-sizing: border-box;
+}
+.ld-bar-bottom, .ld-bar-top { position: fixed; left: 50%; transform: translateX(-50%); z-index: var(--z-glass-bar); }
+.ld-bar-bottom { bottom: max(var(--space-4), env(safe-area-inset-bottom)); }
+.ld-bar-top { top: max(var(--space-4), env(safe-area-inset-top)); }
+.ld-bar-list { display: flex; gap: var(--space-0_5); min-width: 0; list-style: none; margin: 0; padding: 0; }
+/* Each item is a flex box, so it's as tall as its link. A line box would add the page's text height above it. */
+.ld-bar-list > li { display: flex; min-width: 0; }
+.ld-bar-item {
+  appearance: none; border: 0; margin: 0; background: transparent; font: inherit; color: var(--foreground); text-decoration: none;
+  display: inline-flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--space-0_5); box-sizing: border-box;
+  min-width: var(--size-tab-min-width); min-height: var(--size-hit-min); padding: var(--space-1) var(--space-3); border-radius: var(--radius-capsule);
+  /* A label and its line grow no larger than `--size-bar-label-max` and `--size-bar-label-line-max` (11px and 13px, the
+     default size), so five places still fit across a phone at larger text sizes. */
+  font-size: min(var(--text-caption-2-size), var(--size-bar-label-max)); line-height: min(var(--text-caption-2-line-height), var(--size-bar-label-line-max));
+  font-weight: var(--text-caption-2-weight); cursor: pointer;
+  transition: background-color var(--ld-dur) var(--ld-ease), color var(--ld-dur) var(--ld-ease);
+}
+@media (width <= 26.25em) {
+  .ld-bar-list:has(> :nth-child(5)) .ld-bar-item { min-width: 0; padding-inline: var(--space-1); }
+}
+.ld-bar-icon { display: flex; }
+.ld-bar-item svg { width: var(--size-icon-lg); height: var(--size-icon-lg); }
+.ld-bar-item[aria-current="page"] { background: var(--card); color: var(--primary); font-weight: var(--weight-semibold); box-shadow: var(--shadow-raised); }
+[data-theme$="-hc"] .ld-bar-item[aria-current="page"] { box-shadow: inset 0 0 0 1px var(--input); }
+.ld-bar-tool {
+  appearance: none; border: 0; margin: 0; background: transparent; font: inherit; color: var(--foreground);
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--space-1);
+  min-width: var(--size-hit-min); min-height: var(--size-hit-min); padding: 0 var(--space-3); border-radius: var(--radius-capsule);
+  font-size: var(--text-subheadline-size); line-height: var(--text-subheadline-line-height); font-weight: var(--weight-medium); cursor: pointer;
+}
+.ld-bar-tool-icon { padding: 0; }
+.ld-bar-tool svg { width: var(--size-icon); height: var(--size-icon); }
+.ld-bar-tool:hover, .ld-bar-tool[data-pressed] { background: var(--fill-control); }
+[data-theme$="-hc"] .ld-bar-tool[data-pressed] { box-shadow: inset 0 0 0 1px var(--input); }
+.ld-bar-tool[data-disabled] { color: var(--foreground-disabled); cursor: default; }
+.ld-bar-sep { width: 0.5px; align-self: stretch; margin: var(--space-2) var(--space-0_5); background: var(--border); }
+
+/* Row-action extras (ListRow and DataTable): disabled actions stay listed, with their reason */
+.ld-row-action:disabled { background: var(--fill-control); color: var(--foreground-disabled); cursor: default; }
+.ld-menu-item-reason { flex-direction: column; align-items: flex-start; justify-content: center; gap: var(--space-0_5); padding-top: var(--space-1_5); padding-bottom: var(--space-1_5); }
+.ld-menu-item[data-disabled] { color: var(--muted-foreground); cursor: default; }
+.ld-menu-item-hint { font-size: var(--text-footnote-size); line-height: var(--text-footnote-line-height); color: var(--muted-foreground); }
+.ld-row-control { position: relative; z-index: 2; flex: none; display: flex; margin-left: calc(-1 * var(--space-2)); }
+.ld-row-actions-visible .ld-row-more { opacity: 1; }
+
+/* Hit size for dense controls (table rows, checkboxes), read from the density tokens: 44px in regular density
+   (`--size-control-md` 36px + `--space-2`), less in compact and at least 24px (WCAG 2.5.8). */
+:root, [data-theme], .ld-theme {
+  --ld-table-hit: max(var(--size-hit-absolute-min), min(var(--size-hit-min), calc(var(--size-control-md) + var(--space-2))));
+  --ld-table-control-w: calc(var(--ld-table-hit) + var(--space-2));
+}
+
+/* Checkbox — a native `<input type="checkbox">` as the hit target, with the box drawn beside it */
+.ld-checkbox {
+  --ld-check-hit: var(--ld-table-hit);
+  position: relative; flex: none; display: inline-flex; align-items: center; justify-content: center;
+  width: var(--ld-check-hit); height: var(--ld-check-hit); vertical-align: middle;
+}
+.ld-checkbox-input { position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+.ld-checkbox-input:disabled { cursor: default; }
+.ld-checkbox-box {
+  display: flex; align-items: center; justify-content: center; width: var(--size-icon); height: var(--size-icon); box-sizing: border-box;
+  border: var(--stroke-control) solid var(--muted-foreground); border-radius: var(--radius-xs); background: var(--card); color: var(--primary-foreground);
+  transition: background-color var(--ld-dur-quick) var(--ld-ease), border-color var(--ld-dur-quick) var(--ld-ease);
+}
+.ld-checkbox-box::after { content: ""; display: none; box-sizing: border-box; border: 0 solid currentColor; }
+.ld-checkbox-input:checked + .ld-checkbox-box, .ld-checkbox-input:indeterminate + .ld-checkbox-box { background: var(--primary); border-color: var(--primary); }
+.ld-checkbox-input:checked:not(:indeterminate) + .ld-checkbox-box::after {
+  display: block; width: 6px; height: 11px; margin-top: -2px; border-width: 0 2px 2px 0; border-radius: 0 0 1px 0; transform: rotate(45deg);
+}
+.ld-checkbox-input:indeterminate + .ld-checkbox-box::after { display: block; width: 10px; height: 0; border-top-width: 2px; border-radius: 1px; }
+.ld-checkbox-input:focus-visible + .ld-checkbox-box { outline: var(--stroke-ring) solid var(--ring); outline-offset: var(--stroke-ring-offset); }
+[data-theme$="-hc"] .ld-checkbox-box { border-width: var(--stroke-ring); border-color: var(--foreground); }
+.ld-checkbox-input:disabled + .ld-checkbox-box { background: var(--fill-control); border-color: var(--foreground-disabled); color: var(--foreground-disabled); }
+@media (forced-colors: active) {
+  .ld-checkbox-box { border-color: CanvasText; }
+  .ld-checkbox-input:checked + .ld-checkbox-box, .ld-checkbox-input:indeterminate + .ld-checkbox-box { forced-color-adjust: none; background: Highlight; border-color: Highlight; color: HighlightText; }
+}
+
+/* Table — a real `<table>`: sticky header, fixed layout, tokens for every size.
+   While the table fits, its box clips but doesn't scroll, so the header sticks to the page (or whatever scrolls the
+   page). Only a table wider than its box gets its own scroll box (`[data-overflow]`): it scrolls sideways, and down
+   within a max height so its header can stick inside it. */
+.ld-table-scroll {
+  /* `isolation`: the table's own z-indexes stay inside it, below menus, backdrops and dialogs. */
+  /* `min-width`: a clip box is not a scroll container, so as a flex or grid item it would otherwise grow to the table.
+     `container-type`: column widths are `calc()`s on the box's width (`100cqi`, as Table.Columns writes them). */
+  position: relative; isolation: isolate; overflow: clip; min-width: 0; container-type: inline-size;
+  background: var(--card); color: var(--card-foreground); border-radius: var(--radius-lg); font-family: var(--font-sans);
+}
+.ld-table-scroll[data-overflow] { overflow: auto; max-height: var(--ld-table-max-height, var(--layout-table-max-height)); overscroll-behavior-x: contain; }
+.ld-table-scroll[data-overflow] .ld-table-th { top: 0; }
+/* Scrolled into view (focus, find-in-page): clear of the sticky header and column, in the box or on the page. */
+/* The header is one hit target tall (`.ld-table-th`'s height), and the sticky columns' width comes from Table.Columns. */
+.ld-table-body :is(a, button, input) {
+  scroll-margin-top: calc(var(--ld-table-hit) + var(--ld-table-sticky-top, 0px)); scroll-margin-left: var(--ld-table-stuck-w, 0px);
+}
+.ld-table-scroll:focus-visible { outline: var(--stroke-ring) solid var(--ring); outline-offset: var(--stroke-ring-offset); }
+[data-theme$="-hc"] .ld-table-scroll { box-shadow: inset 0 0 0 1px var(--input); }
+.ld-table { width: 100%; table-layout: fixed; border-collapse: separate; border-spacing: 0; font-size: var(--text-subheadline-size); line-height: var(--text-subheadline-line-height); }
+.ld-table-caption { caption-side: top; margin: 0; padding: var(--space-3) var(--space-4) var(--space-2); text-align: start; font-size: var(--text-headline-size); line-height: var(--text-headline-line-height); font-weight: var(--text-headline-weight); color: var(--foreground); }
+/* A collapsible table: the caption holds a button (title, summary, chevron), and collapsed, only the caption shows.
+   `display: none` takes the header and rows out of the accessibility tree too. */
+.ld-table-caption-toggle { padding: 0; }
+.ld-table[data-collapsed] > :not(caption) { display: none; }
+.ld-table-toggle {
+  appearance: none; border: 0; margin: 0; background: transparent; font: inherit; color: inherit; text-align: start;
+  display: flex; align-items: center; gap: var(--space-3); width: 100%; min-height: var(--size-hit-min);
+  padding: var(--space-3) var(--space-4) var(--space-2); border-radius: var(--radius-md); cursor: pointer; box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+.ld-table-toggle:focus-visible { outline: var(--stroke-ring) solid var(--ring); outline-offset: calc(-1 * var(--stroke-ring)); }
+.ld-table-toggle:active { background: var(--fill-control); }
+.ld-table-toggle-text { flex: 1; min-width: 0; display: grid; gap: var(--space-0_5); }
+.ld-table-toggle-summary { font-size: var(--text-subheadline-size); line-height: var(--text-subheadline-line-height); font-weight: var(--text-subheadline-weight); color: var(--muted-foreground); }
+.ld-table-toggle-chevron {
+  flex: none; width: auto; height: var(--size-chevron); color: var(--muted-foreground); opacity: var(--opacity-resting); transform: rotate(90deg);
+  transition: transform var(--ld-dur-quick) var(--ld-ease), opacity var(--ld-dur-quick) var(--ld-ease);
+}
+.ld-table-toggle:hover .ld-table-toggle-chevron, .ld-table-toggle:focus-visible .ld-table-toggle-chevron { opacity: 1; }
+.ld-table-toggle[aria-expanded="false"] .ld-table-toggle-chevron { transform: none; }
+.ld-table-th, .ld-table-td, .ld-table-rowheader {
+  height: var(--ld-table-hit); padding: 0 var(--space-3); box-sizing: border-box; text-align: start; vertical-align: middle;
+  border-bottom: 0.5px solid var(--border); overflow-wrap: anywhere; background-clip: padding-box;
+}
+.ld-table-row > :first-child { padding-left: var(--space-4); }
+.ld-table-row > :last-child { padding-right: var(--space-4); }
+[data-theme$="-hc"] .ld-table-th, [data-theme$="-hc"] .ld-table-td, [data-theme$="-hc"] .ld-table-rowheader { border-bottom: 1px solid var(--input); }
+.ld-table-body .ld-table-row:last-child > * { border-bottom: 0; }
+.ld-table-th {
+  position: sticky; top: var(--ld-table-sticky-top, 0px); z-index: 3; background: var(--card);
+  font-size: var(--text-footnote-size); line-height: var(--text-footnote-line-height); font-weight: var(--weight-semibold); color: var(--muted-foreground); border-bottom-width: 1px;
+}
+.ld-table-rowheader { font-weight: var(--weight-semibold); }
+.ld-table-end { text-align: end; font-variant-numeric: tabular-nums; }
+.ld-table-center { text-align: center; }
+.ld-table-trunc { display: block; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; overflow-wrap: normal; }
+/* Full text while the cell has focus (hover shows it as a title, set when the text is actually clipped). */
+.ld-table-rowheader:focus-within .ld-table-trunc, .ld-table-td:focus-within .ld-table-trunc { white-space: normal; overflow-wrap: anywhere; }
+
+/* Selected rows: a tint for people who can see it, and the checkbox carries the state for everyone. */
+.ld-table-row[data-selected] > * { background-color: color-mix(in srgb, var(--primary) 10%, var(--card)); }
+[data-theme$="-hc"] .ld-table-row[data-selected] > :first-child { box-shadow: inset var(--stroke-marker) 0 0 var(--primary); }
+.ld-table-row[data-selected] .ld-btn-plain:not(.ld-btn-critical) { color: var(--ld-primary-on-tint); }
+.ld-table-row-linked:hover > * { background-image: linear-gradient(var(--fill-control), var(--fill-control)); }
+
+/* Row link: a real `<a>` in the row header, stretched over the `<tr>`. Controls in the row sit above it.
+   Stacking, lowest first: the link's `::after` (`auto`) < row controls (1) < sticky body cells (2) < header (3) < the
+   header's sticky corner (4). So controls take their own clicks, and scroll under the sticky header and column. */
+.ld-table-row-linked { position: relative; }
+.ld-table-link {
+  display: flex; align-items: center; min-height: var(--ld-table-hit); color: inherit; text-decoration: none;
+  border-radius: var(--radius-xs); -webkit-tap-highlight-color: transparent;
+}
+.ld-table-link::after { content: ""; position: absolute; inset: 0; }
+.ld-table-link:hover { text-decoration: underline; text-underline-offset: var(--stroke-underline-offset); }
+.ld-table-link:focus-visible { outline: var(--stroke-ring) solid var(--ring); outline-offset: calc(-1 * var(--stroke-ring)); }
+.ld-table-rowheader:focus-visible { outline: var(--stroke-ring) solid var(--ring); outline-offset: calc(-1 * var(--stroke-ring)); }
+.ld-table-twin { position: absolute; inset: 0; }
+.ld-table-check .ld-checkbox, .ld-table-more, .ld-table-control { position: relative; z-index: 1; }
+.ld-table-link .ld-table-trunc { flex: 1; }
+
+/* Control columns */
+.ld-table-row > .ld-table-check { padding: 0 var(--space-1); text-align: center; }
+.ld-table-row > .ld-table-actions { padding: 0 var(--space-1); text-align: center; }
+.ld-table-more {
+  appearance: none; border: 0; margin: 0; padding: 0; display: inline-flex; align-items: center; justify-content: center;
+  width: var(--ld-table-hit); height: var(--ld-table-hit); border-radius: var(--radius-capsule);
+  background: transparent; color: var(--muted-foreground); cursor: pointer; vertical-align: middle;
+}
+.ld-table-more:hover, .ld-table-more[data-popup-open] { background: var(--accent); color: var(--accent-foreground); }
+.ld-table-more:focus-visible { outline: var(--stroke-ring) solid var(--ring); outline-offset: calc(-1 * var(--stroke-ring)); }
+
+/* Sorting: a `<button>` in the header, and `aria-sort` on the sorted `<th>` only */
+.ld-table-sort {
+  appearance: none; border: 0; background: none; font: inherit; color: inherit; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--space-1); min-width: var(--ld-table-hit); min-height: var(--ld-table-hit); max-width: 100%; box-sizing: border-box;
+  margin: 0 calc(-1 * var(--space-1)); padding: 0 var(--space-1); border-radius: var(--radius-xs); text-align: inherit;
+}
+.ld-table-sort:hover { color: var(--foreground); }
+.ld-table-sort:focus-visible { outline: var(--stroke-ring) solid var(--ring); outline-offset: calc(-1 * var(--stroke-ring)); }
+.ld-table-sort-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ld-table-sort-icon { flex: none; width: auto; height: var(--size-sort-arrow); opacity: var(--opacity-hint); }
+[data-sort-direction] .ld-table-sort { color: var(--foreground); }
+[data-sort-direction] .ld-table-sort-icon { opacity: 1; }
+[data-sort-direction="ascending"] .ld-table-sort-down, [data-sort-direction="descending"] .ld-table-sort-up { opacity: 0; }
+
+/* Sticky first column (and the checkbox column before it). Opaque, so content never shows through. */
+.ld-table-sticky { position: sticky; left: 0; z-index: 2; background-color: var(--card); }
+.ld-table-th.ld-table-sticky { z-index: 4; }
+.ld-table-check.ld-table-sticky + .ld-table-sticky { left: var(--ld-table-control-w); }
+.ld-table-sticky-first .ld-table-row > .ld-table-sticky:not(:has(+ .ld-table-sticky)) { box-shadow: inset -1px 0 0 var(--border); }
+
+/* Skeleton rows keep the layout while the first page loads */
+.ld-skel { display: block; width: 72%; max-width: 160px; height: 10px; border-radius: var(--radius-xs); background: var(--fill-control); }
+.ld-skel-short { width: 40%; }
+.ld-table-skeleton > :nth-child(3n) .ld-skel { width: 48%; }
+.ld-table-skeleton > :nth-child(3n + 1) .ld-skel { width: 86%; }
+@media (prefers-reduced-motion: no-preference) {
+  .ld-skel { animation: ld-skel var(--duration-pulse) var(--ld-ease) infinite alternate; }
+  @keyframes ld-skel { from { opacity: 1; } to { opacity: var(--opacity-pulse); } }
+}
+
+/* Forced colors (Windows High Contrast and similar): the browser replaces every color with a system color, and
+   removes shadows and most backgrounds, so whatever those drew is redrawn here. Rest is a border, on is a `Highlight`
+   fill, hover is a `Highlight` border or an underline, disabled is `GrayText` and focus stays an outline. Without
+   `forced-color-adjust: none`, text on a fill gets a `Canvas` plate behind it. With it nothing is forced, so every
+   color on that element is set here, its focus ring included. The browser forces a ring a control draws on itself to
+   `Highlight`, whatever `--ring` holds, and a ring drawn on another element is named `Highlight` here. */
+@media (forced-colors: active) {
+  .ld-glass, [data-glass] .ld-glass { background: Canvas; -webkit-backdrop-filter: none; backdrop-filter: none; }
+  .ld-glass { border: 1px solid CanvasText; }
+  .ld-card, .ld-list-body, .ld-disc:not(.ld-disc-plain), .ld-menu, .ld-table-scroll { border: 1px solid CanvasText; }
+  .ld-bar-sep { background: CanvasText; }
+  .ld-avatar { outline: 1px solid CanvasText; outline-offset: -1px; }
+  .ld-skel { background: GrayText; }
+
+  .ld-btn, .ld-bar-tool, .ld-row-more, .ld-row-action { border: 1px solid currentColor; }
+  :where(.ld-btn, .ld-bar-tool, .ld-row-more, .ld-row-action):hover { border-color: Highlight; }
+  /* Inset, or the ring would fill the row's height and meet the lines between rows. */
+  .ld-table-more { outline: 1px solid ButtonText; outline-offset: calc(-1 * var(--space-1_5)); }
+  .ld-table-more:hover { outline-color: Highlight; }
+  .ld-btn:is(:disabled, [aria-disabled="true"]), .ld-row-action:disabled, .ld-bar-tool[data-disabled] { color: GrayText; border-color: GrayText; }
+
+  .ld-seg { border: 1px solid ButtonText; }
+  .ld-seg-input:checked + .ld-seg-label,
+  .ld-bar-item[aria-current="page"],
+  .ld-bar-tool[data-pressed],
+  .ld-row-more[data-popup-open], .ld-table-more[data-popup-open],
+  .ld-menu-item[data-highlighted] {
+    forced-color-adjust: none; background: Highlight; color: HighlightText; border-color: Highlight; outline-color: Highlight; box-shadow: none;
+  }
+  /* The fill's edge has to clear the label: `HighlightText` beyond it would be on `Canvas`. */
+  .ld-bar-item[aria-current="page"] { border-radius: var(--radius-md); }
+  .ld-seg-input:focus-visible + .ld-seg-label { outline-color: Highlight; }
+  .ld-seg:has(.ld-seg-input:checked:focus-visible) .ld-seg-thumb { outline-color: Highlight; }
+  .ld-seg:disabled { border-color: GrayText; }
+  .ld-seg:disabled .ld-seg-label { color: GrayText; }
+  .ld-seg:disabled .ld-seg-input:checked + .ld-seg-label { background: GrayText; color: Canvas; }
+
+  /* An outline, so the knob keeps its offsets inside the track. */
+  .ld-switch-track { outline: 1px solid ButtonText; outline-offset: -1px; }
+  .ld-switch-knob { background: ButtonText; }
+  .ld-switch-track[data-checked] { background: Highlight; outline-color: Highlight; }
+  .ld-switch-knob[data-checked] { background: HighlightText; }
+  .ld-switch-disabled { color: GrayText; }
+  .ld-switch-track[data-disabled] { outline-color: GrayText; }
+  .ld-switch-knob[data-disabled] { background: GrayText; }
+  .ld-switch-track[data-checked][data-disabled] { background: GrayText; }
+  .ld-switch-knob[data-checked][data-disabled] { background: Canvas; }
+
+  .ld-field-input { border: 1px solid CanvasText; }
+  .ld-field-input:focus { outline: var(--stroke-ring) solid Highlight; outline-offset: var(--stroke-ring-offset); }
+  .ld-field-input[data-invalid] { border-width: var(--stroke-ring); }
+  .ld-field-input:disabled { border-color: GrayText; color: GrayText; }
+
+  .ld-menu-item[data-disabled], .ld-menu-item[data-disabled] .ld-menu-item-hint { color: GrayText; }
+  .ld-menu-item[data-highlighted] .ld-menu-item-hint { color: inherit; }
+  /* `GrayText` on a `Highlight` fill can't be read, so a disabled item the keyboard reaches is outlined instead. */
+  .ld-menu-item[data-disabled][data-highlighted] {
+    forced-color-adjust: auto; background: Canvas; color: GrayText; outline: var(--stroke-ring) solid Highlight; outline-offset: calc(-1 * var(--stroke-ring));
+  }
+
+  .ld-row:has(.ld-row-target[aria-current="page"]) { border-inline-start: var(--stroke-marker) solid Highlight; padding-inline-start: calc(var(--space-4) - var(--stroke-marker)); }
+  /* An `<svg>` keeps the color it's given here (`preserve-parent-color`), so a chevron takes its parent's forced one. */
+  .ld-row-chevron, .ld-disc-chevron, .ld-table-toggle-chevron { opacity: 1; color: inherit; }
+  .ld-disc-head:hover .ld-disc-title, .ld-table-toggle:hover .ld-table-toggle-title, .ld-table-sort:hover .ld-table-sort-label { text-decoration: underline; }
+  .ld-table-sort:active { color: Highlight; }
+
+  .ld-checkbox-input:focus-visible + .ld-checkbox-box { outline-color: Highlight; }
+  .ld-checkbox-input:disabled + .ld-checkbox-box { border-color: GrayText; }
+  .ld-checkbox-input:checked:disabled + .ld-checkbox-box, .ld-checkbox-input:indeterminate:disabled + .ld-checkbox-box { background: GrayText; color: Canvas; }
+
+  .ld-table-row[data-selected] > :first-child { border-inline-start: var(--stroke-marker) solid Highlight; padding-inline-start: calc(var(--space-4) - var(--stroke-marker)); }
+  .ld-table-row[data-selected] > .ld-table-check { padding-inline-start: 0; }
+  .ld-table-sticky-first .ld-table-row > .ld-table-sticky:not(:has(+ .ld-table-sticky)) { border-inline-end: 1px solid CanvasText; }
+}

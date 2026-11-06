@@ -1,0 +1,7 @@
+# Vite fingerprints everything under /assets/, so a file there never changes.
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# The workers.dev hosts (production and version previews) stay out of search results.
+https://:worker.:subdomain.workers.dev/*
+  X-Robots-Tag: noindex

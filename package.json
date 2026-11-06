@@ -1,0 +1,66 @@
+{
+  "name": "lede",
+  "private": true,
+  "version": "0.4.0",
+  "description": "Summary first, depth on request. A content-first design system for React, shipped as a shadcn registry.",
+  "license": "MIT",
+  "homepage": "https://lede.cloudcompute.com/",
+  "bugs": "https://github.com/fairchild/lede/issues",
+  "keywords": [
+    "design-system",
+    "react",
+    "shadcn",
+    "base-ui",
+    "tailwindcss",
+    "accessibility",
+    "progressive-disclosure"
+  ],
+  "engines": {
+    "node": ">=22.12"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/fairchild/lede.git"
+  },
+  "type": "module",
+  "scripts": {
+    "tokens": "node scripts/build-tokens.mjs",
+    "contrast": "node scripts/check-contrast.mjs",
+    "literals": "node scripts/check-literals.mjs",
+    "brand": "node scripts/build-brand.mjs",
+    "registry": "node scripts/build-tokens.mjs && node scripts/check-contrast.mjs && node scripts/check-literals.mjs && node scripts/check-registry.mjs && shadcn build --output public/r",
+    "dev": "npm run tokens && vite",
+    "build": "npm run registry && npm run typecheck && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit && npm run typecheck:worker",
+    "typecheck:worker": "wrangler types worker/worker-configuration.d.ts >/dev/null && tsc --noEmit -p worker",
+    "test": "playwright test"
+  },
+  "dependencies": {
+    "@base-ui/react": "1.9.0",
+    "@react-aria/interactions": "3.28.1",
+    "@react-aria/live-announcer": "3.5.1",
+    "@tanstack/react-table": "9.3.1",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "react-router": "7.18.4"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "4.14.0",
+    "@fontsource-variable/inter": "5.3.0",
+    "@playwright/test": "1.64.1",
+    "@tailwindcss/vite": "4.3.3",
+    "@types/node": "22.18.0",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@vitejs/plugin-react": "6.1.2",
+    "shadcn": "^4.23.0",
+    "tailwindcss": "4.3.3",
+    "typescript": "5.9.3",
+    "vite": "8.3.4",
+    "wrangler": "4.156.2"
+  },
+  "overrides": {
+    "minimatch": "^11.0.3"
+  }
+}

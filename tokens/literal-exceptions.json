@@ -1,0 +1,96 @@
+[
+  {
+    "reason": "A share in a color-mix() needs no token: tokens/contrast.json names each mix, and the contrast gate measures the color it makes.",
+    "functions": ["color-mix"]
+  },
+  {
+    "reason": "Zero, with a unit or without, is the same length, time, angle or number in every unit, so it needs no token.",
+    "values": ["0"]
+  },
+  {
+    "reason": "A hairline or a one-pixel step is the smallest mark a screen draws, and keeps that size at every density and shape: a rule, border, ring or outline; a 1px gap, as between a row's title and subtitle; a 1px offset of an outline or a margin, as outside an accent swatch's checked ring; and the visually hidden box.",
+    "values": ["1px", "-1px", "0.5px"],
+    "properties": [
+      "border", "border-top", "border-right", "border-bottom", "border-left", "border-block", "border-block-start",
+      "border-block-end", "border-inline", "border-inline-start", "border-inline-end", "border-width",
+      "border-top-width", "border-right-width", "border-bottom-width", "border-left-width", "border-block-width",
+      "border-block-start-width", "border-block-end-width", "border-inline-width", "border-inline-start-width",
+      "border-inline-end-width", "outline", "outline-width", "outline-offset", "box-shadow", "gap", "row-gap",
+      "column-gap", "width", "height", "margin", "margin-top", "margin-right", "margin-bottom", "margin-left",
+      "margin-block", "margin-block-start", "margin-block-end", "margin-inline", "margin-inline-start",
+      "margin-inline-end"
+    ]
+  },
+  {
+    "reason": "The whole or half of a box or of the window follows the layout, so it needs no token: full width or height, 100dvh, and centering with 50% and -50%.",
+    "values": ["100%", "50%", "-50%", "100dvh"],
+    "properties": [
+      "width", "height", "min-width", "min-height", "max-width", "max-height", "inline-size", "block-size",
+      "min-inline-size", "min-block-size", "max-inline-size", "max-block-size", "top", "right", "bottom", "left",
+      "inset", "inset-block", "inset-block-start", "inset-block-end", "inset-inline", "inset-inline-start",
+      "inset-inline-end", "transform", "translate", "grid-template-columns", "grid-template-rows", "flex-basis"
+    ]
+  },
+  {
+    "reason": "One of a unit is the unit itself, so it needs no token: fully opaque, one share of the free space (flex: 1, 1fr), a line box as tall as its font (line-height: 1), and one line of the element's own text (1lh, and the @supports test for it).",
+    "values": ["1", "1fr", "1lh"],
+    "properties": [
+      "opacity", "flex", "flex-grow", "flex-shrink", "grid-template-columns", "grid-template-rows",
+      "grid-auto-columns", "grid-auto-rows", "line-height", "width", "height", "@supports"
+    ]
+  },
+  {
+    "reason": "A sign flip, a double or a half of a token derives from it, because a token often applies to both sides of a box or to a pair: twice an inset is the inset on each side, and half of a difference is each side's share. Inside calc(), min(), max() or clamp(), it needs no token of its own.",
+    "values": ["-2", "-1", "2"],
+    "operand": "factor"
+  },
+  {
+    "reason": "A quarter of a token derives from it: the radius chain's floor is a quarter of radius-step, as the radius note in tokens.json defines it, so the floor follows the step. Four times a token is a new size, which is a choice, so 4 as a multiplier fails.",
+    "values": ["4"],
+    "operand": "divisor"
+  },
+  {
+    "reason": "A quarter turn points a glyph another way, as a chevron turns when its section opens. It is a direction and has no size.",
+    "values": ["90deg"],
+    "functions": ["rotate"]
+  },
+  {
+    "reason": "A border-radius of 999px keeps a shape round in every shape setting, square included, as status dots and the step mark are. A shape that follows the setting uses radius-capsule.",
+    "values": ["999px"],
+    "properties": [
+      "border-radius", "border-top-left-radius", "border-top-right-radius", "border-bottom-right-radius",
+      "border-bottom-left-radius", "border-start-start-radius", "border-start-end-radius",
+      "border-end-start-radius", "border-end-end-radius"
+    ]
+  },
+  {
+    "reason": "z-index 1 to 4 orders the parts of one component among themselves. Anything that layers over other components or the page uses a layer token (z-menu and the others).",
+    "values": ["1", "2", "3", "4"],
+    "properties": ["z-index"]
+  },
+  {
+    "reason": "A grid line number names a position, and a line clamp counts lines of text. Neither is a size.",
+    "properties": [
+      "grid-row", "grid-row-start", "grid-row-end", "grid-column", "grid-column-start", "grid-column-end",
+      "grid-area", "line-clamp", "-webkit-line-clamp"
+    ]
+  },
+  {
+    "reason": "The Checkbox's check mark and dash are drawn with borders, and these numbers are the drawing's geometry: its size, stroke, rounded end, offset and turn. A new glyph is an SVG sized with a size token.",
+    "properties": [
+      "width", "height", "margin-top", "border-width", "border-top-width", "border-radius", "transform"
+    ],
+    "selectors": [".ld-checkbox-box::after"]
+  },
+  {
+    "reason": "A skeleton placeholder's widths and heights imitate the lines and rows it stands in for, and vary on purpose. Its colors, radii and spacing still come from tokens.",
+    "properties": ["width", "min-width", "max-width", "height", "min-height", "max-height"],
+    "selectors": [".ld-skel", ".ld-skel-short", ".ld-dt-card-skeleton"]
+  },
+  {
+    "reason": "The skip link waits twice its own height above the page until it takes focus. The offset is a share of the link's own height, so it follows the link's size.",
+    "values": ["-200%"],
+    "selectors": [".ld-skip"],
+    "functions": ["translateY"]
+  }
+]

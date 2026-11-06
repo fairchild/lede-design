@@ -1,0 +1,236 @@
+{
+ "about": "What sits on what. scripts/check-contrast.mjs measures every pair in every theme, and with every preset standing in for primary. `a over b` is a stack, top first, composited in order. `@name` is a group. `any` is the content behind glass, which the glass-stroke token says can be of any colour, so it stands for every grey from black to white and a pair takes its worst: blur and saturate(180%) can't move a pixel outside that range, and luminance alone decides the ratio. Every X-foreground is paired with X by convention, so it isn't listed here. A role's floor is in `floors`, and `exempt` has none: its pairs are only measured. `in` limits a pair to `standard` or `hc` themes. A pair with a floor that leaves out -hc has an `exempt` -hc pair for the same colours and surfaces, so what -hc does there is in the data. `fills` names the fills the -hc fill walk holds to an --input edge. `edge` names a shadow token whose first shadow, a solid edge, counts with the fill.",
+ "line": "A fill or edge is a control boundary when it's the only thing showing where a control is or what state it's in, as in WCAG 1.4.11: an empty text field, a switch's track and knob, the selected segment. A hairline between rows that text and spacing already tell apart is decorative, and a labelled Button is identified by its label. So in standard themes `border` is only measured and tints have no floor. The -hc themes exist for people who need a boundary, so there a control's fill shows at 3:1, at rest or as its current state, labelled or not, by the fill itself or by an edge. `input` has 3:1 everywhere, and `border`'s usage promises 3:1 in -hc.",
+ "floors": {
+  "text": { "standard": 4.5, "hc": 7 },
+  "icon": { "standard": 3, "hc": 3 },
+  "control": { "standard": 3, "hc": 3 },
+  "focus": { "standard": 3, "hc": 3 },
+  "rule": { "standard": 3, "hc": 3 },
+  "outline": { "standard": 0, "hc": 9 },
+  "exempt": { "standard": 0, "hc": 0 }
+ },
+ "groups": {
+  "page": ["background", "background-grouped", "card", "muted", "popover"],
+  "row": ["@page", "primary 10% card"],
+  "glass": ["glass-tint over any"],
+  "every": ["@row", "fill-control over @row", "@glass"]
+ },
+ "pairs": [
+  {
+   "why": "Its usage says every surface, glass over any content included. Glyphs share it, so they're held to the text floor. fill-control over a row is hover, press and current.",
+   "role": "text",
+   "colors": ["foreground"],
+   "on": ["@every"]
+  },
+  {
+   "why": "Their usage says every surface but glass. Glyphs share these tokens, so they're held to the text floor.",
+   "role": "text",
+   "colors": ["muted-foreground", "destructive", "success", "warning"],
+   "on": ["@row", "fill-control over @row"]
+  },
+  {
+   "why": "In -hc glass is opaque, so these hold on it there.",
+   "role": "text",
+   "in": "hc",
+   "colors": ["muted-foreground", "destructive", "success", "warning"],
+   "on": ["@glass"]
+  },
+  {
+   "why": "In light and dark, glass over any content holds foreground, --ld-destructive-on-tint and the ring, and not these: their usage says so. Holding them would take glass-tint to 0.93 and 0.98, nearly solid.",
+   "role": "exempt",
+   "in": "standard",
+   "colors": ["muted-foreground", "destructive", "success", "warning"],
+   "on": ["@glass"]
+  },
+  {
+   "why": "A hovered or pressed .ld-bar-tool, and the critical one.",
+   "role": "text",
+   "colors": ["foreground", "ld-destructive-on-tint"],
+   "on": ["fill-control over glass-tint over any"]
+  },
+  {
+   "why": "A selected segment's label, and a hovered gray Button's.",
+   "role": "text",
+   "colors": ["foreground"],
+   "on": ["fill-selected", "fill-control-strong over @page"]
+  },
+  {
+   "why": "primary's usage names these four. A pressed Plain Button keeps it, since it only scales. Text on a tint, a gray fill or a selected row uses --ld-primary-on-tint.",
+   "role": "text",
+   "colors": ["primary"],
+   "on": ["@page"]
+  },
+  {
+   "why": "A hovered filled Button, and a hovered critical one, which deepens destructive. destructive-foreground is primary-foreground.",
+   "role": "text",
+   "colors": ["primary-foreground"],
+   "on": ["primary 90% foreground", "destructive 90% foreground"]
+  },
+  {
+   "why": "Tinted Button at rest and hovered, the done step, the plain Button on card in the data table's notice and the Inbox notice, and a Plain Button in a selected row, hovered too. fill-control is measured too, though no CSS paints it there.",
+   "role": "text",
+   "colors": ["ld-primary-on-tint"],
+   "on": ["card", "primary 14% over @page", "primary 20% over @page", "fill-control over @page", "primary 10% card", "fill-control over primary 10% card"]
+  },
+  {
+   "why": "Avatar initials. The tint is mixed with card, so it's opaque and reads the same wherever the avatar sits: a card row, the sidebar's background-grouped, and a hovered or pressed row's fill-control, inside a Disclosure too.",
+   "role": "text",
+   "colors": ["ld-primary-on-tint"],
+   "on": ["primary 14% card"]
+  },
+  {
+   "why": "Critical Tinted, gray and glass Buttons, a hovered critical Tinted Button and a highlighted critical menu item.",
+   "role": "text",
+   "colors": ["ld-destructive-on-tint"],
+   "on": ["destructive 14% over @page", "destructive 20% over @page", "fill-control over @page", "fill-control-strong over @page", "@glass"]
+  },
+  {
+   "why": "Disclosure and SummaryCard chevrons, at opacity-resting (0.8). A Disclosure's chevron is what shows it can open.",
+   "role": "icon",
+   "colors": ["muted-foreground 80%"],
+   "on": ["@page"]
+  },
+  {
+   "why": "A resting sort arrow, at opacity-hint (0.7): the only sign a table header sorts.",
+   "role": "icon",
+   "colors": ["muted-foreground 70%"],
+   "on": ["card"]
+  },
+  {
+   "why": "A text field's and a table select's fill, and a switch's off track, in every theme. Each draws an --input edge, which `input`'s pair measures, and the -hc fill walk (`fills`) holds it in -hc. These rows report the fill alone.",
+   "role": "exempt",
+   "colors": ["fill-control", "fill-control-strong"],
+   "on": ["@page"]
+  },
+  {
+   "why": "In -hc a control's fill shows at 3:1: see `line`. These fills don't, so the -hc fill walk (`fills`) holds an --input edge on every control that paints one: a gray, Tinted or critical Tinted Button, a SegmentedControl track, a current ListRow, a text field, a table select and a switch's off track. These rows report the fill alone.",
+   "role": "exempt",
+   "in": "hc",
+   "colors": ["fill-control", "fill-control-strong", "primary 14%", "destructive 14%"],
+   "on": ["@page"]
+  },
+  {
+   "why": "A current GlassBar item's and AppShell link's pill. shadow-raised is none in -hc, so the -hc fill walk holds an --input edge on each. These rows report the fill alone.",
+   "role": "exempt",
+   "in": "hc",
+   "colors": ["card"],
+   "on": ["background-grouped", "glass-tint"]
+  },
+  {
+   "why": "The selected segment against its track. It draws an --input edge in every theme, which the next pair measures. These rows report the fill alone.",
+   "role": "exempt",
+   "colors": ["fill-selected"],
+   "on": ["fill-control over @page"]
+  },
+  {
+   "why": "The knob against its track, off and on. It shows by its fill or by the 1px edge that starts shadow-knob, whichever is stronger, in every theme.",
+   "role": "control",
+   "colors": ["fill-knob"],
+   "on": ["primary", "fill-control-strong over @page"],
+   "edge": "shadow-knob"
+  },
+  {
+   "why": "Its usage says every surface.",
+   "role": "control",
+   "colors": ["input"],
+   "on": ["@page"]
+  },
+  {
+   "why": "The edge of the selected segment against its track.",
+   "role": "control",
+   "colors": ["input"],
+   "on": ["fill-control over @page"]
+  },
+  {
+   "why": "One ring everywhere. A segment's ring goes around its thumb, at stroke-ring-offset, on the track.",
+   "role": "focus",
+   "colors": ["ring"],
+   "on": ["@every"]
+  },
+  {
+   "why": "A swiped row action's ring, drawn inside the action's fill in the label's colour. destructive-foreground is primary-foreground, and every preset, graphite included, stands in for primary.",
+   "role": "focus",
+   "colors": ["primary-foreground"],
+   "on": ["primary", "destructive"]
+  },
+  {
+   "why": "`border`'s usage: in -hc it becomes a 3:1 rule.",
+   "role": "rule",
+   "in": "hc",
+   "colors": ["border"],
+   "on": ["@row"]
+  },
+  {
+   "why": "The -hc outline of glass. Content on its far side can be any colour, so stroke and glass share the boundary. The worst grey for the two sits about the square root of their ratio, so 9:1 between them gives 3:1 against anything.",
+   "role": "outline",
+   "in": "hc",
+   "colors": ["glass-stroke"],
+   "on": ["glass-tint over any"]
+  },
+  {
+   "why": "Hairlines: see `line`.",
+   "role": "exempt",
+   "in": "standard",
+   "colors": ["border", "glass-stroke"],
+   "on": ["@page"]
+  },
+  {
+   "why": "A disabled control's label, which WCAG 1.4.3 exempts: on a page surface, and on the fill-control a disabled Button, row action, Checkbox or Switch takes.",
+   "role": "exempt",
+   "colors": ["foreground-disabled"],
+   "on": ["@page", "fill-control over @page"]
+  },
+  {
+   "why": "Dims content behind an overlay, and nothing is read against it. No CSS uses it yet.",
+   "role": "exempt",
+   "colors": ["scrim"],
+   "on": ["@page"]
+  },
+  {
+   "why": "A 0.5px inner highlight a reader doesn't need. Off in -hc.",
+   "role": "exempt",
+   "colors": ["glass-highlight"],
+   "on": ["glass-tint over any"]
+  }
+ ],
+ "fills": {
+  "why": "The -hc fill walk in scripts/check-contrast.mjs. In -hc a control's fill shows at 3:1 (see `line`), and these fills don't on their own, so every rule in registry/ that paints one draws an --input edge in -hc: in the rule itself, or in a `[data-theme$=\"-hc\"]` twin for the same element. A twin covers the element in every state. `everyTheme` lists the controls whose fill sits under 3:1 in light and dark as well, so their own rule draws the edge. `notControls` lists what paints one of these fills and isn't a control.",
+  "colors": ["fill-control", "fill-control-strong", "fill-selected", "card", "muted", "primary 14%", "primary 20%", "destructive 14%", "primary 10% card"],
+  "everyTheme": [".ld-field-input", ".ld-dt-select", ".ld-switch-track", ".ld-seg-thumb"],
+  "notControls": {
+   ".ld-shell-link:hover": "A hover, press or highlight: it follows the pointer or the keyboard, and the control is drawn at rest.",
+   ".ld-summary-card-link:active": "A hover, press or highlight: it follows the pointer or the keyboard, and the control is drawn at rest.",
+   ".ld-accent:hover": "A hover, press or highlight: it follows the pointer or the keyboard, and the control is drawn at rest.",
+   ".ld-row:has(.ld-row-target:active)": "A hover, press or highlight: it follows the pointer or the keyboard, and the control is drawn at rest.",
+   ".ld-row-more:hover": "A hover, press or highlight: it follows the pointer or the keyboard, and the control is drawn at rest.",
+   ".ld-row-more[data-popup-open]": "Its menu is open, and the menu shows that.",
+   ".ld-menu-item[data-highlighted]": "A hover, press or highlight: it follows the pointer or the keyboard, and the control is drawn at rest.",
+   ".ld-disc-head:active": "A hover, press or highlight: it follows the pointer or the keyboard, and the control is drawn at rest.",
+   ".ld-bar-tool:hover": "A hover, press or highlight: it follows the pointer or the keyboard, and the control is drawn at rest.",
+   ".ld-table-toggle:active": "A hover, press or highlight: it follows the pointer or the keyboard, and the control is drawn at rest.",
+   ".ld-table-row-linked:hover > *": "A hover, press or highlight: it follows the pointer or the keyboard, and the control is drawn at rest.",
+   ".ld-table-more:hover": "A hover, press or highlight: it follows the pointer or the keyboard, and the control is drawn at rest.",
+   ".ld-table-more[data-popup-open]": "Its menu is open, and the menu shows that.",
+   ".ld-step-mark": "A step's number, which its label names. It isn't a control.",
+   ".ld-step[data-state=\"done\"] .ld-step-mark": "A step's number, which its label names. It isn't a control.",
+   ".ld-inbox-count": "A count, read as text. It isn't a control.",
+   ".ld-skel": "A placeholder while rows load. It isn't a control.",
+   ".ld-message-bar": "A card: part of the open message, which has its -hc edge.",
+   ".ld-dt-error": "A card, edged in destructive by its own box-shadow.",
+   ".ld-dt-empty": "A card, which holds an EmptyState's text.",
+   ".ld-card-muted": "A Card variant: .ld-card's -hc twin edges it.",
+   ".ld-glass": "Glass, outlined by glass-stroke at 9:1 in -hc.",
+   "[data-glass=\"solid\"] .ld-glass": "Glass, outlined by glass-stroke at 9:1 in -hc.",
+   ".ld-row": "A row, which its text and the lines between rows show. Its list has the edge.",
+   ".ld-disc .ld-list-body .ld-row": "A row, which its text and the lines between rows show. Its list has the edge.",
+   ".ld-table-sticky": "A cell of the table, which has the edge.",
+   ".ld-table-row[data-selected] > *": "A selected row: its Checkbox carries the state, and -hc adds a primary marker.",
+   ".ld-dt-card-selected .ld-row": "A selected card: its Checkbox carries the state.",
+   ".ld-checkbox-box": "A box drawn by its own border, muted-foreground and foreground in -hc.",
+   ".ld-btn:is(.ld-btn-filled, .ld-btn-tinted, .ld-btn-gray):is(:disabled, [aria-disabled=\"true\"])": "Disabled: WCAG 1.4.11 exempts it, and its foreground-disabled label shows the state.",
+   ".ld-row-action:disabled": "Disabled: WCAG 1.4.11 exempts it, and its foreground-disabled label shows the state.",
+   ".ld-checkbox-input:disabled + .ld-checkbox-box": "Disabled: WCAG 1.4.11 exempts it, and its foreground-disabled label shows the state."
+  }
+ }
+}

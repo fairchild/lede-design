@@ -1,0 +1,122 @@
+name: Deploy to Cloudflare
+# A v* tag publishes its registry to r/<tag> in R2, once and for good, and deploys the site when it's the highest final
+# release. A push to main publishes r/next and uploads a preview version, while it's still main's head. A re-run of an
+# older run can publish its own release but never moves production or r/next backwards.
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+permissions:
+  contents: read
+# One queue per ref type, never cancelled: a tag run waits behind another tag run, and a main push can't replace a
+# pending tag run. A newer tag can still replace a pending older one; re-running that one publishes its release.
+concurrency:
+  group: deploy-${{ github.ref_type }}
+  cancel-in-progress: false
+# An explicit bash runs every step with -eo pipefail; the implicit default is bash -e, which lets a failed gh in the tag
+# lookup's pipeline pass as an empty result.
+defaults:
+  run:
+    shell: bash
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    # The token is an environment secret; the environment admits only main and v* tags.
+    environment: cloudflare
+    steps:
+      # The account is wrangler.jsonc's account_id; the token is the only secret.
+      - name: Check for a Cloudflare token
+        id: credentials
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          if [ -n "$CLOUDFLARE_API_TOKEN" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice title=Deploy skipped::CLOUDFLARE_API_TOKEN isn't set, so nothing was published or deployed."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with: { persist-credentials: false }
+      - name: Check the tag matches package.json
+        if: github.ref_type == 'tag'
+        run: |
+          version=$(jq -r .version package.json)
+          if [ "$GITHUB_REF_NAME" != "v$version" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME doesn't match package.json version $version."
+            exit 1
+          fi
+      # A tag always publishes its release, and deploys only as the highest final (no "-") v* tag. A main run publishes
+      # only while its commit is still main's head.
+      - name: Decide what this run publishes
+        id: plan
+        if: steps.credentials.outputs.ready == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          final='^v[0-9]+\.[0-9]+\.[0-9]+$'
+          if [ "$GITHUB_REF_TYPE" = tag ]; then
+            deploy=false
+            if ! [[ "$GITHUB_REF_NAME" =~ $final ]]; then
+              echo "::notice title=Not deployed::$GITHUB_REF_NAME is a prerelease. This run publishes r/$GITHUB_REF_NAME and doesn't deploy the site."
+            else
+              latest=$(gh api --paginate "repos/$GITHUB_REPOSITORY/git/matching-refs/tags/v" --jq '.[].ref' |
+                sed 's#^refs/tags/##' | { grep -E "$final" || true; } | sort -V | tail -n 1)
+              if [ "$GITHUB_REF_NAME" = "$latest" ]; then
+                deploy=true
+              else
+                echo "::notice title=Not deployed::$GITHUB_REF_NAME isn't the highest release ($latest). This run publishes r/$GITHUB_REF_NAME and doesn't deploy the site."
+              fi
+            fi
+            printf 'publish=true\ndeploy=%s\n' "$deploy" >> "$GITHUB_OUTPUT"
+          else
+            head=$(gh api "repos/$GITHUB_REPOSITORY/commits/$GITHUB_REF_NAME" --jq .sha)
+            if [ "$GITHUB_SHA" = "$head" ]; then
+              echo "publish=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "::notice title=Skipped::$GITHUB_REF_NAME has moved on to ${head::7}, so this run of ${GITHUB_SHA::7} doesn't publish r/next or a preview."
+            fi
+          fi
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        if: steps.plan.outputs.publish == 'true'
+        with: { node-version: 22, cache: npm }
+      - if: steps.plan.outputs.publish == 'true'
+        run: npm ci
+      - if: steps.plan.outputs.publish == 'true'
+        run: npm run build
+
+      # Exit 3 means r/<tag> is already published, as on a re-run. The release stays as it was first published.
+      - name: Publish the release registry to R2
+        if: steps.plan.outputs.publish == 'true' && github.ref_type == 'tag'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          node scripts/publish-r2.mjs public/r "r/$GITHUB_REF_NAME" --remote --immutable || {
+            status=$?
+            [ "$status" -eq 3 ] || exit "$status"
+            echo "::warning::r/$GITHUB_REF_NAME was already in R2 and was left as it was."
+          }
+      - name: Deploy
+        if: steps.plan.outputs.deploy == 'true'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: npx wrangler deploy --message "$GITHUB_REF_NAME"
+
+      - name: Publish the next registry to R2
+        if: steps.plan.outputs.publish == 'true' && github.ref_type == 'branch'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: node scripts/publish-r2.mjs public/r r/next --remote
+      - name: Upload a preview version
+        if: steps.plan.outputs.publish == 'true' && github.ref_type == 'branch'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          WRANGLER_OUTPUT_FILE_PATH: ${{ runner.temp }}/wrangler-output.json
+        run: |
+          npx wrangler versions upload --message "$GITHUB_SHA"
+          url=$(jq -r 'select(.type == "version-upload") | .preview_url // empty' "$WRANGLER_OUTPUT_FILE_PATH" | tail -n 1)
+          {
+            echo "### Preview of ${GITHUB_SHA::7}"
+            echo
+            echo "${url:-Wrangler reported no preview URL.}"
+          } >> "$GITHUB_STEP_SUMMARY"

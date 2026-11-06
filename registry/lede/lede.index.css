@@ -1,0 +1,4 @@
+/* Lede: import this once, after your shadcn globals (Tailwind v4): `@import "./styles/lede/index.css";` */
+@import "./tokens.css";
+@import "./components.css";
+@import "./blocks.css";

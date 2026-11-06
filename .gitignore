@@ -1,0 +1,17 @@
+node_modules
+dist
+dist-fixtures
+public/r
+src/styles/lede.tokens.css
+test-results
+playwright-report
+blob-report
+.DS_Store
+registry/lede/lede.tokens.css
+.env*
+*.pem
+*.key
+.wrangler
+.dev.vars*
+worker/worker-configuration.d.ts
+dist-strict

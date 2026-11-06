@@ -1,0 +1,3 @@
+// Every route the site serves, the fixture pages included, and the two that answer "Page not found".
+export const ROUTES = ['/', '/foundations', '/components', '/blocks', '/blocks/data-table', '/blocks/data-table/items/WI-1001', '/layouts', '/layouts/sidebar', '/layouts/workbench', '/decisions', '/fixtures/data-table', '/fixtures/segmented-control', '/fixtures/list-row', '/fixtures/page-header', '/fixtures/inbox/m6', '/app/work', '/app/work/WI-1001', '/app', '/app/inbox', '/app/inbox/m1', '/app/inbox/m5', '/app/inbox/m6', '/app/inbox/nope', '/app/settings', '/app/settings/appearance', '/app/profile', '/app/welcome', '/app/nope', '/missing'];
+export const NOT_FOUND = new Set(['/app/nope', '/missing']);
