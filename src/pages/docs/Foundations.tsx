@@ -106,7 +106,7 @@ export function Foundations() {
           <Disclosure key={group.id} title={group.name} summary={group.note} meta={String(list.length)} defaultOpen={i === 0} headingLevel={2}>
             <Scroll label={group.name}>
               <table className="docs-table docs-table-wide">
-                <caption>Swatches show the current theme. Change it with Mode at the foot of the sidebar or page, or in the demo app’s <RouterLink href="/app/settings/appearance">Settings → Appearance</RouterLink>.</caption>
+                <caption>Swatches show the current theme. Change it with Automatic, Light or Dark at the foot of the sidebar or page, or in the demo app’s <RouterLink href="/app/settings/appearance">Settings → Appearance</RouterLink>.</caption>
                 <thead><tr><th scope="col">Swatch</th><th scope="col">Token</th><th scope="col">Usage</th></tr></thead>
                 <tbody>
                   {list.map((t) => (

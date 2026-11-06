@@ -50,9 +50,9 @@ From 0.2.0, do the same, and check the places 0.3.0 changed, which this file doe
 
 - The docs site shows all four install steps under Overview → Install, rendered from the README, and Layouts links
   there before its install commands. Overview links to the README for what a project needs first.
-- The docs sidebar ends with Mode and Increase contrast, which change the site's theme and the demo app's together, and
-  links to the demo app, Decisions, the GitHub repository and the changelog for this version. On a phone they sit at
-  the foot of every docs page.
+- The docs sidebar ends with a choice of Automatic, Light or Dark and an Increase contrast switch, which change the
+  site's theme and the demo app's together. It links to the demo app, Decisions, the GitHub repository and the
+  changelog for this version. On a phone these sit at the foot of every docs page.
 - The site serves a `robots.txt` that lets every crawler in.
 - Lede has a mark: a heavy line over two light ones on a `primary` tile. The docs site uses it for its favicon and
   beside the wordmark in its header, which follow the theme and accent, and a 1200×630 social card carries it.

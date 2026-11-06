@@ -35,10 +35,11 @@ function sourceExamples(route: keyof typeof PAGES) {
 /** Overview shows the README's install steps after its first: each fenced block from step 2 on, dedented, by its label. */
 function readmeExamples() {
   const steps = readFileSync('README.md', 'utf8').split('## Use it in a shadcn project')[1].split('\nTo move to a later release')[0];
-  const fences = [...steps.split(/^2\. /m)[1].matchAll(/^ {3}```\w*\n([\s\S]*?)\n {3}```$/gm)].map(([, code]) => code.replace(/^ {3}/gm, ''));
+  const fences = [...steps.split(/^2\. /m)[1].matchAll(/^ {3}```(\w*)\n([\s\S]*?)\n {3}```$/gm)].map(([, language, code]) => ({ language, code: code.replace(/^ {3}/gm, '') }));
   const labels = ['CSS import', 'Import a component', 'Wrap your app', 'React Router adapter'];
-  expect(fences).toHaveLength(labels.length);
-  return fences.map((code, i) => [labels[i], code] as const);
+  // Overview names each block by its step, so the README's order is part of what the labels describe.
+  expect(fences.map((f) => f.language)).toEqual(['css', 'tsx', 'tsx', 'tsx']);
+  return fences.map(({ code }, i) => [labels[i], code] as const);
 }
 
 for (const route of ROUTES) {

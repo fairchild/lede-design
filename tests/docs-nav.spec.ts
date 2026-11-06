@@ -25,10 +25,12 @@ test('Mode and Increase contrast theme the docs, keep focus and carry into the d
   const dark = footer(page).getByRole('radio', { name: 'Dark' });
   await dark.check();
   await expect(root).toHaveAttribute('data-theme', 'dark');
+  await expect(dark).toBeChecked();
   await expect(dark).toBeFocused();
   const contrast = footer(page).getByRole('switch', { name: 'Increase contrast' });
   await contrast.click();
   await expect(root).toHaveAttribute('data-theme', 'dark-hc');
+  await expect(contrast).toBeChecked();
   await expect(contrast).toBeFocused();
   await page.getByRole('link', { name: 'Settings → Appearance' }).first().click();
   await expect(page).toHaveURL(/\/app\/settings\/appearance$/);
