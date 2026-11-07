@@ -233,17 +233,12 @@
 
 /* ListGroup and ListRow — a `<section>`, a heading and a `<ul>` of `<li>` */
 .ld-list { font-family: var(--font-sans); }
-.ld-list-header { display: flex; justify-content: space-between; align-items: baseline; gap: var(--space-3); padding: 0 var(--space-4); margin-bottom: var(--space-1_5); }
+.ld-list-header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 0 var(--space-3); padding: 0 var(--space-4); margin-bottom: var(--space-1_5); }
 .ld-list-title, .ld-list-summary, .ld-list-footer { margin: 0; font-size: var(--text-footnote-size); line-height: var(--text-footnote-line-height); font-weight: var(--text-footnote-weight); color: var(--muted-foreground); }
-/* A word too long for the header, such as a long identifier, breaks, so it can't widen the list. */
+/* The summary sits beside the title while both fit on one line, and moves under it otherwise, so the title keeps its
+   words whole and the summary reads from the start. Only a word wider than the whole header, such as a long
+   identifier, breaks, so it can't widen the list. */
 .ld-list-title, .ld-list-summary { overflow-wrap: anywhere; }
-.ld-list-summary { text-align: right; }
-/* With enlarged text on a narrow window (see the subtitle's rule below), a summary that doesn't fit beside its title
-   moves under it. It wraps only on a line of its own there, so it reads from the start. */
-@media (width < 20em) {
-  .ld-list-header { flex-wrap: wrap; row-gap: 0; }
-  .ld-list-summary { text-align: start; }
-}
 .ld-list-footer { padding: 0 var(--space-4); margin-top: var(--space-1_5); }
 .ld-list-body { list-style: none; margin: 0; padding: 0; background: var(--card); border-radius: var(--radius-lg); overflow: hidden; }
 [data-theme$="-hc"] .ld-list-body { box-shadow: 0 0 0 1px var(--input); }

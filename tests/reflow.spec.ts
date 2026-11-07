@@ -13,17 +13,19 @@ interface Findings { overflow: number; overlaps: string[]; squeezed: string[]; c
 
 // Sideways scroll is measured against `clientWidth`, the screen's width: a phone widens `innerWidth` to fit a page wider
 // than its screen.
-function inspect(): Findings {
+function inspect(wordTakesLine: boolean | void = true): Findings {
   const found: Findings = { overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth, overlaps: [], squeezed: [], clipped: [], truncated: [] };
   const crosses = (a: DOMRect, b: DOMRect) => a.left < b.right - 0.5 && b.left < a.right - 0.5 && a.top < b.bottom - 0.5 && b.top < a.bottom - 0.5;
   const text = (el: Element | null) => (el?.textContent ?? '').trim().slice(0, 40);
 
-  // A ListRow's value and a Disclosure's meta sit beside the title while both fit, and move under it otherwise. A
+  // A ListRow's value, a Disclosure's meta and a ListGroup's summary sit beside the title while both fit, and move under
+  // it otherwise. A
   // Disclosure's meta takes a column of its own beside the title and summary, so it narrows the title anywhere but under.
   const beside = (t: DOMRect, v: DOMRect) => v.top < t.bottom && t.top < v.bottom;
   const pairs = [
     { box: '.ld-row', title: '.ld-row-title', parts: '.ld-row-title, .ld-row-subtitle', value: '.ld-row-value', line: '.ld-row-primary', beside },
     { box: '.ld-disc-head', title: '.ld-disc-title', parts: '.ld-disc-title, .ld-disc-summary', value: '.ld-disc-meta', line: '.ld-disc-head', beside: (t: DOMRect, v: DOMRect) => v.left >= t.right - 0.5 },
+    { box: '.ld-list-header', title: '.ld-list-title', parts: '.ld-list-title', value: '.ld-list-summary', line: '.ld-list-header', beside },
   ];
   for (const pair of pairs) for (const row of document.querySelectorAll(pair.box)) {
     const value = row.querySelector(pair.value);
@@ -33,7 +35,8 @@ function inspect(): Findings {
     for (const part of row.querySelectorAll(pair.parts)) {
       if (crosses(part.getBoundingClientRect(), v)) found.overlaps.push(`“${text(part)}” under “${text(value)}”`);
     }
-    // Beside its value, the title is at least as wide as its longest word, or as the whole line when the word is longer.
+    // Beside its value, the title is at least as wide as its longest word. A word longer than the line takes the whole
+    // line at enlarged text, and at the default size, where the value stays beside the title, it breaks.
     const t = title.getBoundingClientRect();
     if (pair.beside(t, v)) {
       const probe = title.cloneNode(true) as HTMLElement;
@@ -44,7 +47,7 @@ function inspect(): Findings {
       const line = row.matches(pair.line) ? row : row.querySelector(pair.line)!;
       const style = getComputedStyle(line);
       const room = line.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
-      if (t.width + 1 < Math.min(word, room)) found.squeezed.push(`“${text(title)}” is ${Math.round(t.width)}px beside “${text(value)}”, its longest word ${Math.round(word)}px`);
+      if (wordTakesLine ? t.width + 1 < Math.min(word, room) : word <= room && t.width + 1 < word) found.squeezed.push(`“${text(title)}” is ${Math.round(t.width)}px beside “${text(value)}”, its longest word ${Math.round(word)}px`);
     }
   }
 
@@ -167,6 +170,23 @@ for (const route of ROUTES) {
     if (!(await openPanels(page))) return;
     await steady(page);
     expect(await inspectAt300(page, route), 'with every panel open').toEqual({ overflow: 0, overlaps: [], squeezed: [], clipped: [], truncated: [], spilled: [] });
+  });
+}
+
+// At the default text size on a phone, a title keeps its longest word beside a row's value, a Disclosure's meta or a
+// list's summary: a ListGroup summary longer than the room beside its title moves under it. Only a word longer than the
+// whole line breaks.
+for (const route of ROUTES) {
+  test(`${route} · at the default text size on a phone, every title beside a value keeps its words whole`, async ({ page, isMobile }) => {
+    test.skip(!isMobile, 'A phone is the narrow case.');
+    for (const width of [320, 390]) {
+      await page.setViewportSize({ width, height: 800 });
+      await settle(page, route, 1);
+      expect((await page.evaluate(inspect, false)).squeezed, `${width}px`).toEqual([]);
+      if (!(await openPanels(page))) continue;
+      await steady(page);
+      expect((await page.evaluate(inspect, false)).squeezed, `${width}px with every panel open`).toEqual([]);
+    }
   });
 }
 
