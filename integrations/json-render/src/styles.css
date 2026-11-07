@@ -1,0 +1,28 @@
+@import "tailwindcss";
+/* Lede's source and its generated tokens, straight from the repo: `npm run tokens` writes lede.tokens.css. */
+@source "../../../registry/lede";
+@import "../../../registry/lede/lede.tokens.css";
+@import "../../../registry/lede/lede.components.css";
+@import "../../../registry/lede/lede.blocks.css";
+
+html, body { margin: 0; font-family: var(--font-sans); -webkit-font-smoothing: antialiased; }
+.jr-app { min-height: 100dvh; color: var(--foreground); }
+.jr-page { box-sizing: border-box; max-width: 72rem; margin: 0 auto; padding: var(--space-6) var(--space-4) var(--space-12); display: grid; gap: var(--space-6); }
+.jr-controls { display: grid; gap: var(--space-3); justify-items: start; }
+.jr-controls > .ld-segmented { justify-self: stretch; }
+.jr-layout { display: grid; gap: var(--space-6); grid-template-columns: minmax(0, 1fr); align-items: start; }
+@media (width >= 56.25em) { .jr-layout { grid-template-columns: minmax(0, 1fr) 20rem; } }
+.jr-preview { box-sizing: border-box; min-height: 24rem; padding: var(--space-4); border-radius: var(--radius-xl); border: 1px solid var(--input); }
+
+.jr-inspector { display: grid; gap: var(--space-3); min-width: 0; }
+.jr-inspector > * { margin: 0; }
+.jr-status { font-weight: var(--weight-semibold); }
+.jr-muted { color: var(--muted-foreground); }
+.jr-issues, .jr-log { display: grid; gap: var(--space-2); padding-left: 1.2em; overflow-wrap: anywhere; }
+.jr-issues { list-style: disc; font-size: var(--text-footnote-size); line-height: var(--text-footnote-line-height); }
+.jr-log { list-style: decimal; }
+.jr-under { display: grid; gap: var(--space-3); }
+.jr-under > h2 { margin: 0; }
+.jr-code { margin: 0; max-height: 28rem; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; font-size: var(--text-footnote-size); line-height: var(--text-footnote-line-height); }
+.jr-unknown { margin: 0; padding: var(--space-4); border: 1px dashed var(--muted-foreground); border-radius: var(--radius-lg); color: var(--muted-foreground); }
+.jr-check { display: flex; align-items: center; gap: var(--space-2); }

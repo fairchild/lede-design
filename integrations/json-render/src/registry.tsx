@@ -1,4 +1,4 @@
-import type * as React from 'react';
+import * as React from 'react';
 import { defineRegistry, useBoundProp } from '@json-render/react';
 import { Button } from '@/components/lede/button';
 import { Checkbox } from '@/components/lede/checkbox';
@@ -10,6 +10,7 @@ import { EmptyState } from '@/components/lede/blocks/empty-state';
 import { FormSection } from '@/components/lede/blocks/form-section';
 import { PageHeader } from '@/components/lede/blocks/page-header';
 import { SummaryCard } from '@/components/lede/blocks/summary-card';
+import { focusLanding } from '@/components/lede/input-modality';
 import { catalog } from './catalog';
 
 /**
@@ -28,8 +29,10 @@ export const { registry, handlers } = defineRegistry(catalog, {
     ListRow: ({ props, bindings, emit, on }) => {
       const [checked, setChecked] = useBoundProp(props.checked, bindings?.checked);
       const press = on('press');
+      const id = React.useId();
       return (
         <ListRow
+          rowKey={id}
           title={props.title}
           subtitle={props.subtitle}
           value={props.value}
@@ -38,7 +41,7 @@ export const { registry, handlers } = defineRegistry(catalog, {
           trailing={checked === undefined ? undefined : (
             <Switch aria-label={props.title} checked={checked} onCheckedChange={(next) => { setChecked(next); emit('change'); }} />
           )}
-          actions={props.actions?.map((a) => ({ label: a.label, tone: a.tone, onSelect: () => emit(a.event) }))}
+          actions={props.actions?.map((a) => ({ label: a.label, tone: a.tone, onSelect: () => { keepFocus(id); emit(a.event); } }))}
         />
       );
     },
@@ -90,6 +93,17 @@ export const { registry, handlers } = defineRegistry(catalog, {
     submit: async (params) => report('submit', params),
   },
 });
+
+/**
+ * A row action can hide its own row, through a `visible` condition. Focus then moves to the next row, or the one
+ * before it, or the screen's title, so it never falls to `<body>`.
+ */
+function keepFocus(rowKey: string) {
+  const row = document.querySelector(`[data-row-id="${CSS.escape(rowKey)}"]`);
+  const sibling = (row?.nextElementSibling ?? row?.previousElementSibling)?.querySelector<HTMLElement>('.ld-row-target');
+  const title = row?.closest('.jr-preview')?.querySelector<HTMLElement>('h2');
+  setTimeout(() => { if (!row?.isConnected && (document.activeElement === document.body || !document.activeElement)) focusLanding(sibling ?? title); }, 50);
+}
 
 /** The page's action log listens here: each catalog action a spec runs, with its params. */
 export const actions = new EventTarget();
