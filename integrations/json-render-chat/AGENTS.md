@@ -15,15 +15,13 @@ for bots on Slack, Teams and Discord, so it doesn't belong in a browser chat.
 
 1. Follow “Build this in your app” in `README.md` step by step. It was run as written on a fresh create-vite
    `react-ts` app, and `npm run build` passed. `npx shadcn@latest add @lede/json-render` installs the catalog, the
-   registry, `check`, `toPatches` and `SpecView` under `components/lede/json-render/`, with the Lede components and
+   registry, `catalog-fit`, `check`, `toPatches` and `SpecView` under `components/lede/json-render/`, with the Lede components and
    npm packages they need. The chat's own files, copied from `src/chat/` and `server/`, import them from
    `@/components/lede/…`, so they need no edits.
 2. The registry URL, `https://lede.cloudcompute.com/r/v0.4.0/{name}.json`, serves once 0.4.0 is tagged. Before a tag
    exists, the deployed site's `/r/next/{name}.json` is the unreleased build of main. From a clone, `npm run registry`
    writes the same files to `public/r/`, which any static server can serve.
-3. To change what a model may build, edit `components/lede/json-render/catalog.ts` and `registry.tsx` together.
-   Both are your copies now. In the Lede repo, `integrations/json-render/src/catalog-fit.ts` fails `tsc` when a catalog
-   prop isn't one the Lede component takes; copy it if you change the catalog.
+3. To change what a model may build, follow “Extend the catalog” below.
 4. The server is `server/chat.ts`: `streamText({ model: anthropic('claude-sonnet-5-5'), system:
    catalog.prompt({ mode: 'inline' }), messages: await convertToModelMessages(forModel(messages)) })`, then
    `createUIMessageStreamResponse({ stream: pipeJsonRender(result.toUIMessageStream({ onError })) })`. It exports
@@ -36,6 +34,61 @@ for bots on Slack, Teams and Discord, so it doesn't belong in a browser chat.
    `<SpecView spec={buildSpecFromParts(message.parts)} streaming={live} headingLevel={3} handlers={…} />`.
 7. Check it: `npm run build`, then the page in a browser with a reply showing: the question, the reply's text and then
    its screen, focus in the composer and axe clean. This repo's `tests/chat.e2e.ts` does that with Playwright.
+
+## Extend the catalog
+
+Adding a component or an action changes three files in `components/lede/json-render/`, and once the catalog has it,
+`tsc -b` names the other two. A fourth edit, a verb for the chat's notes, is optional. This walk-through adds
+Lede's Disclosure and a `flag` action, and was run on the app the recipe builds.
+
+1. Install the component: `npx shadcn@latest add @lede/disclosure`.
+2. `components/lede/json-render/catalog.ts`: the entry the model sees. Props keep the Lede component's own names.
+
+   ```ts
+   Disclosure: {
+     props: z.object({ title: text, summary: text.optional() }),
+     slots: ['default'],
+     description: 'Detail that opens on request: a title, its takeaway as summary and the rest inside.',
+   },
+   ```
+
+   and, under `actions`, `` flag: { params: z.object({ id: text }), description: `Flag an item by its id. ${inRepeat}` }, ``.
+   `tsc -b` now fails in `registry.tsx`, with “Property 'Disclosure' is missing” and “Property 'flag' is missing”,
+   and in `catalog-fit.ts`.
+3. `components/lede/json-render/registry.tsx`: import the component and draw it, at the section's heading level, and
+   add the action beside the others.
+
+   ```tsx
+   Disclosure: ({ props, children }) => (
+     <Disclosure title={props.title} summary={props.summary} headingLevel={useLevels().section}>{children}</Disclosure>
+   ),
+   ```
+
+   `flag: async (params) => report('flag', params),`
+4. `components/lede/json-render/catalog-fit.ts`: add `Disclosure: typeof Disclosure;` to `interface Lede` (with its
+   `import type`) and `Disclosure: true,` to `fit`. A prop that Disclosure doesn't take then fails here by name. A
+   prop the registry renames, as Button's `label` becomes its children, goes in `interface Adapted`.
+5. `src/chat/describe.ts`, optional: `flag: 'flagged'` in `DID`, so the note reads “You flagged Alan Turing.” rather
+   than “You chose flag on Alan Turing.” The chat's handlers come from the catalog's action names, so `flag` already
+   reaches it.
+
+A spec then uses them: a ListRow with `"actions": [{ "label": "Flag", "event": "flag" }]` and
+`"on": { "flag": { "action": "flag", "params": { "id": "m2" } } }`, or a Disclosure holding other elements. For a row
+event other than archive, flag and delete, add it to `rowEvent` in the catalog too.
+
+## Lists from state
+
+json-render's own prompt tells a model to draw any list backed by a state array with `repeat`, and the model will. In
+this catalog, `repeat` goes on a ListGroup, with one ListRow child, and `rules` in `catalog.ts` (passed as
+`customRules` in `server/chat.ts`) says so: json-render's example would otherwise repeat Screen or PageHeader. The
+week reply in `src/chat/replies/week.json` is one.
+
+- Inside a repeat, `{ "$item": "title" }` in props reads the item's field, and `{ "$bindItem": "done" }` binds to it.
+- In action params, `{ "$item": "id" }` is the item's state path, such as `/meetings/0/id`, which suits `setState`.
+  To pass the value, write `{ "$template": "${id}" }`. The catalog's action descriptions tell the model this.
+- A row drawn by repeat has its title in state, so `describe()` names it from the control that ran the action.
+- `{ "$state": "/form" }` in params passes the value at that path when the action runs, after any change the same
+  press made. The sign-up reply's `submit` sends its form that way.
 
 ## Failure modes
 
@@ -94,6 +147,8 @@ Each one below broke this example while it was built, or was checked in the pack
   min-content, and at 200% text on a phone the page then scrolls sideways.
 - A `position: sticky` composer with large text on a short screen can leave the conversation a few pixels tall. Make
   it sticky only in a height query in `em`, which follows the text size.
+- A sticky composer covers the controls under it. Set the page's `scroll-padding-bottom` to its height, so a control
+  reached with Tab scrolls into view above it. `Chat.tsx` measures it with a ResizeObserver.
 - Announce a reply with a polite `role="status"` line, and don't move focus into new content.
 
 **Build**
@@ -112,6 +167,15 @@ Each one below broke this example while it was built, or was checked in the pack
   `tsconfig.json` and `tsconfig.app.json`; shadcn reads the first, `tsc -b` the second.
 - `tsconfig.app.json` includes only `src`, so `server/` isn't typechecked unless it has a tsconfig of its own.
   `templates/tsconfig.server.json` is one; add it to `references` in `tsconfig.json`.
+- create-vite's `src/index.css` centers every line in a bordered 1126px `#root` and sets `:root` to 18px, which
+  rescales every rem in Lede. The build and axe pass with it; only a screenshot shows it. Replace the file before
+  `shadcn init`, which merges into whatever `:root` it finds.
+- `shadcn init` leaves `src/index.css` without a final newline, so `echo '@import …' >>` glues the import onto the last
+  rule. Start the appended text with a newline.
+- The server listens on `PORT`, default 4882; the Vite proxy has to name the same port.
+- A full-page screenshot draws the sticky composer where the window ended, over the middle of the page. Take
+  viewport screenshots.
 - `toUIMessageStream()` sends a generic “An error occurred.” to the client unless you pass `onError`. The example
   returns the error's message, which helps while you build; return something generic in production, since a
-  provider's message can name your account or model.
+  provider's message can name your account or model. `streamText` logs each failure with its stack and response
+  headers unless it has an `onError` of its own; the example logs one line.

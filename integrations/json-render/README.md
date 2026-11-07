@@ -27,7 +27,7 @@ The catalog, the registry, `check` and `SpecView` are Lede's `json-render` regis
 - `specs/*.json` are the recorded specs: settings, an inbox, a sign-up form with an error, an empty state and an
   invalid spec. "Replay as a stream" sends the selected spec through `createSpecStreamCompiler` as JSON Patch lines,
   each split across two chunks, so the screen builds up as a model would write it.
-- `src/catalog-fit.ts` fails `tsc` when a catalog prop isn't one the Lede component takes, or allows a value the
+- `catalog-fit.ts` fails `tsc` when a catalog prop isn't one the Lede component takes, or allows a value the
   component's type doesn't. `tests/specs.test.tsx` renders each recorded spec and fails on a type the registry has no
   component for, or a prop its schema rejects.
 

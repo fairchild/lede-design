@@ -58,3 +58,24 @@ test('Try again moves focus to the composer at once, and it never falls to <body
   expect([...seen]).toEqual(['textarea']);
   await expect(page.getByRole('button', { name: 'Try again' })).toBeHidden();
 });
+
+test('a control reached with the keyboard stops above the composer, not under it', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 640 });
+  await ask(page, 'How’s my week?');
+  await expect(page.getByRole('button', { name: 'Stop' })).toBeHidden();
+  const control = page.getByRole('switch', { name: 'Block Friday morning for focus time' });
+  // Put the control just inside the window's bottom edge, behind the composer, where it counts as in view.
+  await control.evaluate((el) => scrollBy(0, el.getBoundingClientRect().bottom - innerHeight + 8));
+  await control.focus();
+  const [box, footer] = await Promise.all([control.boundingBox(), page.locator('.jrc-footer').boundingBox()]);
+  expect(box!.y + box!.height).toBeLessThanOrEqual(footer!.y);
+});
+
+test('a screen’s title sits one step above what follows it, with no doubled space', async ({ page }) => {
+  await ask(page, 'How’s my week?');
+  const header = page.locator('.jrc-screen header').first();
+  const next = page.getByRole('group', { name: 'Period' });
+  await expect(next).toBeVisible();
+  const [above, below] = await Promise.all([header.boundingBox(), next.boundingBox()]);
+  expect(Math.round(below!.y - (above!.y + above!.height))).toBe(24);
+});

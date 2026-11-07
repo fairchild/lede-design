@@ -31,9 +31,17 @@ passed. Commands run in your app's folder, and `LEDE` is the path to a clone of 
 
    In `vite.config.ts`, add `tailwindcss()` to `plugins`, the alias
    `resolve: { alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) } }` (`fileURLToPath` and `URL` come from
-   `node:url`), and, for step 6, `server: { proxy: { '/api': 'http://localhost:4882' } }`. Put
-   `@import "tailwindcss";` at the top of `src/index.css`. In both `tsconfig.json` and `tsconfig.app.json`, add
-   `"compilerOptions": { "paths": { "@/*": ["./src/*"] } }`. TypeScript 7 rejects `baseUrl`, so leave it out.
+   `node:url`), and, for step 6, `server: { proxy: { '/api': 'http://localhost:4882' } }`. In both `tsconfig.json` and
+   `tsconfig.app.json`, add `"paths": { "@/*": ["./src/*"] }` inside `compilerOptions` (in `tsconfig.json`, add the
+   `compilerOptions` object too). `tsconfig.app.json` has comments, so a JSON parser can't edit it; edit it by hand.
+   TypeScript 7 rejects `baseUrl`, so leave it out.
+
+   Replace create-vite's demo styles: its `src/index.css` centers every line in a bordered 1126px column and sets
+   `:root` to 18px, which rescales Lede. `shadcn init` merges into whatever `:root` it finds, so clear the file first.
+
+   ```bash
+   printf '@import "tailwindcss";\n' > src/index.css
+   ```
 
 2. **shadcn and Lede.** `init` writes `components.json` and shadcn's variables in `src/index.css`. Keep them: Lede's
    styles come after them and set the same variables. `init` may also add `src/components/ui/button.tsx`, which the
@@ -46,8 +54,12 @@ passed. Commands run in your app's folder, and `LEDE` is the path to a clone of 
    npx shadcn@latest add @lede/theme-provider @lede/avatar @lede/json-render --yes
    ```
 
-   Then add `@import "./styles/lede/index.css";` on a new line at the end of `src/index.css`, as the main README's
-   step 2 shows.
+   Then import Lede's styles at the end of `src/index.css`, as the main README's step 2 shows. `init` leaves the file
+   without a final newline, so start with one:
+
+   ```bash
+   printf '\n@import "./styles/lede/index.css";\n' >> src/index.css
+   ```
 
 3. **The chat's packages.**
 
@@ -70,13 +82,16 @@ passed. Commands run in your app's folder, and `LEDE` is the path to a clone of 
    | `src/chat/transport.ts` | The switch: the scripted mock, or `DefaultChatTransport` when `VITE_CHAT_API` is set |
    | `src/chat/mock-transport.ts` and `replies/*.json` | The scripted replies, which stream through `pipeJsonRender` like a model's |
    | `src/chat/app-message.ts` | `AppMessage`, a `UIMessage` whose data parts are json-render's spec patches |
+| `src/chat/describe.ts` | The words for each action's note, such as “You opened Venue review.” |
    | `server/chat.ts` | The backend: `handleChat`, a fetch-style handler for any framework's route |
    | `tsconfig.server.json` | Typechecks the server, which `tsconfig.app.json` leaves out |
 
    Add `{ "path": "./tsconfig.server.json" }` to `references` in `tsconfig.json`, so `tsc -b` checks the server too.
 
-5. **Render the chat.** In `src/main.tsx`, render `<Chat />` from `./chat/Chat` in place of `<App />`. Then
-   `npm run build` and `npm run dev`. The replies come from the mock.
+5. **Render the chat.** In `src/main.tsx`, render `<Chat />` from `./chat/Chat` in place of `<App />`, and delete
+   `src/App.tsx` and `src/App.css`. Chat brings its own ThemeProvider. Then `npm run build` and `npm run dev`. The replies come from the
+   mock. To check it by eye, take viewport screenshots: a full-page one draws the sticky composer where the window
+   ended, partway down the page.
 
 6. **Use the real model.** Run the server, then the app pointed at it:
 
@@ -85,13 +100,18 @@ passed. Commands run in your app's folder, and `LEDE` is the path to a clone of 
    VITE_CHAT_API=/api/chat npm run dev
    ```
 
+   The server listens on 4882. To use another port, set `PORT` for the server and change the proxy in step 1 to match.
+
+To add a component or an action, see “Extend the catalog” in [`AGENTS.md`](AGENTS.md): the compiler names each file
+that has to change.
+
 The chat page is a starting point to change. [`AGENTS.md`](AGENTS.md) has the same recipe for a coding agent, with the
 mistakes that break it.
 
 ## Run it against a real model
 
 ```bash
-ANTHROPIC_API_KEY=… npm run server              # POST /api/chat on port 4882
+ANTHROPIC_API_KEY=… npm run server              # POST /api/chat on port 4882, or PORT
 VITE_CHAT_API=/api/chat npm run dev             # the app; Vite proxies /api to the server
 ```
 
@@ -121,8 +141,9 @@ screens it sent, and “turn off push” has nothing to refer to.
 | `server/chat.ts` | The reference backend: `streamText` with Anthropic and the catalog prompt. |
 | `templates/tsconfig.server.json` | The server's tsconfig for an app made with create-vite. |
 | `tests/mock-transport.test.ts` | Sends each scripted prompt through the mock and checks the spec against the catalog. |
-| `tests/server.test.ts` | Checks that the model sees earlier screens, and starts the server to check it answers. |
-| `tests/chat.e2e.ts` | The chat in a browser: the order of a reply, an action's note, Stop, Escape, Try again, focus and axe. |
+| `tests/describe.test.ts` | Checks each action's note, for literal params, params bound to state and rows drawn by repeat. |
+| `tests/server.test.ts` | Checks that the model sees earlier screens, then starts the server: its answers, and one log line per failed model call. |
+| `tests/chat.e2e.ts` | The chat in a browser: the order of a reply, an action's note, Stop, Escape, Try again, focus, the composer's scroll padding, spacing and axe. |
 
 The catalog, the registry and `SpecView` are Lede's `json-render` item, in `registry/lede/json-render/`, which this
 entry and [`../json-render`](../json-render) both import through the `@/components/lede` alias, the path an install

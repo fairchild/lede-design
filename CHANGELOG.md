@@ -3,9 +3,12 @@
 ## Unreleased
 
 - `json-render`, titled SpecView, lets a model's reply be a Lede screen. It installs a json-render catalog of 12
-  Lede components for the model's prompt, a registry that draws each one, `check` for a spec's props and `SpecView`.
+  Lede components for the model's prompt, with `rules` that keep its lists on ListGroup, a registry that draws each
+  one, `catalog-fit` for the typecheck, `check` for a spec's props and `SpecView`.
   `integrations/json-render-chat` uses it in an AI SDK chat.
 - EmptyState's `headingLevel` takes 4.
+- A PageHeader inside a flow's stack drops its bottom margin, so the space under it stays one step when an
+  inline-level control, such as a SegmentedControl, comes next.
 
 ## 0.4.0
 

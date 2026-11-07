@@ -1,6 +1,5 @@
 import * as React from 'react';
 import { useChat } from '@ai-sdk/react';
-import type { Spec } from '@json-render/core';
 import { buildSpecFromParts } from '@json-render/react';
 import { ThemeProvider } from '@/components/lede/theme-provider';
 import { Avatar } from '@/components/lede/avatar';
@@ -8,9 +7,11 @@ import { Button } from '@/components/lede/button';
 import { SegmentedControl } from '@/components/lede/segmented-control';
 import { TextField } from '@/components/lede/text-field';
 import { PageHeader } from '@/components/lede/blocks/page-header';
+import { catalog, type CatalogAction } from '@/components/lede/json-render/catalog';
 import { SpecView, type SpecHandlers } from '@/components/lede/json-render/spec-view';
 import { transport, chatApi } from './transport';
 import type { AppMessage } from './app-message';
+import { describe } from './describe';
 import './chat.css';
 
 const ASSISTANT = 'Daybook';
@@ -18,6 +19,13 @@ const SUGGESTIONS = ['How’s my week?', 'What’s in my inbox?', 'Show my notif
 const SCHEMES = ['System', 'Light', 'Dark'] as const;
 type Scheme = (typeof SCHEMES)[number];
 type Ending = 'stopped' | 'failed';
+
+/** The name of the focused control in a screen, such as a row's title: the control a person just used. */
+const focusedName = () => {
+  const el = document.activeElement?.closest('.jrc-screen') ? document.activeElement : null;
+  return el?.getAttribute('aria-label') ?? el?.querySelector('.ld-row-title')?.textContent ?? el?.textContent?.trim() ?? undefined;
+};
+const ACTIONS = Object.keys(catalog.data.actions) as CatalogAction[];
 
 const clock = new Intl.DateTimeFormat('en-US', { hour: 'numeric', minute: '2-digit' });
 const textOf = (message: AppMessage) => message.parts.flatMap((p) => (p.type === 'text' && p.text.trim() ? [p.text.trim()] : []));
@@ -82,6 +90,19 @@ export function Chat() {
     const top = turn.getBoundingClientRect().top + scrollY - parseFloat(getComputedStyle(turn).scrollMarginTop);
     scrollTo({ top: Math.min(top, document.documentElement.scrollHeight - innerHeight) });
   });
+
+  // The composer covers the foot of the window while it's sticky, so the page keeps that much room when it scrolls a
+  // control into view, such as the last switch of a screen reached with Tab.
+  React.useEffect(() => {
+    const footer = form.current?.closest<HTMLElement>('.jrc-footer');
+    if (!footer) return;
+    const root = document.documentElement;
+    const pad = () => { root.style.scrollPaddingBottom = getComputedStyle(footer).position === 'sticky' ? `${footer.offsetHeight}px` : ''; };
+    const observer = new ResizeObserver(pad);
+    observer.observe(footer);
+    addEventListener('resize', pad);
+    return () => { observer.disconnect(); removeEventListener('resize', pad); root.style.scrollPaddingBottom = ''; };
+  }, []);
 
   const note = React.useCallback((id: string, text: string) => setNotes((prev) => ({ ...prev, [id]: [...(prev[id] ?? []), text] })), []);
 
@@ -159,18 +180,6 @@ export function Chat() {
   );
 }
 
-/** What a screen's action did, in words: “You opened Venue review.” The element that ran it supplies the name. */
-function describe(spec: Spec | null, name: string, params: Record<string, unknown>) {
-  const ran = (binding: unknown): boolean =>
-    Array.isArray(binding) ? binding.some(ran)
-    : !!binding && typeof binding === 'object' && (binding as { action?: string }).action === name
-      && Object.entries(params).every(([k, v]) => (binding as { params?: Record<string, unknown> }).params?.[k] === v);
-  const element = Object.values(spec?.elements ?? {}).find((el) => Object.values(el.on ?? {}).some(ran));
-  const label = element?.props?.title ?? element?.props?.label;
-  const verb = { open: 'opened', archive: 'archived', submit: 'sent' }[name] ?? `ran ${name} on`;
-  return typeof label === 'string' ? `You ${verb} ${label}.` : name === 'submit' ? 'You sent the form.' : `You ${verb} an item.`;
-}
-
 interface TurnProps {
   message: AppMessage;
   time?: Date;
@@ -188,7 +197,7 @@ function Turn({ message, time, live, ending, failure, notes, onNote }: TurnProps
   specRef.current = spec;
   // json-render reads its handlers once, when the screen mounts, so these read the latest spec through a ref.
   const handlers = React.useMemo<SpecHandlers>(
-    () => Object.fromEntries(['open', 'archive', 'submit'].map((name) => [name, (params: Record<string, unknown>) => onNote(message.id, describe(specRef.current, name, params))])),
+    () => Object.fromEntries(ACTIONS.map((name) => [name, (params: Record<string, unknown>) => onNote(message.id, describe(specRef.current, name, params, focusedName()))])),
     [message.id, onNote],
   );
   const author = message.role === 'user' ? 'You' : ASSISTANT;

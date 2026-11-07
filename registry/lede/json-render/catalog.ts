@@ -5,10 +5,11 @@ import { z } from 'zod';
 const text = z.string();
 const tone = z.enum(['primary', 'critical']);
 const rowEvent = z.enum(['archive', 'flag', 'delete']);
+const inRepeat = 'Inside a repeat, pass the item’s id as { "$template": "${id}" }, since { "$item": "id" } in params is its state path.';
 
 /**
  * The Lede components a model may use. Each prop keeps the Lede component's own name and values, so a spec reads like
- * the JSX it becomes. In the Lede repo, `integrations/json-render/src/catalog-fit.ts` checks that every prop here is one the component accepts.
+ * the JSX it becomes. `catalog-fit.ts` checks that every prop here is one the component accepts.
  */
 export const catalog = defineCatalog(schema, {
   components: {
@@ -25,7 +26,7 @@ export const catalog = defineCatalog(schema, {
     ListGroup: {
       props: z.object({ title: text.optional(), summary: text.optional(), footer: text.optional() }),
       slots: ['default'],
-      description: 'A titled list of rows. Use it for settings, messages or any set of items that people scan and pick from. Its children are ListRows.',
+      description: 'A titled list of rows. Use it for settings, messages or any set of items that people scan and pick from. Its children are ListRows. For rows from a state array, set repeat on the ListGroup and give it one ListRow child that reads each item with $item.',
     },
     ListRow: {
       props: z.object({
@@ -77,12 +78,12 @@ export const catalog = defineCatalog(schema, {
     SegmentedControl: {
       props: z.object({ label: text, options: z.array(text).min(2).max(5), value: text.optional() }),
       events: ['change'],
-      description: 'A choice of two to five options shown side by side, such as a view or a period. Bind value with $bindState.',
+      description: 'A choice of two to five options, such as a view or a period. They sit side by side, and stack on a narrow screen. Bind value with $bindState.',
     },
     FormSection: {
       props: z.object({ legend: text, description: text.optional() }),
       slots: ['default'],
-      description: 'A group of related fields with a name, such as “Contact details”. Its children are TextFields, Switches and Checkboxes.',
+      description: 'A group of related fields with a name, such as “Contact details”. Its children are TextFields, Switches, Checkboxes and SegmentedControls.',
     },
     EmptyState: {
       props: z.object({ title: text, description: text.optional() }),
@@ -100,10 +101,24 @@ export const catalog = defineCatalog(schema, {
     },
   },
   actions: {
-    open: { params: z.object({ id: text }), description: 'Open an item by its id.' },
-    archive: { params: z.object({ id: text }), description: 'Archive an item by its id.' },
-    submit: { params: z.object({ form: text }), description: 'Send the named form.' },
+    open: { params: z.object({ id: text }), description: `Open an item by its id. ${inRepeat}` },
+    archive: { params: z.object({ id: text }), description: `Archive an item by its id. ${inRepeat}` },
+    submit: {
+      params: z.object({ form: text, values: z.record(z.string(), z.unknown()).optional() }),
+      description: 'Send the named form. Pass what the person entered as values, read from state: { "$state": "/signup" }.',
+    },
   },
 });
 
 export type CatalogType = keyof typeof catalog.data.components;
+export type CatalogAction = keyof typeof catalog.data.actions;
+
+/**
+ * Lede's rules for a model, for `catalog.prompt({ customRules: rules })`. json-render's own prompt shows `repeat` on
+ * the first components in a catalog, which here are Screen and PageHeader; these keep each to its one place.
+ */
+export const rules = [
+  'Screen is the root of every spec, and there is one. PageHeader is its first child, and there is one.',
+  'To list items from a state array, put repeat on a ListGroup, with one ListRow child that reads each item with $item.',
+  'In action params, { "$item": "id" } is the item’s state path. To pass the value, write { "$template": "${id}" }.',
+];

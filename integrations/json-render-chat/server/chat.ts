@@ -5,18 +5,21 @@ import { anthropic } from '@ai-sdk/anthropic';
 import { pipeJsonRender, SPEC_DATA_PART_TYPE } from '@json-render/core';
 import { buildSpecFromParts } from '@json-render/react';
 import { convertToModelMessages, createUIMessageStreamResponse, streamText, type UIMessage } from 'ai';
-import { catalog } from '@/components/lede/json-render/catalog';
+import { catalog, rules } from '@/components/lede/json-render/catalog';
 import { toPatches } from '@/components/lede/json-render/patches';
 
 // The reference backend for the chat. `handleChat` is a fetch-style handler, so it drops into any framework's route
-// (Hono, a Next.js route handler, a Worker). Run this file and it serves POST /api/chat on port 4882, which
-// `npm run dev` proxies to. The key is read from the server's environment and never reaches the browser.
+// (Hono, a Next.js route handler, a Worker). Run this file and it serves POST /api/chat on port 4882, or on `PORT`,
+// which `npm run dev` proxies to. The key is read from the server's environment and never reaches the browser.
 
 /** Inline mode asks the model for its prose first and then the spec as JSONL patches, in one text stream. */
 const system = catalog.prompt({
   mode: 'inline',
   system: 'You are Daybook, the assistant in a calendar, inbox and settings app. Answer in a sentence or two, and add a screen when one helps the person act.',
+  customRules: rules,
 });
+
+const reason = (error: unknown) => (error instanceof Error ? error.message : 'The model call failed.');
 
 /**
  * The conversation as the model reads it. `convertToModelMessages` drops data parts, so without this the model never
@@ -47,12 +50,14 @@ export async function handleChat(request: Request): Promise<Response> {
     system,
     messages: await convertToModelMessages(forModel(messages)),
     abortSignal: request.signal,
+    // One line per failure. Without this the AI SDK logs the whole error, stack and response headers included.
+    onError: ({ error }) => console.error(`Model call failed: ${reason(error)}`),
   });
   // json-render's transform lifts each JSONL patch line out of the text into a `data-spec` part, which the client
   // reads with `buildSpecFromParts`. The prose stays as text parts, in order around it.
   // `onError` passes the provider's message, such as an invalid key, to the client. That suits development; in
   // production, return a generic message here and log the error.
-  const stream = result.toUIMessageStream({ onError: (error) => (error instanceof Error ? error.message : 'The model call failed.') });
+  const stream = result.toUIMessageStream({ onError: reason });
   return createUIMessageStreamResponse({ stream: pipeJsonRender(stream) });
 }
 

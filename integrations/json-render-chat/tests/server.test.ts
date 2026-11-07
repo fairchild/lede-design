@@ -34,9 +34,9 @@ test('the model sees the screen it sent, as the patches it wrote', async () => {
   expect(said).toContain('Notifications');
 });
 
-test('the server starts, answers 404 off its route and 400 to a body without messages', async () => {
+test('the server starts, answers 404 off its route and 400 to a body without messages, and logs a failed model call in one line', async () => {
   const port = 4884;
-  const server = spawn('npm', ['run', 'server'], { env: { ...process.env, ANTHROPIC_API_KEY: 'test', PORT: String(port) }, stdio: ['ignore', 'pipe', 'pipe'], detached: true });
+  const server = spawn('npm', ['run', 'server'], { env: { ...process.env, ANTHROPIC_API_KEY: 'test', PORT: String(port), ANTHROPIC_BASE_URL: 'http://127.0.0.1:9/v1' }, stdio: ['ignore', 'pipe', 'pipe'], detached: true });
   try {
     let log = '';
     server.stderr.on('data', (d) => { log += d; });
@@ -46,6 +46,16 @@ test('the server starts, answers 404 off its route and 400 to a body without mes
     });
     expect((await fetch(`http://localhost:${port}/`)).status).toBe(404);
     expect((await fetch(`http://localhost:${port}/api/chat`, { method: 'POST', body: '{}' })).status).toBe(400);
+    const reply = await fetch(`http://localhost:${port}/api/chat`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ messages: [{ id: 'u1', role: 'user', parts: [{ type: 'text', text: 'Hello' }] }] }),
+    });
+    expect(await reply.text()).toContain('"type":"error"');
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    const failures = log.split('\n').filter((line) => line.trim());
+    expect(failures.filter((line) => /Model call failed/.test(line))).toHaveLength(1);
+    expect(failures.filter((line) => /^\s+at /.test(line))).toEqual([]);
   } finally {
     process.kill(-server.pid!);
   }

@@ -596,6 +596,11 @@
           "target": "components/lede/json-render/catalog.ts"
         },
         {
+          "path": "registry/lede/json-render/catalog-fit.ts",
+          "type": "registry:lib",
+          "target": "components/lede/json-render/catalog-fit.ts"
+        },
+        {
           "path": "registry/lede/json-render/registry.tsx",
           "type": "registry:component",
           "target": "components/lede/json-render/registry.tsx"

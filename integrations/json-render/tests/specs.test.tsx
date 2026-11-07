@@ -55,3 +55,20 @@ describe.each([2, 3] as const)('under a level %i title', (level) => {
     expect(headings.length).toBeGreaterThan(1);
   });
 });
+
+test('a ListGroup that repeats over state draws one ListRow per item and passes the check', () => {
+  const spec = {
+    root: 'screen',
+    state: { meetings: [{ id: 'a', title: 'Venue review' }, { id: 'b', title: 'Design critique' }] },
+    elements: {
+      screen: { type: 'Screen', props: {}, children: ['header', 'list'] },
+      header: { type: 'PageHeader', props: { title: 'Your week' }, children: [] },
+      list: { type: 'ListGroup', props: { title: 'Coming up' }, repeat: { statePath: '/meetings', key: 'id' }, children: ['row'] },
+      row: { type: 'ListRow', props: { title: { $item: 'title' }, chevron: true }, on: { press: { action: 'open', params: { id: { $template: '${id}' } } } }, children: [] },
+    },
+  } as unknown as (typeof specs)['Inbox'];
+  expect(check(spec)).toEqual([]);
+  const html = renderToString(<SpecView spec={spec} />);
+  expect([...html.matchAll(/class="ld-row-title"[^>]*>([^<]*)</g)].map(([, t]) => t)).toEqual(['Venue review', 'Design critique']);
+  expect(html.match(/<li\b/g)?.length).toBe(2);
+});

@@ -1,9 +1,10 @@
 import type { Spec } from '@json-render/core';
 import { JSONUIProvider, Renderer } from '@json-render/react';
+import type { CatalogAction } from './catalog';
 import { registry, SpecHeadingLevel } from './registry';
 
-/** The catalog actions a spec can run, each called with its params. */
-export type SpecHandlers = Partial<Record<'open' | 'archive' | 'submit', (params: Record<string, unknown>) => void>>;
+/** The catalog's actions, each called with its params when a spec runs it. Add an action to the catalog and it's here. */
+export type SpecHandlers = Partial<Record<CatalogAction, (params: Record<string, unknown>) => void>>;
 
 export interface SpecViewProps {
   /** The spec so far, such as `buildSpecFromParts(message.parts)` while a reply streams. */
