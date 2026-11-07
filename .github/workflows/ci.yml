@@ -1,7 +1,7 @@
 name: CI
 # A pull request into main runs what its change can affect, and `check` reports the result. A PR into another branch,
 # a push to main and a manual run all run everything. `plan` sorts a PR into main by its diff with scripts/ci-tier.mjs:
-# 1, Markdown the site doesn't render: the build only.
+# 1, Markdown the site doesn't render and integrations/: the build only.
 # 2, test files only: the build, and beside it the changed specs and the specs that import a changed helper.
 # 3, anything else: the build, and beside it the whole suite in shards, with perf alone on its own runner.
 on:
@@ -46,7 +46,7 @@ jobs:
           parts=$(jq -nc --argjson n "$shards" '[range(1; $n + 1) | "\(.)/\($n)"] + ["perf"]')
           printf 'tier=%s\nbase=%s\nparts=%s\n' "$tier" "$base" "$parts" | tee -a "$GITHUB_OUTPUT"
           case $tier in
-            1) what='Markdown only: the build and no Playwright.' ;;
+            1) what='Markdown or integrations only: the build and no Playwright.' ;;
             2) what='Tests only: the build and the changed specs.' ;;
             *) what='The build and the whole suite.' ;;
           esac
@@ -62,6 +62,26 @@ jobs:
         with: { node-version: 22, cache: npm }
       - run: npm ci
       - run: npm run build          # tokens → registry (public/r) → typecheck → site
+
+  # Each entry in integrations/ reads Lede's source from registry/, so every PR builds and tests each one, with its own
+  # install. The tokens script it runs needs no root install.
+  integrations:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        entry: [json-render]
+    defaults:
+      run:
+        working-directory: integrations/${{ matrix.entry }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with: { persist-credentials: false }
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with: { node-version: 22, cache: npm, cache-dependency-path: 'integrations/${{ matrix.entry }}/package-lock.json' }
+      - run: npm ci
+      - run: npm run build          # tokens → tsc --noEmit, with the catalog fit check → vite build
+      - run: npm test               # renders each recorded spec and checks its types and props
 
   # Each part has a runner of its own: a shard of desktop and phone, or perf, which measures timings and so runs alone.
   # Tier 2 has one shard, and both parts keep to the changed specs.
@@ -144,14 +164,14 @@ jobs:
   # The one status a merge reads. Tier 1 skips test and report, and every other job has to succeed.
   check:
     if: always()
-    needs: [plan, build, test, report]
+    needs: [plan, build, integrations, test, report]
     runs-on: ubuntu-latest
     steps:
-      # 4 is the length of `needs:` above, so a job dropped from that list fails here. Change both together.
+      # 5 is the length of `needs:` above, so a job dropped from that list fails here. Change both together.
       - env:
           TIER: ${{ needs.plan.outputs.tier }}
           NEEDS: ${{ toJSON(needs) }}
         run: |
           jq -r 'to_entries[] | "\(.key): \(.value.result)"' <<< "$NEEDS"
-          jq -e --arg tier "$TIER" 'length == 4 and (to_entries | all(.value.result == "success"
+          jq -e --arg tier "$TIER" 'length == 5 and (to_entries | all(.value.result == "success"
             or ($tier == "1" and (.key == "test" or .key == "report") and .value.result == "skipped")))' <<< "$NEEDS" >/dev/null

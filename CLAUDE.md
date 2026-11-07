@@ -11,6 +11,7 @@ registry, with layouts (blocks) and hero flows. The docs site and demo app are t
 3. `registry/lede/blocks/*.tsx` — layouts and higher-level components. `lede.blocks.css`.
 4. `registry/lede/flows/*.tsx` — hero-flow assemblies. Router-agnostic: data, hrefs and callbacks in; no fetching.
 5. `src/` — docs site and the demo app ("Daybook"), wiring flows to React Router and sample data.
+- `integrations/` sits outside the layers: self-contained apps that show Lede beside another project. They read `registry/`, and no layer imports them.
 
 Registry files use relative imports (`../list`) that match their install targets (`components/lede/…`).
 Every installed registry file must be listed in `registry.json`; the `index.ts` barrels are repo-only and don't install.

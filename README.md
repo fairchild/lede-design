@@ -123,6 +123,8 @@ npm run contrast   # the contrast check alone
 [CONTRIBUTING.md](CONTRIBUTING.md) covers pull requests and the Writing rules, and [CLAUDE.md](CLAUDE.md) the layers
 and conventions.
 
+[`integrations/`](integrations/) holds small apps that show Lede beside other projects, starting with json-render.
+
 ## License
 
 [MIT](LICENSE). Lede builds on [Base UI](https://base-ui.com) (MIT), [React Aria](https://react-spectrum.adobe.com/react-aria/) (Apache-2.0) and [TanStack Table](https://tanstack.com/table) (MIT).

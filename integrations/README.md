@@ -1,0 +1,10 @@
+# Integrations
+
+Each folder here shows Lede working beside another project, such as a generative-UI renderer. An entry is a small app
+of its own, with its own `package.json` and lockfile, and it reads Lede's source from `registry/` so it tracks main.
+
+Nothing in `registry/` or `src/` imports from here, and the published registry doesn't include it. CI builds and tests
+each entry on every pull request.
+
+- [`json-render/`](json-render/): Lede drawn by [json-render](https://github.com/vercel-labs/json-render) from
+  recorded JSON specs.

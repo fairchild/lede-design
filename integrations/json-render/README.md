@@ -1,0 +1,62 @@
+# Lede and json-render
+
+This app draws Lede components from JSON specs with [json-render](https://github.com/vercel-labs/json-render)
+(Apache-2.0). A model writes a spec from a catalog of components, and json-render's `Renderer` turns each element into
+the Lede component the registry maps it to. The specs here were recorded, so the page needs no network or API key.
+
+```bash
+npm install
+npm run dev     # http://localhost:4890
+npm run build   # tokens, typecheck, then the site
+npm test        # renders each recorded spec and checks it
+```
+
+## What's in it
+
+- `src/catalog.ts` is the catalog: each Lede component with a Zod schema for its props and a description of when to
+  use it. Props keep the component's own names and values. `catalog.prompt()` turns it into a model's instructions, and
+  the page shows that text under "The prompt".
+- `src/registry.tsx` maps each type to its Lede component. Callback props become json-render events through `emit`,
+  so a spec binds them to actions in its `on` field. TextField, Switch, Checkbox, SegmentedControl and a ListRow with
+  `checked` bind their value with `$bindState`, and the inbox spec archives a row with the built-in `setState` action
+  and a `visible` condition.
+- `specs/*.json` are the recorded specs: settings, an inbox, a sign-up form with an error, an empty state and an
+  invalid spec. "Replay as a stream" sends the selected spec through `createSpecStreamCompiler` as JSON Patch lines,
+  each split across two chunks, so the screen builds up as a model would write it.
+- `src/catalog-fit.ts` fails `tsc` when a catalog prop isn't one the Lede component takes, or allows a value the
+  component's type doesn't. `tests/specs.test.tsx` renders each recorded spec and fails on a type the registry has no
+  component for, or a prop its schema rejects.
+
+## What json-render checks
+
+As of 0.22.0, `catalog.validate(spec)` checks the spec's shape and that each element's `type` is in the catalog.
+`validateSpec(spec)` checks its structure, such as a child that doesn't exist. Neither parses an element's props
+against its schema, so `src/check.ts` adds that pass, strictly, with props bound to expressions made optional.
+
+`Renderer` validates nothing as it draws. The invalid spec shows what happens to each kind of mistake:
+
+- A type the registry doesn't have draws the `fallback` component if one is passed. Without one, json-render logs a
+  warning and draws nothing there.
+- A prop its schema rejects reaches the component as it is. Button gets `variant="huge"` and draws with no variant
+  style.
+- A component that throws, here SegmentedControl given a number for `options`, is caught by json-render's error
+  boundary for that element. It logs the error and draws nothing there, and the rest of the screen renders.
+- A child that doesn't exist logs a warning and draws nothing.
+
+## How it uses Lede
+
+The app imports Lede from this repo's `registry/lede` through the `@/components/lede` alias in `vite.config.ts` and
+`tsconfig.json`, the same path a shadcn install uses, so it always matches main. Lede's own imports resolve from this
+app's `node_modules`. `npm run tokens` writes the tokens CSS the styles import.
+
+Outside this repo, install the same items from the hosted registry and keep the imports as they are:
+
+```bash
+npx shadcn@latest registry add '@lede=https://lede.cloudcompute.com/r/v0.4.0/{name}.json'
+npx shadcn@latest add @lede/theme-provider @lede/button @lede/checkbox @lede/disclosure @lede/list \
+  @lede/segmented-control @lede/switch @lede/text-field @lede/empty-state @lede/form-section @lede/page-header \
+  @lede/summary-card
+npm install @json-render/core @json-render/react zod
+```
+
+Then import `./styles/lede/index.css` once in your global CSS, as the main README's step 2 shows.
