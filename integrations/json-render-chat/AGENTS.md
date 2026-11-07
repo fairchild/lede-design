@@ -211,6 +211,10 @@ Each one below broke this example while it was built, or was checked in the pack
   every build, so a value the person typed or pressed while the reply streamed is overwritten by state that arrives
   after it. `SpecView` keeps a store of its own instead: state that streams in fills in the screen, and a value the
   person changes stays theirs. So a person can use a screen while the rest of it arrives.
+- A change the person makes inside a list, such as switching a row on, is kept by its index, `/todo/0/done`. Rows
+  that stream in after it still arrive, with the change written back on top. A stream that reorders rows or inserts
+  one above it moves the change to whatever row then holds that index. Stream a list's rows by appending, in their
+  final order, and never reorder or insert rows mid-stream.
 - `JSONUIProvider` keeps the `handlers` it mounted with. Pass handlers that don't close over changing state, such as
   ones that call a state setter with a function, or read the latest values through a ref.
 - The registry also defines `actions` that report on its `actions` event target. Handlers passed to `SpecView` (or

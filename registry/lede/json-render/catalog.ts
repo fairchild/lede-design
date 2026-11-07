@@ -154,6 +154,7 @@ export const rules = [
   'Only the components under AVAILABLE COMPONENTS and the actions under AVAILABLE ACTIONS exist. Use no other type or action name.',
   'Screen is the root of every spec, and there is one. PageHeader is its first child, and there is one.',
   'To list items from a state array, put repeat on a ListGroup, with one ListRow child that reads each item with $item.',
+  'Stream a list’s rows by appending them in their final order, one item at a time. Never reorder rows or insert one above another mid-stream: a person can use a row while later rows arrive, and their change stays with its position in the list.',
   'In action params, { "$item": "id" } is the item’s state path. To pass the value, write { "$template": "${id}" }.',
   'An event runs several actions in order when its binding is an array, such as "press": [{ "action": "setState", … }, { "action": "submit", … }].',
   'To show a value worked out from others, use $computed. { "$computed": "scale", "args": { "amount": …, "from": …, "to": …, "unit": …, "units": … } } returns amount × to ÷ from. { "$computed": "remaining", "args": { "from": …, "take": …, "unit": …, "units": … } } returns from − take, and never less than 0. Each arg can be a literal, { "$state": … } or { "$item": … }, and a number inside text, such as “6 people”, counts as 6.',
