@@ -43,13 +43,25 @@ function useDocumentTitle() {
 /** The site's address. Every copy of the site, a preview's included, names the page there. */
 const SITE = 'https://lede.cloudcompute.com';
 
-/** Points `index.html`'s canonical link and `og:url` at the route, as the title follows it. */
+/** Head elements the app adds and keeps up to date, found again by their selector. */
+function headElement(selector: string, tag: 'link' | 'meta', attributes: Record<string, string>) {
+  const found = document.head.querySelector(selector);
+  if (found) return found;
+  const el = document.createElement(tag);
+  for (const [name, value] of Object.entries(attributes)) el.setAttribute(name, value);
+  return document.head.appendChild(el);
+}
+
+/**
+ * Names the route as canonical, with `og:url`, as the title follows it. `index.html` has neither: a crawler that runs no
+ * script would read a static one as the home page's address on every deep link.
+ */
 function useCanonical() {
   const { pathname } = useLocation();
   useEffect(() => {
     const url = `${SITE}${pathname}`;
-    document.querySelector('link[rel="canonical"]')?.setAttribute('href', url);
-    document.querySelector('meta[property="og:url"]')?.setAttribute('content', url);
+    headElement('link[rel="canonical"]', 'link', { rel: 'canonical' }).setAttribute('href', url);
+    headElement('meta[property="og:url"]', 'meta', { property: 'og:url' }).setAttribute('content', url);
   }, [pathname]);
 }
 

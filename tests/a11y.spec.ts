@@ -121,7 +121,10 @@ test('Every page has its own document title', async ({ page }) => {
   await expect(page).toHaveTitle('Settings · Lede');
 });
 
-test('Each page names its own address as canonical, and keeps it in step after a link', async ({ page }) => {
+test('Each page names its own address as canonical, and keeps it in step after a link', async ({ page, request }) => {
+  // The shell every route serves names no address, so a crawler that runs no script finds no canonical at all.
+  const shell = await (await request.get('/components')).text();
+  expect(shell).not.toMatch(/rel="canonical"|property="og:url"/);
   const canonical = page.locator('link[rel="canonical"]');
   const ogUrl = page.locator('meta[property="og:url"]');
   await page.goto('/');
