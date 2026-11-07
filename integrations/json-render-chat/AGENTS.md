@@ -139,8 +139,8 @@ that isn't in `functions` draws nothing, with one console warning.
 
 **Checked fields.** Each field's `name` is the state path it binds. When a Button's press or a TextField's Enter runs
 its actions, they run in order, and they stop at the first action whose params read a field that fails the browser's
-own check. That covers a `required` field that's empty, a number outside its `min` and `max`, an email or URL that
-isn't one, a required SegmentedControl with nothing chosen and a required Checkbox left unchecked. Each field that
+own check. That covers a `required` field that's empty, a number outside its `min` and `max` or off its `step`, a
+value that misses its `pattern` or falls short of its `minLength`, an email or URL that isn't one, a required SegmentedControl with nothing chosen and a required Checkbox left unchecked. Each field that
 action reads and that fails shows its `error`, and focus moves to the first. The error is plain text: it stays hidden
 until a check holds an action back, and goes as soon as the person's input makes the field pass. A field with no
 `error` shows the browser's own message. So a built-in action such as `pushState` holds back too, a Button needs no
@@ -148,7 +148,9 @@ until a check holds an action back, and goes as soon as the person's input makes
 failed send isn't reported as sent. Keep `$cond` for text that depends on state, such as a row whose value reads “On”
 or “Off”.
 
-A number field (`"type": "number"`) keeps a number in state, so a condition's `gt` and `lt` compare it. A
+A number field (`"type": "number"`) keeps a number in state, so a condition's `gt` and `lt` compare it. It takes
+any decimal, such as 7.5 hours, unless the spec sets `step`, such as 1 for whole numbers. An error names only what the
+field checks: an error that asks for a 5-digit ZIP code needs `"pattern": "[0-9]{5}"` beside it, or “973” goes through. A
 SegmentedControl takes `required` and `error`: start its value at `""` so nothing looks chosen. Its error shows under
 it, linked to the group with `aria-describedby`.
 

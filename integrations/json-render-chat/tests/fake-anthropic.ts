@@ -9,6 +9,7 @@ const read = (path: string) => readFileSync(new URL(path, import.meta.url), 'utf
 const replies: Array<[string, string]> = [
   ['quiz', read('./fake-replies/quiz.txt')],
   ['patch', read('./fake-replies/patch-only.txt')],
+  ['check-in', read('./fake-replies/checkin.txt')],
 ];
 const settings = read('./model-replies/after/2-settings.txt');
 const port = Number(process.env.FAKE_PORT ?? 4885);

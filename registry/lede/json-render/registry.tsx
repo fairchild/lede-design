@@ -161,6 +161,11 @@ const drawn = defineRegistry(catalog, {
           required={props.required}
           min={props.min}
           max={props.max}
+          // Without a step a number field allows whole steps only, so 7.5 would fail; a spec asks for whole numbers with step 1.
+          step={props.type === 'number' ? (props.step ?? 'any') : undefined}
+          pattern={props.pattern}
+          minLength={props.minLength}
+          maxLength={props.maxLength}
           name={bindings?.value}
           rows={props.rows}
           value={value ?? ''}

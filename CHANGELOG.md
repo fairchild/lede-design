@@ -8,7 +8,8 @@
   `SpecView`. `functions` holds `scale` and `remaining`, for values a spec works out with `$computed`. An action that
   reads a field failing its browser check doesn't run: each such field shows its `error`, a plain string, until the
   person's input makes it pass, and focus moves to the first. Enter in a one-line TextField runs its actions, a number
-  field keeps a number in state, and a SegmentedControl or Checkbox in a spec can be required and show an error.
+  field keeps a number in state and takes decimals unless `step` says otherwise, a TextField takes `pattern`,
+  `minLength` and `maxLength`, and a SegmentedControl or Checkbox in a spec can be required and show an error.
   `SpecView` takes input while a spec streams and keeps what the person changed, reports the screen's state through
   `onStateChange`, moves focus on when a press hides the control that made it and warns in development when Lede's
   CSS isn't loaded. It needs `@json-render/core` and `@json-render/react` at exactly 0.22.0.

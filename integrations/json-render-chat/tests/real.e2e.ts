@@ -91,3 +91,21 @@ test('a control that hides itself, or a row an action hides, hands focus on and 
     await expect(after).toBeFocused();
   }
 });
+
+test('a field checks only what it says: a pattern holds back a short ZIP code, and a number field takes a decimal', async ({ page }) => {
+  await ask(page, 'My morning check-in');
+  const screen = page.locator('.jrc-screen');
+  const [zip, hours] = [screen.getByRole('textbox', { name: 'ZIP code' }), screen.getByRole('spinbutton', { name: 'Hours slept' })];
+  await expect(page.getByRole('button', { name: 'Stop' })).toBeHidden();
+  await zip.fill('973');
+  await hours.fill('7.5');
+  await screen.getByRole('button', { name: 'Save' }).click();
+  await expect(zip).toBeFocused();
+  await expect(screen.getByText('Enter a 5-digit ZIP code.')).toBeVisible();
+  await expect(screen.getByText('Enter hours from 0 to 24.')).toBeHidden();
+  await expect(page.getByRole('list', { name: 'What you did here' })).toHaveCount(0);
+  await zip.fill('97301');
+  await expect(screen.getByText('Enter a 5-digit ZIP code.')).toBeHidden();
+  await screen.getByRole('button', { name: 'Save' }).click();
+  await expect(page.getByRole('list', { name: 'What you did here' })).toHaveText('You pressed Save.');
+});

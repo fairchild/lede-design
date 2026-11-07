@@ -1,0 +1,12 @@
+Here’s today’s check-in. Add your ZIP code and how long you slept.
+
+```spec
+{"op":"add","path":"/root","value":"screen"}
+{"op":"add","path":"/elements/screen","value":{"type":"Screen","props":{},"children":["header","form"]}}
+{"op":"add","path":"/elements/header","value":{"type":"PageHeader","props":{"title":"Morning check-in","summary":"Two answers, and the forecast follows."},"children":[]}}
+{"op":"add","path":"/elements/form","value":{"type":"FormSection","props":{"legend":"Today"},"children":["zip","sleep","save"]}}
+{"op":"add","path":"/elements/zip","value":{"type":"TextField","props":{"label":"ZIP code","required":true,"pattern":"[0-9]{5}","maxLength":5,"hint":"5 digits, such as 97301.","error":"Enter a 5-digit ZIP code.","value":{"$bindState":"/checkin/zip"}},"children":[]}}
+{"op":"add","path":"/elements/sleep","value":{"type":"TextField","props":{"label":"Hours slept","type":"number","min":0,"max":24,"required":true,"error":"Enter hours from 0 to 24.","value":{"$bindState":"/checkin/hours"}},"children":[]}}
+{"op":"add","path":"/elements/save","value":{"type":"Button","props":{"label":"Save","variant":"filled"},"on":{"press":{"action":"submit","params":{"form":"checkin","values":{"$state":"/checkin"}}}},"children":[]}}
+{"op":"add","path":"/state","value":{"checkin":{"zip":"","hours":""}}}
+```
