@@ -121,7 +121,7 @@
     "terms": {
       "type": "Checkbox",
       "props": {
-        "label": "I agree to the terms of use",
+        "label": "I agree to the terms of use and the privacy policy",
         "checked": {
           "$bindState": "/form/terms"
         }

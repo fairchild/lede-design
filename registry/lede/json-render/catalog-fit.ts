@@ -35,11 +35,15 @@ interface Lede {
   SummaryCard: typeof SummaryCard;
 }
 
-/** Props the registry reads and turns into something else, such as a Button's `label`, which becomes its children. */
+/**
+ * Props the registry reads and turns into something else, such as a Button's `label`, which becomes its children, or a
+ * SegmentedControl's `error`, which it draws under the control.
+ */
 interface Adapted {
   ListRow: 'checked';
   Button: 'label';
   Checkbox: 'label';
+  SegmentedControl: 'error';
 }
 
 // TextField's props are a union (an input or a textarea), so a prop counts when any member takes it.

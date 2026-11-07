@@ -18,8 +18,9 @@ The catalog, the registry, `check` and `SpecView` are Lede's `json-render` regis
 `@lede/json-render` gives them.
 
 - `catalog.ts` is the catalog: each Lede component with a Zod schema for its props and a description of when to
-  use it. Props keep the component's own names and values. `catalog.prompt()` turns it into a model's instructions, and
-  the page shows that text under "The prompt".
+  use it. Props keep the component's own names and values. `prompt()` turns it into a model's instructions, with
+  json-render's examples rewritten in this catalog's terms and Lede's `rules`, and the page shows that text under
+  "The prompt".
 - `registry.tsx` maps each type to its Lede component. Callback props become json-render events through `emit`,
   so a spec binds them to actions in its `on` field. TextField, Switch, Checkbox, SegmentedControl and a ListRow with
   `checked` bind their value with `$bindState`, and the inbox spec archives a row with the built-in `setState` action

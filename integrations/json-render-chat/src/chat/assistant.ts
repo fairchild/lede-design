@@ -7,4 +7,4 @@ export const ASSISTANT = 'Daybook';
 export const DOMAIN = 'a calendar, inbox and settings app';
 
 /** The prompts an empty chat offers. The mock transport's script answers these. */
-export const SUGGESTIONS = ['How’s my week?', 'What’s in my inbox?', 'Show my notification settings', 'Fail once'];
+export const SUGGESTIONS = ['How’s my week?', 'Show my tasks', 'What’s in my inbox?', 'Show my notification settings', 'Fail once'];

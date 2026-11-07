@@ -3,11 +3,15 @@
 ## Unreleased
 
 - `json-render`, titled SpecView, lets a model's reply be a Lede screen. It installs a json-render catalog of 12
-  Lede components for the model's prompt, with `rules` that keep its lists on ListGroup, a registry that draws each
-  one, `catalog-fit` for the typecheck, `check` for a spec's props, `specFromParts` and `SpecView`. `functions`
-  holds `scale`, for a value a spec works out with `$computed`. A SegmentedControl in a spec shows its label, Enter
-  in a one-line TextField sends its form, and `SpecView` doesn't send a form while a field fails its browser check.
-  `integrations/json-render-chat` uses it in an AI SDK chat.
+  Lede components, `prompt()`, which gives a model json-render's prompt in this catalog's terms with Lede's `rules`, a
+  registry that draws each component, `catalog-fit` for the typecheck, `check` for a spec's props, `specFromParts` and
+  `SpecView`. `functions` holds `scale` and `remaining`, for values a spec works out with `$computed`. An action that
+  reads a field failing its browser check doesn't run, and focus moves to the field. Enter in a one-line TextField
+  runs its actions, a number field keeps a number in state, and a SegmentedControl in a spec shows its label and can
+  be required and show an error. `integrations/json-render-chat` uses it in an AI SDK chat.
+- SegmentedControl takes `required`, `aria-describedby` and `aria-invalid`, and with a value outside its options it
+  shows no option as chosen.
+- `ld-checkbox-field` on a `<label>` that holds a Checkbox keeps a long label in a column beside the box.
 - EmptyState's `headingLevel` takes 4.
 - A PageHeader inside a flow's stack drops its bottom margin, so the space under it stays one step when an
   inline-level control, such as a SegmentedControl, comes next.

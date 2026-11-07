@@ -2,7 +2,7 @@ import * as React from 'react';
 import type { Spec } from '@json-render/core';
 import { JSONUIProvider, Renderer } from '@json-render/react';
 import { functions, type CatalogAction } from './catalog';
-import { registry, SpecHeadingLevel } from './registry';
+import { registry, SpecHeadingLevel, SpecRoot } from './registry';
 
 /** The catalog's actions, each called with its params when a spec runs it. Add an action to the catalog and it's here. */
 export type SpecHandlers = Partial<Record<CatalogAction, (params: Record<string, unknown>) => void>>;
@@ -16,36 +16,27 @@ export interface SpecViewProps {
   headingLevel?: 2 | 3;
   /**
    * Called when the spec runs a catalog action. Keep them stable: json-render reads them once, when the view mounts.
-   * `submit` isn't called while a field in the view fails its native check, such as an empty required field.
+   * An action whose params read a field that fails its check doesn't run, so its handler isn't called.
    */
   handlers?: SpecHandlers;
 }
 
-/** The first field that fails its native check, focused so the person can fix it, or null when every field passes. */
-function firstInvalid(root: HTMLElement | null) {
-  const field = root?.querySelector<HTMLInputElement | HTMLTextAreaElement>('input:invalid, textarea:invalid') ?? null;
-  field?.focus();
-  return field;
-}
-
 /**
- * The screen a spec describes, drawn with Lede. It draws nothing until the spec's root element arrives, because
- * json-render reads the spec's `state` once, when it mounts, and a streamed spec sends its state first.
+ * The screen a spec describes, drawn with Lede. It draws once the spec's root element arrives, and state that arrives
+ * after it, as a model streams it, fills in what's drawn: a list drawn with repeat gains a row per item.
  */
 export function SpecView({ spec, streaming = false, headingLevel = 2, handlers }: SpecViewProps) {
   const root = React.useRef<HTMLDivElement>(null);
-  const gated = React.useMemo(
-    () => handlers && { ...handlers, submit: (params: Record<string, unknown>) => { if (!firstInvalid(root.current)) handlers.submit?.(params); } },
-    [handlers],
-  );
   if (!spec?.elements[spec.root]) return null;
   return (
     <SpecHeadingLevel.Provider value={headingLevel}>
-      <div ref={root}>
-        <JSONUIProvider registry={registry} functions={functions} initialState={spec.state ?? {}} handlers={gated as Record<string, (params: Record<string, unknown>) => void>}>
-          <Renderer spec={spec} registry={registry} loading={streaming} />
-        </JSONUIProvider>
-      </div>
+      <SpecRoot.Provider value={root}>
+        <div ref={root}>
+          <JSONUIProvider registry={registry} functions={functions} initialState={spec.state ?? {}} handlers={handlers as Record<string, (params: Record<string, unknown>) => void>}>
+            <Renderer spec={spec} registry={registry} loading={streaming} />
+          </JSONUIProvider>
+        </div>
+      </SpecRoot.Provider>
     </SpecHeadingLevel.Provider>
   );
 }

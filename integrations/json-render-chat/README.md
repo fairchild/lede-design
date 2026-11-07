@@ -12,8 +12,8 @@ npm run build   # tokens, typecheck (app, server and tests), then the site
 npm test        # the mock and the server in Vitest, then the chat in a browser with Playwright and axe
 ```
 
-Try “how’s my week”, “show my notification settings”, “what’s in my inbox”, “help me sign up”, “any projects”,
-“fail” or “offline”. The last two fail once, partway through or before a word arrives, and Try again then answers.
+Try “how’s my week”, “show my tasks”, “show my notification settings”, “what’s in my inbox”, “help me sign up”,
+“any projects”, “fail” or “offline”. The last two fail once, partway through or before a word arrives, and Try again then answers.
 
 ## Build this in your app
 
@@ -124,8 +124,8 @@ The key stays on the server. The browser only talks to `/api/chat`.
 
 ## How a spec reaches the client
 
-The spec arrives as data parts. `catalog.prompt({ mode: 'inline' })` asks the model for its prose first and then the
-spec as JSONL patch lines, all in one text stream. On the server, json-render's `pipeJsonRender` lifts each patch line
+The spec arrives as data parts. `prompt()`, in its default inline mode, asks the model for its prose first and then
+the spec as JSONL patch lines, all in one text stream. On the server, json-render's `pipeJsonRender` lifts each patch line
 out of the text into a `data-spec` part. On the client, `specFromParts` applies the patches in order, so the
 screen builds while the reply streams. json-render documents this path for the AI SDK. A tool would deliver the spec
 in one piece once the call ends.
@@ -143,13 +143,13 @@ screens it sent, and “turn off push” has nothing to refer to.
 | File | What it is |
 | --- | --- |
 | `src/chat/` | The chat: the files step 4 copies. |
-| `server/chat.ts` | The reference backend: `streamText` with Anthropic and the catalog prompt. |
+| `server/chat.ts` | The reference backend: `streamText` with Anthropic and the catalog's `prompt()`. |
 | `templates/tsconfig.server.json` | The server's tsconfig for an app made with create-vite. |
 | `tests/mock-transport.test.ts` | Sends each scripted prompt through the mock and checks the spec against the catalog. |
 | `tests/describe.test.ts` | Checks each action's note, for literal params, params bound to state and rows drawn by repeat. |
 | `tests/model-replies.test.tsx` | Streams 16 replies a model wrote for 8 requests through the server's transform: each parses, passes the catalog and draws, with each list's rows once. |
 | `tests/server.test.ts` | Checks that the model sees earlier screens, then starts the server: its answers, and one log line per failed model call. |
-| `tests/chat.e2e.ts` | The chat in a browser: the order of a reply, an action's note, Stop, Escape, Try again, focus, the composer's scroll padding, spacing and axe. |
+| `tests/chat.e2e.ts` | The chat in a browser: the order of a reply, an action's note, Stop, Escape, Try again, focus, the composer's scroll padding, checked fields, a list that fills in as it streams, a checkbox label at 200% text and axe. |
 
 The catalog, the registry and `SpecView` are Lede's `json-render` item, in `registry/lede/json-render/`, which this
 entry and [`../json-render`](../json-render) both import through the `@/components/lede` alias, the path an install

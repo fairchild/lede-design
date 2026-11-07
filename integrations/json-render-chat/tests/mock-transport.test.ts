@@ -22,6 +22,7 @@ export async function ask(transport: MockChatTransport, text: string) {
 
 describe.each([
   ['How’s my week?', 'Your week'],
+  ['Show my tasks', 'Today’s tasks'],
   ['Show my notification settings', 'Notifications'],
   ['What’s in my inbox?', 'Inbox'],
   ['Help me sign up', 'Create your account'],

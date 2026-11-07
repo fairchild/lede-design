@@ -4,7 +4,7 @@ import { pathToFileURL } from 'node:url';
 import { anthropic } from '@ai-sdk/anthropic';
 import { pipeJsonRender, SPEC_DATA_PART_TYPE } from '@json-render/core';
 import { convertToModelMessages, createUIMessageStreamResponse, streamText, type UIMessage } from 'ai';
-import { catalog, rules } from '@/components/lede/json-render/catalog';
+import { prompt } from '@/components/lede/json-render/catalog';
 import { ASSISTANT, DOMAIN } from '../src/chat/assistant';
 import { specFromParts, toPatches } from '@/components/lede/json-render/patches';
 
@@ -12,11 +12,9 @@ import { specFromParts, toPatches } from '@/components/lede/json-render/patches'
 // (Hono, a Next.js route handler, a Worker). Run this file and it serves POST /api/chat on port 4882, or on `PORT`,
 // which `npm run dev` proxies to. The key is read from the server's environment and never reaches the browser.
 
-/** Inline mode asks the model for its prose first and then the spec as JSONL patches, in one text stream. */
-const system = catalog.prompt({
-  mode: 'inline',
+/** Inline mode, the default, asks the model for its prose first and then the spec as JSONL patches, in one stream. */
+const system = prompt({
   system: `You are ${ASSISTANT}, the assistant in ${DOMAIN}. Answer in a sentence or two, and add a screen when one helps the person act.`,
-  customRules: rules,
 });
 
 const reason = (error: unknown) => (error instanceof Error ? error.message : 'The model call failed.');

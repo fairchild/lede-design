@@ -6,13 +6,13 @@ import { Button } from '@/components/lede/button';
 import { Disclosure } from '@/components/lede/disclosure';
 import { SegmentedControl } from '@/components/lede/segmented-control';
 import { PageHeader } from '@/components/lede/blocks/page-header';
-import { catalog, functions } from '@/components/lede/json-render/catalog';
+import { functions, prompt } from '@/components/lede/json-render/catalog';
 import { registry, handlers, actions, type ActionEvent } from '@/components/lede/json-render/registry';
 import { replay } from './stream';
 import { check } from '@/components/lede/json-render/check';
 import { specs, type SpecName } from './specs';
 
-const prompt = catalog.prompt();
+const shown = prompt({ mode: 'standalone' });
 const actionHandlers = handlers(() => undefined, () => ({}));
 
 /** Drawn for a type the registry doesn't have. Without it, json-render logs a warning and draws nothing. */
@@ -96,8 +96,8 @@ export function App() {
         </div>
         <section aria-labelledby="under" className="jr-under">
           <h2 id="under" className="text-title-3">What json-render sees</h2>
-          <Disclosure title="The prompt" summary="What catalog.prompt() tells a model: the spec format, each component with its props and when to use it, and the actions." headingLevel={3}>
-            <pre className="jr-code" tabIndex={0} aria-label="The prompt"><code>{prompt}</code></pre>
+          <Disclosure title="The prompt" summary="What prompt() tells a model: the spec format, each component with its props and when to use it, the actions and Lede’s rules." headingLevel={3}>
+            <pre className="jr-code" tabIndex={0} aria-label="The prompt"><code>{shown}</code></pre>
           </Disclosure>
           <Disclosure title="The spec" summary={`The JSON a model wrote for ${name}.`} headingLevel={3}>
             <pre className="jr-code" tabIndex={0} aria-label="The spec"><code>{JSON.stringify(full, null, 2)}</code></pre>

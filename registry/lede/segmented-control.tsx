@@ -14,6 +14,11 @@ export interface SegmentedControlProps {
   size?: 'sm' | 'md';
   block?: boolean;
   disabled?: boolean;
+  /** Every radio is `required`, so the group fails its native check until an option is chosen. */
+  required?: boolean;
+  /** An error or hint beside the control, by id. */
+  'aria-describedby'?: string;
+  'aria-invalid'?: boolean;
   className?: string;
 }
 
@@ -28,6 +33,7 @@ export function SegmentedControl(props: SegmentedControlProps) {
   const [inner, setInner] = React.useState(props.defaultValue ?? opts[0]?.value);
   const value = props.value !== undefined ? props.value : inner;
   const idx = Math.max(0, opts.findIndex((o) => o.value === value));
+  const chosen = opts.some((o) => o.value === value);
   // The segments' nodes are keyed by value, so new values mean new nodes to observe.
   const values = opts.map((o) => o.value).join('\n');
   const setRef = React.useRef<HTMLFieldSetElement>(null);
@@ -49,7 +55,7 @@ export function SegmentedControl(props: SegmentedControlProps) {
       }
       const items = [...set.querySelectorAll<HTMLElement>('.ld-seg-item')];
       const item = items[idx];
-      if (!item) return;
+      if (!item || thumb.hidden) return;
       const inset = thumb.offsetLeft;
       const share = (set.clientWidth - 2 * inset) / items.length;
       const equal = !set.dataset.fit && items.every((it, n) => Math.abs(it.offsetWidth - share) < 0.6 && Math.abs(it.offsetLeft - inset - n * share) < 0.6);
@@ -81,15 +87,18 @@ export function SegmentedControl(props: SegmentedControlProps) {
       ro.disconnect();
       cancelAnimationFrame(frame);
     };
-  }, [idx, values]);
+  }, [idx, values, chosen]);
   return (
     <fieldset
       ref={setRef}
       className={cn('ld-seg', props.size === 'sm' && 'ld-seg-sm', props.block && 'ld-seg-block', props.className)}
       disabled={props.disabled}
+      aria-describedby={props['aria-describedby']}
+      aria-invalid={props['aria-invalid'] || undefined}
     >
       <legend className="ld-sr-only">{props.label}</legend>
-      <span className="ld-seg-thumb" aria-hidden="true" style={{ '--ld-seg-n': opts.length, '--ld-seg-i': idx } as React.CSSProperties} />
+      {/* With no option chosen, as a controlled value outside the options leaves it, nothing looks chosen. */}
+      <span className="ld-seg-thumb" aria-hidden="true" hidden={!chosen} style={{ '--ld-seg-n': opts.length, '--ld-seg-i': idx } as React.CSSProperties} />
       {opts.map((o) => (
         <label key={o.value} className="ld-seg-item">
           <input
@@ -97,6 +106,7 @@ export function SegmentedControl(props: SegmentedControlProps) {
             className="ld-seg-input"
             name={props.name ?? autoName}
             value={o.value}
+            required={props.required}
             checked={o.value === value}
             onChange={() => {
               if (props.value === undefined) setInner(o.value);

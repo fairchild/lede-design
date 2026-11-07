@@ -15,15 +15,15 @@ for bots on Slack, Teams and Discord, so it doesn't belong in a browser chat.
 
 1. Follow “Build this in your app” in `README.md` step by step. It was run as written on a fresh create-vite
    `react-ts` app, and `npm run build` passed. `npx shadcn@latest add @lede/json-render` installs the catalog, the
-   registry, `catalog-fit`, `check`, `toPatches` and `SpecView` under `components/lede/json-render/`, with the Lede components and
+   registry, `prompt`, `catalog-fit`, `check`, `toPatches` and `SpecView` under `components/lede/json-render/`, with the Lede components and
    npm packages they need. The chat's own files, copied from `src/chat/` and `server/`, import them from
    `@/components/lede/…`, so they need no edits.
 2. The registry URL, `https://lede.cloudcompute.com/r/v0.4.0/{name}.json`, serves once 0.4.0 is tagged. Before a tag
    exists, the deployed site's `/r/next/{name}.json` is the unreleased build of main. From a clone, `npm run registry`
    writes the same files to `public/r/`, which any static server can serve.
 3. To change what a model may build, follow “Extend the catalog” below.
-4. The server is `server/chat.ts`: `streamText({ model: anthropic('claude-sonnet-5-5'), system:
-   catalog.prompt({ mode: 'inline' }), messages: await convertToModelMessages(forModel(messages)) })`, then
+4. The server is `server/chat.ts`: `streamText({ model: anthropic('claude-sonnet-5-5'), system: prompt({ system }),
+   messages: await convertToModelMessages(forModel(messages)) })`, then
    `createUIMessageStreamResponse({ stream: pipeJsonRender(result.toUIMessageStream({ onError })) })`. It exports
    `handleChat(request)`, a fetch-style handler for any framework's route, and runs on its own under
    `tsx --tsconfig tsconfig.server.json server/chat.ts`. The key is `ANTHROPIC_API_KEY` in the server's environment.
@@ -80,9 +80,9 @@ event other than archive, flag and delete, add it to `rowEvent` in the catalog t
 ## Lists from state
 
 json-render's own prompt tells a model to draw any list backed by a state array with `repeat`, and the model will. In
-this catalog, `repeat` goes on a ListGroup, with one ListRow child, and `rules` in `catalog.ts` (passed as
-`customRules` in `server/chat.ts`) says so: json-render's example would otherwise repeat Screen or PageHeader. The
-rules also say every control does something, since a model otherwise adds controls a spec can't act on, such as
+this catalog, `repeat` goes on a ListGroup, with one ListRow child, and `rules` in `catalog.ts`, which `prompt()` adds
+to json-render's prompt, says so. `prompt()` also rewrites json-render's examples, which repeat Screen and use Card,
+Select and `loadCities`, in this catalog's terms. The rules also say every control does something, since a model otherwise adds controls a spec can't act on, such as
 “Sort by”. The week reply in `src/chat/replies/week.json` is one.
 
 - Inside a repeat, `{ "$item": "title" }` in props reads the item's field, and `{ "$bindItem": "done" }` binds to it.
@@ -91,17 +91,27 @@ rules also say every control does something, since a model otherwise adds contro
 - A row drawn by repeat has its title in state, so `describe()` names it from the control that ran the action.
 - `{ "$state": "/form" }` in params passes the value at that path when the action runs, after any change the same
   press made. The sign-up reply's `submit` sends its form that way.
+- A list drawn with repeat fills in a row at a time as its state streams. `SpecView` draws once the root element
+  arrives, and state that comes after it, as a model sends it, fills in what's drawn. `toPatches` streams in that
+  order, so the tasks reply's rows arrive one by one.
 
 ## Compute and validate
 
 A value worked out from others, such as an amount that follows the servings, comes from a function the spec calls
-with `$computed`. A check on a form comes from `$cond` on the field's `error` and from `required`, which keeps the
-form from sending. Both are in `rules`, so a model writes them too.
+with `$computed`. A field is checked when an action reads it: the action doesn't run while the field fails, and focus
+moves to the field. The error the person reads comes from `$cond` on the field's `error`. All of it is in `rules`, so a
+model writes it too.
 
 **Computed values.** `functions` in `components/lede/json-render/catalog.ts` holds the functions a spec may call, and
-`SpecView` hands them to json-render. Lede ships `scale`: `amount × to ÷ from`, as text, with `unit` after it. Each arg
-can be a literal, `$state` or `$item`, and a number inside text counts, so a SegmentedControl's “6 people” is 6. The
-recipe in `integrations/json-render/specs/recipe.json` draws its ingredients with it:
+`SpecView` hands them to json-render. Each arg can be a literal, `$state` or `$item`, and a number inside text counts,
+so a SegmentedControl's “6 people” is 6. Lede ships two:
+
+- `scale`: `amount × to ÷ from`.
+- `remaining`: `from − take`, never less than 0, so a refund larger than the balance reads “0”, not a negative.
+
+Both put `unit` after the number, or `units` when the number takes a plural, so `"unit": "cup", "units": "cups"`
+reads “1 cup” and “1.5 cups”. A noun added in a `$template`, as in `"${cups} cups"`, reads “1 cups”. The recipe in
+`integrations/json-render/specs/recipe.json` draws its ingredients with `scale`:
 
 ```json
 "servings": { "type": "SegmentedControl", "props": { "label": "Serves", "options": ["2 people", "4 people", "6 people"], "value": { "$bindState": "/servings" } }, "children": [] },
@@ -120,32 +130,50 @@ At “6 people”, 400 g of a recipe that serves 4 reads “600 g”. To add a f
 its args in `rules`: json-render's prompt lists the names of the catalog's functions but not what they take. A name
 that isn't in `functions` draws nothing, with one console warning.
 
-**Checks when a form is sent.** The field's `error` reads state through `$cond`, and the press that sends the form
-first sets `/tried`, so the error shows only after a try. The sign-up reply, `src/chat/replies/signup.json`, does
-this for its Name:
+**Checked fields.** Each field's `name` is the state path it binds. When a Button's press or a TextField's Enter runs
+its actions, they run in order, and they stop at the first action whose params read a field that fails the browser's
+own check. That covers a `required` field that's empty, a number outside its `min` and `max`, an email or URL that
+isn't one, a required SegmentedControl with nothing chosen and a required Checkbox left unchecked. Focus moves to
+that field. The actions before it still run, so the binding starts with a setState of `/tried`, and each field's
+`error` shows once `/tried` is set. So a built-in action such as `pushState` holds back too, a Button needs no
+`disabled` rule, and focus never falls to `<body>`. Your `submit` handler isn't called for a form that fails, so a
+failed send isn't reported as sent.
+
+A number field (`"type": "number"`) keeps a number in state, so a condition's `gt` and `lt` compare it. A
+SegmentedControl takes `required` and `error`: start its value at `""` so nothing looks chosen, and its error shows
+under it, linked to the group with `aria-describedby`.
+
+The tasks reply, `src/chat/replies/tasks.json`, is the worked example. Its list fills in a row at a time as it
+streams, and its form adds a task only with a name, minutes from 5 to 240 and a priority:
 
 ```json
-"name": {
+"list": { "type": "ListGroup", "props": { "title": "To do" }, "repeat": { "statePath": "/tasks", "key": "id" }, "children": ["task"] },
+"task": { "type": "ListRow", "props": { "title": { "$item": "title" }, "subtitle": { "$template": "${priority} priority" }, "value": { "$template": "${minutes} min" } }, "children": [] },
+"minutes": {
   "type": "TextField",
   "props": {
-    "label": "Name", "required": true, "value": { "$bindState": "/form/name" },
-    "error": { "$cond": { "$and": [{ "$state": "/tried" }, { "$state": "/form/name", "not": true }] }, "$then": "Enter your name.", "$else": "" }
+    "label": "Minutes", "type": "number", "min": 5, "max": 240, "required": true, "hint": "From 5 to 240.",
+    "value": { "$bindState": "/draft/minutes" },
+    "error": { "$cond": { "$and": [{ "$state": "/tried" }, { "$or": [{ "$state": "/draft/minutes", "not": true }, { "$state": "/draft/minutes", "lt": 5 }, { "$state": "/draft/minutes", "gt": 240 }] }] }, "$then": "Enter minutes from 5 to 240.", "$else": "" }
   },
-  "on": { "submit": [
+  "on": { "submit": "the same four actions as the Button" },
+  "children": []
+},
+"save": {
+  "type": "Button", "props": { "label": "Add task", "variant": "filled", "block": true },
+  "on": { "press": [
     { "action": "setState", "params": { "statePath": "/tried", "value": true } },
-    { "action": "submit", "params": { "form": "signup", "values": { "$state": "/form" } } }
+    { "action": "pushState", "params": { "statePath": "/tasks", "value": { "id": "$id", "title": { "$state": "/draft/title" }, "minutes": { "$state": "/draft/minutes" }, "priority": { "$state": "/draft/priority" } } } },
+    { "action": "setState", "params": { "statePath": "/draft", "value": { "title": "", "minutes": "", "priority": "" } } },
+    { "action": "setState", "params": { "statePath": "/tried", "value": false } }
   ] },
   "children": []
 }
 ```
 
-The Create account Button's `press` runs the same two actions. Enter in a one-line TextField emits `submit`, so a lone
-field sends its form from the keyboard, as its Button does.
-
-`SpecView` doesn't call your `submit` handler while a field in the screen fails its browser check: a `required` field
-that's empty, or an `email` or `url` field that doesn't hold one. Focus moves to the first such field, and its error
-shows, so a failed send isn't reported as sent. A check the browser can't make, such as a number in range, needs a
-handler that checks `values` itself.
+`pushState` reads `/draft/title`, `/draft/minutes` and `/draft/priority`, so the press stops there while any of them
+fails. The last two actions clear the form and hide its errors once a task is added. A check the browser can't make,
+such as one date before another, belongs in your handler, which receives the values.
 
 ## Failure modes
 
@@ -154,7 +182,10 @@ Each one below broke this example while it was built, or was checked in the pack
 **Prompt and stream**
 
 - `catalog.prompt()` with no options is `mode: 'standalone'`: the model writes only JSONL, with no prose. A chat needs
-  `{ mode: 'inline' }`.
+  `{ mode: 'inline' }`, which is `prompt()`'s default.
+- json-render's prompt has no option to leave out its own examples, which use components from other catalogs.
+  `prompt()` rewrites each one it knows, and `integrations/json-render/tests/specs.test.tsx` fails when a json-render
+  update changes one, so the rewrite stays in step.
 - Without `pipeJsonRender` on the server, the patch lines arrive as plain text and the screen never draws. The
   client reads only `data-spec` parts.
 - `buildSpecFromParts` applies each patch's value in place, so a later patch such as `/state/items/0` writes into the
@@ -164,9 +195,8 @@ Each one below broke this example while it was built, or was checked in the pack
   each list's rows appear once, render after render.
 - `buildSpecFromParts` returns `null` until the first patch, and then a spec whose `root` is set before any element
   exists. Render only when `spec.elements[spec.root]` exists.
-- `JSONUIProvider` reads `initialState` once, when it mounts. Mount it after the `/state` patch arrives, or emit
-  `/state` before any element (as `toPatches` in `components/lede/json-render/patches.ts` does). Otherwise bound fields start
-  empty.
+- `JSONUIProvider` takes changes to `initialState` after it mounts, key by key, so state that streams after the
+  elements fills them in. A change to a key the person has since edited replaces their edit.
 - `JSONUIProvider` keeps the `handlers` it mounted with. Pass handlers that don't close over changing state, such as
   ones that call a state setter with a function, or read the latest values through a ref.
 - The registry also defines `actions` that report on its `actions` event target. Handlers passed to `SpecView` (or

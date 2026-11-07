@@ -7,6 +7,7 @@ import inbox from './replies/inbox.json';
 import signup from './replies/signup.json';
 import projects from './replies/projects.json';
 import week from './replies/week.json';
+import tasks from './replies/tasks.json';
 
 interface Reply {
   text: string;
@@ -30,6 +31,10 @@ export const script: Array<{ match: RegExp; reply: Reply }> = [
     reply: { text: 'You have 4 meetings left this week, and Thursday afternoon is the busiest stretch.', spec: week as Spec },
   },
   {
+    match: /task|to-?do/i,
+    reply: { text: 'You have 3 tasks today, about an hour and a half of work. Add one below.', spec: tasks as Spec },
+  },
+  {
     match: /notification|setting|alert/i,
     reply: { text: 'Here are your notification settings. Push alerts and mentions are on, and email alerts are off.', spec: settings as Spec },
   },
@@ -47,7 +52,7 @@ export const script: Array<{ match: RegExp; reply: Reply }> = [
   },
   {
     match: /./s,
-    reply: { text: 'I can show your week, your notification settings, your inbox, a sign-up form or your projects. Try “what’s in my inbox”.' },
+    reply: { text: 'I can show your week, your tasks, your notification settings, your inbox, a sign-up form or your projects. Try “what’s in my inbox”.' },
   },
 ];
 
@@ -55,7 +60,7 @@ const textOf = (message: AppMessage | undefined) =>
   message?.parts.map((part) => (part.type === 'text' ? part.text : '')).join('') ?? '';
 
 /**
- * The reply as a model writes it under `catalog.prompt({ mode: 'inline' })`: its prose, then the spec as JSONL patches,
+ * The reply as a model writes it under `prompt()`, in inline mode: its prose, then the spec as JSONL patches,
  * one per line. Words go out a few at a time and each patch line in two halves, the way network chunks fall.
  */
 export function modelOutput(reply: Reply): string[] {

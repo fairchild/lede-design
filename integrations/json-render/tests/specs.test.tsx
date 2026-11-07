@@ -2,7 +2,7 @@ import { renderToString } from 'react-dom/server';
 import { describe, expect, test } from 'vitest';
 import { JSONUIProvider, Renderer, type ComponentRenderer } from '@json-render/react';
 import { SpecView } from '@/components/lede/json-render/spec-view';
-import { catalog, functions } from '@/components/lede/json-render/catalog';
+import { catalog, functions, prompt, promptFixes, rules } from '@/components/lede/json-render/catalog';
 import { registry } from '@/components/lede/json-render/registry';
 import { check } from '@/components/lede/json-render/check';
 import { specs } from '../src/specs';
@@ -100,4 +100,36 @@ test('a value computed in a repeat follows the state it reads', () => {
 test('scale reads a number inside text, and shows the amount as it was when it has none', () => {
   expect(functions.scale({ amount: 1.5, unit: 'tsp', from: 4, to: '2 people' })).toBe('0.75 tsp');
   expect(functions.scale({ amount: 'a pinch', from: 4, to: 6 })).toBe('a pinch');
+});
+
+test('scale and remaining give a noun its plural, and remaining never goes below 0', () => {
+  expect(functions.scale({ amount: '2 cups', from: 4, to: 2, unit: 'cup', units: 'cups' })).toBe('1 cup');
+  expect(functions.scale({ amount: 1, from: 2, to: 3, unit: 'cup', units: 'cups' })).toBe('1.5 cups');
+  expect(functions.remaining({ from: 120, take: 500, unit: 'dollar', units: 'dollars' })).toBe('0 dollars');
+  expect(functions.remaining({ from: 120, take: '', unit: 'dollar', units: 'dollars' })).toBe('120 dollars');
+});
+
+test('the prompt names only this catalog’s components and actions in its examples', () => {
+  const raw = catalog.prompt({ mode: 'inline', customRules: rules });
+  for (const [from] of promptFixes) expect(raw, `json-render's prompt no longer has: ${from}`).toContain(from);
+  const text = prompt();
+  for (const name of ['"Card"', '"Select"', 'loadCities', '"type":"Screen","props":{},"repeat"', '"type":"Screen","props":{},"on"']) expect(text).not.toContain(name);
+  expect(text).toContain('its binding is an array');
+});
+
+test('a SegmentedControl’s error shows under it and describes its group', () => {
+  const spec = {
+    root: 'screen',
+    state: { priority: '' },
+    elements: {
+      screen: { type: 'Screen', props: {}, children: ['priority'] },
+      priority: { type: 'SegmentedControl', props: { label: 'Priority', options: ['Low', 'High'], required: true, error: 'Choose a priority.', value: { $bindState: '/priority' } }, children: [] },
+    },
+  } as unknown as (typeof specs)['Inbox'];
+  const html = renderToString(<SpecView spec={spec} />);
+  const id = html.match(/<fieldset[^>]*aria-describedby="([^"]+)"/)?.[1];
+  expect(id).toBeTruthy();
+  expect(html).toContain(`id="${id}" class="ld-field-hint">Choose a priority.</p>`);
+  expect(html.match(/<input[^>]*required=""/g)?.length).toBe(2);
+  expect(html).toMatch(/class="ld-seg-thumb"[^>]*hidden=""/);
 });

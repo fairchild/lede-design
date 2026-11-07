@@ -104,3 +104,65 @@ test('a form sends only when its fields pass, from Enter in a field as from its 
   await expect(notes).toHaveText('You pressed Create account.');
   await expect(reply.getByText('Enter your name.')).toBeHidden();
 });
+
+test('a list drawn from state fills in a row at a time as the reply streams', async ({ page }) => {
+  await ask(page, 'Show my tasks');
+  const rows = turns(page).nth(1).getByRole('list').filter({ hasText: 'Draft the venue brief' }).getByRole('listitem');
+  const seen = new Set<number>();
+  while (await page.getByRole('button', { name: 'Stop' }).isVisible()) seen.add(await rows.count());
+  seen.add(await rows.count());
+  expect([...seen].filter((n) => n > 0).sort()).toEqual([1, 2, 3]);
+});
+
+test('an action holds back while a field it reads fails, focus moves to that field, and an add leaves focus in place', async ({ page }) => {
+  await ask(page, 'Show my tasks');
+  await expect(page.getByRole('button', { name: 'Stop' })).toBeHidden();
+  const reply = turns(page).nth(1);
+  const rows = reply.getByRole('list').filter({ hasText: 'Draft the venue brief' }).getByRole('listitem');
+  const [task, minutes, add] = [reply.getByRole('textbox', { name: 'Task' }), reply.getByRole('spinbutton', { name: 'Minutes' }), reply.getByRole('button', { name: 'Add task' })];
+
+  await add.click();
+  await expect(task).toBeFocused();
+  await expect(rows).toHaveCount(3);
+  await expect(reply.getByText('Enter what the task is.')).toBeVisible();
+  await expect(reply.getByText('Choose a priority.')).toBeVisible();
+  await expect(reply.getByRole('group', { name: 'Priority' })).toHaveAccessibleDescription('Choose a priority.');
+  expect((await new AxeBuilder({ page }).include('.jrc-screen').analyze()).violations).toEqual([]);
+
+  await task.fill('Call the florist');
+  await minutes.fill('500');
+  await minutes.press('Enter');
+  await expect(minutes).toBeFocused();
+  await expect(reply.getByText('Enter minutes from 5 to 240.')).toBeVisible();
+  await minutes.fill('20');
+  await minutes.press('Enter');
+  await expect(reply.getByRole('radio', { name: 'Low' })).toBeFocused();
+  await expect(rows).toHaveCount(3);
+
+  await reply.getByRole('radio', { name: 'High' }).check();
+  await add.click();
+  await expect(rows).toHaveCount(4);
+  await expect(rows.last()).toContainText('Call the florist');
+  await expect(rows.last()).toContainText('20 min');
+  await expect(add).toBeFocused();
+  await expect(task).toHaveValue('');
+  await expect(reply.getByText('Enter what the task is.')).toBeHidden();
+});
+
+test('a checkbox’s long label wraps beside the box, at a phone’s width and 200% text', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  const cdp = await page.context().newCDPSession(page);
+  await cdp.send('Page.setFontSizes', { fontSizes: { standard: 32, fixed: 32 } });
+  await page.reload();
+  await ask(page, 'Help me sign up');
+  await expect(page.getByRole('button', { name: 'Stop' })).toBeHidden();
+  const label = turns(page).nth(1).locator('label', { has: page.getByRole('checkbox') });
+  const lines = await label.evaluate((el) => {
+    const box = el.querySelector('input')!.getBoundingClientRect();
+    const range = document.createRange();
+    range.selectNodeContents(el.querySelector('input')!.parentElement!.nextElementSibling ?? el);
+    return { right: box.right, lefts: [...range.getClientRects()].map((r) => r.left) };
+  });
+  expect(lines.lefts.length).toBeGreaterThan(1);
+  expect(Math.min(...lines.lefts)).toBeGreaterThanOrEqual(lines.right);
+});

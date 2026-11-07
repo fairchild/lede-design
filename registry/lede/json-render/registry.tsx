@@ -1,5 +1,6 @@
 import * as React from 'react';
-import { defineRegistry, useBoundProp } from '@json-render/react';
+import { defineRegistry, useActions, useBoundProp, type ComponentRegistry } from '@json-render/react';
+import type { ActionBinding } from '@json-render/core';
 import { Button } from '../button';
 import { Checkbox } from '../checkbox';
 import { ListGroup, ListRow } from '../list';
@@ -23,11 +24,45 @@ const useLevels = () => {
   return { title, section: (title + 1) as 3 | 4 };
 };
 
+/** The element around a SpecView's screen, where a press looks for the fields its actions read. */
+export const SpecRoot = React.createContext<React.RefObject<HTMLElement | null> | null>(null);
+/** The `on` bindings of the element being drawn, which defineRegistry's render props leave out. */
+const ElementOn = React.createContext<Record<string, ActionBinding | ActionBinding[]> | undefined>(undefined);
+
+/** Every `$state` path a binding's params read, such as `/form` in `{ "values": { "$state": "/form" } }`. */
+function statePaths(value: unknown): string[] {
+  if (!value || typeof value !== 'object') return [];
+  if (!Array.isArray(value) && typeof (value as { $state?: unknown }).$state === 'string') return [(value as { $state: string }).$state];
+  return Object.values(value).flatMap(statePaths);
+}
+
+/**
+ * An event's emit, held back at the first action that reads a field failing its native check: empty and required,
+ * outside its min and max, or not the email or URL its type asks for. The actions before that one run, so a spec can
+ * set `/tried` and show its errors, and focus moves to the field. Each field's `name` is the state path it binds.
+ */
+function useCheckedEmit(emit: (event: string) => void) {
+  const root = React.useContext(SpecRoot);
+  const on = React.useContext(ElementOn);
+  const { execute } = useActions();
+  return async (event: string) => {
+    const bound = on?.[event];
+    const list = bound ? (Array.isArray(bound) ? bound : [bound]) : [];
+    const scope: ParentNode = root?.current ?? document;
+    const failing = [...scope.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('input[name]:invalid, textarea[name]:invalid')];
+    const reads = (b: ActionBinding) => failing.find((f) => statePaths(b.params).some((p) => f.name === p || f.name.startsWith(`${p}/`)));
+    const stop = list.findIndex(reads);
+    if (stop < 0) return emit(event);
+    for (const b of list.slice(0, stop)) await execute(b);
+    reads(list[stop])?.focus();
+  };
+}
+
 /**
  * Each catalog type drawn by its Lede component. The spec's PageHeader leaves focus where the reader is. PageHeader
  * takes an h1 or h2 only, so a deeper title draws its parts with the same classes.
  */
-export const { registry, handlers } = defineRegistry(catalog, {
+const drawn = defineRegistry(catalog, {
   components: {
     Screen: ({ children }) => <div className="ld-flow ld-flow-stack">{children}</div>,
     PageHeader: ({ props, slots }) => {
@@ -68,14 +103,18 @@ export const { registry, handlers } = defineRegistry(catalog, {
         />
       );
     },
-    Button: ({ props, emit }) => (
-      <Button variant={props.variant} tone={props.tone} size={props.size} block={props.block} disabled={props.disabled} onClick={() => emit('press')}>
-        {props.label}
-      </Button>
-    ),
-    TextField: ({ props, bindings, on }) => {
+    Button: ({ props, emit }) => {
+      const checked = useCheckedEmit(emit);
+      return (
+        <Button variant={props.variant} tone={props.tone} size={props.size} block={props.block} disabled={props.disabled} onClick={() => checked('press')}>
+          {props.label}
+        </Button>
+      );
+    },
+    TextField: ({ props, bindings, on, emit }) => {
       const [value, setValue] = useBoundProp(props.value, bindings?.value);
       const submit = on('submit');
+      const checked = useCheckedEmit(emit);
       return (
         <TextField
           label={props.label}
@@ -84,11 +123,18 @@ export const { registry, handlers } = defineRegistry(catalog, {
           hint={props.hint}
           error={props.error}
           required={props.required}
+          min={props.min}
+          max={props.max}
+          name={bindings?.value}
           rows={props.rows}
           value={value ?? ''}
-          onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setValue(e.currentTarget.value)}
+          // A number field keeps a number in state, so a condition's gt and lt compare it.
+          onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+            const input = e.currentTarget;
+            setValue(props.type === 'number' && input.value !== '' ? (input as HTMLInputElement).valueAsNumber : input.value);
+          }}
           onKeyDown={submit.bound && !props.rows ? (e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-            if (e.key === 'Enter' && !e.nativeEvent.isComposing) { e.preventDefault(); submit.emit(); }
+            if (e.key === 'Enter' && !e.nativeEvent.isComposing) { e.preventDefault(); void checked('submit'); }
           } : undefined}
         />
       );
@@ -100,20 +146,33 @@ export const { registry, handlers } = defineRegistry(catalog, {
     Checkbox: ({ props, bindings, emit }) => {
       const [checked, setChecked] = useBoundProp(props.checked, bindings?.checked);
       return (
-        <label>
-          <Checkbox checked={!!checked} disabled={props.disabled} onChange={(e) => { setChecked(e.currentTarget.checked); emit('change'); }} /> {props.label}
+        // Lede's Checkbox is the box alone. Its label sits in a column of its own, so a long one wraps beside the box.
+        <label className="ld-checkbox-field">
+          <Checkbox checked={!!checked} disabled={props.disabled} required={props.required} name={bindings?.checked} onChange={(e) => { setChecked(e.currentTarget.checked); emit('change'); }} />
+          <span className="ld-checkbox-label">{props.label}</span>
         </label>
       );
     },
     SegmentedControl: ({ props, bindings, emit }) => {
       const [value, setValue] = useBoundProp(props.value, bindings?.value);
+      const errorId = React.useId();
       // Lede's SegmentedControl names its group with a hidden legend, for a screen where a heading beside it says what
       // it picks. A model's screen may have none, so the label shows here too, hidden from assistive tech, which
-      // reads the legend.
+      // reads the legend. An error shows under it, as a TextField's does.
       return (
-        <div className="ld-field">
+        <div className="ld-field" data-invalid={props.error ? '' : undefined}>
           <p className="ld-field-label" aria-hidden="true">{props.label}</p>
-          <SegmentedControl label={props.label} options={props.options} value={value} onValueChange={(next) => { setValue(next); emit('change'); }} />
+          <SegmentedControl
+            label={props.label}
+            options={props.options}
+            value={value}
+            name={bindings?.value}
+            required={props.required}
+            aria-describedby={props.error ? errorId : undefined}
+            aria-invalid={!!props.error}
+            onValueChange={(next) => { setValue(next); emit('change'); }}
+          />
+          {props.error ? <p id={errorId} className="ld-field-hint">{props.error}</p> : null}
         </div>
       );
     },
@@ -131,6 +190,15 @@ export const { registry, handlers } = defineRegistry(catalog, {
     submit: async (params) => report('submit', params),
   },
 });
+
+/** The registry, each entry given its element's `on` bindings, which `useCheckedEmit` reads. */
+export const registry: ComponentRegistry = Object.fromEntries(
+  Object.entries(drawn.registry).map(([type, Draw]) => [
+    type,
+    (ctx: React.ComponentProps<typeof Draw>) => <ElementOn.Provider value={ctx.element.on}><Draw {...ctx} /></ElementOn.Provider>,
+  ]),
+);
+export const { handlers } = drawn;
 
 /**
  * A row action can hide its own row, through a `visible` condition. Focus then moves to the next row, or the one
