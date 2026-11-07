@@ -84,8 +84,24 @@ Lede's Disclosure and a `flag` action, and was run on the app the recipe builds.
    chat's handlers come from the catalog's action names, so `flag` already reaches it.
 
 A spec then uses them: a ListRow with `"actions": [{ "label": "Flag", "event": "flag" }]` and
-`"on": { "flag": { "action": "flag", "params": { "id": "m2" } } }`, or a Disclosure holding other elements. For a row
-event other than archive, flag and delete, add it to `rowEvent` in the catalog too.
+`"on": { "flag": { "action": "flag", "params": { "id": "m2" } } }`, or a Disclosure holding other elements.
+
+A row action of your own, such as “Mark paid” on each bill, takes one more edit: its event goes in `rowEvent` in the
+catalog, which lists the events a ListRow may emit (`z.enum(['archive', 'flag', 'delete', 'pay'])`). Add a `pay`
+action as `flag` was added above, and `pay: 'paid'` in `DID` if you keep the notes. A row drawn by repeat then marks
+its own item and tells your app which bill:
+
+```json
+"bill": {
+  "type": "ListRow",
+  "props": { "title": { "$item": "name" }, "value": { "$cond": { "$item": "paid" }, "$then": "Paid", "$else": "Due" }, "actions": [{ "label": "Mark paid", "event": "pay" }] },
+  "on": { "pay": [
+    { "action": "setState", "params": { "statePath": { "$item": "paid" }, "value": true } },
+    { "action": "pay", "params": { "id": { "$template": "${id}" } } }
+  ] },
+  "children": []
+}
+```
 
 ## Lists from state
 
@@ -105,6 +121,24 @@ Select and `loadCities`, in this catalog's terms. The rules also say every contr
   arrives, and state that comes after it, as a model sends it, fills in what's drawn. `toPatches` streams in that
   order, so the tasks reply's rows arrive one by one.
 
+## json-render features you'll use
+
+json-render's own prompt teaches the model each of these, and `rules` adds what's specific to this catalog.
+
+- **Show or hide an element:** `visible` sits on the element, beside `type`, not in its props.
+  `"visible": { "$state": "/saved" }` shows a confirmation once a press sets `/saved`.
+- **Text that depends on state:** `$cond` picks between two values. Inside a repeat it reads the item:
+  `"value": { "$cond": { "$item": "paid" }, "$then": "Paid", "$else": "Due" }`.
+- **State in text:** `$template` reads a path anywhere, `"${/booked/start}"`, and an item's field in a repeat,
+  `"${name}"`.
+- **A whole list as an arg:** `{ "$state": "/bills" }` passes the array, so a function such as `sum` can read every
+  item: `{ "$computed": "sum", "args": { "items": { "$state": "/bills" }, "field": "amount", "unless": "paid" } }`.
+- **A date:** a TextField with `"type": "date"` draws the browser's date picker and keeps `YYYY-MM-DD` in state.
+- **What the person entered, on the next turn:** the client sends each screen's state as `screens` in the request
+  body (`sendMessage({ text }, { body: { screens } })`). `server/chat.ts` reads `body.screens` and `forModel` writes it
+  into each earlier screen. A transport of your own, such as the mock, finds the same object as `body` in
+  `sendMessages`' options.
+
 ## Compute and validate
 
 A value worked out from others, such as an amount that follows the servings, comes from a function the spec calls
@@ -113,12 +147,14 @@ shows its `error` and focus moves to it. All of it is in `rules`, so a model wri
 
 **Computed values.** `functions` in `components/lede/json-render/catalog.ts` holds the functions a spec may call, and
 `SpecView` hands them to json-render. Each arg can be a literal, `$state` or `$item`, and a number inside text counts,
-so a SegmentedControl's “6 people” is 6. Lede ships two:
+so a SegmentedControl's “6 people” is 6. Lede ships three:
 
 - `scale`: `amount × to ÷ from`.
 - `remaining`: `from − take`, never less than 0, so a refund larger than the balance leaves “0”.
+- `sum`: `field` added up across `items`, a state array, keeping only the items whose `where` field is set and whose
+  `unless` field isn't, never less than 0. Without `field` it adds the items themselves.
 
-Both put `unit` after the number, or `units` when the number takes a plural, so `"unit": "cup", "units": "cups"`
+Each puts `unit` after the number, or `units` when the number takes a plural, so `"unit": "cup", "units": "cups"`
 reads “1 cup” and “1.5 cups”. A noun added in a `$template`, as in `"${cups} cups"`, reads “1 cups”. The recipe in
 `integrations/json-render/specs/recipe.json` draws its ingredients with `scale`:
 
@@ -211,6 +247,10 @@ Each one below broke this example while it was built, or was checked in the pack
   every build, so a value the person typed or pressed while the reply streamed is overwritten by state that arrives
   after it. `SpecView` keeps a store of its own instead: state that streams in fills in the screen, and a value the
   person changes stays theirs. So a person can use a screen while the rest of it arrives.
+- A change the person makes inside a list, such as switching a row on, is kept by its index, `/todo/0/done`. Rows
+  that stream in after it still arrive, with the change written back on top. A stream that reorders rows or inserts
+  one above it moves the change to whatever row then holds that index. Stream a list's rows by appending, in their
+  final order, and never reorder or insert rows mid-stream.
 - `JSONUIProvider` keeps the `handlers` it mounted with. Pass handlers that don't close over changing state, such as
   ones that call a state setter with a function, or read the latest values through a ref.
 - The registry also defines `actions` that report on its `actions` event target. Handlers passed to `SpecView` (or

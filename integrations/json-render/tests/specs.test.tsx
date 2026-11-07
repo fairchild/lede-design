@@ -109,6 +109,29 @@ test('scale and remaining give a noun its plural, and remaining never goes below
   expect(functions.remaining({ from: 120, take: '', unit: 'dollar', units: 'dollars' })).toBe('120 dollars');
 });
 
+test('sum adds a field across a list, keeps only the items its where and unless allow, and never goes below 0', () => {
+  const bills = [{ amount: 120, paid: true }, { amount: '80.50', paid: false }, { amount: 40 }, { amount: 'n/a' }];
+  expect(functions.sum({ items: bills, field: 'amount', unit: 'dollar', units: 'dollars' })).toBe('240.5 dollars');
+  expect(functions.sum({ items: bills, field: 'amount', unless: 'paid', unit: 'dollar', units: 'dollars' })).toBe('120.5 dollars');
+  expect(functions.sum({ items: bills, field: 'amount', where: 'paid' })).toBe('120');
+  expect(functions.sum({ items: [{ amount: 30 }, { amount: -50 }], field: 'amount' })).toBe('0');
+  expect(functions.sum({ items: undefined, field: 'amount', unit: 'dollar', units: 'dollars' })).toBe('0 dollars');
+});
+
+test('a date field passes the catalog and draws the browser’s own date input, required', () => {
+  const spec = {
+    root: 'screen',
+    state: { renews: '' },
+    elements: {
+      screen: { type: 'Screen', props: {}, children: ['header', 'renews'] },
+      header: { type: 'PageHeader', props: { title: 'Policy' }, children: [] },
+      renews: { type: 'TextField', props: { label: 'Renewal date', type: 'date', required: true, error: 'Enter the renewal date.', value: { $bindState: '/renews' } }, children: [] },
+    },
+  } as unknown as (typeof specs)['Inbox'];
+  expect(check(spec)).toEqual([]);
+  expect(renderToString(<SpecView spec={spec} />)).toMatch(/<input[^>]*type="date"[^>]*required=""|<input[^>]*required=""[^>]*type="date"/);
+});
+
 test('the prompt names only this catalog’s components and actions in its examples', () => {
   const raw = catalog.prompt({ mode: 'inline', customRules: rules });
   for (const [from] of promptFixes) expect(raw, `json-render's prompt no longer has: ${from}`).toContain(from);
