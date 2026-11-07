@@ -10,7 +10,7 @@ import type { EmptyState } from '@/components/lede/blocks/empty-state';
 import type { FormSection } from '@/components/lede/blocks/form-section';
 import type { PageHeader } from '@/components/lede/blocks/page-header';
 import type { SummaryCard } from '@/components/lede/blocks/summary-card';
-import type { catalog } from './catalog';
+import type { catalog } from '@/components/lede/json-render/catalog';
 
 // A typecheck, not a runtime test: `tsc --noEmit` fails when a catalog entry lets a model set a prop its Lede
 // component doesn't take, or a value the component's type doesn't allow. The error names the entry and the prop.

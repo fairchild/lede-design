@@ -1,7 +1,12 @@
 import { pipeJsonRender, type Spec } from '@json-render/core';
-import type { ChatTransport, UIMessage, UIMessageChunk } from 'ai';
-import { specs } from '@/json-render/specs';
-import { toPatches } from '@/json-render/stream';
+import type { ChatTransport, UIMessageChunk } from 'ai';
+import type { AppMessage } from './app-message';
+import { toPatches } from '@/components/lede/json-render/patches';
+import settings from './replies/settings.json';
+import inbox from './replies/inbox.json';
+import signup from './replies/signup.json';
+import projects from './replies/projects.json';
+import week from './replies/week.json';
 
 interface Reply {
   text: string;
@@ -17,28 +22,32 @@ export const script: Array<{ match: RegExp; reply: Reply }> = [
     reply: { text: 'This reply fails partway through the first time, so you can see the error state.', failsOnce: true },
   },
   {
+    match: /week|calendar|schedule|meeting|busy/i,
+    reply: { text: 'You have 4 meetings left this week, and Thursday afternoon is the busiest stretch.', spec: week as Spec },
+  },
+  {
     match: /notification|setting|alert/i,
-    reply: { text: 'Here are your notification settings. Push alerts and mentions are on, and email alerts are off.', spec: specs.Settings },
+    reply: { text: 'Here are your notification settings. Push alerts and mentions are on, and email alerts are off.', spec: settings as Spec },
   },
   {
     match: /inbox|mail|message/i,
-    reply: { text: 'You have 3 unread messages. Grace needs an answer about the venue by 5:00 PM.', spec: specs.Inbox },
+    reply: { text: 'You have 3 unread messages. Grace needs an answer about the venue by 5:00 PM.', spec: inbox as Spec },
   },
   {
     match: /sign ?up|account|register/i,
-    reply: { text: 'Here’s the sign-up form. Your email address is missing its @, so that field shows the fix.', spec: specs['Sign-up form'] },
+    reply: { text: 'Here’s the sign-up form. Your email address is missing its @, so that field shows the fix.', spec: signup as Spec },
   },
   {
     match: /project/i,
-    reply: { text: 'You have no projects yet. You can start one from here.', spec: specs['Empty state'] },
+    reply: { text: 'You have no projects yet. You can start one from here.', spec: projects as Spec },
   },
   {
     match: /./s,
-    reply: { text: 'I can show your notification settings, your inbox, a sign-up form or your projects. Try “what’s in my inbox”.' },
+    reply: { text: 'I can show your week, your notification settings, your inbox, a sign-up form or your projects. Try “what’s in my inbox”.' },
   },
 ];
 
-const textOf = (message: UIMessage | undefined) =>
+const textOf = (message: AppMessage | undefined) =>
   message?.parts.map((part) => (part.type === 'text' ? part.text : '')).join('') ?? '';
 
 /**
@@ -56,7 +65,7 @@ export function modelOutput(reply: Reply): string[] {
  * A ChatTransport that needs no network. It streams a scripted reply through json-render's own transform, the one the
  * server in `server/chat.ts` uses, so text arrives as text parts and the spec as `data-spec` patch parts.
  */
-export class MockChatTransport implements ChatTransport<UIMessage> {
+export class MockChatTransport implements ChatTransport<AppMessage> {
   private failed = new Set<RegExp>();
   private delay: number;
 
@@ -65,7 +74,7 @@ export class MockChatTransport implements ChatTransport<UIMessage> {
     this.delay = delay;
   }
 
-  async sendMessages({ messages, abortSignal }: Parameters<ChatTransport<UIMessage>['sendMessages']>[0]) {
+  async sendMessages({ messages, abortSignal }: Parameters<ChatTransport<AppMessage>['sendMessages']>[0]) {
     const prompt = textOf(messages.findLast((m) => m.role === 'user'));
     const { match, reply } = script.find(({ match }) => match.test(prompt))!;
     const fails = !!reply.failsOnce && !this.failed.has(match);

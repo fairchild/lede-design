@@ -1,29 +1,44 @@
 import * as React from 'react';
 import { useChat } from '@ai-sdk/react';
+import type { Spec } from '@json-render/core';
+import { buildSpecFromParts } from '@json-render/react';
 import { ThemeProvider } from '@/components/lede/theme-provider';
+import { Avatar } from '@/components/lede/avatar';
 import { Button } from '@/components/lede/button';
 import { SegmentedControl } from '@/components/lede/segmented-control';
 import { TextField } from '@/components/lede/text-field';
 import { PageHeader } from '@/components/lede/blocks/page-header';
-import { transport, chatApi as api } from './transport';
-import { SpecView, type SpecActions } from './spec-view';
-import { toChatMessage, type ChatMessage } from './chat-message';
+import { SpecView, type SpecHandlers } from '@/components/lede/json-render/spec-view';
+import { transport, chatApi } from './transport';
+import type { AppMessage } from './app-message';
 import './chat.css';
 
 const ASSISTANT = 'Daybook';
-const SUGGESTIONS = ['Show my notification settings', 'What’s in my inbox?', 'Help me sign up', 'Fail once'];
+const SUGGESTIONS = ['How’s my week?', 'What’s in my inbox?', 'Show my notification settings', 'Fail once'];
+const SCHEMES = ['System', 'Light', 'Dark'] as const;
+type Scheme = (typeof SCHEMES)[number];
+type Ending = 'stopped' | 'failed';
 
-/** The chat page: the conversation, then the composer, which stays at the foot of the window. */
+const clock = new Intl.DateTimeFormat('en-US', { hour: 'numeric', minute: '2-digit' });
+const textOf = (message: AppMessage) => message.parts.flatMap((p) => (p.type === 'text' && p.text.trim() ? [p.text.trim()] : []));
+
+/** The chat page: the conversation, then the composer at the foot of the window. */
 export function Chat() {
-  const [scheme, setScheme] = React.useState<'Light' | 'Dark'>(() => (matchMedia('(prefers-color-scheme: dark)').matches ? 'Dark' : 'Light'));
-  const { messages, sendMessage, status, stop, error, regenerate } = useChat({ transport });
+  const [scheme, setScheme] = React.useState<Scheme>('System');
+  const { messages, sendMessage, status, stop, error, regenerate } = useChat<AppMessage>({ transport });
   const [draft, setDraft] = React.useState('');
-  const [stopped, setStopped] = React.useState<Set<string>>(() => new Set());
+  const [endings, setEndings] = React.useState<Record<string, Ending>>({});
   const [notes, setNotes] = React.useState<Record<string, string[]>>({});
+  const [times, setTimes] = React.useState<Record<string, Date>>({});
   const form = React.useRef<HTMLFormElement>(null);
   const focusComposer = () => form.current?.querySelector('textarea')?.focus();
   const busy = status === 'submitted' || status === 'streaming';
   const last = messages.at(-1);
+
+  React.useEffect(() => {
+    const fresh = messages.filter((m) => !times[m.id]);
+    if (fresh.length) setTimes((prev) => ({ ...prev, ...Object.fromEntries(fresh.map((m) => [m.id, new Date()])) }));
+  }, [messages, times]);
 
   const send = (text: string) => {
     if (!text.trim() || busy) return;
@@ -32,14 +47,20 @@ export function Chat() {
     focusComposer();
   };
 
+  // A reply stopped before it began has no message of its own, so the ending sits on the question.
   const onStop = () => {
-    if (last?.role === 'assistant') setStopped((prev) => new Set(prev).add(last.id));
+    if (last) setEndings((prev) => ({ ...prev, [last.id]: 'stopped' }));
     void stop();
     focusComposer();
   };
 
-  // A control that held focus can leave as the reply ends, such as Stop or Try again. Focus then returns to the
-  // composer, where the person acts next, so it never falls to `<body>`.
+  const retry = () => {
+    focusComposer();
+    void regenerate();
+  };
+
+  // A control that held focus can leave as the reply ends, such as Stop. Focus then returns to the composer, where the
+  // person acts next, so it never falls to `<body>`. On load it lands there too: a chat's next act is to type.
   React.useEffect(() => {
     if (!busy && (document.activeElement === document.body || !document.activeElement)) focusComposer();
   }, [busy]);
@@ -62,47 +83,49 @@ export function Chat() {
     scrollTo({ top: Math.min(top, document.documentElement.scrollHeight - innerHeight) });
   });
 
-  const note = (id: string) => (name: string, params: Record<string, unknown>) => {
-    const detail = typeof params?.id === 'string' ? ` (${params.id})` : typeof params?.form === 'string' ? ` (${params.form})` : '';
-    setNotes((prev) => ({ ...prev, [id]: [...(prev[id] ?? []), `You chose ${name}${detail}.`] }));
-  };
+  const note = React.useCallback((id: string, text: string) => setNotes((prev) => ({ ...prev, [id]: [...(prev[id] ?? []), text] })), []);
 
-  const chat: ChatMessage[] = messages.map((m, i) => {
-    const message = toChatMessage(m, busy && i === messages.length - 1);
-    const failed = status === 'error' && i === messages.length - 1 && m.role === 'assistant';
-    return {
-      ...message,
-      author: message.role === 'user' ? 'You' : ASSISTANT,
-      ending: failed ? { kind: 'failed', message: error?.message ?? 'The reply failed.' } : stopped.has(m.id) ? { kind: 'stopped' } : undefined,
-    };
-  });
-
-  const reply = last?.role === 'assistant' ? chat.at(-1) : undefined;
-  const firstLine = reply?.parts.find((p) => p.type === 'text')?.text.split(/(?<=[.!?])\s/)[0];
+  const failed = status === 'error' ? last?.id : undefined;
+  const reply = last?.role === 'assistant' ? last : undefined;
   const statusText =
-    status === 'submitted' || status === 'streaming' ? `${ASSISTANT} is replying.`
+    busy ? `${ASSISTANT} is replying.`
     : status === 'error' ? `The reply failed: ${error?.message ?? 'unknown error'}`
-    : reply?.ending?.kind === 'stopped' ? 'You stopped the reply.'
-    : firstLine ? `${ASSISTANT} replied: ${firstLine}` : '';
+    : last && endings[last.id] === 'stopped' ? 'You stopped the reply.'
+    : reply ? `${ASSISTANT} replied: ${textOf(reply)[0]?.split(/(?<=[.!?])\s/)[0] ?? 'a screen.'}` : '';
 
   return (
-    <ThemeProvider scheme={scheme === 'Dark' ? 'dark' : 'light'} surface="grouped" className="jrc-app">
+    <ThemeProvider scheme={scheme === 'System' ? 'auto' : scheme === 'Dark' ? 'dark' : 'light'} surface="grouped" className="jrc-app">
       <main className="jrc-page">
         <PageHeader
           title="Ask Daybook"
-          summary={`A chat whose replies can include screens that json-render builds from Lede. ${api ? `Replies come from ${api}.` : 'Replies come from a script, so it needs no network or key.'}`}
-          actions={<SegmentedControl label="Appearance" size="sm" options={['Light', 'Dark']} value={scheme} onValueChange={(v) => setScheme(v as 'Light' | 'Dark')} />}
+          summary={chatApi ? `Replies come from ${chatApi}, and can bring a screen with them.` : 'Replies come from a script here, and can bring a screen with them.'}
+          actions={<SegmentedControl label="Appearance" size="sm" options={[...SCHEMES]} value={scheme} onValueChange={(v) => setScheme(v as Scheme)} />}
         />
         <section aria-label="Conversation" className="jrc-conversation">
-          {chat.length ? (
+          {messages.length ? (
             <ol className="jrc-messages">
-              {chat.map((m, i) => (
-                <Message key={m.id} message={m} live={busy && i === chat.length - 1} notes={notes[m.id] ?? []} onAction={note(m.id)} />
+              {messages.map((m, i) => (
+                <Turn
+                  key={m.id}
+                  message={m}
+                  time={times[m.id]}
+                  live={busy && i === messages.length - 1}
+                  ending={m.id === failed ? 'failed' : endings[m.id]}
+                  failure={error?.message}
+                  notes={notes[m.id] ?? []}
+                  onNote={note}
+                />
               ))}
+              {status === 'submitted' && last?.role === 'user' ? (
+                <li className="jrc-message" data-role="assistant" aria-hidden="true">
+                  <Avatar name={ASSISTANT} alt="" className="jrc-avatar" />
+                  <p className="jrc-typing"><span /><span /><span /></p>
+                </li>
+              ) : null}
             </ol>
           ) : (
             <div className="jrc-empty">
-              <p className="jrc-muted">Ask about your notifications, inbox, sign-up or projects. Each reply can bring a screen with it.</p>
+              <p className="jrc-muted">Ask about your week, inbox, notifications, sign-up or projects. Each reply can bring a screen you can use.</p>
               <ul className="jrc-suggestions" aria-label="Suggestions">
                 {SUGGESTIONS.map((s) => <li key={s}><Button size="sm" variant="tinted" onClick={() => send(s)}>{s}</Button></li>)}
               </ul>
@@ -111,17 +134,19 @@ export function Chat() {
         </section>
         <div className="jrc-footer">
           <p role="status" className={status === 'error' ? 'jrc-status' : 'ld-sr-only'}>{statusText}</p>
-          {status === 'error' ? <Button size="sm" onClick={() => void regenerate()}>Try again</Button> : null}
+          {status === 'error' ? <Button size="sm" onClick={retry}>Try again</Button> : null}
           <form ref={form} className="jrc-composer" onSubmit={(e) => { e.preventDefault(); send(draft); }}>
             <TextField
               label="Message"
               rows={2}
               value={draft}
+              placeholder="Ask Daybook…"
               onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setDraft(e.currentTarget.value)}
               onKeyDown={(e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+                if (e.key === 'Escape' && busy) { e.preventDefault(); onStop(); }
                 if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); e.currentTarget.form?.requestSubmit(); }
               }}
-              hint="Enter sends, and Shift+Enter starts a new line."
+              hint="Enter sends, Shift+Enter starts a new line and Escape stops a reply."
             />
             <div className="jrc-composer-actions">
               {busy ? <Button type="button" onClick={onStop}>Stop</Button> : null}
@@ -134,34 +159,59 @@ export function Chat() {
   );
 }
 
-interface MessageProps {
-  message: ChatMessage;
-  live: boolean;
-  notes: string[];
-  onAction: (name: string, params: Record<string, unknown>) => void;
+/** What a screen's action did, in words: “You opened Venue review.” The element that ran it supplies the name. */
+function describe(spec: Spec | null, name: string, params: Record<string, unknown>) {
+  const ran = (binding: unknown): boolean =>
+    Array.isArray(binding) ? binding.some(ran)
+    : !!binding && typeof binding === 'object' && (binding as { action?: string }).action === name
+      && Object.entries(params).every(([k, v]) => (binding as { params?: Record<string, unknown> }).params?.[k] === v);
+  const element = Object.values(spec?.elements ?? {}).find((el) => Object.values(el.on ?? {}).some(ran));
+  const label = element?.props?.title ?? element?.props?.label;
+  const verb = { open: 'opened', archive: 'archived', submit: 'sent' }[name] ?? `ran ${name} on`;
+  return typeof label === 'string' ? `You ${verb} ${label}.` : name === 'submit' ? 'You sent the form.' : `You ${verb} an item.`;
 }
 
-/** One turn: its author as a heading, its text and, where the reply has one, the screen its spec describes. */
-function Message({ message, live, notes, onAction }: MessageProps) {
-  const actions = React.useMemo<SpecActions>(() => ({
-    open: (params) => onAction('open', params),
-    archive: (params) => onAction('archive', params),
-    submit: (params) => onAction('submit', params),
-  }), [onAction]);
-  const firstData = message.parts.findIndex((p) => p.type === 'data');
-  const parts = message.parts.flatMap((p) => (p.type === 'data' ? [{ type: `data-${p.name}`, data: p.data }] : []));
+interface TurnProps {
+  message: AppMessage;
+  time?: Date;
+  live: boolean;
+  ending?: Ending;
+  failure?: string;
+  notes: string[];
+  onNote: (id: string, text: string) => void;
+}
+
+/** One turn: its author and time as a heading, its text and then, when the reply has one, the screen its spec describes. */
+function Turn({ message, time, live, ending, failure, notes, onNote }: TurnProps) {
+  const spec = buildSpecFromParts(message.parts);
+  const specRef = React.useRef(spec);
+  specRef.current = spec;
+  // json-render reads its handlers once, when the screen mounts, so these read the latest spec through a ref.
+  const handlers = React.useMemo<SpecHandlers>(
+    () => Object.fromEntries(['open', 'archive', 'submit'].map((name) => [name, (params: Record<string, unknown>) => onNote(message.id, describe(specRef.current, name, params))])),
+    [message.id, onNote],
+  );
+  const author = message.role === 'user' ? 'You' : ASSISTANT;
 
   return (
     <li className="jrc-message" data-role={message.role} data-message={message.id}>
-      <h2 className="jrc-author">{message.author}</h2>
-      {message.parts.map((part, i) => {
-        if (part.type === 'data') return i === firstData ? <SpecView key="spec" parts={parts} streaming={live} actions={actions} /> : null;
-        return part.text.trim() ? <p key={i} className="jrc-text">{part.text.trim()}</p> : null;
-      })}
-      {message.ending ? (
-        <p className="jrc-ending">{message.ending.kind === 'stopped' ? 'You stopped this reply.' : `This reply failed: ${message.ending.message}`}</p>
-      ) : null}
-      {notes.map((n, i) => <p key={i} className="jrc-note">{n}</p>)}
+      {message.role === 'assistant' ? <Avatar name={ASSISTANT} alt="" className="jrc-avatar" /> : null}
+      <div className="jrc-body">
+        <h2 className="jrc-author">
+          {author}
+          {time ? <> · <time dateTime={time.toISOString()}>{clock.format(time)}</time></> : null}
+        </h2>
+        {textOf(message).map((text, i) => <p key={i} className="jrc-text">{text}</p>)}
+        {spec?.elements[spec.root] ? (
+          <div className="jrc-screen">
+            <SpecView spec={spec} streaming={live} headingLevel={3} handlers={handlers} />
+          </div>
+        ) : null}
+        {notes.length ? (
+          <ul className="jrc-notes" aria-label="What you did here">{notes.map((n, i) => <li key={i}>{n}</li>)}</ul>
+        ) : null}
+        {ending ? <p className="jrc-ending">{ending === 'stopped' ? 'You stopped this reply.' : `This reply failed: ${failure ?? 'unknown error'}`}</p> : null}
+      </div>
     </li>
   );
 }

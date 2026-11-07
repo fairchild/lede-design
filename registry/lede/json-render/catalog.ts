@@ -8,7 +8,7 @@ const rowEvent = z.enum(['archive', 'flag', 'delete']);
 
 /**
  * The Lede components a model may use. Each prop keeps the Lede component's own name and values, so a spec reads like
- * the JSX it becomes. `src/catalog-fit.ts` checks that every prop here is one the component accepts.
+ * the JSX it becomes. In the Lede repo, `integrations/json-render/src/catalog-fit.ts` checks that every prop here is one the component accepts.
  */
 export const catalog = defineCatalog(schema, {
   components: {

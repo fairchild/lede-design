@@ -14,22 +14,28 @@ for bots on Slack, Teams and Discord, so it doesn't belong in a browser chat.
 ## Recipe
 
 1. Follow “Build this in your app” in `README.md` step by step. It was run as written on a fresh create-vite
-   `react-ts` app, and `npm run build` passed. `scripts/copy-into.mjs` copies every file to the path its imports
-   expect (`src/json-render/`, `src/specs/`, `src/chat/`, `server/`), so imports need no rewriting: they use
-   `@/components/lede/…`, where `shadcn add` puts Lede, and `@/json-render/…`.
-2. To change what a model may build, edit `src/json-render/catalog.ts` and `registry.tsx` together.
-   `catalog-fit.ts` fails `tsc` when a catalog prop isn't one the Lede component takes.
-3. The server is `server/chat.ts`: `streamText({ model: anthropic('claude-sonnet-5-5'), system:
-   catalog.prompt({ mode: 'inline' }), messages: await convertToModelMessages(messages) })`, then
+   `react-ts` app, and `npm run build` passed. `npx shadcn@latest add @lede/json-render` installs the catalog, the
+   registry, `check`, `toPatches` and `SpecView` under `components/lede/json-render/`, with the Lede components and
+   npm packages they need. The chat's own files, copied from `src/chat/` and `server/`, import them from
+   `@/components/lede/…`, so they need no edits.
+2. The registry URL, `https://lede.cloudcompute.com/r/v0.4.0/{name}.json`, serves once 0.4.0 is tagged. Before a tag
+   exists, the deployed site's `/r/next/{name}.json` is the unreleased build of main. From a clone, `npm run registry`
+   writes the same files to `public/r/`, which any static server can serve.
+3. To change what a model may build, edit `components/lede/json-render/catalog.ts` and `registry.tsx` together.
+   Both are your copies now. In the Lede repo, `integrations/json-render/src/catalog-fit.ts` fails `tsc` when a catalog
+   prop isn't one the Lede component takes; copy it if you change the catalog.
+4. The server is `server/chat.ts`: `streamText({ model: anthropic('claude-sonnet-5-5'), system:
+   catalog.prompt({ mode: 'inline' }), messages: await convertToModelMessages(forModel(messages)) })`, then
    `createUIMessageStreamResponse({ stream: pipeJsonRender(result.toUIMessageStream({ onError })) })`. It exports
    `handleChat(request)`, a fetch-style handler for any framework's route, and runs on its own under
    `tsx --tsconfig tsconfig.server.json server/chat.ts`. The key is `ANTHROPIC_API_KEY` in the server's environment.
-4. The client picks its transport in `src/chat/transport.ts`: the scripted mock by default, or
-   `new DefaultChatTransport({ api })` when `VITE_CHAT_API` is set.
-5. In each assistant message, render its text parts first, then pass `message.parts` to `SpecView` in
-   `src/chat/spec-view.tsx`.
-6. Check it: `npm run build`, the mock test in `tests/mock-transport.test.ts` adapted to your script, then axe on
-   the page with a reply showing.
+5. The client picks its transport in `src/chat/transport.ts`: the scripted mock by default, or
+   `new DefaultChatTransport({ api })` when `VITE_CHAT_API` is set. Type the chat as
+   `useChat<AppMessage>`, where `AppMessage` is `UIMessage<unknown, { [SPEC_DATA_PART]: SpecDataPart }>`.
+6. In each assistant message, render its text parts first, then
+   `<SpecView spec={buildSpecFromParts(message.parts)} streaming={live} headingLevel={3} handlers={…} />`.
+7. Check it: `npm run build`, then the page in a browser with a reply showing: the question, the reply's text and then
+   its screen, focus in the composer and axe clean. This repo's `tests/chat.e2e.ts` does that with Playwright.
 
 ## Failure modes
 
@@ -44,17 +50,23 @@ Each one below broke this example while it was built, or was checked in the pack
 - `buildSpecFromParts` returns `null` until the first patch, and then a spec whose `root` is set before any element
   exists. Render only when `spec.elements[spec.root]` exists.
 - `JSONUIProvider` reads `initialState` once, when it mounts. Mount it after the `/state` patch arrives, or emit
-  `/state` before any element (as `toPatches` in `src/json-render/stream.ts` does). Otherwise bound fields start
+  `/state` before any element (as `toPatches` in `components/lede/json-render/patches.ts` does). Otherwise bound fields start
   empty.
 - `JSONUIProvider` keeps the `handlers` it mounted with. Pass handlers that don't close over changing state, such as
-  ones that call a state setter with a function.
+  ones that call a state setter with a function, or read the latest values through a ref.
+- The registry also defines `actions` that report on its `actions` event target. Handlers passed to `SpecView` (or
+  `JSONUIProvider`) are the ones a screen runs; the event target serves the repo's json-render page.
+- `convertToModelMessages` drops data parts, so the model never sees the screens it sent, and a follow-up can't refer
+  to them. `forModel` in `server/chat.ts` turns each reply's patches back into a fenced spec in its text.
+- `pipeJsonRender` sends a patch line in many small pieces, down to one character per event. That's json-render's
+  behavior, and the client reassembles them.
 - A data part that a transport emits without an `id` is appended as a new part each time, so every patch is its own
   part. That's what `buildSpecFromParts` expects.
 
 **Validation**
 
 - `catalog.validate(spec)` checks the spec's shape and that each `type` is in the catalog. It doesn't parse props
-  against their Zod schemas. `src/json-render/check.ts` adds that pass. Run it in tests and on any spec you store.
+  against their Zod schemas. `components/lede/json-render/check.ts` adds that pass. Run it in tests and on any spec you store.
 - `Renderer` validates nothing. An unknown type draws the `fallback` prop, or nothing. A bad prop reaches the Lede
   component as it is. A component that throws is caught by a per-element error boundary and draws nothing.
 - Server rendering (`renderToString`, as in a test) has no error boundaries, so a throwing component fails the
@@ -64,9 +76,9 @@ Each one below broke this example while it was built, or was checked in the pack
 
 **Lede inside a message**
 
-- PageHeader is a screen's h1. In a spec it must set `focusOnMount={false}`, or it takes focus from the composer as
-  each reply mounts. It takes `headingLevel` 1 or 2 only, so under a message's author heading the registry draws the
-  title itself. Set the level with the registry's `SpecHeadingLevel` context.
+- PageHeader is a screen's h1. In a spec the registry sets `focusOnMount={false}`, or it would take focus from the
+  composer as each reply mounts. Under a message's author heading, pass `headingLevel={3}` to `SpecView`: the title
+  becomes an h3 and its sections h4.
 - Lede's TextField takes no `ref`. To focus the composer, query the `textarea` inside its `<form>`.
 - TextField's props are a union of input and textarea, so an inline `onChange` needs its event type written out:
   `(e: React.ChangeEvent<HTMLTextAreaElement>) => …`.
@@ -75,8 +87,13 @@ Each one below broke this example while it was built, or was checked in the pack
   conversation's own clips a tall screen inside a message.
 - Scrolling to the bottom on every chunk pushes the question out of view while a long reply streams. Follow the
   reply until the question's turn reaches the top, and stop following when the person scrolls (`src/chat/Chat.tsx`).
-- A control that unmounts while focused, such as Stop when the reply ends or a row that an action hides, drops focus to
-  `<body>`. Move focus to the composer, or to the next row, when that happens.
+- A control that unmounts while focused, such as Stop when the reply ends, Try again when the retry starts or a row
+  that an action hides, drops focus to `<body>`. Move focus to the composer before the call that removes it, or to the
+  next row.
+- Every grid track that holds a screen needs `minmax(0, 1fr)`. An implicit `auto` track grows to the screen's
+  min-content, and at 200% text on a phone the page then scrolls sideways.
+- A `position: sticky` composer with large text on a short screen can leave the conversation a few pixels tall. Make
+  it sticky only in a height query in `em`, which follows the text size.
 - Announce a reply with a polite `role="status"` line, and don't move focus into new content.
 
 **Build**

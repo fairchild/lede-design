@@ -8,7 +8,7 @@ export interface EmptyStateProps {
   /** At most one action. */
   action?: React.ReactNode;
   /** Heading level. Default 2. */
-  headingLevel?: 2 | 3;
+  headingLevel?: 2 | 3 | 4;
   className?: string;
 }
 

@@ -6,10 +6,10 @@ import { Button } from '@/components/lede/button';
 import { Disclosure } from '@/components/lede/disclosure';
 import { SegmentedControl } from '@/components/lede/segmented-control';
 import { PageHeader } from '@/components/lede/blocks/page-header';
-import { catalog } from './catalog';
-import { registry, handlers, actions, type ActionEvent } from './registry';
+import { catalog } from '@/components/lede/json-render/catalog';
+import { registry, handlers, actions, type ActionEvent } from '@/components/lede/json-render/registry';
 import { replay } from './stream';
-import { check } from './check';
+import { check } from '@/components/lede/json-render/check';
 import { specs, type SpecName } from './specs';
 
 const prompt = catalog.prompt();

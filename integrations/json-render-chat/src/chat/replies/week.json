@@ -1,0 +1,50 @@
+{
+  "root": "screen",
+  "state": { "view": "This week", "focus": false },
+  "elements": {
+    "screen": { "type": "Screen", "props": {}, "children": ["header", "period", "meetings", "agenda", "focus"] },
+    "header": {
+      "type": "PageHeader",
+      "props": { "title": "Your week", "summary": "4 meetings left, and Thursday is the busiest day." },
+      "children": []
+    },
+    "period": {
+      "type": "SegmentedControl",
+      "props": { "label": "Period", "options": ["Today", "This week", "Next week"], "value": { "$bindState": "/view" } },
+      "children": []
+    },
+    "meetings": {
+      "type": "SummaryCard",
+      "props": { "title": "Meetings left", "figure": "4", "summary": "2 of them are on Thursday afternoon.", "status": { "tone": "caution", "label": "Busy Thursday" } },
+      "children": []
+    },
+    "agenda": {
+      "type": "ListGroup",
+      "props": { "title": "Coming up", "summary": "Venue review is next, at 2:00 PM." },
+      "children": ["a1", "a2", "a3"]
+    },
+    "a1": {
+      "type": "ListRow",
+      "props": { "title": "Venue review", "subtitle": "With Grace and Alan", "value": "Today, 2:00 PM", "chevron": true },
+      "on": { "press": { "action": "open", "params": { "id": "venue-review" } } },
+      "children": []
+    },
+    "a2": {
+      "type": "ListRow",
+      "props": { "title": "Launch window sync", "subtitle": "With Katherine", "value": "Thu, 1:00 PM", "chevron": true },
+      "on": { "press": { "action": "open", "params": { "id": "launch-sync" } } },
+      "children": []
+    },
+    "a3": {
+      "type": "ListRow",
+      "props": { "title": "Design critique", "subtitle": "Studio B", "value": "Thu, 3:30 PM", "chevron": true },
+      "on": { "press": { "action": "open", "params": { "id": "critique" } } },
+      "children": []
+    },
+    "focus": {
+      "type": "Switch",
+      "props": { "label": "Block Friday morning for focus time", "checked": { "$bindState": "/focus" } },
+      "children": []
+    }
+  }
+}

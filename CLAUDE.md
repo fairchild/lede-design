@@ -9,6 +9,7 @@ registry, with layouts (blocks) and hero flows. The docs site and demo app are t
    writes `src/styles/lede.tokens.css` and `registry/lede/lede.tokens.css` (generated, git-ignored).
 2. `registry/lede/*.tsx` — primitives. `lede.components.css` styles them.
 3. `registry/lede/blocks/*.tsx` — layouts and higher-level components. `lede.blocks.css`.
+   `registry/lede/json-render/` sits here too: a json-render catalog and registry over the components, adding no CSS.
 4. `registry/lede/flows/*.tsx` — hero-flow assemblies. Router-agnostic: data, hrefs and callbacks in; no fetching.
 5. `src/` — docs site and the demo app ("Daybook"), wiring flows to React Router and sample data.
 - `integrations/` sits outside the layers: self-contained apps that show Lede beside another project. They read `registry/`, and no layer imports them.

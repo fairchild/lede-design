@@ -2,9 +2,11 @@ import { createServer } from 'node:http';
 import { Readable } from 'node:stream';
 import { pathToFileURL } from 'node:url';
 import { anthropic } from '@ai-sdk/anthropic';
-import { pipeJsonRender } from '@json-render/core';
+import { pipeJsonRender, SPEC_DATA_PART_TYPE } from '@json-render/core';
+import { buildSpecFromParts } from '@json-render/react';
 import { convertToModelMessages, createUIMessageStreamResponse, streamText, type UIMessage } from 'ai';
-import { catalog } from '@/json-render/catalog';
+import { catalog } from '@/components/lede/json-render/catalog';
+import { toPatches } from '@/components/lede/json-render/patches';
 
 // The reference backend for the chat. `handleChat` is a fetch-style handler, so it drops into any framework's route
 // (Hono, a Next.js route handler, a Worker). Run this file and it serves POST /api/chat on port 4882, which
@@ -16,12 +18,34 @@ const system = catalog.prompt({
   system: 'You are Daybook, the assistant in a calendar, inbox and settings app. Answer in a sentence or two, and add a screen when one helps the person act.',
 });
 
+/**
+ * The conversation as the model reads it. `convertToModelMessages` drops data parts, so without this the model never
+ * sees the screens it sent, and a follow-up such as “turn off push” has nothing to refer to. Each reply's patches
+ * become one text part, in the fenced form the inline prompt asks the model to write.
+ */
+const FENCE = '`'.repeat(3);
+
+export function forModel(messages: UIMessage[]): UIMessage[] {
+  return messages.map((message) => {
+    const spec = buildSpecFromParts(message.parts as Parameters<typeof buildSpecFromParts>[0]);
+    if (!spec?.elements[spec.root]) return message;
+    const parts = message.parts.filter((part) => part.type !== SPEC_DATA_PART_TYPE);
+    return { ...message, parts: [...parts, { type: 'text', text: `\n\n${FENCE}spec\n${toPatches(spec).join('')}${FENCE}` }] };
+  });
+}
+
 export async function handleChat(request: Request): Promise<Response> {
-  const { messages } = (await request.json()) as { messages: UIMessage[] };
+  let messages: UIMessage[];
+  try {
+    ({ messages } = (await request.json()) as { messages: UIMessage[] });
+    if (!Array.isArray(messages)) throw new TypeError('messages is not an array');
+  } catch {
+    return new Response('The body must be JSON with a messages array.', { status: 400 });
+  }
   const result = streamText({
     model: anthropic('claude-sonnet-5-5'),
     system,
-    messages: await convertToModelMessages(messages),
+    messages: await convertToModelMessages(forModel(messages)),
     abortSignal: request.signal,
   });
   // json-render's transform lifts each JSONL patch line out of the text into a `data-spec` part, which the client

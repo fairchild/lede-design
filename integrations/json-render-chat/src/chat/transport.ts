@@ -1,4 +1,5 @@
-import { DefaultChatTransport, type ChatTransport, type UIMessage } from 'ai';
+import { DefaultChatTransport, type ChatTransport } from 'ai';
+import type { AppMessage } from './app-message';
 import { MockChatTransport } from './mock-transport';
 
 /**
@@ -7,4 +8,4 @@ import { MockChatTransport } from './mock-transport';
  */
 export const chatApi = import.meta.env.VITE_CHAT_API as string | undefined;
 
-export const transport: ChatTransport<UIMessage> = chatApi ? new DefaultChatTransport({ api: chatApi }) : new MockChatTransport();
+export const transport: ChatTransport<AppMessage> = chatApi ? new DefaultChatTransport<AppMessage>({ api: chatApi }) : new MockChatTransport();

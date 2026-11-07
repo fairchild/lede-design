@@ -1,23 +1,49 @@
 /* The chat page's own layout, on Lede tokens. It needs Lede's styles (styles/lede/index.css) loaded first. */
 .jrc-app { min-height: 100dvh; color: var(--foreground); }
-.jrc-page { box-sizing: border-box; max-width: 48rem; margin: 0 auto; padding: var(--space-4) var(--space-4) 0; display: grid; gap: var(--space-6); }
+.jrc-page { box-sizing: border-box; max-width: 48rem; margin: 0 auto; padding: var(--space-4) var(--space-4) 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-6); }
 .jrc-empty { display: grid; gap: var(--space-3); }
 .jrc-empty > * { margin: 0; }
-.jrc-messages { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-6); }
-.jrc-message { display: grid; gap: var(--space-3); min-width: 0; scroll-margin-top: var(--space-4); }
-.jrc-message > * { margin: 0; }
-.jrc-message[data-role="user"] { justify-self: end; max-width: 85%; gap: var(--space-1); padding: var(--space-3) var(--space-4); border-radius: var(--radius-xl); background: var(--card); }
-.jrc-author { font-size: var(--text-footnote-size); line-height: var(--text-footnote-line-height); font-weight: var(--weight-semibold); color: var(--muted-foreground); }
-.jrc-text { white-space: pre-wrap; overflow-wrap: anywhere; }
-.jrc-spec { padding: var(--space-4); border-radius: var(--radius-xl); border: 1px solid var(--input); }
-.jrc-muted, .jrc-note, .jrc-ending { color: var(--muted-foreground); }
-.jrc-note, .jrc-ending { font-size: var(--text-footnote-size); line-height: var(--text-footnote-line-height); }
-.jrc-ending { font-style: italic; }
+.jrc-muted { color: var(--muted-foreground); }
 .jrc-suggestions { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--space-2); }
-/* The composer stays at the foot of the window. Its layer sits above the rows, whose swipe uses a transform. */
-.jrc-footer { position: sticky; bottom: 0; z-index: var(--z-tabbar); display: grid; gap: var(--space-3); padding: var(--space-3) 0 var(--space-4); background: var(--background-grouped); border-top: 0.5px solid var(--border); }
+
+/* Turns: the assistant's beside its avatar, text and then its screen; yours in a bubble on the right. */
+.jrc-messages { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-6); }
+.jrc-message { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--space-3); align-items: start; min-width: 0; scroll-margin-top: var(--space-4); }
+.jrc-message[data-role="user"] { grid-template-columns: minmax(0, 1fr); justify-self: end; max-width: 85%; }
+.jrc-body { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-2); min-width: 0; }
+.jrc-body > * { margin: 0; }
+.jrc-message[data-role="user"] .jrc-body { gap: var(--space-1); padding: var(--space-2) var(--space-4) var(--space-3); border-radius: var(--radius-lg); background: var(--primary); color: var(--primary-foreground); }
+.jrc-author { font-size: var(--text-footnote-size); line-height: var(--text-footnote-line-height); font-weight: var(--weight-semibold); color: var(--muted-foreground); }
+.jrc-author time { font-weight: var(--weight-regular); }
+.jrc-message[data-role="user"] .jrc-author { color: inherit; }
+.jrc-text { white-space: pre-wrap; overflow-wrap: anywhere; }
+.jrc-screen { padding: var(--space-4); border-radius: var(--radius-xl); border: 1px solid var(--border); background: var(--background-grouped); }
+.jrc-notes, .jrc-ending { color: var(--muted-foreground); font-size: var(--text-footnote-size); line-height: var(--text-footnote-line-height); }
+.jrc-notes { list-style: none; padding: 0 0 0 var(--space-4); display: grid; gap: var(--space-1); }
+.jrc-ending { font-style: italic; }
+
+.jrc-typing { display: flex; gap: var(--space-1); margin: 0; padding: var(--space-3) 0; }
+.jrc-typing span { width: 0.5rem; height: 0.5rem; border-radius: 50%; background: var(--muted-foreground); animation: jrc-dot 1.2s infinite ease-in-out; }
+.jrc-typing span:nth-child(2) { animation-delay: 0.15s; }
+.jrc-typing span:nth-child(3) { animation-delay: 0.3s; }
+@keyframes jrc-dot { 0%, 80%, 100% { opacity: 0.3; } 40% { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .jrc-typing span { animation: none; opacity: 0.6; } }
+
+/* The composer sits at the end of the page, and stays at the foot of the window when the window has room for it and
+   the conversation: with large text on a short screen it scrolls with the page. Its layer sits above the rows, whose
+   swipe uses a transform. */
+.jrc-footer { display: grid; gap: var(--space-3); padding: var(--space-3) 0 var(--space-4); background: var(--background-grouped); border-top: 0.5px solid var(--border); }
+@media (min-height: 36em) { .jrc-footer { position: sticky; bottom: 0; z-index: var(--z-tabbar); } }
 .jrc-footer > * { margin: 0; }
 .jrc-footer > .ld-btn { justify-self: start; }
-.jrc-composer { display: grid; gap: var(--space-2); }
+.jrc-status { color: var(--destructive); font-size: var(--text-footnote-size); line-height: var(--text-footnote-line-height); }
+.jrc-composer { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--space-2) var(--space-3); align-items: end; }
 .jrc-composer .ld-field-input { background: var(--card); }
-.jrc-composer-actions { display: flex; justify-content: flex-end; gap: var(--space-2); }
+.jrc-composer-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--space-2); padding-bottom: var(--space-6); }
+
+/* On a narrow window the screen takes the whole width: the avatar, which the author heading already names, steps out. */
+@media (width < 37.5em) {
+  .jrc-message[data-role="assistant"] { grid-template-columns: minmax(0, 1fr); }
+  .jrc-message .jrc-avatar { display: none; }
+  .jrc-screen { padding: var(--space-3); }
+}

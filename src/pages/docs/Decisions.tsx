@@ -212,6 +212,16 @@ const GROUPS: Group[] = [
           <><Path to="scripts/check-registry.mjs" />, part of every build, fails a registry file whose relative import isn’t installed with it. The site’s <code>@/</code> and <code>@lede/</code> aliases fail there too, so a flow can’t import the docs site’s code.</>,
         ],
       },
+      {
+        title: 'Generated screens draw with Lede',
+        summary: <>The <code>json-render</code> item lets a model’s reply be a Lede screen: a catalog of components for its prompt, a registry that draws each one and <code>SpecView</code>.</>,
+        why: <>A catalog, a registry and the components they draw only work when they agree. Shipped as one item, they change with each release, and an app’s own files import them from <code>@/components/lede/</code> like any other item.</>,
+        cost: <>It adds <code>@json-render/core</code>, <code>@json-render/react</code> and <code>zod</code> for the apps that install it. A model can build only from the 12 entries in the catalog. PageHeader takes an h1 or h2, so under a chat message the registry draws its h3 title with PageHeader’s classes.</>,
+        heldBy: [
+          <><Path to="scripts/check-registry.mjs" /> fails the item when a file it installs imports a component it doesn’t list.</>,
+          <><Path to="integrations/json-render/src/catalog-fit.ts" /> and <Path to="integrations/json-render/tests/specs.test.tsx" />, which also checks each heading level <code>SpecView</code> takes, and the chat’s tests in <Path to="integrations/json-render-chat/tests/" />.</>,
+        ],
+      },
     ],
   },
   {
@@ -258,7 +268,7 @@ const GROUPS: Group[] = [
         heldBy: [
           <>The <code>integrations</code> job in <Path to=".github/workflows/ci.yml" />, which runs each entry’s <code>npm run build</code> and <code>npm test</code>.</>,
           <>For json-render, <Path to="integrations/json-render/src/catalog-fit.ts" /> fails the typecheck on a catalog prop its Lede component doesn’t take, and <Path to="integrations/json-render/tests/specs.test.tsx" /> fails on a recorded spec with a type the registry can’t draw or a prop its schema rejects.</>,
-          <>The chat entry reuses that catalog, and <Path to="integrations/json-render-chat/tests/mock-transport.test.ts" /> sends each scripted prompt through its mock transport and fails when the spec a reply builds doesn’t pass the catalog.</>,
+          <>The chat entry uses the same item. <Path to="integrations/json-render-chat/tests/mock-transport.test.ts" /> fails when the spec a scripted reply builds doesn’t pass the catalog, <Path to="integrations/json-render-chat/tests/server.test.ts" /> starts the server and checks that the model sees its earlier screens, and <Path to="integrations/json-render-chat/tests/chat.e2e.ts" /> drives the chat in a browser: a reply’s order, focus, Stop, Escape, Try again and axe.</>,
         ],
       },
     ],

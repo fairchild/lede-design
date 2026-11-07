@@ -1,12 +1,13 @@
 import { describe, expect, test } from 'vitest';
-import type { UIMessage, UIMessageChunk } from 'ai';
+import type { UIMessageChunk } from 'ai';
 import { buildSpecFromParts } from '@json-render/react';
-import { check } from '@/json-render/check';
+import { check } from '@/components/lede/json-render/check';
+import type { AppMessage } from '../src/chat/app-message';
 import { MockChatTransport } from '../src/chat/mock-transport';
 
 /** Sends one prompt through the mock transport and collects what the client would receive. */
-async function ask(transport: MockChatTransport, text: string) {
-  const messages: UIMessage[] = [{ id: 'u1', role: 'user', parts: [{ type: 'text', text }] }];
+export async function ask(transport: MockChatTransport, text: string) {
+  const messages: AppMessage[] = [{ id: 'u1', role: 'user', parts: [{ type: 'text', text }] }];
   const stream = await transport.sendMessages({ trigger: 'submit-message', chatId: 'c', messageId: undefined, messages, abortSignal: undefined });
   const chunks: UIMessageChunk[] = [];
   for (const reader = stream.getReader(); ; ) {
@@ -20,6 +21,7 @@ async function ask(transport: MockChatTransport, text: string) {
 }
 
 describe.each([
+  ['How’s my week?', 'Your week'],
   ['Show my notification settings', 'Notifications'],
   ['What’s in my inbox?', 'Inbox'],
   ['Help me sign up', 'Create your account'],

@@ -1,9 +1,10 @@
 import { renderToString } from 'react-dom/server';
 import { describe, expect, test } from 'vitest';
 import { JSONUIProvider, Renderer, type ComponentRenderer } from '@json-render/react';
-import { catalog } from '../src/catalog';
-import { registry } from '../src/registry';
-import { check } from '../src/check';
+import { SpecView } from '@/components/lede/json-render/spec-view';
+import { catalog } from '@/components/lede/json-render/catalog';
+import { registry } from '@/components/lede/json-render/registry';
+import { check } from '@/components/lede/json-render/check';
 import { specs } from '../src/specs';
 
 const { 'Invalid spec': invalid, ...recorded } = specs;
@@ -42,4 +43,15 @@ test('the invalid spec shows each kind of mistake the page explains', () => {
     expect.stringMatching(/^elements\.save\.props\.variant: Invalid option/),
     expect.stringMatching(/^elements\.period\.props\.options: Invalid input: expected array, received number$/),
   ]);
+});
+
+describe.each([2, 3] as const)('under a level %i title', (level) => {
+  const html = renderToString(<SpecView spec={specs.Inbox} headingLevel={level} />);
+  const headings = [...html.matchAll(/<h(\d)[^>]*>(.*?)<\/h\1>/g)].map(([, n, text]) => `h${n} ${text.replace(/<[^>]+>/g, '')}`);
+
+  test('the screen’s title takes that level and its sections the next', () => {
+    expect(headings[0]).toBe(`h${level} Inbox`);
+    expect(headings.slice(1).every((h) => h.startsWith(`h${level + 1} `))).toBe(true);
+    expect(headings.length).toBeGreaterThan(1);
+  });
 });

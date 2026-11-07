@@ -22,7 +22,11 @@
       "react-dom": ["./node_modules/@types/react-dom"],
       "react-dom/*": ["./node_modules/@types/react-dom/*"],
       "@base-ui/react/*": ["./node_modules/@base-ui/react/*"],
-      "@react-aria/*": ["./node_modules/@react-aria/*"]
+      "@react-aria/*": ["./node_modules/@react-aria/*"],
+      "@json-render/core": ["./node_modules/@json-render/core/dist/index"],
+      "@json-render/react": ["./node_modules/@json-render/react/dist/index"],
+      "@json-render/react/schema": ["./node_modules/@json-render/react/dist/schema"],
+      "zod": ["./node_modules/zod/index"]
     }
   },
   "include": ["src", "tests", "vite.config.ts"]

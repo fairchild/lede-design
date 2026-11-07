@@ -81,6 +81,8 @@ jobs:
         with: { node-version: 22, cache: npm, cache-dependency-path: 'integrations/${{ matrix.entry }}/package-lock.json' }
       - run: npm ci
       - run: npm run build          # tokens → tsc --noEmit → vite build
+      - if: hashFiles(format('integrations/{0}/playwright.config.ts', matrix.entry)) != ''
+        run: npx playwright install --with-deps chromium
       - run: npm test               # each entry's own tests, such as its specs against the catalog
 
   # Each part has a runner of its own: a shard of desktop and phone, or perf, which measures timings and so runs alone.
