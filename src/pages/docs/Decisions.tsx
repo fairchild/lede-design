@@ -252,13 +252,14 @@ const GROUPS: Group[] = [
       },
       {
         title: 'Integrations build against main',
-        summary: <>Each app in <code>integrations/</code> shows Lede beside another project, such as json-render, and reads Lede’s source from <code>registry/</code>.</>,
+        summary: <>Each app in <code>integrations/</code> shows Lede beside another project, such as json-render, and reads Lede’s source from <code>registry/</code>. One draws the same chat without Lede, to compare against.</>,
         why: <>An example that installs a past release shows how Lede used to work. Reading the source in <Path to="registry/" /> means a change to a component reaches each example in <Path to="integrations/" /> in the same pull request, and a break there shows in CI.</>,
         cost: <>Every pull request installs, builds and tests each entry, on a runner of its own. An entry keeps its own package manifest and lockfile, so its dependencies never reach the registry or the site.</>,
         heldBy: [
           <>The <code>integrations</code> job in <Path to=".github/workflows/ci.yml" />, which runs each entry’s <code>npm run build</code> and <code>npm test</code>.</>,
           <>For json-render, <Path to="integrations/json-render/src/catalog-fit.ts" /> fails the typecheck on a catalog prop its Lede component doesn’t take, and <Path to="integrations/json-render/tests/specs.test.tsx" /> fails on a recorded spec with a type the registry can’t draw or a prop its schema rejects.</>,
           <>The chat entry reuses that catalog, and <Path to="integrations/json-render-chat/tests/mock-transport.test.ts" /> sends each scripted prompt through its mock transport and fails when the spec a reply builds doesn’t pass the catalog.</>,
+          <>The plain chat entry, which draws the same conversations from json-render’s shadcn components to compare against, runs the same transport test against its own catalog, and <Path to="integrations/json-render-chat-plain/tests/specs.test.tsx" /> fails on a recorded spec with a type its registry can’t draw.</>,
         ],
       },
     ],

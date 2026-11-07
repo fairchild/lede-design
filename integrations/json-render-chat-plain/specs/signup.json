@@ -1,0 +1,36 @@
+{
+  "root": "screen",
+  "state": { "form": { "name": "Ada Lovelace", "email": "ada.example.com", "terms": false } },
+  "elements": {
+    "screen": { "type": "Stack", "props": { "direction": "vertical", "gap": "lg" }, "children": ["title", "summary", "contact", "terms", "create"] },
+    "title": { "type": "Heading", "props": { "text": "Create your account", "level": "h3" }, "children": [] },
+    "summary": { "type": "Text", "props": { "text": "Two fields and you’re in. One of them needs a fix.", "variant": "muted" }, "children": [] },
+    "contact": {
+      "type": "Card",
+      "props": { "title": "Contact details", "description": "We send your sign-in link to this address." },
+      "children": ["name", "email"]
+    },
+    "name": {
+      "type": "Input",
+      "props": { "label": "Name", "name": "name", "value": { "$bindState": "/form/name" }, "checks": [{ "type": "required", "message": "Enter your name." }] },
+      "children": []
+    },
+    "email": {
+      "type": "Input",
+      "props": {
+        "label": "Email",
+        "name": "email",
+        "type": "email",
+        "placeholder": "ada@example.com",
+        "value": { "$bindState": "/form/email" },
+        "checks": [
+          { "type": "required", "message": "Enter your email address." },
+          { "type": "email", "message": "Enter an email address with an @, such as ada@example.com." }
+        ]
+      },
+      "children": []
+    },
+    "terms": { "type": "Checkbox", "props": { "label": "I agree to the terms of use", "name": "terms", "checked": { "$bindState": "/form/terms" } }, "children": [] },
+    "create": { "type": "Button", "props": { "label": "Create account", "variant": "primary" }, "on": { "press": { "action": "submit", "params": { "form": "signup" } } }, "children": [] }
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "root": "screen",
+  "state": {
+    "settings": { "push": true, "email": false, "mentions": true, "digest": "weekly", "signature": "Sent from Daybook", "signatureOn": true }
+  },
+  "elements": {
+    "screen": { "type": "Stack", "props": { "direction": "vertical", "gap": "lg" }, "children": ["title", "summary", "delivery", "digest", "signature"] },
+    "title": { "type": "Heading", "props": { "text": "Notifications", "level": "h3" }, "children": [] },
+    "summary": { "type": "Text", "props": { "text": "Push alerts are on, and a summary arrives each week.", "variant": "muted" }, "children": [] },
+    "delivery": {
+      "type": "Card",
+      "props": { "title": "Delivery", "description": "Mentions reach you even when the others are off." },
+      "children": ["push", "email", "mentions"]
+    },
+    "push": { "type": "Switch", "props": { "label": "Push alerts", "name": "push", "checked": { "$bindState": "/settings/push" } }, "children": [] },
+    "email": { "type": "Switch", "props": { "label": "Email alerts", "name": "email", "checked": { "$bindState": "/settings/email" } }, "children": [] },
+    "mentions": { "type": "Switch", "props": { "label": "Mentions", "name": "mentions", "checked": { "$bindState": "/settings/mentions" } }, "children": [] },
+    "digest": { "type": "Card", "props": { "title": "Summary email" }, "children": ["digest-choice"] },
+    "digest-choice": {
+      "type": "ToggleGroup",
+      "props": {
+        "type": "single",
+        "items": [{ "label": "Daily", "value": "daily" }, { "label": "Weekly", "value": "weekly" }, { "label": "Never", "value": "never" }],
+        "value": { "$bindState": "/settings/digest" }
+      },
+      "children": []
+    },
+    "signature": {
+      "type": "Card",
+      "props": { "title": "Signature", "description": "Added to the end of each reply you send." },
+      "children": ["signature-text", "signature-on"]
+    },
+    "signature-text": { "type": "Textarea", "props": { "label": "Signature text", "name": "signature", "rows": 2, "value": { "$bindState": "/settings/signature" } }, "children": [] },
+    "signature-on": { "type": "Switch", "props": { "label": "Add to replies", "name": "signatureOn", "checked": { "$bindState": "/settings/signatureOn" } }, "children": [] }
+  }
+}

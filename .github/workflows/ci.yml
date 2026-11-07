@@ -70,7 +70,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        entry: [json-render, json-render-chat]
+        entry: [json-render, json-render-chat, json-render-chat-plain]
     defaults:
       run:
         working-directory: integrations/${{ matrix.entry }}
