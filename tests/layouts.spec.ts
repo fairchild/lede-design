@@ -42,13 +42,14 @@ test('Decisions links each repo path it names to that file on GitHub', async ({ 
     // A Disclosure's summary sits in its button, where a link can't nest.
     inButton: !!code.closest('button'),
   })));
-  const paths = named.filter(({ text }) => /^[\w.-]+(\/[\w.-]+)*\/?$/.test(text) && /[/.]/.test(text) && existsSync(text));
+  // A repo path by its shape, whether or not it exists: a folder with a slash, or a file with an extension.
+  const isPath = (text: string) => /^[\w.-]+(\/[\w.-]+)*\/?$/.test(text) && /\/|\.(md|json|ts|tsx|mjs|css)$/.test(text);
+  const paths = named.filter(({ text }) => isPath(text));
   expect(paths.length).toBeGreaterThan(20);
+  expect(paths.filter(({ text }) => !existsSync(text)).map(({ text }) => text), 'missing from the repo').toEqual([]);
   expect(paths.filter(({ href, inButton }) => !href && !inButton).map(({ text }) => text), 'unlinked').toEqual([]);
-  for (const { text, href } of named.filter(({ href }) => href?.startsWith(files))) {
-    const [, kind, , path] = /^[^]*?\/(blob|tree)\/([^/]+)\/(.+)$/.exec(href!.slice(files.length - 1))!;
-    expect(path, href!).toBe(text);
-    expect(existsSync(path) && kind === (path.endsWith('/') ? 'tree' : 'blob'), href!).toBe(true);
+  for (const { text, href } of paths.filter(({ href }) => href)) {
+    expect(href, text).toBe(`${files}${text.endsWith('/') ? 'tree' : 'blob'}/main/${text}`);
   }
 });
 

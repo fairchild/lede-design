@@ -2,7 +2,7 @@
 
 ## 0.4.0
 
-First public release. Lede is a design system for React, installed from the shadcn registry at
+First public release. Lede is a design system for React, installed from its shadcn registry at
 `https://lede.cloudcompute.com/r/v0.4.0/{name}.json`.
 
 - 12 components, each a native element where HTML has one, with Base UI for the interactions HTML can't do.

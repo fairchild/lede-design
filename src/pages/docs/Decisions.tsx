@@ -279,9 +279,9 @@ const GROUPS: Group[] = [
       },
       {
         title: 'Released notes stay as shipped',
-        summary: <>New changelog lines go under <code>## Unreleased</code> at the top, and a release renames it to the version. A released section stays as it shipped.</>,
+        summary: <>New changelog lines go under <code>{'##\u00a0Unreleased'}</code> at the top, and a release renames it to the version. A released section stays as it shipped.</>,
         why: 'A consumer reads a released section as the record of what that version did, so editing it later changes the record they upgraded from.',
-        cost: <>A correction to a released note is a new line under <code>## Unreleased</code>.</>,
+        cost: <>A correction to a released note is a new line under <code>{'##\u00a0Unreleased'}</code>.</>,
         heldBy: [<>The “Before you open a pull request” section of <Path to="CONTRIBUTING.md" />, in review.</>],
       },
       {
