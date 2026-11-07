@@ -1,18 +1,14 @@
 import * as React from 'react';
 import { useChat } from '@ai-sdk/react';
-import { DefaultChatTransport } from 'ai';
-import { JSONUIProvider, Renderer, buildSpecFromParts } from '@json-render/react';
 import { ThemeProvider } from '@/components/lede/theme-provider';
 import { Button } from '@/components/lede/button';
 import { SegmentedControl } from '@/components/lede/segmented-control';
 import { TextField } from '@/components/lede/text-field';
 import { PageHeader } from '@/components/lede/blocks/page-header';
-import { registry, SpecHeadingLevel } from '@json-render-lede/registry';
-import { MockChatTransport } from './mock-transport';
+import { transport, chatApi as api } from './transport';
+import { SpecView, type SpecActions } from './spec-view';
 import { toChatMessage, type ChatMessage } from './chat-message';
 
-const api = import.meta.env.VITE_CHAT_API as string | undefined;
-const transport = api ? new DefaultChatTransport({ api }) : new MockChatTransport();
 const ASSISTANT = 'Daybook';
 const SUGGESTIONS = ['Show my notification settings', 'What’s in my inbox?', 'Help me sign up', 'Fail once'];
 
@@ -136,26 +132,19 @@ interface MessageProps {
 /** One turn: its author as a heading, its text and, where the reply has one, the screen its spec describes. */
 function Message({ message, live, notes, onAction }: MessageProps) {
   const id = React.useId();
-  const data = message.parts.filter((p) => p.type === 'data');
-  const spec = buildSpecFromParts(data.map((p) => ({ type: `data-${p.name}`, data: p.data })));
-  const ready = !!spec?.elements[spec.root];
-  const handlers = React.useMemo(() => Object.fromEntries(['open', 'archive', 'submit'].map((name) => [name, (params: Record<string, unknown>) => onAction(name, params)])), [onAction]);
+  const actions = React.useMemo<SpecActions>(() => ({
+    open: (params) => onAction('open', params),
+    archive: (params) => onAction('archive', params),
+    submit: (params) => onAction('submit', params),
+  }), [onAction]);
   const firstData = message.parts.findIndex((p) => p.type === 'data');
-  const screen = ready ? (
-    <div key="spec" className="jrc-spec">
-      <SpecHeadingLevel.Provider value={3}>
-        <JSONUIProvider registry={registry} initialState={spec.state ?? {}} handlers={handlers}>
-          <Renderer spec={spec} registry={registry} loading={live} />
-        </JSONUIProvider>
-      </SpecHeadingLevel.Provider>
-    </div>
-  ) : null;
+  const parts = message.parts.flatMap((p) => (p.type === 'data' ? [{ type: `data-${p.name}`, data: p.data }] : []));
 
   return (
     <li className="jrc-message" data-role={message.role}>
       <h2 id={id} className="jrc-author">{message.author}</h2>
       {message.parts.map((part, i) => {
-        if (part.type === 'data') return i === firstData ? screen : null;
+        if (part.type === 'data') return i === firstData ? <SpecView key="spec" parts={parts} streaming={live} actions={actions} /> : null;
         return part.text.trim() ? <p key={i} className="jrc-text">{part.text.trim()}</p> : null;
       })}
       {message.ending ? (
