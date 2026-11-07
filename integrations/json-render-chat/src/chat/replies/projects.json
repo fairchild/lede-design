@@ -1,0 +1,68 @@
+{
+  "root": "screen",
+  "state": {
+    "view": "Active"
+  },
+  "elements": {
+    "screen": {
+      "type": "Screen",
+      "props": {},
+      "children": [
+        "header",
+        "view",
+        "empty"
+      ]
+    },
+    "header": {
+      "type": "PageHeader",
+      "props": {
+        "title": "Projects",
+        "summary": "You have no projects yet."
+      },
+      "children": []
+    },
+    "view": {
+      "type": "SegmentedControl",
+      "props": {
+        "label": "Show",
+        "options": [
+          "Active",
+          "Archived"
+        ],
+        "value": {
+          "$bindState": "/view"
+        }
+      },
+      "children": []
+    },
+    "empty": {
+      "type": "EmptyState",
+      "props": {
+        "title": "No projects yet",
+        "description": "A project gathers the tasks, files and people for one piece of work."
+      },
+      "slots": {
+        "action": [
+          "new"
+        ]
+      },
+      "children": []
+    },
+    "new": {
+      "type": "Button",
+      "props": {
+        "label": "New project",
+        "variant": "filled"
+      },
+      "on": {
+        "press": {
+          "action": "open",
+          "params": {
+            "id": "new-project"
+          }
+        }
+      },
+      "children": []
+    }
+  }
+}

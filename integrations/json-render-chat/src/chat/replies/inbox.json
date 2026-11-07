@@ -1,0 +1,88 @@
+{
+  "root": "screen",
+  "state": { "archived": {} },
+  "elements": {
+    "screen": { "type": "Screen", "props": {}, "children": ["header", "reply", "messages"] },
+    "header": {
+      "type": "PageHeader",
+      "props": { "title": "Inbox", "summary": "3 unread messages, and one needs a reply today." },
+      "slots": { "actions": ["compose"] },
+      "children": []
+    },
+    "compose": {
+      "type": "Button",
+      "props": { "label": "New message", "variant": "filled" },
+      "on": { "press": { "action": "open", "params": { "id": "new" } } },
+      "children": []
+    },
+    "reply": {
+      "type": "SummaryCard",
+      "props": {
+        "title": "Needs a reply",
+        "figure": "1",
+        "summary": "Grace asked for the venue by 5:00 PM.",
+        "status": { "tone": "caution", "label": "Due today" }
+      },
+      "children": []
+    },
+    "messages": {
+      "type": "ListGroup",
+      "props": { "title": "Today", "footer": "Swipe a row, or open its menu, to archive it." },
+      "children": ["m1", "m2", "m3"]
+    },
+    "m1": {
+      "type": "ListRow",
+      "props": {
+        "title": "Grace Hopper",
+        "subtitle": "Venue for Thursday: can you confirm by 5?",
+        "value": "9:41 AM",
+        "actions": [{ "label": "Archive", "event": "archive" }]
+      },
+      "visible": { "$state": "/archived/m1", "not": true },
+      "on": {
+        "press": { "action": "open", "params": { "id": "m1" } },
+        "archive": [
+          { "action": "setState", "params": { "statePath": "/archived/m1", "value": true } },
+          { "action": "archive", "params": { "id": "m1" } }
+        ]
+      },
+      "children": []
+    },
+    "m2": {
+      "type": "ListRow",
+      "props": {
+        "title": "Alan Turing",
+        "subtitle": "Notes from the review are in the shared folder.",
+        "value": "8:15 AM",
+        "actions": [{ "label": "Archive", "event": "archive" }]
+      },
+      "visible": { "$state": "/archived/m2", "not": true },
+      "on": {
+        "press": { "action": "open", "params": { "id": "m2" } },
+        "archive": [
+          { "action": "setState", "params": { "statePath": "/archived/m2", "value": true } },
+          { "action": "archive", "params": { "id": "m2" } }
+        ]
+      },
+      "children": []
+    },
+    "m3": {
+      "type": "ListRow",
+      "props": {
+        "title": "Katherine Johnson",
+        "subtitle": "Updated figures for the launch window.",
+        "value": "7:02 AM",
+        "actions": [{ "label": "Archive", "event": "archive" }]
+      },
+      "visible": { "$state": "/archived/m3", "not": true },
+      "on": {
+        "press": { "action": "open", "params": { "id": "m3" } },
+        "archive": [
+          { "action": "setState", "params": { "statePath": "/archived/m3", "value": true } },
+          { "action": "archive", "params": { "id": "m3" } }
+        ]
+      },
+      "children": []
+    }
+  }
+}

@@ -6,13 +6,13 @@ import { Button } from '@/components/lede/button';
 import { Disclosure } from '@/components/lede/disclosure';
 import { SegmentedControl } from '@/components/lede/segmented-control';
 import { PageHeader } from '@/components/lede/blocks/page-header';
-import { catalog } from './catalog';
-import { registry, handlers, actions, type ActionEvent } from './registry';
+import { functions, prompt } from '@/components/lede/json-render/catalog';
+import { registry, handlers, actions, FieldChecks, type ActionEvent } from '@/components/lede/json-render/registry';
 import { replay } from './stream';
-import { check } from './check';
+import { check } from '@/components/lede/json-render/check';
 import { specs, type SpecName } from './specs';
 
-const prompt = catalog.prompt();
+const shown = prompt({ mode: 'standalone' });
 const actionHandlers = handlers(() => undefined, () => ({}));
 
 /** Drawn for a type the registry doesn't have. Without it, json-render logs a warning and draws nothing. */
@@ -78,8 +78,10 @@ export function App() {
         </div>
         <div className="jr-layout">
           <section className="jr-preview" aria-label="Preview" aria-busy={streaming}>
-            <JSONUIProvider key={name} registry={registry} initialState={full.state ?? {}} handlers={actionHandlers} onStateChange={(changes) => setState((prev) => apply(prev, changes))}>
-              <Renderer spec={spec} registry={registry} loading={streaming} fallback={Unknown} />
+            <JSONUIProvider key={name} registry={registry} functions={functions} initialState={full.state ?? {}} handlers={actionHandlers} onStateChange={(changes) => setState((prev) => apply(prev, changes))}>
+              <FieldChecks>
+                <Renderer spec={spec} registry={registry} loading={streaming} fallback={Unknown} />
+              </FieldChecks>
             </JSONUIProvider>
           </section>
           <aside className="jr-inspector" aria-labelledby="checks">
@@ -96,8 +98,8 @@ export function App() {
         </div>
         <section aria-labelledby="under" className="jr-under">
           <h2 id="under" className="text-title-3">What json-render sees</h2>
-          <Disclosure title="The prompt" summary="What catalog.prompt() tells a model: the spec format, each component with its props and when to use it, and the actions." headingLevel={3}>
-            <pre className="jr-code" tabIndex={0} aria-label="The prompt"><code>{prompt}</code></pre>
+          <Disclosure title="The prompt" summary="What prompt() tells a model: the spec format, each component with its props and when to use it, the actions and Lede’s rules." headingLevel={3}>
+            <pre className="jr-code" tabIndex={0} aria-label="The prompt"><code>{shown}</code></pre>
           </Disclosure>
           <Disclosure title="The spec" summary={`The JSON a model wrote for ${name}.`} headingLevel={3}>
             <pre className="jr-code" tabIndex={0} aria-label="The spec"><code>{JSON.stringify(full, null, 2)}</code></pre>

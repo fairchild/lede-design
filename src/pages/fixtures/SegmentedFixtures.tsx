@@ -41,9 +41,33 @@ function Replaced() {
   );
 }
 
+/** Required, with nothing chosen yet: no thumb, an error that describes the group, and radios that fail their check. */
+function Unchosen() {
+  const [value, setValue] = React.useState('');
+  const error = React.useId();
+  return (
+    <section aria-label="Nothing chosen, required, 240px" className="docs-section">
+      <div style={{ width: 240 }}>
+        <SegmentedControl
+          block
+          required
+          label="Mode"
+          options={['Automatic', 'Light', 'Dark']}
+          value={value}
+          onValueChange={setValue}
+          aria-invalid={!value}
+          aria-describedby={value ? undefined : error}
+        />
+      </div>
+      {value ? null : <p id={error}>Choose a mode.</p>}
+    </section>
+  );
+}
+
 /**
  * SegmentedControls with labels of unequal length in narrow boxes, for tests/segmented-control.spec.ts, which also
- * doubles the text size, widens a box and replaces options. Not linked from the navigation.
+ * doubles the text size, widens a box, replaces options and starts one with nothing chosen. Not linked from the
+ * navigation.
  */
 export function SegmentedFixtures() {
   return (
@@ -59,6 +83,7 @@ export function SegmentedFixtures() {
         </section>
       ))}
       <Replaced />
+      <Unchosen />
     </div>
   );
 }

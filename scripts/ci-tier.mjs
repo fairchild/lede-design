@@ -1,7 +1,8 @@
 // Picks how much of CI a pull request into main needs from the paths it changes, read one per line on stdin. The PR's
 // base branch is the argument.
-// 1: only Markdown the site doesn't render and integrations/, so the build runs and Playwright doesn't. Nothing the site
-// builds imports integrations/, and the integrations job runs each entry's own build and tests on every PR.
+// 1: only Markdown the site doesn't render and integrations/ files that still exist, so the build runs and Playwright
+// doesn't. Nothing the site builds imports integrations/, and the integrations job runs each entry's own build and tests
+// on every PR. A deleted one isn't tier 1: the Decisions page links paths there, and layouts.spec checks they exist.
 // 2: only .ts files under tests/ that still exist, so the build runs and Playwright runs the specs they touch.
 // 3: anything else, an empty list included, so everything runs. An unrecognized path always lands here, and so does
 // every PR into another branch: retargeting a stacked PR to main runs no CI, so its last run has to have been full.
@@ -20,7 +21,7 @@ const TEST = /^tests\/.+\.ts$/;
  */
 export function tier(paths, base, exists = existsSync) {
   if (base !== 'main' || paths.length === 0) return 3;
-  if (paths.every((path) => TEXT.test(path) || INTEGRATION.test(path))) return 1;
+  if (paths.every((path) => TEXT.test(path) || (INTEGRATION.test(path) && exists(path)))) return 1;
   if (paths.every((path) => TEST.test(path) && exists(path))) return 2;
   return 3;
 }
@@ -48,6 +49,8 @@ const CASES = [
   [['integrations/README.md', 'integrations/json-render/src/App.tsx', 'integrations/json-render/package-lock.json'], 1],
   [['integrations/json-render/specs/inbox.json', 'CHANGELOG.md'], 1],
   [['integrations'], 3],
+  [['integrations/json-render/tests/deleted.test.tsx'], 3],
+  [['integrations/json-render/src/App.tsx', 'integrations/json-render/tests/deleted.test.tsx'], 3],
   [['integrations/json-render/src/App.tsx', 'src/main.tsx'], 3],
   [['integrations/json-render/src/App.tsx', 'registry/lede/list.tsx'], 3],
   [['integrations/json-render/tests/specs.test.tsx', 'tests/inbox.spec.ts'], 3],
@@ -57,7 +60,7 @@ const CASES = [
 ];
 
 if (process.argv.includes('--self-test')) {
-  const exists = (path) => path !== 'tests/deleted.spec.ts';
+  const exists = (path) => !path.includes('/deleted.');
   for (const [paths, expected, base = 'main'] of CASES) {
     deepStrictEqual({ paths, base, tier: tier(paths, base, exists) }, { paths, base, tier: expected });
   }

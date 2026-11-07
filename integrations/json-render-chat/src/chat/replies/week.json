@@ -1,0 +1,126 @@
+{
+  "root": "screen",
+  "state": {
+    "view": "This week",
+    "focus": false,
+    "meetings": [
+      {
+        "id": "venue-review",
+        "title": "Venue review",
+        "subtitle": "With Grace and Alan",
+        "when": "Today, 2:00 PM"
+      },
+      {
+        "id": "launch-sync",
+        "title": "Launch window sync",
+        "subtitle": "With Katherine",
+        "when": "Thu, 1:00 PM"
+      },
+      {
+        "id": "critique",
+        "title": "Design critique",
+        "subtitle": "Studio B",
+        "when": "Thu, 3:30 PM"
+      }
+    ]
+  },
+  "elements": {
+    "screen": {
+      "type": "Screen",
+      "props": {},
+      "children": [
+        "header",
+        "period",
+        "meetings",
+        "agenda",
+        "focus"
+      ]
+    },
+    "header": {
+      "type": "PageHeader",
+      "props": {
+        "title": "Your week",
+        "summary": "4 meetings left, and Thursday is the busiest day."
+      },
+      "children": []
+    },
+    "period": {
+      "type": "SegmentedControl",
+      "props": {
+        "label": "Period",
+        "options": [
+          "Today",
+          "This week",
+          "Next week"
+        ],
+        "value": {
+          "$bindState": "/view"
+        }
+      },
+      "children": []
+    },
+    "meetings": {
+      "type": "SummaryCard",
+      "props": {
+        "title": "Meetings left",
+        "figure": "4",
+        "summary": "2 of them are on Thursday afternoon.",
+        "status": {
+          "tone": "caution",
+          "label": "Busy Thursday"
+        }
+      },
+      "children": []
+    },
+    "agenda": {
+      "type": "ListGroup",
+      "props": {
+        "title": "Coming up",
+        "summary": "Venue review is next, at 2:00 PM."
+      },
+      "repeat": {
+        "statePath": "/meetings",
+        "key": "id"
+      },
+      "children": [
+        "meeting"
+      ]
+    },
+    "focus": {
+      "type": "Switch",
+      "props": {
+        "label": "Block Friday morning for focus time",
+        "checked": {
+          "$bindState": "/focus"
+        }
+      },
+      "children": []
+    },
+    "meeting": {
+      "type": "ListRow",
+      "props": {
+        "title": {
+          "$item": "title"
+        },
+        "subtitle": {
+          "$item": "subtitle"
+        },
+        "value": {
+          "$item": "when"
+        },
+        "chevron": true
+      },
+      "on": {
+        "press": {
+          "action": "open",
+          "params": {
+            "id": {
+              "$template": "${id}"
+            }
+          }
+        }
+      },
+      "children": []
+    }
+  }
+}

@@ -25,4 +25,3 @@ html, body { margin: 0; font-family: var(--font-sans); -webkit-font-smoothing: a
 .jr-under > h2 { margin: 0; }
 .jr-code { margin: 0; max-height: 28rem; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; font-size: var(--text-footnote-size); line-height: var(--text-footnote-line-height); }
 .jr-unknown { margin: 0; padding: var(--space-4); border: 1px dashed var(--muted-foreground); border-radius: var(--radius-lg); color: var(--muted-foreground); }
-.jr-check { display: flex; align-items: center; gap: var(--space-2); }

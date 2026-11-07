@@ -1,0 +1,13 @@
+Here are two words to practice, and a check when you're ready.
+
+```spec
+{"op":"add","path":"/root","value":"screen"}
+{"op":"add","path":"/elements/screen","value":{"type":"Screen","props":{},"children":["header","words","check","again"]}}
+{"op":"add","path":"/elements/header","value":{"type":"PageHeader","props":{"title":"Practice words","summary":"Two words left, and a check at the end."},"children":[]}}
+{"op":"add","path":"/elements/words","value":{"type":"ListGroup","props":{"title":"To learn"},"children":["w1","w2"]}}
+{"op":"add","path":"/elements/w1","value":{"type":"ListRow","props":{"title":"la manzana","subtitle":"the apple","actions":[{"label":"Learned","event":"archive"}]},"visible":{"$state":"/learned/w1","not":true},"on":{"archive":{"action":"setState","params":{"statePath":"/learned/w1","value":true}}},"children":[]}}
+{"op":"add","path":"/elements/w2","value":{"type":"ListRow","props":{"title":"el perro","subtitle":"the dog","actions":[{"label":"Learned","event":"archive"}]},"visible":{"$state":"/learned/w2","not":true},"on":{"archive":{"action":"setState","params":{"statePath":"/learned/w2","value":true}}},"children":[]}}
+{"op":"add","path":"/elements/check","value":{"type":"Button","props":{"label":"Check answers","variant":"filled"},"visible":{"$state":"/checked","not":true},"on":{"press":{"action":"setState","params":{"statePath":"/checked","value":true}}},"children":[]}}
+{"op":"add","path":"/elements/again","value":{"type":"Button","props":{"label":"Start over"},"visible":{"$state":"/checked"},"on":{"press":{"action":"setState","params":{"statePath":"/checked","value":false}}},"children":[]}}
+{"op":"add","path":"/state","value":{"checked":false,"learned":{}}}
+```

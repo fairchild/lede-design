@@ -9,6 +9,7 @@ registry, with layouts (blocks) and hero flows. The docs site and demo app are t
    writes `src/styles/lede.tokens.css` and `registry/lede/lede.tokens.css` (generated, git-ignored).
 2. `registry/lede/*.tsx` — primitives. `lede.components.css` styles them.
 3. `registry/lede/blocks/*.tsx` — layouts and higher-level components. `lede.blocks.css`.
+   `registry/lede/json-render/` sits here too: a json-render catalog and registry over the components, adding no CSS.
 4. `registry/lede/flows/*.tsx` — hero-flow assemblies. Router-agnostic: data, hrefs and callbacks in; no fetching.
 5. `src/` — docs site and the demo app ("Daybook"), wiring flows to React Router and sample data.
 - `integrations/` sits outside the layers: self-contained apps that show Lede beside another project. They read `registry/`, and no layer imports them.
@@ -79,10 +80,12 @@ Every installed registry file must be listed in `registry.json`; the `index.ts` 
 - `npm run contrast` — the contrast gate alone; `npm run contrast -- --report` prints every pair.
 - CI runs what a PR into main can affect, and `check` is the one status to read. `scripts/ci-tier.mjs` sorts the
   PR's diff against main. A diff of only Markdown the site doesn't render (the root `CHANGELOG.md`, `CONTRIBUTING.md`
-  and `CLAUDE.md`, plus Markdown in `docs/` and `.claude/`) runs the build. Overview renders the README's install steps,
-  so a README diff runs everything. A diff of only `.ts`
-  files under `tests/`, none of them deleted, runs the build and the specs that change or import a changed helper. Any
-  other diff runs the build and the whole suite in shards, with `perf` on a runner of its own. A PR into another
-  branch, a push to main and a manual run always run everything. The `@source not` lines in `src/styles/globals.css`
-  keep Tailwind from scanning those Markdown files and `tests/`, so neither kind of diff reaches the site's CSS, and
-  they change with the script's lists. If the site starts to render one of those Markdown files, take it out of both.
+  and `CLAUDE.md`, plus Markdown in `docs/` and `.claude/`), of files under `integrations/` that still exist, or of
+  both, runs the build. Overview renders the README's install steps, so a README diff runs everything. A diff of only
+  `.ts` files under `tests/`, none of them deleted, runs the build and the specs that change or import a changed helper.
+  Any other diff runs the build and the whole suite in shards, with `perf` on a runner of its own. A PR into another
+  branch, a push to main and a manual run always run everything. The `integrations` job, which `check` needs, runs
+  each `integrations/` entry's own build and tests on every PR. The `@source not` lines in `src/styles/globals.css`
+  keep Tailwind from scanning those Markdown files, `tests/` and `integrations/`, so none of those diffs reaches the
+  site's CSS, and they change with the script's lists. If the site starts to render one of those Markdown files, take
+  it out of both.

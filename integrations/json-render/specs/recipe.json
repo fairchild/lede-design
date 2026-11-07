@@ -1,0 +1,108 @@
+{
+  "root": "screen",
+  "state": {
+    "servings": "4 people",
+    "recipe": {
+      "serves": 4
+    },
+    "ingredients": [
+      {
+        "id": "eggs",
+        "name": "Eggs",
+        "amount": 6,
+        "unit": ""
+      },
+      {
+        "id": "tomatoes",
+        "name": "Crushed tomatoes",
+        "amount": 400,
+        "unit": "g"
+      },
+      {
+        "id": "peppers",
+        "name": "Red peppers",
+        "amount": 2,
+        "unit": ""
+      },
+      {
+        "id": "cumin",
+        "name": "Ground cumin",
+        "amount": 1.5,
+        "unit": "tsp"
+      }
+    ]
+  },
+  "elements": {
+    "screen": {
+      "type": "Screen",
+      "props": {},
+      "children": [
+        "header",
+        "servings",
+        "list"
+      ]
+    },
+    "header": {
+      "type": "PageHeader",
+      "props": {
+        "title": "Shakshuka",
+        "summary": "Pick how many people it feeds, and the amounts follow."
+      },
+      "children": []
+    },
+    "servings": {
+      "type": "SegmentedControl",
+      "props": {
+        "label": "Serves",
+        "options": [
+          "2 people",
+          "4 people",
+          "6 people"
+        ],
+        "value": {
+          "$bindState": "/servings"
+        }
+      },
+      "children": []
+    },
+    "list": {
+      "type": "ListGroup",
+      "props": {
+        "title": "Ingredients"
+      },
+      "repeat": {
+        "statePath": "/ingredients",
+        "key": "id"
+      },
+      "children": [
+        "ingredient"
+      ]
+    },
+    "ingredient": {
+      "type": "ListRow",
+      "props": {
+        "title": {
+          "$item": "name"
+        },
+        "value": {
+          "$computed": "scale",
+          "args": {
+            "amount": {
+              "$item": "amount"
+            },
+            "unit": {
+              "$item": "unit"
+            },
+            "from": {
+              "$state": "/recipe/serves"
+            },
+            "to": {
+              "$state": "/servings"
+            }
+          }
+        }
+      },
+      "children": []
+    }
+  }
+}

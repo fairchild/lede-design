@@ -9,7 +9,7 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: { '@/components/lede': fileURLToPath(new URL('../../registry/lede', import.meta.url)) },
-    dedupe: ['react', 'react-dom', '@base-ui/react', '@react-aria/interactions'],
+    dedupe: ['react', 'react-dom', '@base-ui/react', '@react-aria/interactions', '@json-render/core', '@json-render/react', 'zod'],
   },
   server: { port: 4890, strictPort: true, fs: { allow: ['../..'] } },
   preview: { port: 4891, strictPort: true },

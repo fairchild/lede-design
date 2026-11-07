@@ -1,0 +1,6 @@
+I turned off push notifications.
+
+```spec
+{"op":"replace","path":"/state/settings/push","value":false}
+{"op":"replace","path":"/elements/push/props/subtitle","value":"Off on this device"}
+```

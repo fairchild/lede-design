@@ -61,11 +61,11 @@ export function Components() {
       <Demo id="c-switch" item="switch" title="Switch" summary={<>A Base UI Switch in an enclosing <code>{'<label>'}</code>. Given a <code>name</code>, it submits with a form through a hidden native input.</>}>
         <div className="docs-demo"><Switch label="Wi-Fi" defaultChecked /><Switch label="Bluetooth" /><Switch label="Disabled" disabled defaultChecked /></div>
       </Demo>
-      <Demo id="c-check" item="checkbox" title="Checkbox" summary={<>A native <code>{'<input type="checkbox">'}</code> with a drawn box, named by the <code>{'<label>'}</code> around it or by <code>aria-label</code>. <code>indeterminate</code> shows the mixed state, such as some rows of a page selected.</>}>
+      <Demo id="c-check" item="checkbox" title="Checkbox" summary={<>A native <code>{'<input type="checkbox">'}</code> with a drawn box, named by the <code>{'<label>'}</code> around it or by <code>aria-label</code>. The class <code>ld-checkbox-field</code> on that label keeps a long label in a column beside the box. <code>indeterminate</code> shows the mixed state, such as some rows of a page selected.</>}>
         <div className="docs-demo">
-          <label className="docs-check"><Checkbox defaultChecked /> Email me a summary</label>
-          <label className="docs-check"><Checkbox /> Include archived items</label>
-          <label className="docs-check"><Checkbox indeterminate /> Select all</label>
+          <label className="ld-checkbox-field"><Checkbox defaultChecked /><span className="ld-checkbox-label">Email me a summary</span></label>
+          <label className="ld-checkbox-field"><Checkbox /><span className="ld-checkbox-label">Include archived items</span></label>
+          <label className="ld-checkbox-field"><Checkbox indeterminate /><span className="ld-checkbox-label">Select all</span></label>
         </div>
       </Demo>
       <Demo id="c-field" item="text-field" title="TextField" summary={<>A labeled <code>{'<input>'}</code>, or a <code>{'<textarea>'}</code> when given <code>rows</code>, on Base UI Field. The hint and the error are linked to the input with <code>aria-describedby</code>.</>}>

@@ -1,0 +1,16 @@
+You have 4 messages, and 2 are unread. Priya is waiting on your answer about Thursday's review.
+
+```spec
+{"op":"add","path":"/root","value":"screen"}
+{"op":"add","path":"/elements/screen","value":{"type":"Screen","props":{},"children":["header","unread","messages"]}}
+{"op":"add","path":"/elements/header","value":{"type":"PageHeader","props":{"title":"Inbox","summary":"2 unread messages, and one needs a reply today."},"slots":{"actions":["compose"]},"children":[]}}
+{"op":"add","path":"/elements/compose","value":{"type":"Button","props":{"label":"New message","variant":"filled"},"on":{"press":{"action":"open","params":{"id":"new"}}},"children":[]}}
+{"op":"add","path":"/elements/unread","value":{"type":"SummaryCard","props":{"title":"Unread","figure":"2","summary":"Priya needs an answer about Thursday’s review.","status":{"tone":"caution","label":"Reply today"}},"children":[]}}
+{"op":"add","path":"/elements/messages","value":{"type":"ListGroup","props":{"title":"Today"},"repeat":{"statePath":"/messages","key":"id"},"children":["message"]}}
+{"op":"add","path":"/elements/message","value":{"type":"ListRow","props":{"title":{"$item":"from"},"subtitle":{"$item":"subject"},"value":{"$item":"time"},"chevron":true,"actions":[{"label":"Archive","event":"archive"},{"label":"Delete","tone":"critical","event":"delete"}]},"on":{"press":{"action":"open","params":{"id":{"$template":"${id}"}}},"archive":{"action":"archive","params":{"id":{"$template":"${id}"}}},"delete":{"action":"removeState","params":{"statePath":"/messages","index":{"$index":true}}}},"children":[]}}
+{"op":"add","path":"/state/messages","value":[]}
+{"op":"add","path":"/state/messages/0","value":{"id":"m1","from":"Priya Shah","subject":"Thursday review: can we move it to 3?","time":"9:12 AM"}}
+{"op":"add","path":"/state/messages/1","value":{"id":"m2","from":"Lena Ortiz","subject":"Draft agenda for the offsite","time":"8:40 AM"}}
+{"op":"add","path":"/state/messages/2","value":{"id":"m3","from":"Calendar","subject":"Reminder: Dentist at 4:30 PM","time":"7:00 AM"}}
+{"op":"add","path":"/state/messages/3","value":{"id":"m4","from":"Marco Bell","subject":"Photos from Saturday","time":"Yesterday"}}
+```

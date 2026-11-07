@@ -1,15 +1,15 @@
 import type { JSXElementConstructor } from 'react';
 import type { z } from 'zod';
-import type { Button } from '@/components/lede/button';
-import type { Checkbox } from '@/components/lede/checkbox';
-import type { ListGroup, ListRow } from '@/components/lede/list';
-import type { SegmentedControl } from '@/components/lede/segmented-control';
-import type { Switch } from '@/components/lede/switch';
-import type { TextField } from '@/components/lede/text-field';
-import type { EmptyState } from '@/components/lede/blocks/empty-state';
-import type { FormSection } from '@/components/lede/blocks/form-section';
-import type { PageHeader } from '@/components/lede/blocks/page-header';
-import type { SummaryCard } from '@/components/lede/blocks/summary-card';
+import type { Button } from '../button';
+import type { Checkbox } from '../checkbox';
+import type { ListGroup, ListRow } from '../list';
+import type { SegmentedControl } from '../segmented-control';
+import type { Switch } from '../switch';
+import type { TextField } from '../text-field';
+import type { EmptyState } from '../blocks/empty-state';
+import type { FormSection } from '../blocks/form-section';
+import type { PageHeader } from '../blocks/page-header';
+import type { SummaryCard } from '../blocks/summary-card';
 import type { catalog } from './catalog';
 
 // A typecheck, not a runtime test: `tsc --noEmit` fails when a catalog entry lets a model set a prop its Lede
@@ -35,11 +35,15 @@ interface Lede {
   SummaryCard: typeof SummaryCard;
 }
 
-/** Props the registry reads and turns into something else, such as a Button's `label`, which becomes its children. */
+/**
+ * Props the registry reads and turns into something else, such as a Button's `label`, which becomes its children, or a
+ * SegmentedControl's `error`, which it draws under the control.
+ */
 interface Adapted {
   ListRow: 'checked';
   Button: 'label';
-  Checkbox: 'label';
+  Checkbox: 'label' | 'error';
+  SegmentedControl: 'error';
 }
 
 // TextField's props are a union (an input or a textarea), so a prop counts when any member takes it.
