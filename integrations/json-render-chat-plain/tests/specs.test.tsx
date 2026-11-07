@@ -31,3 +31,14 @@ describe.each(specs)('%s', (_, spec) => {
 test('the registry draws every catalog entry', () => {
   expect(Object.keys(registry).sort()).toEqual(Object.keys(catalog.data.components).sort());
 });
+
+test('the check rejects a prop the catalog doesn’t have and a value outside a prop’s schema', () => {
+  const settings = specs.find(([match]) => match.includes('notification'))![1];
+  const wrong = structuredClone(settings);
+  wrong.elements.title.props = { ...wrong.elements.title.props, level: 'h7' };
+  wrong.elements['signature-text'].props = { ...wrong.elements['signature-text'].props, hint: 'Shown under the field.' };
+  expect(check(wrong)).toEqual([
+    expect.stringMatching(/^elements\.title\.props\.level: Invalid option/),
+    expect.stringMatching(/^elements\.signature-text\.props: Unrecognized key: "hint"/),
+  ]);
+});
