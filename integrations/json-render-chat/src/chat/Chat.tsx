@@ -73,34 +73,54 @@ export function Chat() {
   }, [busy]);
 
   // The window follows a reply as it grows, until the question that asked for it reaches the top: the question and
-  // the start of its reply stay in view together. Scrolling by hand stops the following until the next send.
+  // the start of its reply stay in view together. It follows only while the reply streams, and any scroll it didn't
+  // make itself, by wheel, keys, the scrollbar or Tab, stops it until the next send.
   const lastUser = messages.findLast((m) => m.role === 'user')?.id;
   const following = React.useRef(false);
+  const placed = React.useRef<number | null>(null);
   React.useEffect(() => {
     following.current = true;
-    const stopFollowing = () => { following.current = false; };
-    addEventListener('wheel', stopFollowing, { passive: true });
-    addEventListener('touchmove', stopFollowing, { passive: true });
-    return () => { removeEventListener('wheel', stopFollowing); removeEventListener('touchmove', stopFollowing); };
+    placed.current = null;
+    addEventListener('scroll', moved, { passive: true });
+    return () => removeEventListener('scroll', moved);
   }, [lastUser]);
+  // A scroll event can arrive after the next chunk has scrolled again, so each follow first checks where the window is.
+  const moved = () => { if (placed.current !== null && Math.abs(scrollY - placed.current) > 1) following.current = false; };
   React.useLayoutEffect(() => {
     const turn = lastUser && document.querySelector<HTMLElement>(`[data-message="${CSS.escape(lastUser)}"]`);
-    if (!turn || !following.current) return;
+    moved();
+    if (!busy || !turn || !following.current) return;
     const top = turn.getBoundingClientRect().top + scrollY - parseFloat(getComputedStyle(turn).scrollMarginTop);
     scrollTo({ top: Math.min(top, document.documentElement.scrollHeight - innerHeight) });
-  });
+    placed.current = scrollY;
+  }, [messages, busy, lastUser]);
 
   // The composer covers the foot of the window while it's sticky, so the page keeps that much room when it scrolls a
-  // control into view, such as the last switch of a screen reached with Tab.
+  // control into view, such as the last switch of a screen reached with Shift+Tab. While the person types in the
+  // composer the room goes, since the browser would otherwise scroll the page on each key to clear it; Tab brings it
+  // back before focus moves on.
   React.useEffect(() => {
     const footer = form.current?.closest<HTMLElement>('.jrc-footer');
     if (!footer) return;
     const root = document.documentElement;
-    const pad = () => { root.style.scrollPaddingBottom = getComputedStyle(footer).position === 'sticky' ? `${footer.offsetHeight}px` : ''; };
-    const observer = new ResizeObserver(pad);
+    const pad = (tabbing = false) => {
+      const typing = !tabbing && !!document.activeElement?.matches('.jrc-footer textarea');
+      root.style.scrollPaddingBottom = getComputedStyle(footer).position === 'sticky' && !typing ? `${footer.offsetHeight}px` : '';
+    };
+    const refresh = () => pad();
+    const onKey = (event: KeyboardEvent) => { if (event.key === 'Tab') pad(true); };
+    const observer = new ResizeObserver(refresh);
     observer.observe(footer);
-    addEventListener('resize', pad);
-    return () => { observer.disconnect(); removeEventListener('resize', pad); root.style.scrollPaddingBottom = ''; };
+    addEventListener('resize', refresh);
+    addEventListener('focusin', refresh);
+    addEventListener('keydown', onKey, true);
+    return () => {
+      observer.disconnect();
+      removeEventListener('resize', refresh);
+      removeEventListener('focusin', refresh);
+      removeEventListener('keydown', onKey, true);
+      root.style.scrollPaddingBottom = '';
+    };
   }, []);
 
   const note = React.useCallback((id: string, text: string) => setNotes((prev) => ({ ...prev, [id]: [...(prev[id] ?? []), text] })), []);

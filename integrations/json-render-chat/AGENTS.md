@@ -13,20 +13,24 @@ for bots on Slack, Teams and Discord, so it doesn't belong in a browser chat.
 
 ## Recipe
 
-1. Follow “Build this in your app” in `README.md` step by step. It was run as written on a fresh create-vite
-   `react-ts` app, and `npm run build` passed. `npx shadcn@latest add @lede/json-render` installs the catalog, the
+1. Follow “Build this in your app” in `README.md` step by step. It was run on a fresh create-vite `react-ts` app,
+   installing from this repo's registry served locally (`npm run registry`), and `npm run build` passed. `npx shadcn@latest add @lede/json-render` installs the catalog, the
    registry, `prompt`, `catalog-fit`, `check`, `toPatches` and `SpecView` under `components/lede/json-render/`, with the Lede components and
    npm packages they need. The chat's own files, copied from `src/chat/` and `server/`, import them from
    `@/components/lede/…`, so they need no edits.
-2. The registry URL, `https://lede.cloudcompute.com/r/v0.4.0/{name}.json`, serves once 0.4.0 is tagged. Before a tag
-   exists, the deployed site's `/r/next/{name}.json` is the unreleased build of main. From a clone, `npm run registry`
-   writes the same files to `public/r/`, which any static server can serve.
+2. The registry URL is `https://lede.cloudcompute.com/r/v0.5.0/{name}.json`: `json-render` first ships in 0.5.0.
+   Until v0.5.0 is tagged, `/r/next/{name}.json` on the same site is the unreleased build of main. From a clone,
+   `npm run registry` writes the same files to `public/r/`, which any static server can serve.
 3. To change what a model may build, follow “Extend the catalog” below.
-4. The server is `server/chat.ts`: `streamText({ model: anthropic('claude-sonnet-5-5'), system: prompt({ system }),
-   messages: await convertToModelMessages(forModel(messages)) })`, then
-   `createUIMessageStreamResponse({ stream: pipeJsonRender(result.toUIMessageStream({ onError })) })`. It exports
-   `handleChat(request)`, a fetch-style handler for any framework's route, and runs on its own under
-   `tsx --tsconfig tsconfig.server.json server/chat.ts`. The key is `ANTHROPIC_API_KEY` in the server's environment.
+4. The server is `server/chat.ts`. It refuses a body that isn't `application/json` (415), is over 1 MB (413) or
+   fails `safeValidateUIMessages` (400), and keeps only the parts the model reads: what the person typed, and the
+   replies' text and screens. Then `streamText({ model: anthropic('claude-sonnet-5-5'), system: prompt({ system }),
+   messages: await convertToModelMessages(forModel(messages)), maxOutputTokens })`, merged into
+   `createUIMessageStream`, so a connection that drops partway through becomes an error the client shows, and piped
+   through `pipeJsonRender`. It exports `handleChat(request)`, a fetch-style handler for any framework's route, and
+   runs on its own under `tsx --tsconfig tsconfig.server.json server/chat.ts`, where `pipeline` ends a response that
+   fails without stopping the server. The key is `ANTHROPIC_API_KEY` in the server's environment.
+   `tests/real.e2e.ts` drives this path with the AI SDK's `DefaultChatTransport` against a fake Anthropic.
 5. The client picks its transport in `src/chat/transport.ts`: the scripted mock by default, or
    `new DefaultChatTransport({ api })` when `VITE_CHAT_API` is set. Type the chat as
    `useChat<AppMessage>`, where `AppMessage` is `UIMessage<unknown, { [SPEC_DATA_PART]: SpecDataPart }>`.
@@ -69,9 +73,8 @@ Lede's Disclosure and a `flag` action, and was run on the app the recipe builds.
 4. `components/lede/json-render/catalog-fit.ts`: add `Disclosure: typeof Disclosure;` to `interface Lede` (with its
    `import type`) and `Disclosure: true,` to `fit`. A prop that Disclosure doesn't take then fails here by name. A
    prop the registry renames, as Button's `label` becomes its children, goes in `interface Adapted`.
-5. `src/chat/describe.ts`, optional: `flag: 'flagged'` in `DID`, so the note reads “You flagged Alan Turing.” rather
-   than “You chose flag on Alan Turing.” The chat's handlers come from the catalog's action names, so `flag` already
-   reaches it.
+5. `src/chat/describe.ts`, optional: `flag: 'flagged'` in `DID`, so the note reads “You flagged Alan Turing.” The
+   chat's handlers come from the catalog's action names, so `flag` already reaches it.
 
 A spec then uses them: a ListRow with `"actions": [{ "label": "Flag", "event": "flag" }]` and
 `"on": { "flag": { "action": "flag", "params": { "id": "m2" } } }`, or a Disclosure holding other elements. For a row
@@ -107,7 +110,7 @@ model writes it too.
 so a SegmentedControl's “6 people” is 6. Lede ships two:
 
 - `scale`: `amount × to ÷ from`.
-- `remaining`: `from − take`, never less than 0, so a refund larger than the balance reads “0”, not a negative.
+- `remaining`: `from − take`, never less than 0, so a refund larger than the balance leaves “0”.
 
 Both put `unit` after the number, or `units` when the number takes a plural, so `"unit": "cup", "units": "cups"`
 reads “1 cup” and “1.5 cups”. A noun added in a `$template`, as in `"${cups} cups"`, reads “1 cups”. The recipe in
@@ -226,7 +229,7 @@ Each one below broke this example while it was built, or was checked in the pack
   becomes an h3 and its sections h4.
 - Lede's SegmentedControl names its group with a visually hidden legend, for screens where a heading beside it says
   what it picks. A model's screen often has none, so the registry also shows the label above it, hidden from
-  assistive tech. Options still need to read on their own (“4 people”, not “4”).
+  assistive tech. Options still need to read on their own, such as “4 people”.
 - Lede's TextField takes no `ref`. To focus the composer, query the `textarea` inside its `<form>`.
 - TextField's props are a union of input and textarea, so an inline `onChange` needs its event type written out:
   `(e: React.ChangeEvent<HTMLTextAreaElement>) => …`.
@@ -270,7 +273,12 @@ Each one below broke this example while it was built, or was checked in the pack
 - The server listens on `PORT`, default 4882; the Vite proxy has to name the same port.
 - A full-page screenshot draws the sticky composer where the window ended, over the middle of the page. Take
   viewport screenshots.
-- `toUIMessageStream()` sends a generic “An error occurred.” to the client unless you pass `onError`. The example
-  returns the error's message, which helps while you build; return something generic in production, since a
-  provider's message can name your account or model. `streamText` logs each failure with its stack and response
-  headers unless it has an `onError` of its own; the example logs one line.
+- A provider's error message can name your account or key, so the server sends the browser “The assistant
+  couldn’t answer.” and logs the message in one line. Set `CHAT_DEBUG=1` to show the provider's message in the
+  status line while you build. `streamText` logs each failure with its stack and response headers unless it has an
+  `onError` of its own.
+- An upstream connection that drops partway through a reply errors the response's body stream; the AI SDK doesn't
+  turn it into an error part. Merging the reply into `createUIMessageStream` does, and `pipeline` in the Node wrapper
+  ends the response when the body fails. With `.pipe()` and no error listener, Node exits on the first drop.
+- The model sees each screen as it was sent, through `forModel`. A change the person made on it, such as a switch
+  turned off, reaches the model only through an action your handler reports, such as a message it sends.

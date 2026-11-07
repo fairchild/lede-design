@@ -1,5 +1,8 @@
 import { spawn } from 'node:child_process';
 import { once } from 'node:events';
+import { mkdtempSync, readFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { expect, test } from 'vitest';
 import { convertToModelMessages } from 'ai';
 import { forModel } from '../server/chat';
@@ -34,7 +37,7 @@ test('the model sees the screen it sent, as the patches it wrote', async () => {
   expect(said).toContain('Notifications');
 });
 
-test('the server starts, answers 404 off its route and 400 to a body without messages, and logs a failed model call in one line', async () => {
+test('the server starts, answers 404 off its route, refuses a body that is malformed, not JSON or too large, and logs a failed model call in one line', async () => {
   const port = 4884;
   const server = spawn('npm', ['run', 'server'], { env: { ...process.env, ANTHROPIC_API_KEY: 'test', PORT: String(port), ANTHROPIC_BASE_URL: 'http://127.0.0.1:9/v1' }, stdio: ['ignore', 'pipe', 'pipe'], detached: true });
   try {
@@ -45,18 +48,51 @@ test('the server starts, answers 404 off its route and 400 to a body without mes
       once(server, 'exit').then(() => reject(new Error(`The server exited:\n${log}`)));
     });
     expect((await fetch(`http://localhost:${port}/`)).status).toBe(404);
-    expect((await fetch(`http://localhost:${port}/api/chat`, { method: 'POST', body: '{}' })).status).toBe(400);
+    const post = (body: string, type = 'application/json') => fetch(`http://localhost:${port}/api/chat`, { method: 'POST', headers: { 'content-type': type }, body });
+    expect((await post('{}')).status).toBe(400);
+    expect((await post('{"messages":[]}', 'text/plain')).status).toBe(415);
+    expect((await post(JSON.stringify({ messages: [{ id: 'u1', role: 'user', parts: [{ type: 'text', text: 'x'.repeat(1_100_000) }] }] }))).status).toBe(413);
     const reply = await fetch(`http://localhost:${port}/api/chat`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ messages: [{ id: 'u1', role: 'user', parts: [{ type: 'text', text: 'Hello' }] }] }),
     });
-    expect(await reply.text()).toContain('"type":"error"');
+    const said = await reply.text();
+    expect(said).toContain('"type":"error"');
+    expect(said).toContain('The assistant couldn’t answer.');
     await new Promise((resolve) => setTimeout(resolve, 200));
     const failures = log.split('\n').filter((line) => line.trim());
     expect(failures.filter((line) => /Model call failed/.test(line))).toHaveLength(1);
     expect(failures.filter((line) => /^\s+at /.test(line))).toEqual([]);
   } finally {
     process.kill(-server.pid!);
+  }
+}, 20_000);
+
+test('the server caps a reply’s length and passes the model only what the person typed', async () => {
+  const log = join(mkdtempSync(join(tmpdir(), 'chat-')), 'requests.jsonl');
+  const fake = spawn('npx', ['tsx', 'tests/fake-anthropic.ts'], { env: { ...process.env, FAKE_PORT: '4886', FAKE_LOG: log }, stdio: ['ignore', 'pipe', 'pipe'], detached: true });
+  const server = spawn('npm', ['run', 'server'], { env: { ...process.env, ANTHROPIC_API_KEY: 'test', PORT: '4884', ANTHROPIC_BASE_URL: 'http://127.0.0.1:4886/v1' }, stdio: ['ignore', 'pipe', 'pipe'], detached: true });
+  try {
+    await Promise.all([[fake, /Fake Anthropic/], [server, /Chat server on/]].map(([child, ready]) => new Promise<void>((resolve) => {
+      let out = '';
+      (child as typeof fake).stdout!.on('data', (d) => { out += d; if ((ready as RegExp).test(out)) resolve(); });
+    })));
+    const reply = await fetch('http://localhost:4884/api/chat', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ messages: [{ id: 'u1', role: 'user', parts: [
+        { type: 'text', text: 'Show my settings' },
+        { type: 'file', mediaType: 'text/plain', url: 'data:text/plain;base64,c2VjcmV0' },
+      ] }] }),
+    });
+    await reply.text();
+    const [sent] = readFileSync(log, 'utf8').trim().split('\n').map((line) => JSON.parse(line));
+    expect(sent.max_tokens).toBe(4000);
+    expect(JSON.stringify(sent.messages)).toContain('Show my settings');
+    expect(sent.messages[0].content).toHaveLength(1);
+  } finally {
+    process.kill(-server.pid!);
+    process.kill(-fake.pid!);
   }
 }, 20_000);

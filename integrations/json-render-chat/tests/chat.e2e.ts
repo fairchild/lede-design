@@ -61,14 +61,16 @@ test('Try again moves focus to the composer at once, and it never falls to <body
   await expect(page.getByRole('button', { name: 'Try again' })).toBeHidden();
 });
 
-test('a control reached with the keyboard stops above the composer, not under it', async ({ page }) => {
+test('a control reached with Shift+Tab from the composer stops above the composer', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 640 });
   await ask(page, 'How’s my week?');
   await expect(page.getByRole('button', { name: 'Stop' })).toBeHidden();
   const control = page.getByRole('switch', { name: 'Block Friday morning for focus time' });
   // Put the control just inside the window's bottom edge, behind the composer, where it counts as in view.
   await control.evaluate((el) => scrollBy(0, el.getBoundingClientRect().bottom - innerHeight + 8));
-  await control.focus();
+  await composer(page).focus();
+  await page.keyboard.press('Shift+Tab');
+  await expect(control).toBeFocused();
   const [box, footer] = await Promise.all([control.boundingBox(), page.locator('.jrc-footer').boundingBox()]);
   expect(box!.y + box!.height).toBeLessThanOrEqual(footer!.y);
 });
@@ -165,4 +167,17 @@ test('a checkbox’s long label wraps beside the box, at a phone’s width and 2
   });
   expect(lines.lefts.length).toBeGreaterThan(1);
   expect(Math.min(...lines.lefts)).toBeGreaterThanOrEqual(lines.right);
+});
+
+test('the window follows a reply only while it streams, and a scroll the person makes keeps their place', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 640 });
+  await ask(page, 'How’s my week?');
+  await expect.poll(() => page.evaluate(() => scrollY)).toBeGreaterThan(0);
+  await expect(page.getByRole('button', { name: 'Stop' })).toBeVisible();
+  await page.evaluate(() => scrollTo(0, 0));
+  await expect(page.getByRole('button', { name: 'Stop' })).toBeHidden();
+  expect(await page.evaluate(() => scrollY)).toBeLessThan(5);
+  await page.evaluate(() => scrollTo(0, 120));
+  await composer(page).pressSequentially('ok');
+  expect(await page.evaluate(() => scrollY)).toBe(120);
 });

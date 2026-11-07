@@ -50,9 +50,12 @@ passed. Commands run in your app's folder, and `LEDE` is the path to a clone of 
 
    ```bash
    npx shadcn@latest init --defaults --yes
-   npx shadcn@latest registry add '@lede=https://lede.cloudcompute.com/r/v0.4.0/{name}.json'
+   npx shadcn@latest registry add '@lede=https://lede.cloudcompute.com/r/v0.5.0/{name}.json'
    npx shadcn@latest add @lede/theme-provider @lede/avatar @lede/json-render --yes
    ```
+
+   `json-render` first ships in Lede 0.5.0. Until v0.5.0 is tagged, use `/r/next/{name}.json` on the same site, the
+   unreleased build of main.
 
    Then import Lede's styles at the end of `src/index.css`, as the main README's step 2 shows. `init` leaves the file
    without a final newline, so start with one:
@@ -86,7 +89,7 @@ passed. Commands run in your app's folder, and `LEDE` is the path to a clone of 
    | `src/chat/mock-transport.ts` and `replies/*.json` | The scripted replies, which stream through `pipeJsonRender` like a model's |
    | `src/chat/app-message.ts` | `AppMessage`, a `UIMessage` whose data parts are json-render's spec patches |
    | `src/chat/assistant.ts` | Who the assistant is: its name, what it helps with and the suggested prompts |
-   | `src/chat/describe.ts` | The words for each action's note, such as “You opened Venue review.” |
+   | `src/chat/describe.ts` | Demo only: the note an action leaves, such as “You opened Venue review.” In your app, a handler acts on its params instead, such as `open: ({ id }) => navigate(`/items/${id}`)` |
    | `server/chat.ts` | The backend: `handleChat`, a fetch-style handler for any framework's route |
    | `tsconfig.server.json` | Typechecks the server, which `tsconfig.app.json` leaves out |
 
@@ -136,7 +139,8 @@ them apart. It sends each patch in pieces, down to a character at a time, which 
 
 On the next turn the server puts each earlier screen back into the conversation as the fenced patches, with `forModel`
 in `server/chat.ts`. The AI SDK's `convertToModelMessages` drops data parts, so without it the model never sees the
-screens it sent, and “turn off push” has nothing to refer to.
+screens it sent, and “turn off push” has nothing to refer to. The model sees each screen as it was sent: a switch the
+person turned off there reaches it only through an action your app reports, such as a message the handler sends.
 
 ## Files
 
@@ -148,8 +152,9 @@ screens it sent, and “turn off push” has nothing to refer to.
 | `tests/mock-transport.test.ts` | Sends each scripted prompt through the mock and checks the spec against the catalog. |
 | `tests/describe.test.ts` | Checks each action's note, for literal params, params bound to state and rows drawn by repeat. |
 | `tests/model-replies.test.tsx` | Streams 16 replies a model wrote for 8 requests through the server's transform: each parses, passes the catalog and draws, with each list's rows once. |
-| `tests/server.test.ts` | Checks that the model sees earlier screens, then starts the server: its answers, and one log line per failed model call. |
-| `tests/chat.e2e.ts` | The chat in a browser: the order of a reply, an action's note, Stop, Escape, Try again, focus, the composer's scroll padding, checked fields, a list that fills in as it streams, a checkbox label at 200% text and axe. |
+| `tests/server.test.ts` | Checks that the model sees earlier screens, then starts the server: what it refuses, the length cap and parts it passes the model, and one log line per failed model call. |
+| `tests/chat.e2e.ts` | The chat in a browser: the order of a reply, an action's note, Stop, Escape, Try again, focus, the composer's scroll padding, checked fields, a list that fills in as it streams, a checkbox label at 200% text, following a reply as it streams and axe. |
+| `tests/real.e2e.ts` and `fake-anthropic.ts` | The chat on the AI SDK's own transport, against `server/chat.ts` and a fake Anthropic: a reply that draws, a connection that drops partway and a malformed body. |
 
 The catalog, the registry and `SpecView` are Lede's `json-render` item, in `registry/lede/json-render/`, which this
 entry and [`../json-render`](../json-render) both import through the `@/components/lede` alias, the path an install

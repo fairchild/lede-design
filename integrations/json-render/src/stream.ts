@@ -1,8 +1,6 @@
 import { createSpecStreamCompiler, type Spec } from '@json-render/core';
 import { toPatches } from '@/components/lede/json-render/patches';
 
-export { toPatches };
-
 /**
  * Replays a spec through json-render's stream compiler, in chunks that split each line in two, the way network
  * chunks fall. Calls `onSpec` each time a patch completes.
