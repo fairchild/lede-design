@@ -3,7 +3,9 @@ import { createStateStore, type Spec, type StateStore } from '@json-render/core'
 import { JSONUIProvider, Renderer } from '@json-render/react';
 import { focusLanding } from '../input-modality';
 import { functions, type CatalogAction } from './catalog';
-import { FieldChecks, registry, SpecHeadingLevel, SpecRoot } from './registry';
+import { ActionHeld, FieldChecks, registry, SpecHeadingLevel, SpecRoot, type HeldAction } from './registry';
+
+export type { HeldAction } from './registry';
 
 /** The catalog's actions, each called with its params when a spec runs it. Add an action to the catalog and it's here. */
 export type SpecHandlers = Partial<Record<CatalogAction, (params: Record<string, unknown>) => void>>;
@@ -23,6 +25,8 @@ export interface SpecViewProps {
   handlers?: SpecHandlers;
   /** Called with the screen's whole state after each change, such as for a chat to send what the person entered. */
   onStateChange?: (state: State) => void;
+  /** Called when an action doesn't run because a field it reads fails its check, with the action and those fields. */
+  onActionHeld?: (held: HeldAction) => void;
 }
 
 /**
@@ -34,7 +38,7 @@ export function SpecView({ spec, ...props }: SpecViewProps) {
   return spec?.elements[spec.root] ? <Screen spec={spec} {...props} /> : null;
 }
 
-function Screen({ spec, streaming = false, headingLevel = 2, handlers, onStateChange }: SpecViewProps & { spec: Spec }) {
+function Screen({ spec, streaming = false, headingLevel = 2, handlers, onStateChange, onActionHeld }: SpecViewProps & { spec: Spec }) {
   const root = React.useRef<HTMLDivElement>(null);
   const [{ store, sync }] = React.useState(() => specStore(spec.state));
   React.useLayoutEffect(() => sync(spec.state), [spec.state, sync]);
@@ -51,7 +55,9 @@ function Screen({ spec, streaming = false, headingLevel = 2, handlers, onStateCh
         <div ref={root}>
           <JSONUIProvider registry={registry} functions={functions} store={store} handlers={handlers as Record<string, (params: Record<string, unknown>) => void>}>
             <FieldChecks>
-              <Renderer spec={spec} registry={registry} loading={streaming} />
+              <ActionHeld.Provider value={onActionHeld}>
+                <Renderer spec={spec} registry={registry} loading={streaming} />
+              </ActionHeld.Provider>
             </FieldChecks>
           </JSONUIProvider>
         </div>

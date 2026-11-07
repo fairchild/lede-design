@@ -65,7 +65,8 @@ test('a control reached with Shift+Tab from the composer stops above the compose
   await page.setViewportSize({ width: 1280, height: 640 });
   await ask(page, 'How’s my week?');
   await expect(page.getByRole('button', { name: 'Stop' })).toBeHidden();
-  const control = page.getByRole('switch', { name: 'Block Friday morning for focus time' });
+  // The last control in the reply: its account of how it was made, under the screen.
+  const control = page.getByRole('button', { name: /How this reply was made/ });
   // Put the control just inside the window's bottom edge, behind the composer, where it counts as in view.
   await control.evaluate((el) => scrollBy(0, el.getBoundingClientRect().bottom - innerHeight + 8));
   await composer(page).focus();

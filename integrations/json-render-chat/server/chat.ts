@@ -6,10 +6,9 @@ import { anthropic } from '@ai-sdk/anthropic';
 import { pipeJsonRender, SPEC_DATA_PART_TYPE, type SpecDataPart } from '@json-render/core';
 import { convertToModelMessages, createUIMessageStream, createUIMessageStreamResponse, safeValidateUIMessages, streamText } from 'ai';
 import { z } from 'zod';
-import { prompt } from '@/components/lede/json-render/catalog';
 import { specFromParts, toPatches } from '@/components/lede/json-render/patches';
 import type { AppMessage } from '../src/chat/app-message';
-import { ASSISTANT, DOMAIN } from '../src/chat/assistant';
+import { system } from '../src/chat/system';
 
 // The reference backend for the chat. `handleChat` is a fetch-style handler, so it drops into any framework's route
 // (Hono, a Next.js route handler, a Worker). Run this file and it serves POST /api/chat on port 4882, or on `PORT`,
@@ -25,11 +24,6 @@ const KEPT: Record<AppMessage['role'], ReadonlySet<string>> = {
   system: new Set(),
 };
 const specPart = z.custom<SpecDataPart>((part) => ['patch', 'flat', 'nested'].includes((part as { type?: string } | null)?.type ?? ''));
-
-/** Inline mode, the default, asks the model for its prose first and then the spec as JSONL patches, in one stream. */
-const system = prompt({
-  system: `You are ${ASSISTANT}, the assistant in ${DOMAIN}. Answer in a sentence or two, and add a screen when one helps the person act.`,
-});
 
 const reason = (error: unknown) => (error instanceof Error ? error.message : 'The model call failed.');
 

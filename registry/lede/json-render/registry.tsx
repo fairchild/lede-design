@@ -45,6 +45,15 @@ interface Checks {
 }
 const Checked = React.createContext<Checks | null>(null);
 
+/** An action held back by a field it reads: the action, its params as the spec binds them, and each failing field. */
+export interface HeldAction {
+  action: string;
+  params?: Record<string, unknown>;
+  fields: Array<{ name: string; message: string }>;
+}
+/** Where SpecView's `onActionHeld` reaches `useCheckedEmit`. */
+export const ActionHeld = React.createContext<((held: HeldAction) => void) | undefined>(undefined);
+
 /** Holds which fields show their error. SpecView puts it around each screen. */
 export function FieldChecks({ children }: { children: React.ReactNode }) {
   const [shown, setShown] = React.useState<ReadonlyMap<string, string>>(new Map());
@@ -88,6 +97,7 @@ function useCheckedEmit(emit: (event: string) => void) {
   const root = React.useContext(SpecRoot);
   const on = React.useContext(ElementOn);
   const checks = React.useContext(Checked);
+  const report = React.useContext(ActionHeld);
   const { execute } = useActions();
   return async (event: string) => {
     const bound = on?.[event];
@@ -100,6 +110,7 @@ function useCheckedEmit(emit: (event: string) => void) {
     for (const b of list.slice(0, stop)) await execute(b);
     const held = reads(list[stop]);
     checks?.show(held);
+    report?.({ action: list[stop].action, params: list[stop].params, fields: held.map((f) => ({ name: f.name, message: f.validationMessage })) });
     held[0]?.focus();
   };
 }

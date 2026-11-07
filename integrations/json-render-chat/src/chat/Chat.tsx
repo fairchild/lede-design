@@ -9,7 +9,7 @@ import { PageHeader } from '@/components/lede/blocks/page-header';
 import { SPEC_DATA_PART_TYPE } from '@json-render/core';
 import { catalog, type CatalogAction } from '@/components/lede/json-render/catalog';
 import { specFromParts } from '@/components/lede/json-render/patches';
-import { SpecView, type SpecHandlers } from '@/components/lede/json-render/spec-view';
+import { SpecView, type HeldAction, type SpecHandlers } from '@/components/lede/json-render/spec-view';
 import { transport, chatApi } from './transport';
 import type { AppMessage } from './app-message';
 import { describe } from './describe';
@@ -17,8 +17,17 @@ import { ASSISTANT, SUGGESTIONS } from './assistant';
 import './chat.css';
 
 const SCHEMES = ['System', 'Light', 'Dark'] as const;
-type Scheme = (typeof SCHEMES)[number];
+export type Scheme = (typeof SCHEMES)[number];
 type Ending = 'stopped' | 'failed';
+type State = Record<string, unknown>;
+/** Each screen's state as the person left it, by the id of the reply that drew it. */
+export type Screens = Record<string, State>;
+
+/** The Appearance control, and the ThemeProvider scheme each choice sets. */
+export const Appearance = ({ value, onValueChange }: { value: Scheme; onValueChange: (value: Scheme) => void }) => (
+  <SegmentedControl label="Appearance" size="sm" options={[...SCHEMES]} value={value} onValueChange={(v) => onValueChange(v as Scheme)} />
+);
+export const schemeOf = (scheme: Scheme) => (scheme === 'System' ? 'auto' : scheme === 'Dark' ? 'dark' : 'light');
 
 /** The name of the focused control in a screen, such as a row's title: the control a person just used. */
 const focusedName = () => {
@@ -38,9 +47,46 @@ const emptiness = (message: AppMessage) => {
   return textOf(message).length ? undefined : 'The reply was empty.';
 };
 
-/** The chat page: the conversation, then the composer at the foot of the window. */
+/** The chat as a page of its own, with its theme and the Appearance control. */
 export function Chat() {
   const [scheme, setScheme] = React.useState<Scheme>('System');
+  return (
+    <ThemeProvider scheme={schemeOf(scheme)} surface="grouped" className="jrc-app">
+      <main className="jrc-page">
+        <ChatPage actions={<Appearance value={scheme} onValueChange={setScheme} />} />
+      </main>
+    </ThemeProvider>
+  );
+}
+
+/** One fired action, with the params its handler received. */
+export interface RanAction { name: CatalogAction; params: Record<string, unknown> }
+
+/** What a reply's account of itself can show: the request that asked for it, and what its screen did since. */
+export interface TraceProps {
+  message: AppMessage;
+  /** The person's words and each earlier screen's state, as the request that drew this reply sent them. */
+  asked?: { text: string; screens: Screens };
+  /** The screen's state now. */
+  state?: State;
+  ran: RanAction[];
+  held: HeldAction[];
+  live: boolean;
+}
+
+export interface ChatPageProps {
+  /** Beside the title, such as the Appearance control. */
+  actions?: React.ReactNode;
+  /** Drawn under each reply, such as an account of how it was made. */
+  trace?: (props: TraceProps) => React.ReactNode;
+  /** A question to send once, such as from a link; `key` changes for each new one. */
+  ask?: { text: string; key: number };
+  /** PageHeader's `focusOnMount`. Pass false when the page around the chat moves focus itself. */
+  focusOnMount?: boolean;
+}
+
+/** The chat page: the conversation, then the composer at the foot of the window. */
+export function ChatPage({ actions, trace, ask, focusOnMount }: ChatPageProps) {
   const { messages, sendMessage, status, stop, error, regenerate } = useChat<AppMessage>({ transport });
   const [draft, setDraft] = React.useState('');
   const [endings, setEndings] = React.useState<Record<string, Ending>>({});
@@ -51,6 +97,10 @@ export function Chat() {
   const screens = React.useRef<Record<string, Record<string, unknown>>>({});
   const body = () => ({ screens: screens.current });
   const keep = React.useCallback((id: string, state: Record<string, unknown>) => { screens.current[id] = state; }, []);
+  // What each question's request carried, by the question's place among the person's turns, for `trace`.
+  const asked = React.useRef<Array<{ text: string; screens: Screens }>>([]);
+  const record = (at: number, text: string) => { asked.current[at] = { text, screens: structuredClone(screens.current) }; };
+  const questions = messages.filter((m) => m.role === 'user').length;
   const focusComposer = () => form.current?.querySelector('textarea')?.focus();
   const busy = status === 'submitted' || status === 'streaming';
   const last = messages.at(-1);
@@ -62,6 +112,7 @@ export function Chat() {
 
   const send = (text: string) => {
     if (!text.trim() || busy) return;
+    record(questions, text.trim());
     void sendMessage({ text: text.trim() }, { body: body() });
     setDraft('');
     focusComposer();
@@ -75,9 +126,18 @@ export function Chat() {
   };
 
   const retry = () => {
+    const question = messages.findLast((m) => m.role === 'user');
+    if (question) record(questions - 1, textOf(question).join(' '));
     focusComposer();
     void regenerate({ body: body() });
   };
+
+  const asking = React.useRef<number | undefined>(undefined);
+  React.useEffect(() => {
+    if (!ask || asking.current === ask.key) return;
+    asking.current = ask.key;
+    send(ask.text);
+  });
 
   // A control that held focus can leave as the reply ends, such as Stop. Focus then returns to the composer, where the
   // person acts next, so it never falls to `<body>`. On load it lands there too: a chat's next act is to type.
@@ -102,7 +162,7 @@ export function Chat() {
   React.useLayoutEffect(() => {
     const turn = lastUser && document.querySelector<HTMLElement>(`[data-message="${CSS.escape(lastUser)}"]`);
     moved();
-    if (!busy || !turn || !following.current) return;
+    if (!busy || !turn || !following.current || !turn.checkVisibility()) return;
     const top = turn.getBoundingClientRect().top + scrollY - parseFloat(getComputedStyle(turn).scrollMarginTop);
     scrollTo({ top: Math.min(top, document.documentElement.scrollHeight - innerHeight) });
     placed.current = scrollY;
@@ -149,68 +209,69 @@ export function Chat() {
     : reply ? `${ASSISTANT} replied: ${textOf(reply)[0]?.split(/(?<=[.!?])\s/)[0] ?? 'a screen.'}` : '';
 
   return (
-    <ThemeProvider scheme={scheme === 'System' ? 'auto' : scheme === 'Dark' ? 'dark' : 'light'} surface="grouped" className="jrc-app">
-      <main className="jrc-page">
-        <PageHeader
-          title={`Ask ${ASSISTANT}`}
-          summary={chatApi ? `Replies come from ${chatApi}, and can bring a screen with them.` : 'Replies come from a script here, and can bring a screen with them.'}
-          actions={<SegmentedControl label="Appearance" size="sm" options={[...SCHEMES]} value={scheme} onValueChange={(v) => setScheme(v as Scheme)} />}
-        />
-        <section aria-label="Conversation" className="jrc-conversation">
-          {messages.length ? (
-            <ol className="jrc-messages">
-              {messages.map((m, i) => (
-                <Turn
-                  key={m.id}
-                  message={m}
-                  time={times[m.id]}
-                  live={busy && i === messages.length - 1}
-                  ending={m.id === failed ? 'failed' : endings[m.id]}
-                  notes={notes[m.id] ?? []}
-                  onNote={note}
-                  onStateChange={keep}
-                />
-              ))}
-              {status === 'submitted' && last?.role === 'user' ? (
-                <li className="jrc-message" data-role="assistant" aria-hidden="true">
-                  <Avatar name={ASSISTANT} alt="" className="jrc-avatar" />
-                  <p className="jrc-typing"><span /><span /><span /></p>
-                </li>
-              ) : null}
-            </ol>
-          ) : (
-            <div className="jrc-empty">
-              <p className="jrc-muted">Ask about your week, inbox, notifications, sign-up or projects. Each reply can bring a screen you can use.</p>
-              <ul className="jrc-suggestions" aria-label="Suggestions">
-                {SUGGESTIONS.map((s) => <li key={s}><Button size="sm" variant="tinted" onClick={() => send(s)}>{s}</Button></li>)}
-              </ul>
-            </div>
-          )}
-        </section>
-        <div className="jrc-footer">
-          <p role="status" className={failed ? 'jrc-status' : 'ld-sr-only'}>{statusText}</p>
-          {failed ? <Button size="sm" onClick={retry}>Try again</Button> : null}
-          <form ref={form} className="jrc-composer" onSubmit={(e) => { e.preventDefault(); send(draft); }}>
-            <TextField
-              label="Message"
-              rows={2}
-              value={draft}
-              placeholder={`Ask ${ASSISTANT}…`}
-              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setDraft(e.currentTarget.value)}
-              onKeyDown={(e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-                if (e.key === 'Escape' && busy) { e.preventDefault(); onStop(); }
-                if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); e.currentTarget.form?.requestSubmit(); }
-              }}
-              hint="Enter sends, Shift+Enter starts a new line and Escape stops a reply."
-            />
-            <div className="jrc-composer-actions">
-              {busy ? <Button type="button" onClick={onStop}>Stop</Button> : null}
-              <Button type="submit" variant="filled">Send</Button>
-            </div>
-          </form>
-        </div>
-      </main>
-    </ThemeProvider>
+    <>
+      <PageHeader
+        title={`Ask ${ASSISTANT}`}
+        summary={chatApi ? `Replies come from ${chatApi}, and can bring a screen with them.` : 'Replies come from a script here, and can bring a screen with them.'}
+        actions={actions}
+        focusOnMount={focusOnMount}
+      />
+      <section aria-label="Conversation" className="jrc-conversation">
+        {messages.length ? (
+          <ol className="jrc-messages">
+            {messages.map((m, i) => (
+              <Turn
+                key={m.id}
+                message={m}
+                time={times[m.id]}
+                live={busy && i === messages.length - 1}
+                ending={m.id === failed ? 'failed' : endings[m.id]}
+                notes={notes[m.id] ?? []}
+                onNote={note}
+                onStateChange={keep}
+                asked={m.role === 'assistant' ? asked.current[messages.slice(0, i).filter((q) => q.role === 'user').length - 1] : undefined}
+                trace={trace}
+              />
+            ))}
+            {status === 'submitted' && last?.role === 'user' ? (
+              <li className="jrc-message" data-role="assistant" aria-hidden="true">
+                <Avatar name={ASSISTANT} alt="" className="jrc-avatar" />
+                <p className="jrc-typing"><span /><span /><span /></p>
+              </li>
+            ) : null}
+          </ol>
+        ) : (
+          <div className="jrc-empty">
+            <p className="jrc-muted">Ask about your week, inbox, notifications, sign-up or projects. Each reply can bring a screen you can use.</p>
+            <ul className="jrc-suggestions" aria-label="Suggestions">
+              {SUGGESTIONS.map((s) => <li key={s}><Button size="sm" variant="tinted" onClick={() => send(s)}>{s}</Button></li>)}
+            </ul>
+          </div>
+        )}
+      </section>
+      <div className="jrc-footer">
+        <p role="status" className={failed ? 'jrc-status' : 'ld-sr-only'}>{statusText}</p>
+        {failed ? <Button size="sm" onClick={retry}>Try again</Button> : null}
+        <form ref={form} className="jrc-composer" onSubmit={(e) => { e.preventDefault(); send(draft); }}>
+          <TextField
+            label="Message"
+            rows={2}
+            value={draft}
+            placeholder={`Ask ${ASSISTANT}…`}
+            onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setDraft(e.currentTarget.value)}
+            onKeyDown={(e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+              if (e.key === 'Escape' && busy) { e.preventDefault(); onStop(); }
+              if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); e.currentTarget.form?.requestSubmit(); }
+            }}
+            hint="Enter sends, Shift+Enter starts a new line and Escape stops a reply."
+          />
+          <div className="jrc-composer-actions">
+            {busy ? <Button type="button" onClick={onStop}>Stop</Button> : null}
+            <Button type="submit" variant="filled">Send</Button>
+          </div>
+        </form>
+      </div>
+    </>
   );
 }
 
@@ -222,19 +283,33 @@ interface TurnProps {
   notes: string[];
   onNote: (id: string, text: string) => void;
   onStateChange: (id: string, state: Record<string, unknown>) => void;
+  asked?: TraceProps['asked'];
+  trace?: ChatPageProps['trace'];
 }
 
 /** One turn: its author and time as a heading, its text and then, when the reply has one, the screen its spec describes. */
-function Turn({ message, time, live, ending, notes, onNote, onStateChange }: TurnProps) {
+function Turn({ message, time, live, ending, notes, onNote, onStateChange, asked, trace }: TurnProps) {
+  const [ran, setRan] = React.useState<RanAction[]>([]);
+  const [held, setHeld] = React.useState<HeldAction[]>([]);
+  const [state, setState] = React.useState<State>();
   const spec = React.useMemo(() => specFromParts(message.parts), [message.parts]);
   const specRef = React.useRef(spec);
   specRef.current = spec;
   // json-render reads its handlers once, when the screen mounts, so these read the latest spec through a ref.
   const handlers = React.useMemo<SpecHandlers>(
-    () => Object.fromEntries(ACTIONS.map((name) => [name, (params: Record<string, unknown>) => onNote(message.id, describe(specRef.current, name, params, focusedName()))])),
+    () => Object.fromEntries(ACTIONS.map((name) => [name, (params: Record<string, unknown>) => {
+      onNote(message.id, describe(specRef.current, name, params, focusedName()));
+      setRan((prev) => [...prev, { name, params }]);
+    }])),
     [message.id, onNote],
   );
-  const keep = React.useCallback((state: Record<string, unknown>) => onStateChange(message.id, state), [message.id, onStateChange]);
+  const keep = React.useCallback((next: State) => { onStateChange(message.id, next); setState(next); }, [message.id, onStateChange]);
+  const hold = React.useCallback((h: HeldAction) => setHeld((prev) => [...prev, h]), []);
+  // Drawn once per spec, so the state this turn keeps for `trace` doesn't draw the screen again on each key.
+  const screen = React.useMemo(
+    () => <SpecView spec={spec} streaming={live} headingLevel={3} handlers={handlers} onStateChange={keep} onActionHeld={hold} />,
+    [spec, live, handlers, keep, hold],
+  );
   const author = message.role === 'user' ? 'You' : ASSISTANT;
 
   return (
@@ -248,13 +323,14 @@ function Turn({ message, time, live, ending, notes, onNote, onStateChange }: Tur
         {textOf(message).map((text, i) => <p key={i} className="jrc-text">{text}</p>)}
         {spec?.elements[spec.root] ? (
           <div className="jrc-screen">
-            <SpecView spec={spec} streaming={live} headingLevel={3} handlers={handlers} onStateChange={keep} />
+            {screen}
           </div>
         ) : null}
         {notes.length ? (
           <ul className="jrc-notes" aria-label="What you did here">{notes.map((n, i) => <li key={i}>{n}</li>)}</ul>
         ) : null}
         {ending && message.role === 'assistant' ? <Ending ending={ending} /> : null}
+        {trace && message.role === 'assistant' ? trace({ message, asked, state, ran, held, live }) : null}
       </div>
       {/* A reply that ends before it begins has no turn of its own, so its ending follows the question, outside it. */}
       {ending && message.role === 'user' ? <Ending ending={ending} /> : null}

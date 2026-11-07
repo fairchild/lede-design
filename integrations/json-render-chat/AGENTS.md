@@ -6,6 +6,9 @@ and the mistakes that break the build or the page. Every name below was checked 
 `@ai-sdk/react@4.0.168` and `@json-render/*@0.22.0`. Read those packages' `.d.ts` files before trusting a name from
 memory.
 
+This example opens on a guide, in `src/guide/`, that draws `README.md`'s sections beside the chat. It isn't part of
+the recipe: copy `src/chat/` and `server/` only.
+
 ## Which Vercel package
 
 Use the AI SDK: `useChat` from `@ai-sdk/react`, with a `ChatTransport` from `ai`. Vercel's “Chat SDK” (npm `chat`) is
@@ -27,8 +30,8 @@ for bots on Slack, Teams and Discord, so it doesn't belong in a browser chat.
 3. To change what a model may build, follow “Extend the catalog” below.
 4. The server is `server/chat.ts`. It refuses a body that isn't `application/json` (415), is over 1 MB (413) or
    fails `safeValidateUIMessages` (400), and keeps only the parts the model reads: what the person typed, and the
-   replies' text and screens. Then `streamText({ model: anthropic('claude-sonnet-5-5'), system: prompt({ system }),
-   messages: await convertToModelMessages(forModel(messages, screens)), maxOutputTokens })`, merged into
+   replies' text and screens. Then `streamText({ model: anthropic('claude-sonnet-5-5'), system,
+   messages: await convertToModelMessages(forModel(messages, screens)), maxOutputTokens })`, where `system` is the catalog's `prompt()` in `src/chat/system.ts`, merged into
    `createUIMessageStream`, so a connection that drops partway through becomes an error the client shows, and piped
    through `pipeJsonRender`. It exports `handleChat(request)`, a fetch-style handler for any framework's route, and
    runs on its own under `tsx --tsconfig tsconfig.server.json server/chat.ts`, where `pipeline` ends a response that
@@ -43,7 +46,8 @@ for bots on Slack, Teams and Discord, so it doesn't belong in a browser chat.
    `<SpecView spec={specFromParts(message.parts)} streaming={live} headingLevel={3} handlers={…} onStateChange={…} />`,
    with `specFromParts` from `components/lede/json-render/patches`, memoized on `message.parts`. Keep each screen's
    state from `onStateChange` by message id and send it as `screens` with the next message
-   (`sendMessage({ text }, { body: { screens } })`), so the model sees what the person entered.
+   (`sendMessage({ text }, { body: { screens } })`), so the model sees what the person entered. `onActionHeld` reports
+   an action that a failing field held back, with the action and each field's name and message.
 7. Check it: `npm run build`, then the page in a browser with a reply showing: the question, the reply's text and then
    its screen, focus in the composer and axe clean. This repo's `tests/chat.e2e.ts` does that with Playwright.
 

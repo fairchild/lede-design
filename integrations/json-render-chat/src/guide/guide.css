@@ -1,0 +1,44 @@
+/* The guide around the chat, on Lede tokens: the navigation, README's sections as pages and each reply's account. */
+.jrc-top {
+  box-sizing: border-box; max-width: 48rem; margin: 0 auto; padding: var(--space-4) var(--space-4) 0;
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-3);
+}
+.jrc-top .ld-bar { max-width: 100%; }
+.jrc-top .ld-bar-list { flex-wrap: wrap; }
+
+/* README's Markdown, drawn as a page. */
+.jrc-md { max-width: none; }
+.jrc-md > *, .jrc-md li > * { margin: 0 0 var(--space-4); }
+.jrc-md > :last-child, .jrc-md li > :last-child { margin-bottom: 0; }
+.jrc-md h2 { font-size: var(--text-title-2-size); line-height: var(--text-title-2-line-height); font-weight: var(--weight-bold); margin-top: var(--space-6); }
+.jrc-md h3 { font-size: var(--text-title-3-size); line-height: var(--text-title-3-line-height); font-weight: var(--weight-semibold); }
+.jrc-md > h2:first-child { margin-top: 0; }
+.jrc-md-list { padding-inline-start: var(--space-6); display: grid; gap: var(--space-4); list-style: disc; }
+ol.jrc-md-list { list-style: decimal; }
+.jrc-md-list > li::marker { font-weight: var(--weight-semibold); }
+.jrc-md-list > li { min-width: 0; }
+.jrc-md a, .jrc-trace a, .jrc-see a { color: var(--ld-primary-on-tint, var(--primary)); text-decoration: underline; text-underline-offset: 0.15em; }
+.jrc-md code, .jrc-trace code, .ld-page-summary code { font-family: var(--font-mono); font-size: 0.9em; overflow-wrap: anywhere; }
+.jrc-see { color: var(--muted-foreground); }
+
+/* Code with its caption, wrapped so it never scrolls sideways, at any text size. */
+.jrc-code { margin: 0; min-width: 0; border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--card); }
+.jrc-code-head {
+  display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); padding: var(--space-2) var(--space-3);
+  border-bottom: 0.5px solid var(--border); color: var(--muted-foreground);
+  font-size: var(--text-footnote-size); line-height: var(--text-footnote-line-height);
+}
+.jrc-code-head figcaption { flex: 1 1 auto; font-weight: var(--weight-semibold); }
+.jrc-code-said:empty { display: none; }
+.jrc-code pre {
+  margin: 0; padding: var(--space-3); font-family: var(--font-mono);
+  font-size: var(--text-code-size); line-height: var(--text-code-line-height);
+  white-space: pre-wrap; overflow-wrap: anywhere; color: var(--foreground);
+}
+
+/* Each reply's account of itself: quiet until opened. */
+.jrc-trace .ld-disc-body { display: grid; gap: var(--space-4); }
+.jrc-trace section { display: grid; gap: var(--space-2); min-width: 0; }
+.jrc-trace section > * { margin: 0; }
+.jrc-trace h4 { font-size: var(--text-headline-size); line-height: var(--text-headline-line-height); font-weight: var(--weight-semibold); }
+.jrc-trace-actions { padding-inline-start: var(--space-4); list-style: disc; display: grid; gap: var(--space-1); }
