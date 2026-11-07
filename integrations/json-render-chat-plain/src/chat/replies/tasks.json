@@ -1,0 +1,313 @@
+{
+  "root": "screen",
+  "state": {
+    "tasks": [
+      {
+        "id": "brief",
+        "title": "Draft the venue brief",
+        "minutes": "45",
+        "priority": "High"
+      },
+      {
+        "id": "budget",
+        "title": "Review the Q3 budget",
+        "minutes": "30",
+        "priority": "Normal"
+      },
+      {
+        "id": "caterer",
+        "title": "Book the caterer",
+        "minutes": "15",
+        "priority": "Low"
+      }
+    ],
+    "draft": {
+      "title": "",
+      "minutes": "",
+      "priority": ""
+    }
+  },
+  "elements": {
+    "screen": {
+      "type": "Stack",
+      "props": {
+        "direction": "vertical",
+        "gap": "lg"
+      },
+      "children": [
+        "title",
+        "summary",
+        "todo",
+        "add"
+      ]
+    },
+    "title": {
+      "type": "Heading",
+      "props": {
+        "text": "Today’s tasks",
+        "level": "h3"
+      },
+      "children": []
+    },
+    "summary": {
+      "type": "Text",
+      "props": {
+        "text": "Add a task with how long it takes, and it joins the list.",
+        "variant": "muted"
+      },
+      "children": []
+    },
+    "todo": {
+      "type": "Card",
+      "props": {
+        "title": "To do"
+      },
+      "children": [
+        "list"
+      ]
+    },
+    "list": {
+      "type": "Stack",
+      "props": {
+        "direction": "vertical",
+        "gap": "sm"
+      },
+      "children": [
+        "task"
+      ],
+      "repeat": {
+        "statePath": "/tasks",
+        "key": "id"
+      }
+    },
+    "task": {
+      "type": "Stack",
+      "props": {
+        "direction": "horizontal",
+        "gap": "md",
+        "justify": "between"
+      },
+      "children": [
+        "task-title",
+        "task-meta"
+      ]
+    },
+    "task-title": {
+      "type": "Text",
+      "props": {
+        "text": {
+          "$item": "title"
+        }
+      },
+      "children": []
+    },
+    "task-meta": {
+      "type": "Text",
+      "props": {
+        "text": {
+          "$template": "${minutes} min, ${priority} priority"
+        },
+        "variant": "muted"
+      },
+      "children": []
+    },
+    "add": {
+      "type": "Card",
+      "props": {
+        "title": "Add a task"
+      },
+      "children": [
+        "task-field",
+        "minutes",
+        "priority",
+        "save"
+      ]
+    },
+    "task-field": {
+      "type": "Input",
+      "props": {
+        "label": "Task",
+        "name": "task",
+        "value": {
+          "$bindState": "/draft/title"
+        },
+        "checks": [
+          {
+            "type": "required",
+            "message": "Enter what the task is."
+          }
+        ]
+      },
+      "children": [],
+      "on": {
+        "submit": [
+          {
+            "action": "validateForm",
+            "params": {
+              "statePath": "/draftCheck"
+            }
+          },
+          {
+            "action": "pushState",
+            "params": {
+              "statePath": "/tasks",
+              "value": {
+                "id": "$id",
+                "title": {
+                  "$state": "/draft/title"
+                },
+                "minutes": {
+                  "$state": "/draft/minutes"
+                },
+                "priority": {
+                  "$state": "/draft/priority"
+                }
+              }
+            }
+          },
+          {
+            "action": "setState",
+            "params": {
+              "statePath": "/draft",
+              "value": {
+                "title": "",
+                "minutes": "",
+                "priority": ""
+              }
+            }
+          }
+        ]
+      }
+    },
+    "minutes": {
+      "type": "Input",
+      "props": {
+        "label": "Minutes",
+        "name": "minutes",
+        "type": "number",
+        "value": {
+          "$bindState": "/draft/minutes"
+        },
+        "checks": [
+          {
+            "type": "required",
+            "message": "Enter minutes from 5 to 240."
+          },
+          {
+            "type": "numeric",
+            "message": "Enter minutes from 5 to 240."
+          }
+        ]
+      },
+      "children": [],
+      "on": {
+        "submit": [
+          {
+            "action": "validateForm",
+            "params": {
+              "statePath": "/draftCheck"
+            }
+          },
+          {
+            "action": "pushState",
+            "params": {
+              "statePath": "/tasks",
+              "value": {
+                "id": "$id",
+                "title": {
+                  "$state": "/draft/title"
+                },
+                "minutes": {
+                  "$state": "/draft/minutes"
+                },
+                "priority": {
+                  "$state": "/draft/priority"
+                }
+              }
+            }
+          },
+          {
+            "action": "setState",
+            "params": {
+              "statePath": "/draft",
+              "value": {
+                "title": "",
+                "minutes": "",
+                "priority": ""
+              }
+            }
+          }
+        ]
+      }
+    },
+    "priority": {
+      "type": "Radio",
+      "props": {
+        "label": "Priority",
+        "name": "priority",
+        "options": [
+          "Low",
+          "Normal",
+          "High"
+        ],
+        "value": {
+          "$bindState": "/draft/priority"
+        },
+        "checks": [
+          {
+            "type": "required",
+            "message": "Choose a priority."
+          }
+        ]
+      },
+      "children": []
+    },
+    "save": {
+      "type": "Button",
+      "props": {
+        "label": "Add task",
+        "variant": "primary"
+      },
+      "children": [],
+      "on": {
+        "press": [
+          {
+            "action": "validateForm",
+            "params": {
+              "statePath": "/draftCheck"
+            }
+          },
+          {
+            "action": "pushState",
+            "params": {
+              "statePath": "/tasks",
+              "value": {
+                "id": "$id",
+                "title": {
+                  "$state": "/draft/title"
+                },
+                "minutes": {
+                  "$state": "/draft/minutes"
+                },
+                "priority": {
+                  "$state": "/draft/priority"
+                }
+              }
+            }
+          },
+          {
+            "action": "setState",
+            "params": {
+              "statePath": "/draft",
+              "value": {
+                "title": "",
+                "minutes": "",
+                "priority": ""
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}

@@ -1,12 +1,16 @@
 import { renderToString } from 'react-dom/server';
 import { describe, expect, test } from 'vitest';
 import { JSONUIProvider, Renderer, type ComponentRenderer } from '@json-render/react';
-import { catalog } from '../src/catalog';
-import { registry } from '../src/registry';
-import { specs } from '../src/specs';
+import type { Spec } from '@json-render/core';
+import { catalog } from '../src/screens/catalog';
+import { registry } from '../src/screens/registry';
+import { check } from '../src/screens/check';
+import { script } from '../src/chat/mock-transport';
+
+const specs = script.flatMap(({ match, reply }) => (reply.spec ? [[String(match), reply.spec] as const] : []));
 
 /** Renders a spec on the server and returns the types json-render found no component for. */
-function unrendered(spec: (typeof specs)[keyof typeof specs]) {
+function unrendered(spec: Spec) {
   const missing: string[] = [];
   const Missing: ComponentRenderer = ({ element }) => { missing.push(element.type); return null; };
   renderToString(
@@ -17,9 +21,10 @@ function unrendered(spec: (typeof specs)[keyof typeof specs]) {
   return missing;
 }
 
-describe.each(Object.entries(specs))('%s', (_, spec) => {
-  test('every element type has a component in the registry', () => {
+describe.each(specs)('%s', (_, spec) => {
+  test('every element type has a component in the registry, and every prop passes its schema', () => {
     expect(unrendered(spec)).toEqual([]);
+    expect(check(spec)).toEqual([]);
   });
 });
 

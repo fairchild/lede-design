@@ -1,0 +1,174 @@
+{
+  "root": "screen",
+  "state": {
+    "form": {
+      "name": "",
+      "email": "",
+      "terms": false
+    }
+  },
+  "elements": {
+    "screen": {
+      "type": "Stack",
+      "props": {
+        "direction": "vertical",
+        "gap": "lg"
+      },
+      "children": [
+        "title",
+        "summary",
+        "contact",
+        "terms",
+        "create"
+      ]
+    },
+    "title": {
+      "type": "Heading",
+      "props": {
+        "text": "Create your account",
+        "level": "h3"
+      },
+      "children": []
+    },
+    "summary": {
+      "type": "Text",
+      "props": {
+        "text": "Two fields and you’re in.",
+        "variant": "muted"
+      },
+      "children": []
+    },
+    "contact": {
+      "type": "Card",
+      "props": {
+        "title": "Contact details",
+        "description": "We send your sign-in link to this address."
+      },
+      "children": [
+        "name",
+        "email"
+      ]
+    },
+    "name": {
+      "type": "Input",
+      "props": {
+        "label": "Name",
+        "name": "name",
+        "value": {
+          "$bindState": "/form/name"
+        },
+        "checks": [
+          {
+            "type": "required",
+            "message": "Enter your name."
+          }
+        ]
+      },
+      "children": [],
+      "on": {
+        "submit": [
+          {
+            "action": "validateForm",
+            "params": {
+              "statePath": "/formCheck"
+            }
+          },
+          {
+            "action": "submit",
+            "params": {
+              "form": "signup",
+              "values": {
+                "$state": "/form"
+              }
+            }
+          }
+        ]
+      }
+    },
+    "email": {
+      "type": "Input",
+      "props": {
+        "label": "Email",
+        "name": "email",
+        "type": "email",
+        "value": {
+          "$bindState": "/form/email"
+        },
+        "checks": [
+          {
+            "type": "required",
+            "message": "Enter an email address with an @, such as ada@example.com."
+          },
+          {
+            "type": "email",
+            "message": "Enter an email address with an @, such as ada@example.com."
+          }
+        ]
+      },
+      "children": [],
+      "on": {
+        "submit": [
+          {
+            "action": "validateForm",
+            "params": {
+              "statePath": "/formCheck"
+            }
+          },
+          {
+            "action": "submit",
+            "params": {
+              "form": "signup",
+              "values": {
+                "$state": "/form"
+              }
+            }
+          }
+        ]
+      }
+    },
+    "terms": {
+      "type": "Checkbox",
+      "props": {
+        "label": "I agree to the terms of use and the privacy policy",
+        "name": "terms",
+        "checked": {
+          "$bindState": "/form/terms"
+        },
+        "checks": [
+          {
+            "type": "required",
+            "message": "Agree to the terms to continue."
+          }
+        ]
+      },
+      "children": []
+    },
+    "create": {
+      "type": "Button",
+      "props": {
+        "label": "Create account",
+        "variant": "primary"
+      },
+      "children": [],
+      "on": {
+        "press": [
+          {
+            "action": "validateForm",
+            "params": {
+              "statePath": "/formCheck"
+            }
+          },
+          {
+            "action": "submit",
+            "params": {
+              "form": "signup",
+              "values": {
+                "$state": "/form"
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}

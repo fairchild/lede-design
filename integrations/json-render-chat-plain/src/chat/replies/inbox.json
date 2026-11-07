@@ -40,6 +40,7 @@
         "label": "New message",
         "variant": "primary"
       },
+      "children": [],
       "on": {
         "press": {
           "action": "open",
@@ -47,8 +48,7 @@
             "id": "new"
           }
         }
-      },
-      "children": []
+      }
     },
     "reply": {
       "type": "Card",
@@ -94,72 +94,26 @@
     "m1": {
       "type": "Stack",
       "props": {
-        "direction": "horizontal",
-        "gap": "md",
-        "align": "center",
-        "justify": "between"
-      },
-      "visible": {
-        "$state": "/archived/m1",
-        "not": true
-      },
-      "children": [
-        "m1-text",
-        "m1-actions"
-      ]
-    },
-    "m1-text": {
-      "type": "Stack",
-      "props": {
         "direction": "vertical",
-        "gap": "none"
-      },
-      "children": [
-        "m1-name",
-        "m1-subject",
-        "m1-time"
-      ]
-    },
-    "m1-name": {
-      "type": "Text",
-      "props": {
-        "text": "Grace Hopper"
-      },
-      "children": []
-    },
-    "m1-subject": {
-      "type": "Text",
-      "props": {
-        "text": "Venue for Thursday: can you confirm by 5?",
-        "variant": "muted"
-      },
-      "children": []
-    },
-    "m1-time": {
-      "type": "Text",
-      "props": {
-        "text": "9:41 AM",
-        "variant": "caption"
-      },
-      "children": []
-    },
-    "m1-actions": {
-      "type": "Stack",
-      "props": {
-        "direction": "horizontal",
         "gap": "sm"
       },
       "children": [
         "m1-open",
+        "m1-text",
         "m1-archive"
-      ]
+      ],
+      "visible": {
+        "$state": "/archived/m1",
+        "not": true
+      }
     },
     "m1-open": {
       "type": "Button",
       "props": {
-        "label": "Open",
+        "label": "Grace Hopper",
         "variant": "secondary"
       },
+      "children": [],
       "on": {
         "press": {
           "action": "open",
@@ -167,6 +121,13 @@
             "id": "m1"
           }
         }
+      }
+    },
+    "m1-text": {
+      "type": "Text",
+      "props": {
+        "text": "Venue for Thursday: can you confirm by 5? 9:41 AM",
+        "variant": "muted"
       },
       "children": []
     },
@@ -176,6 +137,7 @@
         "label": "Archive",
         "variant": "secondary"
       },
+      "children": [],
       "on": {
         "press": [
           {
@@ -192,78 +154,31 @@
             }
           }
         ]
-      },
-      "children": []
+      }
     },
     "m2": {
       "type": "Stack",
       "props": {
-        "direction": "horizontal",
-        "gap": "md",
-        "align": "center",
-        "justify": "between"
-      },
-      "visible": {
-        "$state": "/archived/m2",
-        "not": true
-      },
-      "children": [
-        "m2-text",
-        "m2-actions"
-      ]
-    },
-    "m2-text": {
-      "type": "Stack",
-      "props": {
         "direction": "vertical",
-        "gap": "none"
-      },
-      "children": [
-        "m2-name",
-        "m2-subject",
-        "m2-time"
-      ]
-    },
-    "m2-name": {
-      "type": "Text",
-      "props": {
-        "text": "Alan Turing"
-      },
-      "children": []
-    },
-    "m2-subject": {
-      "type": "Text",
-      "props": {
-        "text": "Notes from the review are in the shared folder.",
-        "variant": "muted"
-      },
-      "children": []
-    },
-    "m2-time": {
-      "type": "Text",
-      "props": {
-        "text": "8:15 AM",
-        "variant": "caption"
-      },
-      "children": []
-    },
-    "m2-actions": {
-      "type": "Stack",
-      "props": {
-        "direction": "horizontal",
         "gap": "sm"
       },
       "children": [
         "m2-open",
+        "m2-text",
         "m2-archive"
-      ]
+      ],
+      "visible": {
+        "$state": "/archived/m2",
+        "not": true
+      }
     },
     "m2-open": {
       "type": "Button",
       "props": {
-        "label": "Open",
+        "label": "Alan Turing",
         "variant": "secondary"
       },
+      "children": [],
       "on": {
         "press": {
           "action": "open",
@@ -271,6 +186,13 @@
             "id": "m2"
           }
         }
+      }
+    },
+    "m2-text": {
+      "type": "Text",
+      "props": {
+        "text": "Notes from the review are in the shared folder. 8:15 AM",
+        "variant": "muted"
       },
       "children": []
     },
@@ -280,6 +202,7 @@
         "label": "Archive",
         "variant": "secondary"
       },
+      "children": [],
       "on": {
         "press": [
           {
@@ -296,78 +219,31 @@
             }
           }
         ]
-      },
-      "children": []
+      }
     },
     "m3": {
       "type": "Stack",
       "props": {
-        "direction": "horizontal",
-        "gap": "md",
-        "align": "center",
-        "justify": "between"
-      },
-      "visible": {
-        "$state": "/archived/m3",
-        "not": true
-      },
-      "children": [
-        "m3-text",
-        "m3-actions"
-      ]
-    },
-    "m3-text": {
-      "type": "Stack",
-      "props": {
         "direction": "vertical",
-        "gap": "none"
-      },
-      "children": [
-        "m3-name",
-        "m3-subject",
-        "m3-time"
-      ]
-    },
-    "m3-name": {
-      "type": "Text",
-      "props": {
-        "text": "Katherine Johnson"
-      },
-      "children": []
-    },
-    "m3-subject": {
-      "type": "Text",
-      "props": {
-        "text": "Updated figures for the launch window.",
-        "variant": "muted"
-      },
-      "children": []
-    },
-    "m3-time": {
-      "type": "Text",
-      "props": {
-        "text": "7:02 AM",
-        "variant": "caption"
-      },
-      "children": []
-    },
-    "m3-actions": {
-      "type": "Stack",
-      "props": {
-        "direction": "horizontal",
         "gap": "sm"
       },
       "children": [
         "m3-open",
+        "m3-text",
         "m3-archive"
-      ]
+      ],
+      "visible": {
+        "$state": "/archived/m3",
+        "not": true
+      }
     },
     "m3-open": {
       "type": "Button",
       "props": {
-        "label": "Open",
+        "label": "Katherine Johnson",
         "variant": "secondary"
       },
+      "children": [],
       "on": {
         "press": {
           "action": "open",
@@ -375,6 +251,13 @@
             "id": "m3"
           }
         }
+      }
+    },
+    "m3-text": {
+      "type": "Text",
+      "props": {
+        "text": "Updated figures for the launch window. 7:02 AM",
+        "variant": "muted"
       },
       "children": []
     },
@@ -384,6 +267,7 @@
         "label": "Archive",
         "variant": "secondary"
       },
+      "children": [],
       "on": {
         "press": [
           {
@@ -400,8 +284,7 @@
             }
           }
         ]
-      },
-      "children": []
+      }
     }
   }
 }
