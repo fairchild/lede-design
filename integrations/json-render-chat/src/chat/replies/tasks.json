@@ -1,12 +1,6 @@
 {
   "root": "screen",
   "state": {
-    "tried": false,
-    "draft": {
-      "title": "",
-      "minutes": "",
-      "priority": ""
-    },
     "tasks": [
       {
         "id": "brief",
@@ -26,7 +20,12 @@
         "minutes": "15",
         "priority": "Low"
       }
-    ]
+    ],
+    "draft": {
+      "title": "",
+      "minutes": "",
+      "priority": ""
+    }
   },
   "elements": {
     "screen": {
@@ -94,31 +93,10 @@
         "value": {
           "$bindState": "/draft/title"
         },
-        "error": {
-          "$cond": {
-            "$and": [
-              {
-                "$state": "/tried"
-              },
-              {
-                "$state": "/draft/title",
-                "not": true
-              }
-            ]
-          },
-          "$then": "Enter what the task is.",
-          "$else": ""
-        }
+        "error": "Enter what the task is."
       },
       "on": {
         "submit": [
-          {
-            "action": "setState",
-            "params": {
-              "statePath": "/tried",
-              "value": true
-            }
-          },
           {
             "action": "pushState",
             "params": {
@@ -146,13 +124,6 @@
                 "minutes": "",
                 "priority": ""
               }
-            }
-          },
-          {
-            "action": "setState",
-            "params": {
-              "statePath": "/tried",
-              "value": false
             }
           }
         ]
@@ -171,43 +142,10 @@
         "value": {
           "$bindState": "/draft/minutes"
         },
-        "error": {
-          "$cond": {
-            "$and": [
-              {
-                "$state": "/tried"
-              },
-              {
-                "$or": [
-                  {
-                    "$state": "/draft/minutes",
-                    "not": true
-                  },
-                  {
-                    "$state": "/draft/minutes",
-                    "lt": 5
-                  },
-                  {
-                    "$state": "/draft/minutes",
-                    "gt": 240
-                  }
-                ]
-              }
-            ]
-          },
-          "$then": "Enter minutes from 5 to 240.",
-          "$else": ""
-        }
+        "error": "Enter minutes from 5 to 240."
       },
       "on": {
         "submit": [
-          {
-            "action": "setState",
-            "params": {
-              "statePath": "/tried",
-              "value": true
-            }
-          },
           {
             "action": "pushState",
             "params": {
@@ -235,13 +173,6 @@
                 "minutes": "",
                 "priority": ""
               }
-            }
-          },
-          {
-            "action": "setState",
-            "params": {
-              "statePath": "/tried",
-              "value": false
             }
           }
         ]
@@ -258,13 +189,6 @@
       "on": {
         "press": [
           {
-            "action": "setState",
-            "params": {
-              "statePath": "/tried",
-              "value": true
-            }
-          },
-          {
             "action": "pushState",
             "params": {
               "statePath": "/tasks",
@@ -291,13 +215,6 @@
                 "minutes": "",
                 "priority": ""
               }
-            }
-          },
-          {
-            "action": "setState",
-            "params": {
-              "statePath": "/tried",
-              "value": false
             }
           }
         ]
@@ -317,21 +234,7 @@
         "value": {
           "$bindState": "/draft/priority"
         },
-        "error": {
-          "$cond": {
-            "$and": [
-              {
-                "$state": "/tried"
-              },
-              {
-                "$state": "/draft/priority",
-                "not": true
-              }
-            ]
-          },
-          "$then": "Choose a priority.",
-          "$else": ""
-        }
+        "error": "Choose a priority."
       },
       "children": []
     }

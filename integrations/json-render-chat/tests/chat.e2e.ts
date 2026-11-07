@@ -88,23 +88,39 @@ test('a reply that fails before it begins says so after the question, outside it
   await expect(composer(page)).toBeFocused();
 });
 
-test('a form sends only when its fields pass, from Enter in a field as from its button, and the button names it', async ({ page }) => {
+test('a form sends only when its fields pass, each failing field shows its error after a press, and the button names it', async ({ page }) => {
   await ask(page, 'Help me sign up');
   const reply = turns(page).nth(1);
   const notes = reply.getByRole('list', { name: 'What you did here' });
   const [name, email] = [reply.getByRole('textbox', { name: 'Name' }), reply.getByRole('textbox', { name: 'Email' })];
+  const [needName, needAt] = [reply.getByText('Enter your name.'), reply.getByText('Enter an email address with an @, such as ada@example.com.')];
   await expect(page.getByRole('button', { name: 'Stop' })).toBeHidden();
-  await name.press('Enter');
+  await expect(needName).toBeHidden();
+  await expect(needAt).toBeHidden();
+
+  await reply.getByRole('button', { name: 'Create account' }).click();
   await expect(name).toBeFocused();
-  await expect(reply.getByText('Enter your name.')).toBeVisible();
+  await expect(needName).toBeVisible();
+  await expect(name).toHaveAccessibleDescription(/Enter your name\./);
+  await expect(needAt).toBeVisible();
+
   await name.fill('Ada Lovelace');
-  await name.press('Enter');
+  await expect(needName).toBeHidden();
+  await email.fill('ada.example.com');
+  await expect(needAt).toBeVisible();
+  await email.press('Enter');
   await expect(email).toBeFocused();
   await expect(notes).toHaveCount(0);
   await email.fill('ada@example.com');
+  await expect(needAt).toBeHidden();
+  await email.press('Enter');
+  const terms = reply.getByRole('checkbox', { name: /I agree to the terms/ });
+  await expect(terms).toBeFocused();
+  await expect(reply.getByText('Agree to the terms to continue.')).toBeVisible();
+  await terms.check();
+  await expect(reply.getByText('Agree to the terms to continue.')).toBeHidden();
   await email.press('Enter');
   await expect(notes).toHaveText('You pressed Create account.');
-  await expect(reply.getByText('Enter your name.')).toBeHidden();
 });
 
 test('a list drawn from state fills in a row at a time as the reply streams', async ({ page }) => {
@@ -149,6 +165,21 @@ test('an action holds back while a field it reads fails, focus moves to that fie
   await expect(add).toBeFocused();
   await expect(task).toHaveValue('');
   await expect(reply.getByText('Enter what the task is.')).toBeHidden();
+});
+
+test('a screen takes typing and presses while the rest of it streams in, and keeps them', async ({ page }) => {
+  await ask(page, 'Show my tasks');
+  const reply = turns(page).nth(1);
+  const rows = reply.getByRole('list').filter({ hasText: 'Draft the venue brief' }).getByRole('listitem');
+  const high = reply.getByRole('radio', { name: 'High' });
+  await high.check();
+  await reply.getByRole('textbox', { name: 'Task' }).fill('Call the florist');
+  // The draft's state streams after the rows, so with a row still to come these acted before it arrived.
+  expect(await rows.count()).toBeLessThan(3);
+  await expect(page.getByRole('button', { name: 'Stop' })).toBeHidden();
+  await expect(rows).toHaveCount(3);
+  await expect(high).toBeChecked();
+  await expect(reply.getByRole('textbox', { name: 'Task' })).toHaveValue('Call the florist');
 });
 
 test('a checkbox’s long label wraps beside the box, at a phone’s width and 200% text', async ({ page }) => {

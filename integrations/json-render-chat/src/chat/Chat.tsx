@@ -6,6 +6,7 @@ import { Button } from '@/components/lede/button';
 import { SegmentedControl } from '@/components/lede/segmented-control';
 import { TextField } from '@/components/lede/text-field';
 import { PageHeader } from '@/components/lede/blocks/page-header';
+import { SPEC_DATA_PART_TYPE } from '@json-render/core';
 import { catalog, type CatalogAction } from '@/components/lede/json-render/catalog';
 import { specFromParts } from '@/components/lede/json-render/patches';
 import { SpecView, type SpecHandlers } from '@/components/lede/json-render/spec-view';
@@ -29,6 +30,14 @@ const ACTIONS = Object.keys(catalog.data.actions) as CatalogAction[];
 const clock = new Intl.DateTimeFormat('en-US', { hour: 'numeric', minute: '2-digit' });
 const textOf = (message: AppMessage) => message.parts.flatMap((p) => (p.type === 'text' && p.text.trim() ? [p.text.trim()] : []));
 
+/** Why a finished reply shows nothing: no words and no screen, or a screen that can't draw, such as patches to an old one. */
+const emptiness = (message: AppMessage) => {
+  const spec = specFromParts(message.parts);
+  if (spec?.elements[spec.root]) return undefined;
+  if (message.parts.some((p) => p.type === SPEC_DATA_PART_TYPE)) return 'The reply’s screen couldn’t be drawn.';
+  return textOf(message).length ? undefined : 'The reply was empty.';
+};
+
 /** The chat page: the conversation, then the composer at the foot of the window. */
 export function Chat() {
   const [scheme, setScheme] = React.useState<Scheme>('System');
@@ -38,6 +47,10 @@ export function Chat() {
   const [notes, setNotes] = React.useState<Record<string, string[]>>({});
   const [times, setTimes] = React.useState<Record<string, Date>>({});
   const form = React.useRef<HTMLFormElement>(null);
+  // Each screen's state as the person left it, sent with the next message so the model sees what they entered.
+  const screens = React.useRef<Record<string, Record<string, unknown>>>({});
+  const body = () => ({ screens: screens.current });
+  const keep = React.useCallback((id: string, state: Record<string, unknown>) => { screens.current[id] = state; }, []);
   const focusComposer = () => form.current?.querySelector('textarea')?.focus();
   const busy = status === 'submitted' || status === 'streaming';
   const last = messages.at(-1);
@@ -49,7 +62,7 @@ export function Chat() {
 
   const send = (text: string) => {
     if (!text.trim() || busy) return;
-    void sendMessage({ text: text.trim() });
+    void sendMessage({ text: text.trim() }, { body: body() });
     setDraft('');
     focusComposer();
   };
@@ -63,7 +76,7 @@ export function Chat() {
 
   const retry = () => {
     focusComposer();
-    void regenerate();
+    void regenerate({ body: body() });
   };
 
   // A control that held focus can leave as the reply ends, such as Stop. Focus then returns to the composer, where the
@@ -125,11 +138,13 @@ export function Chat() {
 
   const note = React.useCallback((id: string, text: string) => setNotes((prev) => ({ ...prev, [id]: [...(prev[id] ?? []), text] })), []);
 
-  const failed = status === 'error' ? last?.id : undefined;
   const reply = last?.role === 'assistant' ? last : undefined;
+  const empty = status === 'ready' && reply && !endings[reply.id] ? emptiness(reply) : undefined;
+  const failed = status === 'error' || empty ? last?.id : undefined;
   const statusText =
     busy ? `${ASSISTANT} is replying.`
     : status === 'error' ? `The reply failed: ${error?.message ?? 'unknown error'}`
+    : empty ? `The reply failed: ${empty}`
     : last && endings[last.id] === 'stopped' ? 'You stopped the reply.'
     : reply ? `${ASSISTANT} replied: ${textOf(reply)[0]?.split(/(?<=[.!?])\s/)[0] ?? 'a screen.'}` : '';
 
@@ -153,6 +168,7 @@ export function Chat() {
                   ending={m.id === failed ? 'failed' : endings[m.id]}
                   notes={notes[m.id] ?? []}
                   onNote={note}
+                  onStateChange={keep}
                 />
               ))}
               {status === 'submitted' && last?.role === 'user' ? (
@@ -172,8 +188,8 @@ export function Chat() {
           )}
         </section>
         <div className="jrc-footer">
-          <p role="status" className={status === 'error' ? 'jrc-status' : 'ld-sr-only'}>{statusText}</p>
-          {status === 'error' ? <Button size="sm" onClick={retry}>Try again</Button> : null}
+          <p role="status" className={failed ? 'jrc-status' : 'ld-sr-only'}>{statusText}</p>
+          {failed ? <Button size="sm" onClick={retry}>Try again</Button> : null}
           <form ref={form} className="jrc-composer" onSubmit={(e) => { e.preventDefault(); send(draft); }}>
             <TextField
               label="Message"
@@ -205,10 +221,11 @@ interface TurnProps {
   ending?: Ending;
   notes: string[];
   onNote: (id: string, text: string) => void;
+  onStateChange: (id: string, state: Record<string, unknown>) => void;
 }
 
 /** One turn: its author and time as a heading, its text and then, when the reply has one, the screen its spec describes. */
-function Turn({ message, time, live, ending, notes, onNote }: TurnProps) {
+function Turn({ message, time, live, ending, notes, onNote, onStateChange }: TurnProps) {
   const spec = React.useMemo(() => specFromParts(message.parts), [message.parts]);
   const specRef = React.useRef(spec);
   specRef.current = spec;
@@ -217,6 +234,7 @@ function Turn({ message, time, live, ending, notes, onNote }: TurnProps) {
     () => Object.fromEntries(ACTIONS.map((name) => [name, (params: Record<string, unknown>) => onNote(message.id, describe(specRef.current, name, params, focusedName()))])),
     [message.id, onNote],
   );
+  const keep = React.useCallback((state: Record<string, unknown>) => onStateChange(message.id, state), [message.id, onStateChange]);
   const author = message.role === 'user' ? 'You' : ASSISTANT;
 
   return (
@@ -230,7 +248,7 @@ function Turn({ message, time, live, ending, notes, onNote }: TurnProps) {
         {textOf(message).map((text, i) => <p key={i} className="jrc-text">{text}</p>)}
         {spec?.elements[spec.root] ? (
           <div className="jrc-screen">
-            <SpecView spec={spec} streaming={live} headingLevel={3} handlers={handlers} />
+            <SpecView spec={spec} streaming={live} headingLevel={3} handlers={handlers} onStateChange={keep} />
           </div>
         ) : null}
         {notes.length ? (

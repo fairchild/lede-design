@@ -44,7 +44,7 @@ export const script: Array<{ match: RegExp; reply: Reply }> = [
   },
   {
     match: /sign ?up|account|register/i,
-    reply: { text: 'Here’s the sign-up form. Your email address is missing its @, so that field shows the fix.', spec: signup as Spec },
+    reply: { text: 'Here’s the sign-up form. Fill in your name and email, and I’ll send your sign-in link.', spec: signup as Spec },
   },
   {
     match: /project/i,

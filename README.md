@@ -49,6 +49,13 @@ Lede renders on the client only, so use it in a Vite app or another client-only 
 rendering yet: registry files have no `'use client'`, so Next's App Router fails at build. Inside a `'use client'` file
 it builds, but `scheme="auto"` doesn't follow a dark OS after hydration.
 
+In an app made with create-vite, replace `src/index.css` first. Its demo styles center every line in a bordered 1126px
+column and set `:root` to 18px, which rescales Lede, and `shadcn init` merges into whatever `:root` it finds:
+
+```bash
+printf '@import "tailwindcss";\n' > src/index.css
+```
+
 1. Add the registry and the items you want. Keep `@lede/theme-provider` in the list: step 4 needs it, and most items
    don't install it. The CLI follows each item's `@lede/…` dependencies through the same registry, which brings in
    `lede-theme`, and installs the npm packages they need.

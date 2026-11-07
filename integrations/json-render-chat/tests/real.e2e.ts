@@ -1,4 +1,6 @@
+import { readFileSync } from 'node:fs';
 import { expect, test, type Page } from '@playwright/test';
+import { fakeLog } from './fake-log';
 
 // The path a copy of this chat ships: the AI SDK's DefaultChatTransport, posting to server/chat.ts, which streams a
 // model's reply through pipeJsonRender. The model is a fake Anthropic (tests/fake-anthropic.ts).
@@ -38,4 +40,54 @@ test('a malformed body gets a 400, a body that isn’t JSON a 415, and the serve
   expect((await post('{"messages":[]}', 'text/plain')).status()).toBe(415);
   await ask(page, 'Show my notification settings');
   await expect(page.getByRole('heading', { level: 3, name: 'Notifications' })).toBeVisible();
+});
+
+/** What the model was sent with the request whose last message contains `marker`, as one string. */
+function sentWith(marker: string) {
+  const bodies = readFileSync(fakeLog, 'utf8').trim().split('\n').map((line) => JSON.parse(line) as { messages: Array<{ content: Array<{ text?: string }> | string }> });
+  const body = bodies.findLast((b) => JSON.stringify(b.messages.at(-1)).includes(marker));
+  return body?.messages.flatMap((m) => (typeof m.content === 'string' ? [m.content] : m.content.map((c) => c.text ?? ''))).join('\n') ?? '';
+}
+
+test('a follow-up sends each earlier screen with what the person left in it', async ({ page }) => {
+  await ask(page, 'Show my notification settings');
+  const push = page.getByRole('switch', { name: 'Push notifications' });
+  await expect(push).toBeChecked();
+  await expect(page.getByRole('button', { name: 'Stop' })).toBeHidden();
+  await push.click();
+  await expect(push).not.toBeChecked();
+  await ask(page, 'Now the email digest, marker-7319');
+  await expect(page.getByRole('heading', { level: 3, name: 'Notifications' })).toHaveCount(2);
+  const sent = sentWith('marker-7319');
+  expect(sent).toContain('"/state/settings","value":{"push":false');
+});
+
+test('a reply that only patches an earlier screen says it couldn’t be drawn, with Try again', async ({ page }) => {
+  await ask(page, 'Show my notification settings');
+  await expect(page.getByRole('button', { name: 'Stop' })).toBeHidden();
+  await ask(page, 'Just patch push off');
+  await expect(page.getByText('The reply failed: The reply’s screen couldn’t be drawn.')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+  await expect(page.getByText('This reply failed.')).toBeVisible();
+});
+
+test('a control that hides itself, or a row an action hides, hands focus on and never drops it to <body>', async ({ page }) => {
+  await ask(page, 'A quiz, please');
+  const screen = page.locator('.jrc-screen');
+  await expect(screen.getByRole('button', { name: 'Check answers' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Stop' })).toBeHidden();
+
+  await screen.getByRole('button', { name: 'Check answers' }).focus();
+  await page.keyboard.press('Enter');
+  await expect(screen.getByRole('button', { name: 'Start over' })).toBeFocused();
+  await page.keyboard.press('Enter');
+  await expect(screen.getByRole('button', { name: 'Check answers' })).toBeFocused();
+
+  for (const [word, after] of [['la manzana', screen.getByRole('button', { name: 'More actions for el perro' })], ['el perro', screen.getByRole('heading', { level: 3, name: 'Practice words' })]] as const) {
+    await screen.getByRole('button', { name: `More actions for ${word}` }).focus();
+    await page.keyboard.press('Enter');
+    await page.getByRole('menuitem', { name: 'Learned' }).press('Enter');
+    await expect(screen.getByText(word)).toBeHidden();
+    await expect(after).toBeFocused();
+  }
 });

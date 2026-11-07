@@ -7,7 +7,7 @@ import { Disclosure } from '@/components/lede/disclosure';
 import { SegmentedControl } from '@/components/lede/segmented-control';
 import { PageHeader } from '@/components/lede/blocks/page-header';
 import { functions, prompt } from '@/components/lede/json-render/catalog';
-import { registry, handlers, actions, type ActionEvent } from '@/components/lede/json-render/registry';
+import { registry, handlers, actions, FieldChecks, type ActionEvent } from '@/components/lede/json-render/registry';
 import { replay } from './stream';
 import { check } from '@/components/lede/json-render/check';
 import { specs, type SpecName } from './specs';
@@ -79,7 +79,9 @@ export function App() {
         <div className="jr-layout">
           <section className="jr-preview" aria-label="Preview" aria-busy={streaming}>
             <JSONUIProvider key={name} registry={registry} functions={functions} initialState={full.state ?? {}} handlers={actionHandlers} onStateChange={(changes) => setState((prev) => apply(prev, changes))}>
-              <Renderer spec={spec} registry={registry} loading={streaming} fallback={Unknown} />
+              <FieldChecks>
+                <Renderer spec={spec} registry={registry} loading={streaming} fallback={Unknown} />
+              </FieldChecks>
             </JSONUIProvider>
           </section>
           <aside className="jr-inspector" aria-labelledby="checks">

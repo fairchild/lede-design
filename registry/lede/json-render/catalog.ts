@@ -99,14 +99,14 @@ export const catalog = defineCatalog(schema, {
       description: 'An on or off setting that applies at once, outside a list. Bind checked with $bindState. In a list, use a ListRow with checked.',
     },
     Checkbox: {
-      props: z.object({ label: text, checked: z.boolean().optional(), disabled: z.boolean().optional(), required: z.boolean().optional() }),
+      props: z.object({ label: text, checked: z.boolean().optional(), disabled: z.boolean().optional(), required: z.boolean().optional(), error: text.optional() }),
       events: ['change'],
-      description: 'A yes or no choice that applies when the form is sent. Set required when the form needs it checked, such as agreeing to terms. Bind checked with $bindState.',
+      description: 'A yes or no choice that applies when the form is sent. Set required when the form needs it checked, such as agreeing to terms, with an error such as “Agree to the terms to continue.” Bind checked with $bindState.',
     },
     SegmentedControl: {
       props: z.object({ label: text, options: z.array(text).min(2).max(5), value: text.optional(), required: z.boolean().optional(), error: text.optional() }),
       events: ['change'],
-      description: 'A choice of two to five options, such as a view or a period. Its label shows above it. Give options that read on their own, such as “4 people” or “7:00 PM”. They sit side by side, and stack on a narrow screen. Bind value with $bindState. To make the person choose, start value at "" and set required; error shows under it.',
+      description: 'A choice of two to five options, such as a view or a period. Its label shows above it. Give options that read on their own, such as “4 people” or “7:00 PM”. They sit side by side, and stack on a narrow screen. Bind value with $bindState. To make the person choose, start value at "" and set required, with an error that shows under it.',
     },
     FormSection: {
       props: z.object({ legend: text, description: text.optional() }),
@@ -154,7 +154,8 @@ export const rules = [
   'An event runs several actions in order when its binding is an array, such as "press": [{ "action": "setState", … }, { "action": "submit", … }].',
   'To show a value worked out from others, use $computed. { "$computed": "scale", "args": { "amount": …, "from": …, "to": …, "unit": …, "units": … } } returns amount × to ÷ from. { "$computed": "remaining", "args": { "from": …, "take": …, "unit": …, "units": … } } returns from − take, and never less than 0. Each arg can be a literal, { "$state": … } or { "$item": … }, and a number inside text, such as “6 people”, counts as 6.',
   'Text reads right for every value it can show. Give a number its noun through unit and units, such as "unit": "cup", "units": "cups" for “1 cup” and “1.5 cups”, rather than in a $template.',
-  'A field is checked when an action reads it: an action whose params read a field that is empty and required, out of its min and max, or not an email or URL its type asks for doesn’t run, and focus moves to the field. The actions before it in the same binding still run. So put a setState of /tried to true first, and show each field’s error with $cond once /tried is set, such as { "$cond": { "$and": [{ "$state": "/tried" }, { "$state": "/timer/minutes", "not": true }] }, "$then": "Enter the minutes from the package.", "$else": "" }. Bind the same actions to the field’s submit, so Enter in it does what its Button does. To clear a form after it sends, end the binding with setStates that empty its fields and set /tried to false.',
+  'A field is checked when an action reads it. An action whose params read a field that is empty and required, out of its min and max, or not the email or URL its type asks for doesn’t run: the field shows its error and focus moves to it. So give each required or ranged field an error as plain text worded as the fix, such as "error": "Enter minutes from 5 to 240.". It shows only once a check holds an action back, and goes when the field passes. Bind the same actions to the field’s submit, so Enter in it does what its Button does. To clear a form after it sends, end the binding with a setState that empties its fields.',
+  'Each spec is a whole screen, with its root, every element and the state it needs, even when it changes a screen from earlier in the conversation. An earlier screen’s state is what the person left in it, so carry over what they entered.',
   'Every control does something: it changes a setting, a value another element shows or a value an action sends, or it runs an action. A spec can’t sort or filter a list, so it has no sort or filter controls.',
 ];
 
@@ -169,7 +170,7 @@ export const promptFixes: ReadonlyArray<readonly [string, string]> = [
   ['{"type":"PageHeader","props":{"title":{"$item":"title"}},"children":[]}', '{"type":"ListRow","props":{"title":{"$item":"title"}},"children":[]}'],
   ['{"type":"Screen","props":{},"on":{"press"', '{"type":"Button","props":{"label":"Save"},"on":{"press"'],
   ['A Screen with on: {', 'A Button with on: {'],
-  ['"color": { "$cond": { "$state": "/activeTab", "eq": "home" }, "$then": "#007AFF", "$else": "#8E8E93" }', '"error": { "$cond": { "$state": "/tried" }, "$then": "Enter your name.", "$else": "" }'],
+  ['"color": { "$cond": { "$state": "/activeTab", "eq": "home" }, "$then": "#007AFF", "$else": "#8E8E93" }', '"value": { "$cond": { "$state": "/settings/push" }, "$then": "On", "$else": "Off" }'],
   ['Example (cascading select — country changes trigger city loading):', 'Example (a new period sends the page back to its start):'],
   ['{"type":"Select","props":{"value":{"$bindState":"/form/country"},"options":["US","Canada","UK"]},"watch":{"/form/country":{"action":"loadCities","params":{"country":{"$state":"/form/country"}}}},"children":[]}',
     '{"type":"SegmentedControl","props":{"label":"Period","options":["Today","This week"],"value":{"$bindState":"/period"}},"watch":{"/period":{"action":"setState","params":{"statePath":"/page","value":1}}},"children":[]}'],

@@ -39,20 +39,25 @@ const reason = (error: unknown) => (error instanceof Error ? error.message : 'Th
  */
 const shown = (error: unknown) => (process.env.CHAT_DEBUG ? reason(error) : 'The assistant couldn’t answer.');
 
+/** Each screen's state as the person left it when they sent, by the id of the reply that drew it. */
+const screensSchema = z.record(z.string(), z.record(z.string(), z.unknown())).optional();
+export type Screens = z.infer<typeof screensSchema>;
+
 /**
  * The conversation as the model reads it. `convertToModelMessages` drops data parts, so without this the model never
  * sees the screens it sent, and a follow-up such as “turn off push” has nothing to refer to. Each reply's patches
- * become one text part, in the fenced form the inline prompt asks the model to write. The model sees each screen as
- * it was sent: an edit the person made on it reaches the model only through an action the app reports.
+ * become one text part, in the fenced form the inline prompt asks the model to write, with the state the person left
+ * in that screen: what they typed and chose there reaches the model with their next message.
  */
 const FENCE = '`'.repeat(3);
 
-export function forModel(messages: AppMessage[]): AppMessage[] {
+export function forModel(messages: AppMessage[], screens: Screens = {}): AppMessage[] {
   return messages.map((message) => {
     const spec = specFromParts(message.parts);
     if (!spec?.elements[spec.root]) return message;
+    const left = { ...spec, state: screens[message.id] ?? spec.state };
     const parts = message.parts.filter((part) => part.type !== SPEC_DATA_PART_TYPE);
-    return { ...message, parts: [...parts, { type: 'text' as const, text: `\n\n${FENCE}spec\n${toPatches(spec).join('')}${FENCE}` }] };
+    return { ...message, parts: [...parts, { type: 'text' as const, text: `\n\n${FENCE}spec\n${toPatches(left).join('')}${FENCE}` }] };
   });
 }
 
@@ -64,21 +69,22 @@ export async function handleChat(request: Request): Promise<Response> {
   if (Number(request.headers.get('content-length') ?? 0) > LIMITS.bodyBytes) return refuse(413, 'The body is too large.');
   const body = await request.text();
   if (body.length > LIMITS.bodyBytes) return refuse(413, 'The body is too large.');
-  let raw: unknown;
+  let raw: unknown, sent: unknown;
   try {
-    raw = (JSON.parse(body) as { messages?: unknown }).messages;
+    ({ messages: raw, screens: sent } = JSON.parse(body) as { messages?: unknown; screens?: unknown });
   } catch {
     return refuse(400, 'The body must be JSON with a messages array.');
   }
   if (Array.isArray(raw) && raw.length > LIMITS.messages) return refuse(413, 'The conversation is too long.');
   const checked = await safeValidateUIMessages<AppMessage>({ messages: raw, dataSchemas: { spec: specPart } });
-  if (!checked.success) return refuse(400, 'The body must be JSON with a messages array.');
+  const screens = screensSchema.safeParse(sent);
+  if (!checked.success || !screens.success) return refuse(400, 'The body must be JSON with a messages array.');
   const messages = checked.data.map((m) => ({ ...m, parts: m.parts.filter((part) => KEPT[m.role].has(part.type)) }));
 
   const result = streamText({
     model: anthropic('claude-sonnet-5-5'),
     system,
-    messages: await convertToModelMessages(forModel(messages)),
+    messages: await convertToModelMessages(forModel(messages, screens.data)),
     maxOutputTokens: LIMITS.outputTokens,
     abortSignal: request.signal,
     // One line per failure. Without this the AI SDK logs the whole error, stack and response headers included.

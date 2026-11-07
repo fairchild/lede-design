@@ -139,8 +139,10 @@ them apart. It sends each patch in pieces, down to a character at a time, which 
 
 On the next turn the server puts each earlier screen back into the conversation as the fenced patches, with `forModel`
 in `server/chat.ts`. The AI SDK's `convertToModelMessages` drops data parts, so without it the model never sees the
-screens it sent, and “turn off push” has nothing to refer to. The model sees each screen as it was sent: a switch the
-person turned off there reaches it only through an action your app reports, such as a message the handler sends.
+screens it sent, and “turn off push” has nothing to refer to. Each screen goes back with the state the person left in
+it: `SpecView`'s `onStateChange` gives the chat each screen's state, and the chat sends it as `screens` with the next
+message, so a switch turned off or a name typed there reaches the model. The rules ask for a whole screen in each
+reply; a reply whose screen can't draw, such as patches to an earlier one, shows an error with Try again.
 
 ## Files
 
@@ -152,9 +154,9 @@ person turned off there reaches it only through an action your app reports, such
 | `tests/mock-transport.test.ts` | Sends each scripted prompt through the mock and checks the spec against the catalog. |
 | `tests/describe.test.ts` | Checks each action's note, for literal params, params bound to state and rows drawn by repeat. |
 | `tests/model-replies.test.tsx` | Streams 16 replies a model wrote for 8 requests through the server's transform: each parses, passes the catalog and draws, with each list's rows once. |
-| `tests/server.test.ts` | Checks that the model sees earlier screens, then starts the server: what it refuses, the length cap and parts it passes the model, and one log line per failed model call. |
-| `tests/chat.e2e.ts` | The chat in a browser: the order of a reply, an action's note, Stop, Escape, Try again, focus, the composer's scroll padding, checked fields, a list that fills in as it streams, a checkbox label at 200% text, following a reply as it streams and axe. |
-| `tests/real.e2e.ts` and `fake-anthropic.ts` | The chat on the AI SDK's own transport, against `server/chat.ts` and a fake Anthropic: a reply that draws, a connection that drops partway and a malformed body. |
+| `tests/server.test.ts` | Checks that the model sees earlier screens with the state the person left in them, then starts the server: what it refuses, the length cap and parts it passes the model, and one log line per failed model call. |
+| `tests/chat.e2e.ts` | The chat in a browser: the order of a reply, an action's note, Stop, Escape, Try again, focus, the composer's scroll padding, checked fields and their errors, a list that fills in as it streams, typing and presses while a reply streams, a checkbox label at 200% text, following a reply as it streams and axe. |
+| `tests/real.e2e.ts`, `fake-anthropic.ts` and `fake-replies/` | The chat on the AI SDK's own transport, against `server/chat.ts` and a fake Anthropic: a reply that draws, a connection that drops partway, a malformed body, a follow-up that carries a screen's state, a reply that only patches an earlier screen and focus when a control or row hides itself. |
 
 The catalog, the registry and `SpecView` are Lede's `json-render` item, in `registry/lede/json-render/`, which this
 entry and [`../json-render`](../json-render) both import through the `@/components/lede` alias, the path an install

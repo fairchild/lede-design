@@ -24,8 +24,9 @@ The catalog, the registry, `check` and `SpecView` are Lede's `json-render` regis
 - `registry.tsx` maps each type to its Lede component. Callback props become json-render events through `emit`,
   so a spec binds them to actions in its `on` field. TextField, Switch, Checkbox, SegmentedControl and a ListRow with
   `checked` bind their value with `$bindState`, and the inbox spec archives a row with the built-in `setState` action
-  and a `visible` condition.
-- `specs/*.json` are the recorded specs: settings, an inbox, a sign-up form with an error, a recipe whose amounts
+  and a `visible` condition. A page that uses `JSONUIProvider` itself, as this one does, wraps `Renderer` in
+  `FieldChecks`, so a field shows its error when a check holds an action back; `SpecView` does that for you.
+- `specs/*.json` are the recorded specs: settings, an inbox, a sign-up form whose fields show their errors when Create account finds them failing, a recipe whose amounts
   follow its servings through `$computed`, an empty state and an invalid spec. "Replay as a stream" sends the selected spec through `createSpecStreamCompiler` as JSON Patch lines,
   each split across two chunks, so the screen builds up as a model would write it.
 - `catalog-fit.ts` fails `tsc` when a catalog prop isn't one the Lede component takes, or allows a value the

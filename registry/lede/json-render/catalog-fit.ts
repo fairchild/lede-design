@@ -42,7 +42,7 @@ interface Lede {
 interface Adapted {
   ListRow: 'checked';
   Button: 'label';
-  Checkbox: 'label';
+  Checkbox: 'label' | 'error';
   SegmentedControl: 'error';
 }
 

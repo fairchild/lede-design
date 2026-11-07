@@ -1,10 +1,9 @@
 {
   "root": "screen",
   "state": {
-    "tried": false,
     "form": {
       "name": "",
-      "email": "ada.example.com",
+      "email": "",
       "terms": false
     }
   },
@@ -23,7 +22,7 @@
       "type": "PageHeader",
       "props": {
         "title": "Create your account",
-        "summary": "Two fields and you’re in. The email needs a fix."
+        "summary": "Two fields and you’re in."
       },
       "children": []
     },
@@ -46,31 +45,10 @@
         "value": {
           "$bindState": "/form/name"
         },
-        "error": {
-          "$cond": {
-            "$and": [
-              {
-                "$state": "/tried"
-              },
-              {
-                "$state": "/form/name",
-                "not": true
-              }
-            ]
-          },
-          "$then": "Enter your name.",
-          "$else": ""
-        }
+        "error": "Enter your name."
       },
       "on": {
         "submit": [
-          {
-            "action": "setState",
-            "params": {
-              "statePath": "/tried",
-              "value": true
-            }
-          },
           {
             "action": "submit",
             "params": {
@@ -99,13 +77,6 @@
       "on": {
         "submit": [
           {
-            "action": "setState",
-            "params": {
-              "statePath": "/tried",
-              "value": true
-            }
-          },
-          {
             "action": "submit",
             "params": {
               "form": "signup",
@@ -124,7 +95,9 @@
         "label": "I agree to the terms of use and the privacy policy",
         "checked": {
           "$bindState": "/form/terms"
-        }
+        },
+        "required": true,
+        "error": "Agree to the terms to continue."
       },
       "children": []
     },
@@ -137,13 +110,6 @@
       },
       "on": {
         "press": [
-          {
-            "action": "setState",
-            "params": {
-              "statePath": "/tried",
-              "value": true
-            }
-          },
           {
             "action": "submit",
             "params": {

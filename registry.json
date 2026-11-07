@@ -622,8 +622,8 @@
         }
       ],
       "dependencies": [
-        "@json-render/core@^0.22.0",
-        "@json-render/react@^0.22.0",
+        "@json-render/core@0.22.0",
+        "@json-render/react@0.22.0",
         "zod@^4.6.7"
       ]
     },

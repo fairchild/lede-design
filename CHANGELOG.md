@@ -6,12 +6,17 @@
   Lede components, `prompt()`, which gives a model json-render's prompt in this catalog's terms with Lede's `rules`, a
   registry that draws each component, `catalog-fit` for the typecheck, `check` for a spec's props, `specFromParts` and
   `SpecView`. `functions` holds `scale` and `remaining`, for values a spec works out with `$computed`. An action that
-  reads a field failing its browser check doesn't run, and focus moves to the field. Enter in a one-line TextField
-  runs its actions, a number field keeps a number in state, and a SegmentedControl in a spec shows its label and can
-  be required and show an error. `integrations/json-render-chat` uses it in an AI SDK chat.
+  reads a field failing its browser check doesn't run: each such field shows its `error`, a plain string, until the
+  person's input makes it pass, and focus moves to the first. Enter in a one-line TextField runs its actions, a number
+  field keeps a number in state, and a SegmentedControl or Checkbox in a spec can be required and show an error.
+  `SpecView` takes input while a spec streams and keeps what the person changed, reports the screen's state through
+  `onStateChange`, moves focus on when a press hides the control that made it and warns in development when Lede's
+  CSS isn't loaded. It needs `@json-render/core` and `@json-render/react` at exactly 0.22.0.
+  `integrations/json-render-chat` uses it in an AI SDK chat.
 - SegmentedControl takes `required`, `aria-describedby` and `aria-invalid`, and with a value outside its options it
   shows no option as chosen.
-- `ld-checkbox-field` on a `<label>` that holds a Checkbox keeps a long label in a column beside the box.
+- `ld-checkbox-field` on a `<label>` that holds a Checkbox keeps a long label in a column beside the box, with the
+  default cursor while the Checkbox is disabled.
 - EmptyState's `headingLevel` takes 4.
 - A PageHeader inside a flow's stack drops its bottom margin, so the space under it stays one step when an
   inline-level control, such as a SegmentedControl, comes next.

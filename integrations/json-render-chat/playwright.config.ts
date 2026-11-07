@@ -1,4 +1,5 @@
 import { defineConfig, devices } from '@playwright/test';
+import { fakeLog } from './tests/fake-log';
 
 // The chat in a browser. `mock` runs the scripted replies on this entry's preview port, 4881. `real` runs the build
 // that posts to /api/chat, on 4883, through the preview's proxy to server/chat.ts on 4887, which calls a fake
@@ -15,7 +16,7 @@ export default defineConfig({
   ],
   webServer: [
     { command: 'npm run tokens && vite build && vite preview --port 4881 --strictPort', url: 'http://localhost:4881', reuseExistingServer: false },
-    { command: 'FAKE_PORT=4885 tsx tests/fake-anthropic.ts', port: 4885, reuseExistingServer: false },
+    { command: 'tsx tests/fake-anthropic.ts', env: { FAKE_PORT: '4885', FAKE_LOG: fakeLog }, port: 4885, reuseExistingServer: false },
     { command: 'tsx server/chat.ts', env: server, port: 4887, reuseExistingServer: false },
     {
       command: 'VITE_CHAT_API=/api/chat vite build --outDir dist-real && vite preview --outDir dist-real --port 4883 --strictPort',

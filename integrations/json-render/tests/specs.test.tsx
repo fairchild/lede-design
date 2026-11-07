@@ -1,7 +1,7 @@
 import { renderToString } from 'react-dom/server';
 import { describe, expect, test } from 'vitest';
 import { JSONUIProvider, Renderer, type ComponentRenderer } from '@json-render/react';
-import { SpecView } from '@/components/lede/json-render/spec-view';
+import { SpecView, specStore } from '@/components/lede/json-render/spec-view';
 import { catalog, functions, prompt, promptFixes, rules } from '@/components/lede/json-render/catalog';
 import { registry } from '@/components/lede/json-render/registry';
 import { check } from '@/components/lede/json-render/check';
@@ -117,7 +117,7 @@ test('the prompt names only this catalog’s components and actions in its examp
   expect(text).toContain('its binding is an array');
 });
 
-test('a SegmentedControl’s error shows under it and describes its group', () => {
+test('a required SegmentedControl starts with no choice and no error, which waits for a check to hold an action back', () => {
   const spec = {
     root: 'screen',
     state: { priority: '' },
@@ -127,9 +127,32 @@ test('a SegmentedControl’s error shows under it and describes its group', () =
     },
   } as unknown as (typeof specs)['Inbox'];
   const html = renderToString(<SpecView spec={spec} />);
-  const id = html.match(/<fieldset[^>]*aria-describedby="([^"]+)"/)?.[1];
-  expect(id).toBeTruthy();
-  expect(html).toContain(`id="${id}" class="ld-field-hint">Choose a priority.</p>`);
+  expect(html).not.toContain('aria-describedby');
+  expect(html).not.toContain('Choose a priority.');
   expect(html.match(/<input[^>]*required=""/g)?.length).toBe(2);
   expect(html).toMatch(/class="ld-seg-thumb"[^>]*hidden=""/);
+});
+
+describe('the state of a screen that streams', () => {
+  test('a value the person sets keeps their change when the stream later sends that key', () => {
+    const { store, sync } = specStore({});
+    sync({ tasks: [] });
+    store.set('/draft/priority', 'High');
+    sync({ tasks: [{ id: 'a' }], draft: { title: '', priority: '' } });
+    expect(store.get('/draft/priority')).toBe('High');
+    expect(store.get('/draft/title')).toBe('');
+    expect(store.get('/tasks')).toEqual([{ id: 'a' }]);
+  });
+
+  test('a list the person adds to stays theirs, and the same state built again writes nothing', () => {
+    const { store, sync } = specStore({ tasks: [{ id: 'a' }] });
+    store.set('/tasks', [{ id: 'a' }, { id: 'mine' }]);
+    sync({ tasks: [{ id: 'a' }, { id: 'b' }] });
+    expect(store.get('/tasks')).toEqual([{ id: 'a' }, { id: 'mine' }]);
+    sync(structuredClone({ tasks: [{ id: 'a' }, { id: 'b' }], done: {}, page: 1 }));
+    const before = store.getSnapshot();
+    sync(structuredClone({ tasks: [{ id: 'a' }, { id: 'b' }], done: {}, page: 1 }));
+    expect(store.getSnapshot()).toBe(before);
+    expect(store.get('/done')).toEqual({});
+  });
 });

@@ -1,7 +1,7 @@
 name: CI
 # A pull request into main runs what its change can affect, and `check` reports the result. A PR into another branch,
 # a push to main and a manual run all run everything. `plan` sorts a PR into main by its diff with scripts/ci-tier.mjs:
-# 1, Markdown the site doesn't render and integrations/: the build only.
+# 1, Markdown the site doesn't render and integrations/ files that still exist: the build only.
 # 2, test files only: the build, and beside it the changed specs and the specs that import a changed helper.
 # 3, anything else: the build, and beside it the whole suite in shards, with perf alone on its own runner.
 on:

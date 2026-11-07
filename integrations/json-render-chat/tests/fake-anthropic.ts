@@ -1,17 +1,26 @@
 import { createServer } from 'node:http';
-import { appendFileSync, readFileSync } from 'node:fs';
+import { appendFileSync, readFileSync, writeFileSync } from 'node:fs';
 
 // A stand-in for Anthropic's Messages API, for the tests of server/chat.ts. It streams a reply a model wrote, in
-// Anthropic's SSE events. A message containing “drop” loses its connection halfway through the reply. With `FAKE_LOG`
-// set, it appends each request's body to that file, one JSON line each.
-const reply = readFileSync(new URL('./model-replies/after/2-settings.txt', import.meta.url), 'utf8');
+// Anthropic's SSE events: the notification settings, or the reply named by a word in the last message. A message
+// containing “drop” loses its connection halfway through the reply. With `FAKE_LOG` set, it appends each request's
+// body to that file, one JSON line each.
+const read = (path: string) => readFileSync(new URL(path, import.meta.url), 'utf8');
+const replies: Array<[string, string]> = [
+  ['quiz', read('./fake-replies/quiz.txt')],
+  ['patch', read('./fake-replies/patch-only.txt')],
+];
+const settings = read('./model-replies/after/2-settings.txt');
 const port = Number(process.env.FAKE_PORT ?? 4885);
+if (process.env.FAKE_LOG) writeFileSync(process.env.FAKE_LOG, '');
 
 createServer(async (req, res) => {
   let body = '';
   for await (const chunk of req) body += chunk;
   if (process.env.FAKE_LOG) appendFileSync(process.env.FAKE_LOG, `${body}\n`);
-  const drop = JSON.stringify(JSON.parse(body || '{}').messages?.at(-1) ?? '').includes('drop');
+  const asked = JSON.stringify(JSON.parse(body || '{}').messages?.at(-1) ?? '');
+  const drop = asked.includes('drop');
+  const reply = replies.find(([word]) => asked.includes(word))?.[1] ?? settings;
   const send = (type: string, data: object) => res.write(`event: ${type}\ndata: ${JSON.stringify({ type, ...data })}\n\n`);
   res.writeHead(200, { 'content-type': 'text/event-stream' });
   send('message_start', { message: { id: 'msg_1', type: 'message', role: 'assistant', model: 'claude-sonnet-5-5', content: [], stop_reason: null, stop_sequence: null, usage: { input_tokens: 10, output_tokens: 1 } } });

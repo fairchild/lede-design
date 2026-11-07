@@ -80,10 +80,12 @@ Every installed registry file must be listed in `registry.json`; the `index.ts` 
 - `npm run contrast` — the contrast gate alone; `npm run contrast -- --report` prints every pair.
 - CI runs what a PR into main can affect, and `check` is the one status to read. `scripts/ci-tier.mjs` sorts the
   PR's diff against main. A diff of only Markdown the site doesn't render (the root `CHANGELOG.md`, `CONTRIBUTING.md`
-  and `CLAUDE.md`, plus Markdown in `docs/` and `.claude/`) runs the build. Overview renders the README's install steps,
-  so a README diff runs everything. A diff of only `.ts`
-  files under `tests/`, none of them deleted, runs the build and the specs that change or import a changed helper. Any
-  other diff runs the build and the whole suite in shards, with `perf` on a runner of its own. A PR into another
-  branch, a push to main and a manual run always run everything. The `@source not` lines in `src/styles/globals.css`
-  keep Tailwind from scanning those Markdown files and `tests/`, so neither kind of diff reaches the site's CSS, and
-  they change with the script's lists. If the site starts to render one of those Markdown files, take it out of both.
+  and `CLAUDE.md`, plus Markdown in `docs/` and `.claude/`), of files under `integrations/` that still exist, or of
+  both, runs the build. Overview renders the README's install steps, so a README diff runs everything. A diff of only
+  `.ts` files under `tests/`, none of them deleted, runs the build and the specs that change or import a changed helper.
+  Any other diff runs the build and the whole suite in shards, with `perf` on a runner of its own. A PR into another
+  branch, a push to main and a manual run always run everything. The `integrations` job, which `check` needs, runs
+  each `integrations/` entry's own build and tests on every PR. The `@source not` lines in `src/styles/globals.css`
+  keep Tailwind from scanning those Markdown files, `tests/` and `integrations/`, so none of those diffs reaches the
+  site's CSS, and they change with the script's lists. If the site starts to render one of those Markdown files, take
+  it out of both.

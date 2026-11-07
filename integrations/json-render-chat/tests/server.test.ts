@@ -37,6 +37,16 @@ test('the model sees the screen it sent, as the patches it wrote', async () => {
   expect(said).toContain('Notifications');
 });
 
+test('the model sees each earlier screen with the state the person left in it', async () => {
+  const reply = await replyTo('Show my notification settings');
+  const ask = { id: 'u1', role: 'user' as const, parts: [{ type: 'text' as const, text: 'Show my notification settings' }] };
+  const said = async (screens?: Record<string, Record<string, unknown>>) => JSON.stringify((await convertToModelMessages(forModel([ask, reply], screens)))[1].content);
+  expect(await said()).toContain('\\"push\\":true');
+  const left = await said({ a1: { settings: { push: false, mentions: true, email: false } } });
+  expect(left).toContain('\\"push\\":false');
+  expect(left).not.toContain('\\"push\\":true');
+});
+
 test('the server starts, answers 404 off its route, refuses a body that is malformed, not JSON or too large, and logs a failed model call in one line', async () => {
   const port = 4884;
   const server = spawn('npm', ['run', 'server'], { env: { ...process.env, ANTHROPIC_API_KEY: 'test', PORT: String(port), ANTHROPIC_BASE_URL: 'http://127.0.0.1:9/v1' }, stdio: ['ignore', 'pipe', 'pipe'], detached: true });
@@ -50,6 +60,7 @@ test('the server starts, answers 404 off its route, refuses a body that is malfo
     expect((await fetch(`http://localhost:${port}/`)).status).toBe(404);
     const post = (body: string, type = 'application/json') => fetch(`http://localhost:${port}/api/chat`, { method: 'POST', headers: { 'content-type': type }, body });
     expect((await post('{}')).status).toBe(400);
+    expect((await post('{"messages":[],"screens":{"a1":"x"}}')).status).toBe(400);
     expect((await post('{"messages":[]}', 'text/plain')).status).toBe(415);
     expect((await post(JSON.stringify({ messages: [{ id: 'u1', role: 'user', parts: [{ type: 'text', text: 'x'.repeat(1_100_000) }] }] }))).status).toBe(413);
     const reply = await fetch(`http://localhost:${port}/api/chat`, {

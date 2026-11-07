@@ -11,7 +11,6 @@ import { EmptyState } from '../blocks/empty-state';
 import { FormSection } from '../blocks/form-section';
 import { PageHeader } from '../blocks/page-header';
 import { SummaryCard } from '../blocks/summary-card';
-import { focusLanding } from '../input-modality';
 import { catalog } from './catalog';
 
 /**
@@ -36,31 +35,69 @@ function statePaths(value: unknown): string[] {
   return Object.values(value).flatMap(statePaths);
 }
 
+type Field = HTMLInputElement | HTMLTextAreaElement;
+interface Checks {
+  /** Each field whose check held back an action, by name, with the browser's message for what it needs. */
+  shown: ReadonlyMap<string, string>;
+  show: (fields: Field[]) => void;
+  /** Called on a field's input: a field that now passes drops its error, and one that still fails keeps it. */
+  recheck: (name: string, valid: boolean, message: string) => void;
+}
+const Checked = React.createContext<Checks | null>(null);
+
+/** Holds which fields show their error. SpecView puts it around each screen. */
+export function FieldChecks({ children }: { children: React.ReactNode }) {
+  const [shown, setShown] = React.useState<ReadonlyMap<string, string>>(new Map());
+  const checks = React.useMemo<Checks>(() => ({
+    shown,
+    show: (fields) => setShown((prev) => new Map([...prev, ...fields.map((f) => [f.name, f.validationMessage] as const)])),
+    recheck: (name, valid, message) => setShown((prev) => {
+      if (!prev.has(name) || (!valid && prev.get(name) === message)) return prev;
+      const next = new Map(prev);
+      if (valid) next.delete(name);
+      else next.set(name, message);
+      return next;
+    }),
+  }), [shown]);
+  return <Checked.Provider value={checks}>{children}</Checked.Provider>;
+}
+
+/** A field's error, shown once its check holds back an action: the spec's `error`, or the browser's message without one. */
+function useFieldError(name: string | undefined, error: string | undefined) {
+  const checks = React.useContext(Checked);
+  const message = name === undefined ? undefined : checks?.shown.get(name);
+  return { error: message === undefined ? undefined : error || message, recheck: checks?.recheck };
+}
+
 /**
  * An event's emit, held back at the first action that reads a field failing its native check: empty and required,
- * outside its min and max, or not the email or URL its type asks for. The actions before that one run, so a spec can
- * set `/tried` and show its errors, and focus moves to the field. Each field's `name` is the state path it binds.
+ * outside its min and max, or not the email or URL its type asks for. The actions before that one run. Each field it
+ * reads that fails shows its error, and focus moves to the first. Each field's `name` is the state path it binds.
  */
 function useCheckedEmit(emit: (event: string) => void) {
   const root = React.useContext(SpecRoot);
   const on = React.useContext(ElementOn);
+  const checks = React.useContext(Checked);
   const { execute } = useActions();
   return async (event: string) => {
     const bound = on?.[event];
     const list = bound ? (Array.isArray(bound) ? bound : [bound]) : [];
     const scope: ParentNode = root?.current ?? document;
-    const failing = [...scope.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('input[name]:invalid, textarea[name]:invalid')];
-    const reads = (b: ActionBinding) => failing.find((f) => statePaths(b.params).some((p) => f.name === p || f.name.startsWith(`${p}/`)));
-    const stop = list.findIndex(reads);
+    const failing = [...scope.querySelectorAll<Field>('input[name]:invalid, textarea[name]:invalid')];
+    const reads = (b: ActionBinding) => failing.filter((f) => statePaths(b.params).some((p) => f.name === p || f.name.startsWith(`${p}/`)));
+    const stop = list.findIndex((b) => reads(b).length > 0);
     if (stop < 0) return emit(event);
     for (const b of list.slice(0, stop)) await execute(b);
-    reads(list[stop])?.focus();
+    const held = reads(list[stop]);
+    checks?.show(held);
+    held[0]?.focus();
   };
 }
 
 /**
  * Each catalog type drawn by its Lede component. The spec's PageHeader leaves focus where the reader is. PageHeader
- * takes an h1 or h2 only, so a deeper title draws its parts with the same classes.
+ * takes an h1 or h2 only, so a deeper title draws its parts with the same classes, its title focusable as PageHeader's
+ * is, so focus can land there.
  */
 const drawn = defineRegistry(catalog, {
   components: {
@@ -73,7 +110,7 @@ const drawn = defineRegistry(catalog, {
         <header className="ld-page-header">
           <div className="ld-page-header-row">
             <div className="ld-page-header-text">
-              <H className="text-title-2 ld-page-title">{props.title}</H>
+              <H tabIndex={-1} className="text-title-2 ld-page-title">{props.title}</H>
               {props.summary ? <p className="ld-page-summary">{props.summary}</p> : null}
             </div>
             {slots?.actions ? <div className="ld-page-actions">{slots.actions}</div> : null}
@@ -87,10 +124,8 @@ const drawn = defineRegistry(catalog, {
     ListRow: ({ props, bindings, emit, on }) => {
       const [checked, setChecked] = useBoundProp(props.checked, bindings?.checked);
       const press = on('press');
-      const id = React.useId();
       return (
         <ListRow
-          rowKey={id}
           title={props.title}
           subtitle={props.subtitle}
           value={props.value}
@@ -99,7 +134,7 @@ const drawn = defineRegistry(catalog, {
           trailing={checked === undefined ? undefined : (
             <Switch aria-label={props.title} checked={checked} onCheckedChange={(next) => { setChecked(next); emit('change'); }} />
           )}
-          actions={props.actions?.map((a) => ({ label: a.label, tone: a.tone, onSelect: () => { keepFocus(id); emit(a.event); } }))}
+          actions={props.actions?.map((a) => ({ label: a.label, tone: a.tone, onSelect: () => emit(a.event) }))}
         />
       );
     },
@@ -115,13 +150,14 @@ const drawn = defineRegistry(catalog, {
       const [value, setValue] = useBoundProp(props.value, bindings?.value);
       const submit = on('submit');
       const checked = useCheckedEmit(emit);
+      const { error, recheck } = useFieldError(bindings?.value, props.error);
       return (
         <TextField
           label={props.label}
           type={props.type}
           placeholder={props.placeholder}
           hint={props.hint}
-          error={props.error}
+          error={error}
           required={props.required}
           min={props.min}
           max={props.max}
@@ -131,6 +167,7 @@ const drawn = defineRegistry(catalog, {
           // A number field keeps a number in state, so a condition's gt and lt compare it.
           onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
             const input = e.currentTarget;
+            if (bindings?.value) recheck?.(bindings.value, input.validity.valid, input.validationMessage);
             setValue(props.type === 'number' && input.value !== '' ? (input as HTMLInputElement).valueAsNumber : input.value);
           }}
           onKeyDown={submit.bound && !props.rows ? (e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -145,22 +182,41 @@ const drawn = defineRegistry(catalog, {
     },
     Checkbox: ({ props, bindings, emit }) => {
       const [checked, setChecked] = useBoundProp(props.checked, bindings?.checked);
+      const { error, recheck } = useFieldError(bindings?.checked, props.error);
+      const errorId = React.useId();
       return (
-        // Lede's Checkbox is the box alone. Its label sits in a column of its own, so a long one wraps beside the box.
-        <label className="ld-checkbox-field">
-          <Checkbox checked={!!checked} disabled={props.disabled} required={props.required} name={bindings?.checked} onChange={(e) => { setChecked(e.currentTarget.checked); emit('change'); }} />
-          <span className="ld-checkbox-label">{props.label}</span>
-        </label>
+        <div className="ld-field" data-invalid={error ? '' : undefined}>
+          {/* Lede's Checkbox is the box alone. Its label sits in a column of its own, so a long one wraps beside the box. */}
+          <label className="ld-checkbox-field">
+            <Checkbox
+              checked={!!checked}
+              disabled={props.disabled}
+              required={props.required}
+              name={bindings?.checked}
+              aria-describedby={error ? errorId : undefined}
+              aria-invalid={error ? true : undefined}
+              onChange={(e) => {
+                const input = e.currentTarget;
+                if (bindings?.checked) recheck?.(bindings.checked, input.validity.valid, input.validationMessage);
+                setChecked(input.checked);
+                emit('change');
+              }}
+            />
+            <span className="ld-checkbox-label">{props.label}</span>
+          </label>
+          {error ? <p id={errorId} className="ld-field-hint">{error}</p> : null}
+        </div>
       );
     },
     SegmentedControl: ({ props, bindings, emit }) => {
       const [value, setValue] = useBoundProp(props.value, bindings?.value);
       const errorId = React.useId();
+      const { error, recheck } = useFieldError(bindings?.value, props.error);
       // Lede's SegmentedControl names its group with a hidden legend, for a screen where a heading beside it says what
       // it picks. A model's screen may have none, so the label shows here too, hidden from assistive tech, which
       // reads the legend. An error shows under it, as a TextField's does.
       return (
-        <div className="ld-field" data-invalid={props.error ? '' : undefined}>
+        <div className="ld-field" data-invalid={error ? '' : undefined}>
           <p className="ld-field-label" aria-hidden="true">{props.label}</p>
           <SegmentedControl
             label={props.label}
@@ -168,11 +224,11 @@ const drawn = defineRegistry(catalog, {
             value={value}
             name={bindings?.value}
             required={props.required}
-            aria-describedby={props.error ? errorId : undefined}
-            aria-invalid={!!props.error}
-            onValueChange={(next) => { setValue(next); emit('change'); }}
+            aria-describedby={error ? errorId : undefined}
+            aria-invalid={!!error}
+            onValueChange={(next) => { if (bindings?.value) recheck?.(bindings.value, true, ''); setValue(next); emit('change'); }}
           />
-          {props.error ? <p id={errorId} className="ld-field-hint">{props.error}</p> : null}
+          {error ? <p id={errorId} className="ld-field-hint">{error}</p> : null}
         </div>
       );
     },
@@ -199,17 +255,6 @@ export const registry: ComponentRegistry = Object.fromEntries(
   ]),
 );
 export const { handlers } = drawn;
-
-/**
- * A row action can hide its own row, through a `visible` condition. Focus then moves to the next row, or the one
- * before it, or the screen's title, so it never falls to `<body>`.
- */
-function keepFocus(rowKey: string) {
-  const row = document.querySelector(`[data-row-id="${CSS.escape(rowKey)}"]`);
-  const sibling = (row?.nextElementSibling ?? row?.previousElementSibling)?.querySelector<HTMLElement>('.ld-row-target');
-  const title = row?.closest('.ld-flow')?.querySelector<HTMLElement>('h2, h3');
-  setTimeout(() => { if (!row?.isConnected && (document.activeElement === document.body || !document.activeElement)) focusLanding(sibling ?? title); }, 50);
-}
 
 /** The page's action log listens here: each catalog action a spec runs, with its params. */
 export const actions = new EventTarget();

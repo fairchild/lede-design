@@ -17,7 +17,10 @@ for bots on Slack, Teams and Discord, so it doesn't belong in a browser chat.
    installing from this repo's registry served locally (`npm run registry`), and `npm run build` passed. `npx shadcn@latest add @lede/json-render` installs the catalog, the
    registry, `prompt`, `catalog-fit`, `check`, `toPatches` and `SpecView` under `components/lede/json-render/`, with the Lede components and
    npm packages they need. The chat's own files, copied from `src/chat/` and `server/`, import them from
-   `@/components/lede/…`, so they need no edits.
+   `@/components/lede/…`, so they need no edits. In a create-vite app, first replace `src/index.css` with
+   `@import "tailwindcss";`: its demo styles center every line in a bordered 1126px column and set `:root` to 18px,
+   which rescales Lede. Then end it with `@import "./styles/lede/index.css";`. Without that import the screens draw
+   unstyled with no build error; `SpecView` warns in the console in development.
 2. The registry URL is `https://lede.cloudcompute.com/r/v0.5.0/{name}.json`: `json-render` first ships in 0.5.0.
    Until v0.5.0 is tagged, `/r/next/{name}.json` on the same site is the unreleased build of main. From a clone,
    `npm run registry` writes the same files to `public/r/`, which any static server can serve.
@@ -25,7 +28,7 @@ for bots on Slack, Teams and Discord, so it doesn't belong in a browser chat.
 4. The server is `server/chat.ts`. It refuses a body that isn't `application/json` (415), is over 1 MB (413) or
    fails `safeValidateUIMessages` (400), and keeps only the parts the model reads: what the person typed, and the
    replies' text and screens. Then `streamText({ model: anthropic('claude-sonnet-5-5'), system: prompt({ system }),
-   messages: await convertToModelMessages(forModel(messages)), maxOutputTokens })`, merged into
+   messages: await convertToModelMessages(forModel(messages, screens)), maxOutputTokens })`, merged into
    `createUIMessageStream`, so a connection that drops partway through becomes an error the client shows, and piped
    through `pipeJsonRender`. It exports `handleChat(request)`, a fetch-style handler for any framework's route, and
    runs on its own under `tsx --tsconfig tsconfig.server.json server/chat.ts`, where `pipeline` ends a response that
@@ -35,8 +38,10 @@ for bots on Slack, Teams and Discord, so it doesn't belong in a browser chat.
    `new DefaultChatTransport({ api })` when `VITE_CHAT_API` is set. Type the chat as
    `useChat<AppMessage>`, where `AppMessage` is `UIMessage<unknown, { [SPEC_DATA_PART]: SpecDataPart }>`.
 6. In each assistant message, render its text parts first, then
-   `<SpecView spec={specFromParts(message.parts)} streaming={live} headingLevel={3} handlers={…} />`, with
-   `specFromParts` from `components/lede/json-render/patches`, memoized on `message.parts`.
+   `<SpecView spec={specFromParts(message.parts)} streaming={live} headingLevel={3} handlers={…} onStateChange={…} />`,
+   with `specFromParts` from `components/lede/json-render/patches`, memoized on `message.parts`. Keep each screen's
+   state from `onStateChange` by message id and send it as `screens` with the next message
+   (`sendMessage({ text }, { body: { screens } })`), so the model sees what the person entered.
 7. Check it: `npm run build`, then the page in a browser with a reply showing: the question, the reply's text and then
    its screen, focus in the composer and axe clean. This repo's `tests/chat.e2e.ts` does that with Playwright.
 
@@ -101,9 +106,8 @@ Select and `loadCities`, in this catalog's terms. The rules also say every contr
 ## Compute and validate
 
 A value worked out from others, such as an amount that follows the servings, comes from a function the spec calls
-with `$computed`. A field is checked when an action reads it: the action doesn't run while the field fails, and focus
-moves to the field. The error the person reads comes from `$cond` on the field's `error`. All of it is in `rules`, so a
-model writes it too.
+with `$computed`. A field is checked when an action reads it: the action doesn't run while the field fails, the field
+shows its `error` and focus moves to it. All of it is in `rules`, so a model writes it too.
 
 **Computed values.** `functions` in `components/lede/json-render/catalog.ts` holds the functions a spec may call, and
 `SpecView` hands them to json-render. Each arg can be a literal, `$state` or `$item`, and a number inside text counts,
@@ -136,15 +140,17 @@ that isn't in `functions` draws nothing, with one console warning.
 **Checked fields.** Each field's `name` is the state path it binds. When a Button's press or a TextField's Enter runs
 its actions, they run in order, and they stop at the first action whose params read a field that fails the browser's
 own check. That covers a `required` field that's empty, a number outside its `min` and `max`, an email or URL that
-isn't one, a required SegmentedControl with nothing chosen and a required Checkbox left unchecked. Focus moves to
-that field. The actions before it still run, so the binding starts with a setState of `/tried`, and each field's
-`error` shows once `/tried` is set. So a built-in action such as `pushState` holds back too, a Button needs no
+isn't one, a required SegmentedControl with nothing chosen and a required Checkbox left unchecked. Each field that
+action reads and that fails shows its `error`, and focus moves to the first. The error is plain text: it stays hidden
+until a check holds an action back, and goes as soon as the person's input makes the field pass. A field with no
+`error` shows the browser's own message. So a built-in action such as `pushState` holds back too, a Button needs no
 `disabled` rule, and focus never falls to `<body>`. Your `submit` handler isn't called for a form that fails, so a
-failed send isn't reported as sent.
+failed send isn't reported as sent. Keep `$cond` for text that depends on state, such as a row whose value reads “On”
+or “Off”.
 
 A number field (`"type": "number"`) keeps a number in state, so a condition's `gt` and `lt` compare it. A
-SegmentedControl takes `required` and `error`: start its value at `""` so nothing looks chosen, and its error shows
-under it, linked to the group with `aria-describedby`.
+SegmentedControl takes `required` and `error`: start its value at `""` so nothing looks chosen. Its error shows under
+it, linked to the group with `aria-describedby`.
 
 The tasks reply, `src/chat/replies/tasks.json`, is the worked example. Its list fills in a row at a time as it
 streams, and its form adds a task only with a name, minutes from 5 to 240 and a priority:
@@ -157,26 +163,25 @@ streams, and its form adds a task only with a name, minutes from 5 to 240 and a 
   "props": {
     "label": "Minutes", "type": "number", "min": 5, "max": 240, "required": true, "hint": "From 5 to 240.",
     "value": { "$bindState": "/draft/minutes" },
-    "error": { "$cond": { "$and": [{ "$state": "/tried" }, { "$or": [{ "$state": "/draft/minutes", "not": true }, { "$state": "/draft/minutes", "lt": 5 }, { "$state": "/draft/minutes", "gt": 240 }] }] }, "$then": "Enter minutes from 5 to 240.", "$else": "" }
+    "error": "Enter minutes from 5 to 240."
   },
-  "on": { "submit": "the same four actions as the Button" },
+  "on": { "submit": "the same two actions as the Button" },
   "children": []
 },
 "save": {
   "type": "Button", "props": { "label": "Add task", "variant": "filled", "block": true },
   "on": { "press": [
-    { "action": "setState", "params": { "statePath": "/tried", "value": true } },
     { "action": "pushState", "params": { "statePath": "/tasks", "value": { "id": "$id", "title": { "$state": "/draft/title" }, "minutes": { "$state": "/draft/minutes" }, "priority": { "$state": "/draft/priority" } } } },
-    { "action": "setState", "params": { "statePath": "/draft", "value": { "title": "", "minutes": "", "priority": "" } } },
-    { "action": "setState", "params": { "statePath": "/tried", "value": false } }
+    { "action": "setState", "params": { "statePath": "/draft", "value": { "title": "", "minutes": "", "priority": "" } } }
   ] },
   "children": []
 }
 ```
 
 `pushState` reads `/draft/title`, `/draft/minutes` and `/draft/priority`, so the press stops there while any of them
-fails. The last two actions clear the form and hide its errors once a task is added. A check the browser can't make,
-such as one date before another, belongs in your handler, which receives the values.
+fails, and each of those that fails shows its error. The last action clears the form once a task is added; an emptied
+field shows no error until the next press. A check the browser can't make, such as one date before another, belongs in
+your handler, which receives the values.
 
 ## Failure modes
 
@@ -198,14 +203,21 @@ Each one below broke this example while it was built, or was checked in the pack
   each list's rows appear once, render after render.
 - `buildSpecFromParts` returns `null` until the first patch, and then a spec whose `root` is set before any element
   exists. Render only when `spec.elements[spec.root]` exists.
-- `JSONUIProvider` takes changes to `initialState` after it mounts, key by key, so state that streams after the
-  elements fills them in. A change to a key the person has since edited replaces their edit.
+- `JSONUIProvider` takes changes to `initialState` after it mounts, key by key, and an array counts as changed on
+  every build, so a value the person typed or pressed while the reply streamed is overwritten by state that arrives
+  after it. `SpecView` keeps a store of its own instead: state that streams in fills in the screen, and a value the
+  person changes stays theirs. So a person can use a screen while the rest of it arrives.
 - `JSONUIProvider` keeps the `handlers` it mounted with. Pass handlers that don't close over changing state, such as
   ones that call a state setter with a function, or read the latest values through a ref.
 - The registry also defines `actions` that report on its `actions` event target. Handlers passed to `SpecView` (or
   `JSONUIProvider`) are the ones a screen runs; the event target serves the repo's json-render page.
 - `convertToModelMessages` drops data parts, so the model never sees the screens it sent, and a follow-up can't refer
-  to them. `forModel` in `server/chat.ts` turns each reply's patches back into a fenced spec in its text.
+  to them. `forModel` in `server/chat.ts` turns each reply's patches back into a fenced spec in its text, with the
+  state the person left in that screen, which the client sends as `screens`.
+- A model asked to change an earlier screen can reply with patches to it alone. They draw nothing, since each reply
+  builds its own spec. `rules` asks for a whole screen each time, carrying over what the person entered, and the chat
+  shows “The reply’s screen couldn’t be drawn.” with Try again for a reply whose screen can't draw, or one with
+  nothing in it.
 - `pipeJsonRender` sends a patch line in many small pieces, down to one character per event. That's json-render's
   behavior, and the client reassembles them.
 - A data part that a transport emits without an `id` is appended as a new part each time, so every patch is its own
@@ -238,9 +250,10 @@ Each one below broke this example while it was built, or was checked in the pack
   conversation's own clips a tall screen inside a message.
 - Scrolling to the bottom on every chunk pushes the question out of view while a long reply streams. Follow the
   reply until the question's turn reaches the top, and stop following when the person scrolls (`src/chat/Chat.tsx`).
-- A control that unmounts while focused, such as Stop when the reply ends, Try again when the retry starts or a row
-  that an action hides, drops focus to `<body>`. Move focus to the composer before the call that removes it, or to the
-  next row.
+- A control that unmounts while focused drops focus to `<body>`. Inside a screen, `SpecView` moves it on: to the
+  control that took its place, such as Start over when Check answers hides, then to the control beside it, such as
+  the next row when an action hides one, then to the screen's title. Outside it, such as Stop when the reply ends or
+  Try again when the retry starts, move focus to the composer before the call that removes it.
 - Every grid track that holds a screen needs `minmax(0, 1fr)`. An implicit `auto` track grows to the screen's
   min-content, and at 200% text on a phone the page then scrolls sideways.
 - A `position: sticky` composer with large text on a short screen can leave the conversation a few pixels tall. Make
@@ -267,7 +280,7 @@ Each one below broke this example while it was built, or was checked in the pack
   `templates/tsconfig.server.json` is one; add it to `references` in `tsconfig.json`.
 - create-vite's `src/index.css` centers every line in a bordered 1126px `#root` and sets `:root` to 18px, which
   rescales every rem in Lede. The build and axe pass with it; only a screenshot shows it. Replace the file before
-  `shadcn init`, which merges into whatever `:root` it finds.
+  `shadcn init`, which merges into whatever `:root` it finds (recipe step 1).
 - `shadcn init` leaves `src/index.css` without a final newline, so `echo '@import …' >>` glues the import onto the last
   rule. Start the appended text with a newline.
 - The server listens on `PORT`, default 4882; the Vite proxy has to name the same port.
@@ -280,5 +293,7 @@ Each one below broke this example while it was built, or was checked in the pack
 - An upstream connection that drops partway through a reply errors the response's body stream; the AI SDK doesn't
   turn it into an error part. Merging the reply into `createUIMessageStream` does, and `pipeline` in the Node wrapper
   ends the response when the body fails. With `.pipe()` and no error listener, Node exits on the first drop.
-- The model sees each screen as it was sent, through `forModel`. A change the person made on it, such as a switch
-  turned off, reaches the model only through an action your handler reports, such as a message it sends.
+- `@json-render/core` and `@json-render/react` are pinned at exactly 0.22.0, here, in the root and in the registry
+  item. `prompt()`'s rewrites and `specFromParts` depend on that version's text and behavior. To upgrade, bump all
+  of them together and run `integrations/json-render`'s tests, whose prompt test fails on each rewrite that no longer
+  finds its text.
