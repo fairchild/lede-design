@@ -30,6 +30,12 @@ export const functions = {
     const left = Math.max(0, number(from) - (number(take) || 0));
     return Number.isFinite(left) ? counted(left, unit, units) : String(from ?? '');
   },
+  sum: ({ items, field, where, unless, unit, units }) => {
+    const fieldOf = (item: unknown, key: unknown) => (item && typeof item === 'object' ? (item as Record<string, unknown>)[String(key)] : undefined);
+    const kept = (Array.isArray(items) ? items : []).filter((item) => (where == null || !!fieldOf(item, where)) && (unless == null || !fieldOf(item, unless)));
+    const total = kept.reduce<number>((t, item) => t + (number(field == null ? item : fieldOf(item, field)) || 0), 0);
+    return counted(Math.max(0, total), unit, units);
+  },
 } satisfies Record<string, ComputedFunction>;
 
 /**
@@ -81,7 +87,7 @@ export const catalog = defineCatalog(schema, {
       props: z.object({
         label: text,
         value: z.union([text, z.number()]).optional(),
-        type: z.enum(['text', 'email', 'password', 'tel', 'url', 'number']).optional(),
+        type: z.enum(['text', 'email', 'password', 'tel', 'url', 'number', 'date']).optional(),
         placeholder: text.optional(),
         hint: text.optional(),
         error: text.optional(),
@@ -95,7 +101,7 @@ export const catalog = defineCatalog(schema, {
         rows: z.number().int().min(2).max(12).optional(),
       }),
       events: ['submit'],
-      description: 'A labeled text input. Bind value with $bindState. Enter in a one-line field emits “submit”: bind it to what the form’s main Button does. Word error as the fix, such as “Enter an email address with an @.” Put an example in hint, not placeholder: a placeholder in the field reads as a value already entered. For a number, set type “number” and its range with min and max; its value in state is then a number, which gt and lt compare. A number field takes any decimal unless step says otherwise, such as step 1 for whole numbers. pattern is a regular expression the whole value must match, such as "[0-9]{5}" for a 5-digit ZIP code, and minLength and maxLength bound its length. Set rows for text that runs past one line.',
+      description: 'A labeled text input. Bind value with $bindState. Enter in a one-line field emits “submit”: bind it to what the form’s main Button does. Word error as the fix, such as “Enter an email address with an @.” Put an example in hint, not placeholder: a placeholder in the field reads as a value already entered. For a number, set type “number” and its range with min and max; its value in state is then a number, which gt and lt compare. For a date, set type “date”: the browser draws its own picker, and its value in state is the date as YYYY-MM-DD. A number field takes any decimal unless step says otherwise, such as step 1 for whole numbers. pattern is a regular expression the whole value must match, such as "[0-9]{5}" for a 5-digit ZIP code, and minLength and maxLength bound its length. Set rows for text that runs past one line.',
     },
     Switch: {
       props: z.object({ label: text, checked: z.boolean().optional(), disabled: z.boolean().optional() }),
@@ -155,9 +161,10 @@ export const rules = [
   'Screen is the root of every spec, and there is one. PageHeader is its first child, and there is one.',
   'To list items from a state array, put repeat on a ListGroup, with one ListRow child that reads each item with $item.',
   'Stream a list’s rows by appending them in their final order, one item at a time. Never reorder rows or insert one above another mid-stream: a person can use a row while later rows arrive, and their change stays with its position in the list.',
+  'Inside a repeat, a condition in $cond or visible reads the item too, such as { "$cond": { "$item": "paid" }, "$then": "Paid", "$else": "Due" }.',
   'In action params, { "$item": "id" } is the item’s state path. To pass the value, write { "$template": "${id}" }.',
   'An event runs several actions in order when its binding is an array, such as "press": [{ "action": "setState", … }, { "action": "submit", … }].',
-  'To show a value worked out from others, use $computed. { "$computed": "scale", "args": { "amount": …, "from": …, "to": …, "unit": …, "units": … } } returns amount × to ÷ from. { "$computed": "remaining", "args": { "from": …, "take": …, "unit": …, "units": … } } returns from − take, and never less than 0. Each arg can be a literal, { "$state": … } or { "$item": … }, and a number inside text, such as “6 people”, counts as 6.',
+  'To show a value worked out from others, use $computed. { "$computed": "scale", "args": { "amount": …, "from": …, "to": …, "unit": …, "units": … } } returns amount × to ÷ from. { "$computed": "remaining", "args": { "from": …, "take": …, "unit": …, "units": … } } returns from − take, and never less than 0. { "$computed": "sum", "args": { "items": { "$state": "/bills" }, "field": "amount", "unless": "paid", "unit": …, "units": … } } adds up field across a state array, keeping only items whose where field is set and whose unless field isn’t, and never returns less than 0. Each arg can be a literal, { "$state": … }, which can read a whole array, or { "$item": … }, and a number inside text, such as “6 people”, counts as 6.',
   'Text reads right for every value it can show. Give a number its noun through unit and units, such as "unit": "cup", "units": "cups" for “1 cup” and “1.5 cups”, rather than in a $template.',
   'A field is checked when an action reads it. An action whose params read a field that is empty and required, out of its min and max, off its step, not matching its pattern, shorter than its minLength or not the email or URL its type asks for doesn’t run: the field shows its error and focus moves to it. So give each checked field an error as plain text worded as the fix, such as "error": "Enter minutes from 5 to 240.". An error names only what the field checks: to ask for a 5-digit ZIP code, set its pattern too. It shows only once a check holds an action back, and goes when the field passes. Bind the same actions to the field’s submit, so Enter in it does what its Button does. To clear a form after it sends, end the binding with a setState that empties its fields.',
   'Each spec is a whole screen, with its root, every element and the state it needs, even when it changes a screen from earlier in the conversation. An earlier screen’s state is what the person left in it, so carry over what they entered.',
