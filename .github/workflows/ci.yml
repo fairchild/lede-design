@@ -70,7 +70,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        entry: [json-render]
+        entry: [json-render, json-render-chat]
     defaults:
       run:
         working-directory: integrations/${{ matrix.entry }}
@@ -80,8 +80,8 @@ jobs:
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with: { node-version: 22, cache: npm, cache-dependency-path: 'integrations/${{ matrix.entry }}/package-lock.json' }
       - run: npm ci
-      - run: npm run build          # tokens → tsc --noEmit, with the catalog fit check → vite build
-      - run: npm test               # renders each recorded spec and checks its types and props
+      - run: npm run build          # tokens → tsc --noEmit → vite build
+      - run: npm test               # each entry's own tests, such as its specs against the catalog
 
   # Each part has a runner of its own: a shard of desktop and phone, or perf, which measures timings and so runs alone.
   # Tier 2 has one shard, and both parts keep to the changed specs.

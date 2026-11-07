@@ -258,6 +258,7 @@ const GROUPS: Group[] = [
         heldBy: [
           <>The <code>integrations</code> job in <Path to=".github/workflows/ci.yml" />, which runs each entry’s <code>npm run build</code> and <code>npm test</code>.</>,
           <>For json-render, <Path to="integrations/json-render/src/catalog-fit.ts" /> fails the typecheck on a catalog prop its Lede component doesn’t take, and <Path to="integrations/json-render/tests/specs.test.tsx" /> fails on a recorded spec with a type the registry can’t draw or a prop its schema rejects.</>,
+          <>The chat entry reuses that catalog, and <Path to="integrations/json-render-chat/tests/mock-transport.test.ts" /> sends each scripted prompt through its mock transport and fails when the spec a reply builds doesn’t pass the catalog.</>,
         ],
       },
     ],

@@ -8,3 +8,5 @@ each entry on every pull request.
 
 - [`json-render/`](json-render/): Lede drawn by [json-render](https://github.com/vercel-labs/json-render) from
   recorded JSON specs.
+- [`json-render-chat/`](json-render-chat/): the same catalog in a chat built on the AI SDK's `useChat`, with a
+  scripted mock transport and a reference server.

@@ -25,7 +25,7 @@
       "@react-aria/*": ["./node_modules/@react-aria/*"],
       "@json-render/core": ["./node_modules/@json-render/core"],
       "@json-render/react": ["./node_modules/@json-render/react"],
-      "@json-render/react/*": ["./node_modules/@json-render/react/*"],
+      "@json-render/react/schema": ["./node_modules/@json-render/react/dist/schema.d.ts"],
       "zod": ["./node_modules/zod"]
     }
   },

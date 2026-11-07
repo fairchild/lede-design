@@ -9,7 +9,11 @@ async function ask(transport: MockChatTransport, text: string) {
   const messages: UIMessage[] = [{ id: 'u1', role: 'user', parts: [{ type: 'text', text }] }];
   const stream = await transport.sendMessages({ trigger: 'submit-message', chatId: 'c', messageId: undefined, messages, abortSignal: undefined });
   const chunks: UIMessageChunk[] = [];
-  for await (const chunk of stream) chunks.push(chunk);
+  for (const reader = stream.getReader(); ; ) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    chunks.push(value);
+  }
   const text_ = chunks.flatMap((c) => (c.type === 'text-delta' ? [c.delta] : [])).join('');
   const spec = buildSpecFromParts(chunks.filter((c) => c.type.startsWith('data-')) as Array<{ type: string; data: unknown }>);
   return { chunks, text: text_, spec };

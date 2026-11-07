@@ -46,6 +46,14 @@ export function App() {
     if (!busy && (document.activeElement === document.body || !document.activeElement)) focusComposer();
   }, [busy]);
 
+  // The conversation follows new content while the reader is at its end, and stays put once they scroll up.
+  const log = React.useRef<HTMLElement>(null);
+  const following = React.useRef(true);
+  React.useLayoutEffect(() => {
+    const el = log.current;
+    if (el && following.current) el.scrollTop = el.scrollHeight;
+  });
+
   const note = (id: string) => (name: string, params: Record<string, unknown>) => {
     const detail = typeof params?.id === 'string' ? ` (${params.id})` : typeof params?.form === 'string' ? ` (${params.form})` : '';
     setNotes((prev) => ({ ...prev, [id]: [...(prev[id] ?? []), `You chose ${name}${detail}.`] }));
@@ -77,7 +85,7 @@ export function App() {
           summary={`A chat whose replies can include screens that json-render builds from Lede. ${api ? `Replies come from ${api}.` : 'Replies come from a script, so it needs no network or key.'}`}
           actions={<SegmentedControl label="Appearance" size="sm" options={['Light', 'Dark']} value={scheme} onValueChange={(v) => setScheme(v as 'Light' | 'Dark')} />}
         />
-        <section aria-label="Conversation" className="jrc-conversation">
+        <section ref={log} aria-label="Conversation" className="jrc-conversation" tabIndex={0} onScroll={(e) => { const el = e.currentTarget; following.current = el.scrollHeight - el.scrollTop - el.clientHeight < 48; }}>
           {chat.length ? (
             <ol className="jrc-messages">
               {chat.map((m, i) => (
@@ -85,15 +93,17 @@ export function App() {
               ))}
             </ol>
           ) : (
-            <p className="jrc-muted">Ask about your notifications, inbox, sign-up or projects. Each reply can bring a screen with it.</p>
+            <div className="jrc-empty">
+              <p className="jrc-muted">Ask about your notifications, inbox, sign-up or projects. Each reply can bring a screen with it.</p>
+              <ul className="jrc-suggestions" aria-label="Suggestions">
+                {SUGGESTIONS.map((s) => <li key={s}><Button size="sm" variant="tinted" onClick={() => send(s)}>{s}</Button></li>)}
+              </ul>
+            </div>
           )}
         </section>
         <div className="jrc-footer">
           <p role="status" className="jrc-status">{statusText}</p>
           {status === 'error' ? <Button size="sm" onClick={() => void regenerate()}>Try again</Button> : null}
-          <ul className="jrc-suggestions" aria-label="Suggestions">
-            {SUGGESTIONS.map((s) => <li key={s}><Button size="sm" variant="tinted" disabled={busy} onClick={() => send(s)}>{s}</Button></li>)}
-          </ul>
           <form ref={form} className="jrc-composer" onSubmit={(e) => { e.preventDefault(); send(draft); }}>
             <TextField
               label="Message"
