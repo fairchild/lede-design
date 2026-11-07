@@ -8,6 +8,10 @@ import signup from './replies/signup.json';
 import projects from './replies/projects.json';
 import week from './replies/week.json';
 import tasks from './replies/tasks.json';
+import { SUGGESTIONS } from './assistant';
+
+const pushOff = { ...settings, state: { ...settings.state, settings: { ...settings.state.settings, push: false } } };
+const quoted = SUGGESTIONS.filter((s) => !/fail/i.test(s)).map((s) => `“${s}”`);
 
 interface Reply {
   text: string;
@@ -35,6 +39,10 @@ export const script: Array<{ match: RegExp; reply: Reply }> = [
     reply: { text: 'You have 3 tasks today, about an hour and a half of work. Add one below.', spec: tasks as Spec },
   },
   {
+    match: /(turn|switch) off push|push (alerts )?off/i,
+    reply: { text: 'Push alerts are off now. Here are your notification settings with that change.', spec: pushOff as Spec },
+  },
+  {
     match: /notification|setting|alert/i,
     reply: { text: 'Here are your notification settings. Push alerts and mentions are on, and email alerts are off.', spec: settings as Spec },
   },
@@ -52,7 +60,7 @@ export const script: Array<{ match: RegExp; reply: Reply }> = [
   },
   {
     match: /./s,
-    reply: { text: 'I can show your week, your tasks, your notification settings, your inbox, a sign-up form or your projects. Try “what’s in my inbox”.' },
+    reply: { text: `This demo answers from a script, so it can’t answer that. Try one of these: ${quoted.slice(0, -1).join(', ')} or ${quoted.at(-1)}.` },
   },
 ];
 

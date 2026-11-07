@@ -1,7 +1,7 @@
 import readme from '../../README.md?raw';
 import { PageHeader } from '@/components/lede/blocks/page-header';
 import { system } from '../chat/system';
-import { CodeBlock, inline, Markdown, parse, section, type Block } from './markdown';
+import { CodeBlock, inline, Markdown, parse, plain, section, type Block } from './markdown';
 
 // How it works and Build it draw README.md's own sections. AGENTS.md points at the same steps, so a coding agent and a
 // person reading these pages follow one text.
@@ -9,29 +9,40 @@ import { CodeBlock, inline, Markdown, parse, section, type Block } from './markd
 const how = parse(section(readme, 'How it works'));
 const agent = parse(section(readme, 'Hand this to your coding agent'));
 const build = parse(section(readme, 'Build this in your app'));
-const steps = (blocks: Block[]) => blocks.find((b) => b.kind === 'list' && b.ordered);
+const list = (blocks: Block[]) => blocks.find((b): b is Extract<Block, { kind: 'list' }> => b.kind === 'list' && b.ordered);
+/** Each step's bold title, such as “You send a message”. */
+const titles = (list(how)?.items ?? []).map((item) => (item[0]?.kind === 'p' ? plain(item[0].text.match(/^\*\*(.+?)\*\*/)?.[1] ?? '') : ''));
+const buildSteps = list(build)?.items.length ?? 0;
 
-/** Where each step of the loop shows in Try it: a question to ask, then what to open. */
-export const EXAMPLES = [
-  { ask: 'How’s my week?', then: 'then open “How this reply was made” to read your words as they were sent.' },
-  { ask: 'Show my notification settings', then: 'turn a switch off and ask “turn off push”. The second reply’s account shows the state that went with it.' },
-  { ask: 'What’s in my inbox?', then: 'then open “How this reply was made” to read the patches in the order they arrived.' },
-  { ask: 'Show my tasks', then: 'then add a task while the list streams in.' },
-  { ask: 'Help me sign up', then: 'press Create account with the fields empty. “What the screen did” says why it was held back.' },
-];
+/** Where each step of the loop shows in Try it, by the step's title: a question to ask, then what to look at. */
+export const EXAMPLES: Record<string, { ask: string; then: string }> = {
+  'You send a message': { ask: 'How’s my week?', then: 'then open “How this reply was made” to read your words as they were sent.' },
+  'The server asks the model': { ask: 'Show my notification settings', then: 'then switch Email alerts on and ask “turn off push”. The second reply’s account shows the state that went with it.' },
+  'The screen streams back': { ask: 'What’s in my inbox?', then: 'then open “How this reply was made” to read the patches in the order they arrived.' },
+  'Lede draws it': { ask: 'Show my tasks', then: 'then add a task while the list streams in.' },
+  'What the person does goes back': { ask: 'Help me sign up', then: 'then press Create account with the fields empty. “What the screen did” says why it was held back.' },
+};
 
 const SeeIt = ({ n }: { n: number }) => {
-  const example = EXAMPLES[n - 1];
+  const example = EXAMPLES[titles[n - 1] ?? ''];
   return example ? (
     <p className="jrc-see"><a href={`#/?ask=${encodeURIComponent(example.ask)}`}>Try “{example.ask}”</a>, {example.then}</p>
   ) : null;
 };
+
+/** The loop at a glance: its steps as a flow, each a link to the step. */
+const Flow = () => (
+  <ol className="jrc-flow" aria-label="The loop at a glance">
+    {titles.map((title, i) => <li key={title}><a href={`#/how-it-works?step=${i + 1}`}>{title}</a></li>)}
+  </ol>
+);
 
 export function HowItWorks() {
   const [lead, ...rest] = how;
   return (
     <div className="jrc-page">
       <PageHeader title="How it works" summary={lead?.kind === 'p' ? inline(lead.text) : undefined} focusOnMount={false} />
+      <Flow />
       <div className="ld-prose jrc-md">
         <Markdown blocks={rest} label="How it works" afterStep={(n) => <SeeIt n={n} />} />
       </div>
@@ -40,10 +51,9 @@ export function HowItWorks() {
 }
 
 export function BuildIt() {
-  const count = steps(build)?.kind === 'list' ? (steps(build) as Extract<Block, { kind: 'list' }>).items.length : 0;
   return (
     <div className="jrc-page">
-      <PageHeader title="Build it" summary={`Copy the chat into a React app in ${count} steps, or hand them to a coding agent.`} focusOnMount={false} />
+      <PageHeader title="Build it" summary={`Copy the chat into a React app in ${buildSteps} steps, or hand them to a coding agent.`} focusOnMount={false} />
       <section aria-labelledby="build-agent" className="ld-prose jrc-md">
         <h2 id="build-agent">Hand this to your coding agent</h2>
         <Markdown blocks={agent} label="Prompt for your coding agent" />

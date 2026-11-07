@@ -25,7 +25,10 @@ export interface SpecViewProps {
   handlers?: SpecHandlers;
   /** Called with the screen's whole state after each change, such as for a chat to send what the person entered. */
   onStateChange?: (state: State) => void;
-  /** Called when an action doesn't run because a field it reads fails its check, with the action and those fields. */
+  /**
+   * Called when an action doesn't run because fields it reads fail their checks, with the action and each field's name
+   * and the error it shows. Read through a ref, so an inline function is fine.
+   */
   onActionHeld?: (held: HeldAction) => void;
 }
 
@@ -47,6 +50,9 @@ function Screen({ spec, streaming = false, headingLevel = 2, handlers, onStateCh
     onStateChange(store.getSnapshot());
     return store.subscribe(() => onStateChange(store.getSnapshot()));
   }, [store, onStateChange]);
+  const held = React.useRef(onActionHeld);
+  React.useLayoutEffect(() => { held.current = onActionHeld; });
+  const [report] = React.useState(() => (h: HeldAction) => held.current?.(h));
   useKeptFocus(root);
   useTokensCheck(root);
   return (
@@ -55,7 +61,7 @@ function Screen({ spec, streaming = false, headingLevel = 2, handlers, onStateCh
         <div ref={root}>
           <JSONUIProvider registry={registry} functions={functions} store={store} handlers={handlers as Record<string, (params: Record<string, unknown>) => void>}>
             <FieldChecks>
-              <ActionHeld.Provider value={onActionHeld}>
+              <ActionHeld.Provider value={report}>
                 <Renderer spec={spec} registry={registry} loading={streaming} />
               </ActionHeld.Provider>
             </FieldChecks>

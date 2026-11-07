@@ -11,8 +11,9 @@
   actions, a number field keeps a number in state and takes decimals unless `step` says otherwise, a TextField takes
   `type: "date"`, `pattern`, `minLength` and `maxLength` and a SegmentedControl or Checkbox in a spec can be required
   and show an error. `SpecView` takes input while a spec streams and keeps what the person changed, reports the
-  screen's state through `onStateChange` and an action held back through `onActionHeld`, moves focus on when a press hides the control that made it and warns in
-  development when Lede's CSS isn't loaded. It needs `@json-render/core` and `@json-render/react` at exactly 0.22.0.
+  screen's state through `onStateChange` and an action held back, with the error each field shows, through
+  `onActionHeld`, moves focus on when a press hides the control that made it and warns in development when Lede's CSS
+  isn't loaded. It needs `@json-render/core` and `@json-render/react` at exactly 0.22.0.
   `integrations/json-render-chat` uses it in an AI SDK chat, with a guide around the chat: Try it, where each reply
   shows how it was made, How it works and Build it, which draw the example's README.
 - SegmentedControl takes `required`, `aria-describedby` and `aria-invalid`, and with a value outside its options it

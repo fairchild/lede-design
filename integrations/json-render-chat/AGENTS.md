@@ -17,15 +17,17 @@ for bots on Slack, Teams and Discord, so it doesn't belong in a browser chat.
 ## Recipe
 
 1. Follow “Build this in your app” in `README.md` step by step. It was run on a fresh create-vite `react-ts` app,
-   installing from this repo's registry served locally (`npm run registry`), and `npm run build` passed. `npx shadcn@latest add @lede/json-render` installs the catalog, the
-   registry, `prompt`, `catalog-fit`, `check`, `toPatches` and `SpecView` under `components/lede/json-render/`, with the Lede components and
-   npm packages they need. The chat's own files, copied from `src/chat/` and `server/`, import them from
+   installing from this repo's registry served locally (`npm run registry`), and `npm run build` passed.
+   `npx shadcn@latest add @lede/theme-provider @lede/avatar @lede/json-render --yes` installs the catalog, the registry,
+   `prompt`, `catalog-fit`, `check`, `toPatches` and `SpecView` under `components/lede/json-render/`, with the Lede
+   components and npm packages they need, and the Avatar the chat page draws. The chat's own files, copied from `src/chat/` and `server/`, import them from
    `@/components/lede/…`, so they need no edits. In a create-vite app, first replace `src/index.css` with
    `@import "tailwindcss";`: its demo styles center every line in a bordered 1126px column and set `:root` to 18px,
    which rescales Lede. Then end it with `@import "./styles/lede/index.css";`. Without that import the screens draw
    unstyled with no build error; `SpecView` warns in the console in development.
-2. The registry URL is `https://lede.cloudcompute.com/r/v0.5.0/{name}.json`: `json-render` first ships in 0.5.0.
-   Until v0.5.0 is tagged, `/r/next/{name}.json` on the same site is the unreleased build of main. From a clone,
+2. The registry URL is `https://lede.cloudcompute.com/r/v0.5.0/{name}.json`. Before v0.5.0 is tagged, use `/r/next/`
+   in place of `/r/v0.5.0/`: the unreleased build of main. `shadcn init --defaults` also picks a style and may add a
+   font, `tw-animate-css`, `src/components/ui/button.tsx` and `src/lib/utils.ts`; the chat uses none of them. From a clone,
    `npm run registry` writes the same files to `public/r/`, which any static server can serve.
 3. To change what a model may build, follow “Extend the catalog” below.
 4. The server is `server/chat.ts`. It refuses a body that isn't `application/json` (415), is over 1 MB (413) or
@@ -49,7 +51,10 @@ for bots on Slack, Teams and Discord, so it doesn't belong in a browser chat.
    (`sendMessage({ text }, { body: { screens } })`), so the model sees what the person entered. `onActionHeld` reports
    an action that a failing field held back, with the action and each field's name and message.
 7. Check it: `npm run build`, then the page in a browser with a reply showing: the question, the reply's text and then
-   its screen, focus in the composer and axe clean. This repo's `tests/chat.e2e.ts` does that with Playwright.
+   its screen, focus in the composer and axe clean. A screen's rows can arrive seconds after its text, so wait for the
+   last row, such as “Book the caterer” in “show my tasks”, before you judge it. A fresh app has no browser runner:
+   look by hand, or add Playwright and `@axe-core/playwright`, as this repo's `tests/chat.e2e.ts` does. That file
+   isn't copied.
 
 ## Extend the catalog
 

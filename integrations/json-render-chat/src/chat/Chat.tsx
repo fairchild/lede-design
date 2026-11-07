@@ -6,7 +6,7 @@ import { Button } from '@/components/lede/button';
 import { SegmentedControl } from '@/components/lede/segmented-control';
 import { TextField } from '@/components/lede/text-field';
 import { PageHeader } from '@/components/lede/blocks/page-header';
-import { SPEC_DATA_PART_TYPE } from '@json-render/core';
+import { SPEC_DATA_PART_TYPE, type Spec } from '@json-render/core';
 import { catalog, type CatalogAction } from '@/components/lede/json-render/catalog';
 import { specFromParts } from '@/components/lede/json-render/patches';
 import { SpecView, type HeldAction, type SpecHandlers } from '@/components/lede/json-render/spec-view';
@@ -65,6 +65,8 @@ export interface RanAction { name: CatalogAction; params: Record<string, unknown
 /** What a reply's account of itself can show: the request that asked for it, and what its screen did since. */
 export interface TraceProps {
   message: AppMessage;
+  /** The spec its parts build so far. */
+  spec: Spec | null;
   /** The person's words and each earlier screen's state, as the request that drew this reply sent them. */
   asked?: { text: string; screens: Screens };
   /** The screen's state now. */
@@ -79,7 +81,7 @@ export interface ChatPageProps {
   actions?: React.ReactNode;
   /** Drawn under each reply, such as an account of how it was made. */
   trace?: (props: TraceProps) => React.ReactNode;
-  /** A question to send once, such as from a link; `key` changes for each new one. */
+  /** A question to send once, such as from a link; `key` changes for each new one. It waits for a streaming reply. */
   ask?: { text: string; key: number };
   /** PageHeader's `focusOnMount`. Pass false when the page around the chat moves focus itself. */
   focusOnMount?: boolean;
@@ -99,7 +101,7 @@ export function ChatPage({ actions, trace, ask, focusOnMount }: ChatPageProps) {
   const keep = React.useCallback((id: string, state: Record<string, unknown>) => { screens.current[id] = state; }, []);
   // What each question's request carried, by the question's place among the person's turns, for `trace`.
   const asked = React.useRef<Array<{ text: string; screens: Screens }>>([]);
-  const record = (at: number, text: string) => { asked.current[at] = { text, screens: structuredClone(screens.current) }; };
+  const record = (at: number, text: string) => { if (trace) asked.current[at] = { text, screens: structuredClone(screens.current) }; };
   const questions = messages.filter((m) => m.role === 'user').length;
   const focusComposer = () => form.current?.querySelector('textarea')?.focus();
   const busy = status === 'submitted' || status === 'streaming';
@@ -132,11 +134,20 @@ export function ChatPage({ actions, trace, ask, focusOnMount }: ChatPageProps) {
     void regenerate({ body: body() });
   };
 
+  // A question from a link waits for a reply that's still streaming, then goes. The page around the chat moved there,
+  // so it puts focus in the composer, before this runs.
   const asking = React.useRef<number | undefined>(undefined);
+  const [queued, setQueued] = React.useState<string>();
   React.useEffect(() => {
     if (!ask || asking.current === ask.key) return;
     asking.current = ask.key;
-    send(ask.text);
+    if (busy) setQueued(ask.text);
+    else send(ask.text);
+  });
+  React.useEffect(() => {
+    if (busy || !queued) return;
+    setQueued(undefined);
+    send(queued);
   });
 
   // A control that held focus can leave as the reply ends, such as Stop. Focus then returns to the composer, where the
@@ -248,10 +259,17 @@ export function ChatPage({ actions, trace, ask, focusOnMount }: ChatPageProps) {
             </ul>
           </div>
         )}
+        {/* The suggestions stay after the first message, so “Fail once” and the rest are always a press away. */}
+        {messages.length && !busy ? (
+          <ul className="jrc-suggestions jrc-more" aria-label="Suggestions">
+            {SUGGESTIONS.map((s) => <li key={s}><Button size="sm" variant="tinted" onClick={() => send(s)}>{s}</Button></li>)}
+          </ul>
+        ) : null}
       </section>
       <div className="jrc-footer">
         <p role="status" className={failed ? 'jrc-status' : 'ld-sr-only'}>{statusText}</p>
         {failed ? <Button size="sm" onClick={retry}>Try again</Button> : null}
+        {queued ? <p className="jrc-queued">Next, once this reply ends: “{queued}”</p> : null}
         <form ref={form} className="jrc-composer" onSubmit={(e) => { e.preventDefault(); send(draft); }}>
           <TextField
             label="Message"
@@ -289,6 +307,8 @@ interface TurnProps {
 
 /** One turn: its author and time as a heading, its text and then, when the reply has one, the screen its spec describes. */
 function Turn({ message, time, live, ending, notes, onNote, onStateChange, asked, trace }: TurnProps) {
+  // What the screen did, kept only for `trace`: without one, a key in a screen draws nothing here again.
+  const tracing = !!trace;
   const [ran, setRan] = React.useState<RanAction[]>([]);
   const [held, setHeld] = React.useState<HeldAction[]>([]);
   const [state, setState] = React.useState<State>();
@@ -299,16 +319,16 @@ function Turn({ message, time, live, ending, notes, onNote, onStateChange, asked
   const handlers = React.useMemo<SpecHandlers>(
     () => Object.fromEntries(ACTIONS.map((name) => [name, (params: Record<string, unknown>) => {
       onNote(message.id, describe(specRef.current, name, params, focusedName()));
-      setRan((prev) => [...prev, { name, params }]);
+      if (tracing) setRan((prev) => [...prev, { name, params }]);
     }])),
-    [message.id, onNote],
+    [message.id, onNote, tracing],
   );
-  const keep = React.useCallback((next: State) => { onStateChange(message.id, next); setState(next); }, [message.id, onStateChange]);
+  const keep = React.useCallback((next: State) => { onStateChange(message.id, next); if (tracing) setState(next); }, [message.id, onStateChange, tracing]);
   const hold = React.useCallback((h: HeldAction) => setHeld((prev) => [...prev, h]), []);
   // Drawn once per spec, so the state this turn keeps for `trace` doesn't draw the screen again on each key.
   const screen = React.useMemo(
-    () => <SpecView spec={spec} streaming={live} headingLevel={3} handlers={handlers} onStateChange={keep} onActionHeld={hold} />,
-    [spec, live, handlers, keep, hold],
+    () => <SpecView spec={spec} streaming={live} headingLevel={3} handlers={handlers} onStateChange={keep} onActionHeld={tracing ? hold : undefined} />,
+    [spec, live, handlers, keep, hold, tracing],
   );
   const author = message.role === 'user' ? 'You' : ASSISTANT;
 
@@ -330,7 +350,7 @@ function Turn({ message, time, live, ending, notes, onNote, onStateChange, asked
           <ul className="jrc-notes" aria-label="What you did here">{notes.map((n, i) => <li key={i}>{n}</li>)}</ul>
         ) : null}
         {ending && message.role === 'assistant' ? <Ending ending={ending} /> : null}
-        {trace && message.role === 'assistant' ? trace({ message, asked, state, ran, held, live }) : null}
+        {trace && message.role === 'assistant' ? trace({ message, spec, asked, state, ran, held, live }) : null}
       </div>
       {/* A reply that ends before it begins has no turn of its own, so its ending follows the question, outside it. */}
       {ending && message.role === 'user' ? <Ending ending={ending} /> : null}

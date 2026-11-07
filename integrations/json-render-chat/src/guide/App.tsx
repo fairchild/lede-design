@@ -5,7 +5,12 @@ import { LinkProvider, type LinkComponent } from '@/components/lede/link';
 import { focusLanding } from '@/components/lede/input-modality';
 import { Appearance, ChatPage, schemeOf, type Scheme, type TraceProps } from '../chat/Chat';
 import { Trace } from './Trace';
-import { BuildIt, HowItWorks, SystemPrompt } from './pages';
+
+// The pages parse README.md as they load, so a README they can't draw fails there and leaves Try it working.
+const pages = () => import('./pages');
+const HowItWorks = React.lazy(() => pages().then((m) => ({ default: m.HowItWorks })));
+const BuildIt = React.lazy(() => pages().then((m) => ({ default: m.BuildIt })));
+const SystemPrompt = React.lazy(() => pages().then((m) => ({ default: m.SystemPrompt })));
 import './guide.css';
 
 // The guide around the chat: Try it is the chat, with an account of each reply; How it works and Build it draw the
@@ -20,11 +25,14 @@ const NAV = [
   { value: 'build', label: 'Build it', href: PATHS.build },
 ];
 
-/** The screen a hash names, and a question to ask in Try it, as `#/?ask=…` carries. */
-export function route(hash: string): { route: Route; ask?: string } {
+interface At { route: Route; ask?: string; step?: string }
+
+/** The screen a hash names, a question to ask in Try it (`#/?ask=…`) and a step of How it works (`?step=2`). */
+export function route(hash: string): At {
   const [path, query = ''] = hash.replace(/^#/, '').split('?');
   const found = (Object.keys(PATHS) as Route[]).find((r) => PATHS[r] === `#${path || '/'}`);
-  return { route: found ?? 'try', ask: new URLSearchParams(query).get('ask') ?? undefined };
+  const params = new URLSearchParams(query);
+  return { route: found ?? 'try', ask: params.get('ask') ?? undefined, step: params.get('step') ?? undefined };
 }
 
 interface Place { y: number; focus: Element | null }
@@ -39,7 +47,7 @@ const BackLink: LinkComponent = ({ ref, onClick, ...props }) => (
     {...props}
     onClick={(event) => {
       onClick?.(event);
-      if (event.defaultPrevented || !props.className?.includes('ld-back') || !(history.state as Entry | null)?.inApp) return;
+      if (event.defaultPrevented || !/(^|\s)ld-back(\s|$)/.test(props.className ?? '') || !(history.state as Entry | null)?.inApp) return;
       event.preventDefault();
       history.back();
     }}
@@ -56,7 +64,7 @@ export function App() {
   const back = React.useRef<Place | undefined>(undefined);
   const moved = React.useRef(false);
 
-  const arrive = React.useCallback((next: { route: Route; ask?: string }, n: number) => {
+  const arrive = React.useCallback((next: At, n: number) => {
     if (next.ask) {
       setAsk({ text: next.ask, key: n });
       history.replaceState(history.state, '', PATHS.try);
@@ -88,22 +96,37 @@ export function App() {
     return () => removeEventListener('hashchange', onHash);
   }, [arrive]);
 
-  // Each move lands focus once: back on the control the person left, or on the new screen's h1. A question from a link
-  // is sent, and the chat puts focus in the composer, as a suggestion's press does. On load, Try it leaves focus to
-  // the chat, which starts in the composer.
+  // Each move lands focus once: back on the control the person left, on a step a link names, or on the new screen's
+  // h1. A question from a link goes to the composer, as a suggestion's press does, whether it's sent now or waits for
+  // a reply. On load, Try it leaves focus to the chat, which starts in the composer.
+  const [shown, setShown] = React.useState(0);
+  const landed = React.useRef<At | undefined>(undefined);
   React.useLayoutEffect(() => {
-    const title = () => focusLanding(document.querySelector<HTMLElement>(`[data-screen="${at.route}"] .ld-page-title`));
+    if (landed.current === at) return;
+    const screen = document.querySelector<HTMLElement>(`[data-screen="${at.route}"]`);
+    const title = () => focusLanding(screen?.querySelector<HTMLElement>('.ld-page-title'));
+    // A page that's still loading lands focus once it shows.
+    if (!screen?.querySelector('.ld-page-title')) return;
+    landed.current = at;
+    if (at.ask) {
+      screen.querySelector('textarea')?.focus();
+      return;
+    }
+    const step = at.step && document.getElementById(`step-${at.step}`);
+    if (step) {
+      step.focus();
+      return;
+    }
     if (!moved.current) {
       if (at.route !== 'try') title();
       return;
     }
-    if (at.ask) return;
     const place = back.current;
     scrollTo(0, place?.y ?? 0);
     const focus = place?.focus;
     if (focus instanceof HTMLElement && focus.isConnected && focus !== document.body && focus.checkVisibility()) focus.focus({ preventScroll: true });
     else title();
-  }, [at]);
+  }, [at, shown]);
 
   const nav = NAV.some((item) => item.value === at.route) ? at.route : '';
   return (
@@ -119,11 +142,19 @@ export function App() {
               <ChatPage trace={trace} ask={ask} focusOnMount={false} />
             </div>
           </div>
-          {at.route === 'how' ? <div data-screen="how"><HowItWorks /></div> : null}
-          {at.route === 'build' ? <div data-screen="build"><BuildIt /></div> : null}
-          {at.route === 'prompt' ? <div data-screen="prompt"><SystemPrompt /></div> : null}
+          <React.Suspense fallback={null}>
+            {at.route === 'how' ? <div data-screen="how"><Shown onShow={setShown}><HowItWorks /></Shown></div> : null}
+            {at.route === 'build' ? <div data-screen="build"><Shown onShow={setShown}><BuildIt /></Shown></div> : null}
+            {at.route === 'prompt' ? <div data-screen="prompt"><Shown onShow={setShown}><SystemPrompt /></Shown></div> : null}
+          </React.Suspense>
         </main>
       </LinkProvider>
     </ThemeProvider>
   );
+}
+
+/** Tells the App each time a lazily loaded page shows, so focus can land on it. */
+function Shown({ onShow, children }: { onShow: React.Dispatch<React.SetStateAction<number>>; children: React.ReactNode }) {
+  React.useLayoutEffect(() => onShow((n) => n + 1), [onShow]);
+  return <>{children}</>;
 }

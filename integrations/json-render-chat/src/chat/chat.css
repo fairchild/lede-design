@@ -47,3 +47,7 @@
   .jrc-message .jrc-avatar { display: none; }
   .jrc-screen { padding: var(--space-3); }
 }
+
+/* After the first message the suggestions sit under the conversation, and a question waiting for a reply shows above the composer. */
+.jrc-more { margin-top: var(--space-4); }
+.jrc-queued { color: var(--muted-foreground); font-size: var(--text-footnote-size); line-height: var(--text-footnote-line-height); }

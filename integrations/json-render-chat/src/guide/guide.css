@@ -42,3 +42,18 @@ ol.jrc-md-list { list-style: decimal; }
 .jrc-trace section > * { margin: 0; }
 .jrc-trace h4 { font-size: var(--text-headline-size); line-height: var(--text-headline-line-height); font-weight: var(--weight-semibold); }
 .jrc-trace-actions { padding-inline-start: var(--space-4); list-style: disc; display: grid; gap: var(--space-1); }
+
+/* The loop at a glance: an ordered list drawn as a flow of boxes, each a link to its step. The arrows are decoration. */
+.jrc-flow { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; align-items: stretch; gap: var(--space-2); counter-reset: jrc-step; }
+.jrc-flow > li { display: flex; align-items: center; gap: var(--space-2); counter-increment: jrc-step; }
+.jrc-flow > li:not(:last-child)::after { content: "→" / ""; color: var(--muted-foreground); }
+.jrc-flow a {
+  display: flex; align-items: center; gap: var(--space-1); min-height: var(--size-hit-min); box-sizing: border-box;
+  padding: var(--space-2) var(--space-3); border: 1px solid var(--border); border-radius: var(--radius-lg);
+  background: var(--card); color: var(--foreground); text-decoration: none;
+  font-size: var(--text-subheadline-size); line-height: var(--text-subheadline-line-height);
+}
+.jrc-flow a::before { content: counter(jrc-step) "." / ""; color: var(--muted-foreground); font-weight: var(--weight-semibold); }
+.jrc-flow a:hover { border-color: var(--primary); }
+.jrc-flow a:focus-visible, .jrc-md-list > li:focus-visible { outline: var(--stroke-ring) solid var(--ring); outline-offset: var(--stroke-ring-offset); }
+.jrc-md-list > li[tabindex] { scroll-margin-top: var(--space-4); }

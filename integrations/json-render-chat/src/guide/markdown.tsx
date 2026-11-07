@@ -26,6 +26,11 @@ export function section(markdown: string, title: string): string {
 }
 
 const STARTS = /^(`{3,}|#{2,6} |\||(\d+\.|-) )/;
+/** Markdown this renderer doesn't draw: an h1, `*` and `+` lists, quotes and HTML. A README edit that uses one fails. */
+const UNREAD = /^(# |[*+] |> |<[a-z!/])/i;
+const unread = (line: string) => {
+  if (UNREAD.test(line.trimStart())) throw new Error(`The guide can't draw this README line: ${line.trim()}`);
+};
 
 export function parse(markdown: string): Block[] {
   const lines = markdown.split('\n');
@@ -49,7 +54,9 @@ export function parse(markdown: string): Block[] {
       const rows: string[][] = [];
       for (; i < lines.length && lines[i].startsWith('|'); i++) {
         if (/^\|[\s|:-]+\|$/.test(lines[i])) continue;
-        rows.push(lines[i].slice(1, -1).split(' | ').map((cell) => cell.trim()));
+        const row = lines[i].slice(1, -1).split(' | ').map((cell) => cell.trim());
+        if (rows[0] && row.length !== rows[0].length) throw new Error(`The guide can't draw this README table row, whose cells don't match its header: ${lines[i]}`);
+        rows.push(row);
       }
       out.push({ kind: 'table', head: rows[0] ?? [], rows: rows.slice(1) });
     } else if (item) {
@@ -64,7 +71,10 @@ export function parse(markdown: string): Block[] {
       out.push({ kind: 'list', ordered, items });
     } else {
       const text: string[] = [];
-      for (; i < lines.length && lines[i].trim() && (text.length === 0 || !STARTS.test(lines[i])); i++) text.push(lines[i].trim());
+      for (; i < lines.length && lines[i].trim() && (text.length === 0 || !STARTS.test(lines[i])); i++) {
+        unread(lines[i]);
+        text.push(lines[i].trim());
+      }
       out.push({ kind: 'p', text: text.join(' ') });
     }
   }
@@ -72,9 +82,10 @@ export function parse(markdown: string): Block[] {
 }
 
 /** Curly quotes outside code, as the site writes README prose. */
-const curly = (text: string) => text.replace(/(^|[\s(])"/g, '$1“').replace(/"/g, '”').replace(/'/g, '’');
+const curly = (text: string) =>
+  text.replace(/(^|[\s(])"/g, '$1“').replace(/"/g, '”').replace(/(^|[\s(])'/g, '$1‘').replace(/'/g, '’');
 
-const href = (to: string) => (/^([a-z]+:|#)/i.test(to) ? to : `${REPO}/${to}`);
+const href = (to: string) => (/^(https?:|mailto:|#)/i.test(to) ? to : `${REPO}/${to.replace(/^[a-z]+:/i, '')}`);
 
 /** A line's code spans, then its links and bold, as React nodes. */
 export function inline(text: string): React.ReactNode[] {
@@ -132,7 +143,7 @@ export const Code = ({ code, label }: { code: string; label: string }) => {
   );
 };
 
-const plain = (text: string) => text.replace(/\*\*|`/g, '').replace(/\.$/, '');
+export const plain = (text: string) => text.replace(/\*\*|`/g, '').replace(/\.$/, '');
 
 interface MarkdownProps {
   blocks: Block[];
@@ -140,7 +151,7 @@ interface MarkdownProps {
   label: string;
   /** Added to each heading's level: README's `###` under a page's h1 is an h2, so -1. */
   shift?: number;
-  /** Drawn at the end of each item of the first numbered list, by its number. */
+  /** Drawn at the end of each item of the first numbered list, by its number. Those items get ids, `step-1` on. */
   afterStep?: (n: number) => React.ReactNode;
 }
 
@@ -176,7 +187,7 @@ function BlockView({ block, label, shift, afterStep }: { block: Block; label: st
       return (
         <L className="jrc-md-list">
           {block.items.map((item, n) => (
-            <li key={n}>
+            <li key={n} id={afterStep ? `step-${n + 1}` : undefined} tabIndex={afterStep ? -1 : undefined}>
               <Markdown blocks={item} label={block.ordered ? `Step ${n + 1}` : label} shift={shift} />
               {afterStep?.(n + 1)}
             </li>

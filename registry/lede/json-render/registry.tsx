@@ -40,15 +40,16 @@ interface Checks {
   /** Each field whose check held back an action, by name, with the browser's message for what it needs. */
   shown: ReadonlyMap<string, string>;
   show: (fields: Field[]) => void;
+  /** Each field's own `error` from the spec, by name, which it shows in place of the browser's message. */
+  errors: Map<string, string>;
   /** Called when a field's value changes: a field that now passes drops its error, and one that still fails keeps it. */
   recheck: (name: string, valid: boolean, message: string) => void;
 }
 const Checked = React.createContext<Checks | null>(null);
 
-/** An action held back by a field it reads: the action, its params as the spec binds them, and each failing field. */
+/** An action held back by fields it reads: the action, and each failing field's name and the error it shows. */
 export interface HeldAction {
   action: string;
-  params?: Record<string, unknown>;
   fields: Array<{ name: string; message: string }>;
 }
 /** Where SpecView's `onActionHeld` reaches `useCheckedEmit`. */
@@ -57,8 +58,10 @@ export const ActionHeld = React.createContext<((held: HeldAction) => void) | und
 /** Holds which fields show their error. SpecView puts it around each screen. */
 export function FieldChecks({ children }: { children: React.ReactNode }) {
   const [shown, setShown] = React.useState<ReadonlyMap<string, string>>(new Map());
+  const [errors] = React.useState(() => new Map<string, string>());
   const checks = React.useMemo<Checks>(() => ({
     shown,
+    errors,
     show: (fields) => setShown((prev) => new Map([...prev, ...fields.map((f) => [f.name, f.validationMessage] as const)])),
     recheck: (name, valid, message) => setShown((prev) => {
       if (!prev.has(name) || (!valid && prev.get(name) === message)) return prev;
@@ -67,7 +70,7 @@ export function FieldChecks({ children }: { children: React.ReactNode }) {
       else next.set(name, message);
       return next;
     }),
-  }), [shown]);
+  }), [shown, errors]);
   return <Checked.Provider value={checks}>{children}</Checked.Provider>;
 }
 
@@ -80,6 +83,12 @@ function useFieldError(name: string | undefined, error: string | undefined, valu
   const root = React.useContext(SpecRoot);
   const message = name === undefined ? undefined : checks?.shown.get(name);
   const shown = message !== undefined;
+  React.useEffect(() => {
+    if (name === undefined || !checks) return;
+    if (!error) return;
+    checks.errors.set(name, error);
+    return () => { checks.errors.delete(name); };
+  }, [name, error, checks]);
   React.useEffect(() => {
     if (!shown || name === undefined) return;
     const field = (root?.current ?? document).querySelector<Field>(`[name="${CSS.escape(name)}"]`);
@@ -110,7 +119,7 @@ function useCheckedEmit(emit: (event: string) => void) {
     for (const b of list.slice(0, stop)) await execute(b);
     const held = reads(list[stop]);
     checks?.show(held);
-    report?.({ action: list[stop].action, params: list[stop].params, fields: held.map((f) => ({ name: f.name, message: f.validationMessage })) });
+    report?.({ action: list[stop].action, fields: held.map((f) => ({ name: f.name, message: checks?.errors.get(f.name) || f.validationMessage })) });
     held[0]?.focus();
   };
 }

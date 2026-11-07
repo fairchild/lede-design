@@ -10,10 +10,11 @@ npm install
 npm run dev     # http://localhost:4880, with the scripted replies
 npm run build   # tokens, typecheck (app, server and tests), then the site
 npm test        # the mock and the server in Vitest, then the chat in a browser with Playwright and axe
+                # PW_PORT=4883 npm test starts its four servers from 4883 up, beside a dev server on 4881
 ```
 
 Try “how’s my week”, “show my tasks”, “show my notification settings”, “what’s in my inbox”, “help me sign up”,
-“any projects”, “fail” or “offline”. The last two fail once, partway through or before a word arrives, and Try again then answers.
+“any projects”, “turn off push”, “fail” or “offline”. The last two fail once, partway through or before a word arrives, and Try again then answers.
 
 The app opens on Try it, the chat, where each reply's “How this reply was made” shows what went to the model, what
 streamed back, the spec it built and what its screen did. How it works and Build it draw this README's sections of
@@ -48,9 +49,10 @@ passed. Commands run in your app's folder, and `LEDE` is the path to a clone of 
    ```
 
 2. **shadcn and Lede.** `init` writes `components.json` and shadcn's variables in `src/index.css`. Keep them: Lede's
-   styles come after them and set the same variables. `init` may also add `src/components/ui/button.tsx`, which the
-   chat doesn't use, so you can delete it. `@lede/json-render` brings the Lede components its screens use and the
-   npm packages `@json-render/core`, `@json-render/react` and `zod`.
+   styles come after them and set the same variables. `init` also picks a style and may add a font, `tw-animate-css`,
+   `src/components/ui/button.tsx` and `src/lib/utils.ts`; the chat uses none of them. `@lede/json-render` brings the
+   Lede components its screens use and the npm packages `@json-render/core`, `@json-render/react` and `zod`, and the
+   chat page itself also needs `@lede/avatar`.
 
    ```bash
    npx shadcn@latest init --defaults --yes
@@ -58,8 +60,7 @@ passed. Commands run in your app's folder, and `LEDE` is the path to a clone of 
    npx shadcn@latest add @lede/theme-provider @lede/avatar @lede/json-render --yes
    ```
 
-   `json-render` first ships in Lede 0.5.0. Until v0.5.0 is tagged, use `/r/next/{name}.json` on the same site, the
-   unreleased build of main.
+   Before v0.5.0 is tagged, use `/r/next/` in place of `/r/v0.5.0/`: the unreleased build of main.
 
    Then import Lede's styles at the end of `src/index.css`, as the main README's step 2 shows. `init` leaves the file
    without a final newline, so start with one:
@@ -94,7 +95,7 @@ passed. Commands run in your app's folder, and `LEDE` is the path to a clone of 
    | `src/chat/app-message.ts` | `AppMessage`, a `UIMessage` whose data parts are json-render's spec patches |
    | `src/chat/assistant.ts` | Who the assistant is: its name, what it helps with and the suggested prompts |
    | `src/chat/system.ts` | The system prompt the server sends, written by the catalog's `prompt()` |
-   | `src/chat/describe.ts` | Demo only: the note an action leaves, such as “You opened Venue review.” In your app, a handler acts on its params instead, such as `open: ({ id }) => navigate(`/items/${id}`)` |
+   | `src/chat/describe.ts` | Demo only: the note an action leaves, such as “You opened Venue review.” In your app, a handler acts on its params instead, such as ``open: ({ id }) => navigate(`/items/${id}`)`` |
    | `server/chat.ts` | The backend: `handleChat`, a fetch-style handler for any framework's route |
    | `tsconfig.server.json` | Typechecks the server, which `tsconfig.app.json` leaves out |
 
@@ -127,7 +128,7 @@ A coding agent can build the chat from [`AGENTS.md`](AGENTS.md), which holds the
 break them. Paste this into the agent in your app's folder:
 
 ```text
-Add a chat to this React app whose replies can hold screens built from Lede components, using the AI SDK and json-render. Follow https://github.com/fairchild/lede-design/blob/main/integrations/json-render-chat/AGENTS.md step by step. Install Lede from the shadcn registry at https://lede.cloudcompute.com/r/v0.5.0/{name}.json; until v0.5.0 is tagged, use https://lede.cloudcompute.com/r/next/{name}.json. When it builds, check the page in a browser with a reply showing.
+Add a chat to this React app whose replies can hold screens built from Lede components, using the AI SDK and json-render. Follow https://github.com/fairchild/lede-design/blob/main/integrations/json-render-chat/AGENTS.md step by step. Install Lede from the shadcn registry at https://lede.cloudcompute.com/r/v0.5.0/{name}.json (before v0.5.0 is tagged, use /r/next/ in place of /r/v0.5.0/). When it builds, check the page in a browser with a reply showing.
 ```
 
 ## Run it against a real model
@@ -141,31 +142,42 @@ The key stays on the server. The browser only talks to `/api/chat`.
 
 ## How it works
 
-The model writes each reply as words followed by a screen, and the screen is a json-render spec that streams as
-patches and draws with Lede while it arrives. What the person does on that screen goes back with their next message,
-so the model's next reply starts from it.
+Each reply is words and a screen that builds while it streams. What the person does there goes back with their next
+message.
 
 ### The loop
 
-1. **You send a message.** `src/chat/Chat.tsx` sends your words with `useChat`, through the transport that
-   `src/chat/transport.ts` picks: the scripted mock, or the AI SDK's `DefaultChatTransport` when `VITE_CHAT_API` is
-   set. Each earlier screen's state goes with it as `screens`.
-2. **The server asks the model.** `server/chat.ts` keeps the parts the model reads and calls `streamText` with the
-   system prompt from `src/chat/system.ts`, which the catalog's `prompt()` writes from every component and action a
-   screen may use. `forModel` puts each earlier screen back into the conversation as its patches, with the state the
-   person left in it. The AI SDK's `convertToModelMessages` drops data parts, so without it the model never sees the
-   screens it sent, and “turn off push” has nothing to refer to.
-3. **The spec streams back.** The model writes its words, then the screen as JSONL patch lines in the same text
-   stream. On the server, json-render's `pipeJsonRender` lifts each patch line out of the text into a `data-spec`
-   part. On the client, `specFromParts` in `json-render/patches.ts` applies the patches in order, so the screen builds
-   while the reply streams.
-4. **SpecView draws it with Lede.** `json-render/spec-view.tsx` draws the spec so far, and `json-render/registry.tsx`
-   draws each catalog type with its Lede component. The person can use the screen while the rest streams in.
-5. **What the person does goes back.** An action calls its handler in `Chat.tsx`, such as `open` with an item's id.
-   `SpecView`'s `onStateChange` gives the chat each screen's state, and the next message sends it as `screens`, so a
-   switch turned off or a name typed there reaches the model.
+1. **You send a message.** Your words go to the server, along with what you entered on the earlier screens.
+
+   In the code: `src/chat/Chat.tsx` sends them with `useChat`, through the transport that `src/chat/transport.ts`
+   picks: the scripted mock, or the AI SDK's `DefaultChatTransport` when `VITE_CHAT_API` is set. Each screen's state
+   goes as `screens`.
+2. **The server asks the model.** The model gets a system prompt listing every component and action a screen may use,
+   then the conversation, with each earlier screen as the person left it.
+
+   In the code: `server/chat.ts` calls `streamText` with the system prompt from `src/chat/system.ts`, which the
+   catalog's `prompt()` writes. `forModel` writes each earlier screen back as its patches with its state, since the AI
+   SDK's `convertToModelMessages` drops data parts.
+3. **The screen streams back.** The model writes its words, then the screen as a series of small changes, and the
+   screen builds as each one arrives.
+
+   In the code: json-render's `pipeJsonRender` lifts each JSONL patch line out of the text into a `data-spec` part,
+   and `specFromParts` in `json-render/patches.ts` applies the patches in order.
+4. **Lede draws it.** Each part of the screen is a Lede component, and the person can use it while the rest streams
+   in.
+
+   In the code: `json-render/spec-view.tsx` draws the spec so far, and `json-render/registry.tsx` maps each catalog
+   type to its Lede component.
+5. **What the person does goes back.** A press runs an action, and what they type or switch goes with their next
+   message, so the model's next reply starts from it.
+
+   In the code: an action calls its handler in `Chat.tsx`, such as `open` with an item's id. `SpecView`'s
+   `onStateChange` gives the chat each screen's state, which the next message sends as `screens`.
 
 ### What Lede adds
+
+json-render turns a model's spec into a React screen and keeps that screen's state. Lede draws each part with its own
+components and adds four guarantees for a screen that streams:
 
 - A person's changes survive streaming. A value they typed or switched keeps their change while the rest of the reply
   streams in, and a list keeps gaining rows around it.
@@ -181,7 +193,7 @@ own React components, and its “Side by side” table measures what each of the
 
 ### Details
 
-json-render documents this path for the AI SDK. A tool would deliver the spec in one piece once the call ends. The
+json-render documents this inline path for the AI SDK, where the spec arrives in the same stream as the words. The
 mock writes prose and then bare patch lines; a model under the inline prompt fences them in a ```` ```spec ```` block
 and may send the state after the elements. `pipeJsonRender` reads both the same way, so the client can't tell them
 apart. It sends each patch in pieces, down to a character at a time, which is how json-render streams them.
@@ -194,15 +206,16 @@ shows an error with Try again.
 | File | What it is |
 | --- | --- |
 | `src/chat/` | The chat: the files step 4 copies. |
-| `src/guide/` | The guide around the chat: Try it, How it works and Build it, which draw this README. Step 4 leaves it out. |
+| `src/guide/` and `chat.html` | The guide around the chat, at `index.html`: Try it, How it works and Build it, which draw this README. `chat.html` is the chat alone, as step 5 renders it. Step 4 leaves both out. |
 | `server/chat.ts` | The reference backend: `streamText` with Anthropic and the catalog's `prompt()`. |
 | `templates/tsconfig.server.json` | The server's tsconfig for an app made with create-vite. |
 | `tests/mock-transport.test.ts` | Sends each scripted prompt through the mock and checks the spec against the catalog. |
 | `tests/describe.test.ts` | Checks each action's note, for literal params, params bound to state and rows drawn by repeat. |
 | `tests/model-replies.test.tsx` | Streams 16 replies a model wrote for 8 requests through the server's transform: each parses, passes the catalog and draws, with each list's rows once. |
 | `tests/server.test.ts` | Checks that the model sees earlier screens with the state the person left in them, then starts the server: what it refuses, the length cap and parts it passes the model, and one log line per failed model call. |
-| `tests/chat.e2e.ts` | The chat in a browser: the order of a reply, an action's note, Stop, Escape, Try again, focus, the composer's scroll padding, checked fields and their errors, a list that fills in as it streams, typing and presses while a reply streams, a checkbox label at 200% text, following a reply as it streams and axe. |
-| `tests/guide.e2e.ts` | The guide: each screen's link and h1, Back to where the person was, each reply's account of how it was made, the README's code shown block for block, Copy and axe on each screen in each theme at 390 and 1280 pixels and 200% text. |
+| `tests/chat.e2e.ts` | The chat alone (`chat.html`) in a browser: the order of a reply, an action's note, Stop, Escape, Try again, focus, the composer's scroll padding, checked fields and their errors, a list that fills in as it streams, typing and presses while a reply streams, a checkbox label at 200% text, following a reply as it streams and axe. |
+| `tests/guide.e2e.ts` | The guide: each screen's link and h1, Back to where the person was, a Try link pressed mid-reply, each step's example, each reply's account of how it was made, this README's sections shown block for block, Copy and axe on each screen in each theme at 390 and 1280 pixels and 200% text. |
+| `tests/markdown.test.tsx` and `tests/install.test.ts` | The guide's renderer refuses Markdown it can't draw, and the documented install brings every Lede file the copied chat imports. |
 | `tests/real.e2e.ts`, `fake-anthropic.ts` and `fake-replies/` | The chat on the AI SDK's own transport, against `server/chat.ts` and a fake Anthropic: a reply that draws, a connection that drops partway, a malformed body, a follow-up that carries a screen's state, a reply that only patches an earlier screen, focus when a control or row hides itself, a row switched on while its list streams in and a form with a pattern and a decimal. |
 
 The catalog, the registry and `SpecView` are Lede's `json-render` item, in `registry/lede/json-render/`, which this

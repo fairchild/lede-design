@@ -7,7 +7,8 @@ const here = (path: string) => fileURLToPath(new URL(path, import.meta.url));
 
 // Lede's source, its json-render item included, lives in ../../registry, outside this app, under the path a shadcn
 // install gives it: `@/components/lede`. Its imports resolve from here through `dedupe`, so the repo root needs no
-// install of its own. `/api` goes to the chat server, on `PORT` when it's set, as the server reads it.
+// install of its own. index.html is the guide around the chat, and chat.html the chat alone, as an app renders it.
+// `/api` goes to the chat server, on `PORT` when it's set, as the server reads it.
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   resolve: {
@@ -16,4 +17,5 @@ export default defineConfig({
   },
   server: { port: 4880, strictPort: true, fs: { allow: ['../..'] }, proxy: { '/api': `http://localhost:${process.env.PORT ?? 4882}` } },
   preview: { port: 4881, strictPort: true },
+  build: { rollupOptions: { input: { guide: here('index.html'), chat: here('chat.html') } } },
 });

@@ -10,8 +10,9 @@ async function ask(page: Page, text: string) {
   await composer(page).press('Enter');
 }
 
+// The chat alone, as an app renders it: chat.html draws `<Chat />`. tests/guide.e2e.ts drives the guide around it.
 test.beforeEach(async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/chat.html');
 });
 
 test('focus starts in the composer, where the person acts next', async ({ page }) => {
@@ -65,8 +66,8 @@ test('a control reached with Shift+Tab from the composer stops above the compose
   await page.setViewportSize({ width: 1280, height: 640 });
   await ask(page, 'How’s my week?');
   await expect(page.getByRole('button', { name: 'Stop' })).toBeHidden();
-  // The last control in the reply: its account of how it was made, under the screen.
-  const control = page.getByRole('button', { name: /How this reply was made/ });
+  // The last control above the composer: the suggestions, which stay after the first message.
+  const control = page.getByRole('list', { name: 'Suggestions' }).getByRole('button').last();
   // Put the control just inside the window's bottom edge, behind the composer, where it counts as in view.
   await control.evaluate((el) => scrollBy(0, el.getBoundingClientRect().bottom - innerHeight + 8));
   await composer(page).focus();

@@ -22,10 +22,43 @@ async function open(page: Page, n = 1) {
   return trace(page, n);
 }
 
+const sectionOf = (title: string) => readme.split(`\n## ${title}\n`)[1]!.split(/\n## /)[0]!;
+
 /** The fenced code of one `## title` section of README.md, dedented, in order. */
 function fences(title: string): string[] {
-  const body = readme.split(`\n## ${title}\n`)[1]!.split(/\n## /)[0]!;
+  const body = sectionOf(title);
   return [...body.matchAll(/^( *)```\w*\n([\s\S]*?)\n\1```$/gm)].map(([, indent, code]) => code!.split('\n').map((l) => l.slice(indent!.length)).join('\n'));
+}
+
+/**
+ * The words of one `## title` section of README.md as a reader sees them, a block at a time: each paragraph, list item
+ * and table row, with Markdown's marks gone and quotes curled outside code. Code blocks are left to `fences`.
+ */
+function prose(title: string): string[] {
+  const curl = (t: string) => t.replace(/(^|[\s(])"/g, '$1“').replace(/"/g, '”').replace(/(^|[\s(])'/g, '$1‘').replace(/'/g, '’');
+  const words = (t: string) =>
+    t.split(/(````.+?````|``.+?``|`[^`]+`)/).map((part, i) => (i % 2 ? part.replace(/^(`+)\s?(.*?)\s?\1$/, '$2') : curl(part.replace(/\*\*/g, '').replace(/\[([^\]]+)\]\([^)]+\)/g, '$1'))))
+      .join('').replace(/\[`?([^\]]+?)`?\]\([^)]+\)/g, '$1');
+  const body = sectionOf(title).replace(/^( *)```\w*\n[\s\S]*?\n\1```$/gm, '');
+  return body.split(/\n\s*\n/).flatMap((chunk) => {
+    const lines = chunk.split('\n').map((l) => l.trim()).filter((l) => l && !/^\|[\s|:-]+\|$/.test(l));
+    if (!lines.length) return [];
+    if (lines[0]!.startsWith('|')) return lines.map((row) => words(row.slice(1, -1).split(' | ').map((c) => c.trim()).join(' ')));
+    const blocks = lines.reduce<string[][]>((all, line) => (/^(\d+\.|-) /.test(line) || !all.length ? [...all, [line]] : (all.at(-1)!.push(line), all)), []);
+    return blocks.map((block) => words(block.join(' ').replace(/^(\d+\.|-|#{2,6}) /, '')).replace(/\s+/g, ' ').trim());
+  });
+}
+
+/** Expects the visible page to show each block, in order. */
+async function shows(page: Page, blocks: string[]) {
+  await expect(h1(page)).toHaveCount(1);
+  const text = (await page.getByRole('main').innerText()).replace(/\s+/g, ' ');
+  let at = 0;
+  for (const block of blocks) {
+    const found = text.indexOf(block, at);
+    expect(found, `the page shows “${block.slice(0, 80)}…” after what came before it`).toBeGreaterThanOrEqual(0);
+    at = found + block.length;
+  }
 }
 
 test('the navigation marks the current screen, each move lands on that screen’s one h1, and each screen has a link of its own', async ({ page }) => {
@@ -85,13 +118,56 @@ test('the account lists each action with its params, and one held back with the 
   await expect((await open(page, 3)).getByRole('list', { name: 'Actions' })).toContainText('submit was held back by /form/email (“Enter an email address');
 });
 
-test('a follow-up’s account shows the state the person left in the earlier screen', async ({ page }) => {
+test('a follow-up’s account shows the state the person left in the earlier screen, as it was when they sent', async ({ page }) => {
   await page.goto('/');
   await ask(page, 'Show my notification settings');
-  await turns(page).nth(1).getByRole('switch', { name: /Push alerts/ }).click();
+  const email = turns(page).nth(1).getByRole('switch', { name: /Email alerts/ });
+  await email.click();
   await ask(page, 'turn off push');
+  await expect(turns(page).nth(3).getByRole('switch', { name: /Push alerts/ })).toHaveAttribute('aria-checked', 'false');
+  await email.click();
   const sent = (await open(page, 3)).getByRole('figure', { name: 'The state of 1 earlier screen, sent as screens' });
-  expect(Object.values(JSON.parse((await sent.locator('pre').textContent())!) as Record<string, { settings?: { push?: boolean } }>)[0]?.settings).toMatchObject({ push: false });
+  expect(Object.values(JSON.parse((await sent.locator('pre').textContent())!) as Record<string, { settings?: { email?: boolean } }>)[0]?.settings).toMatchObject({ email: true });
+});
+
+test('a retry’s account shows the state as the retry sent it', async ({ page }) => {
+  await page.goto('/');
+  await ask(page, 'Show my notification settings');
+  const email = turns(page).nth(1).getByRole('switch', { name: /Email alerts/ });
+  await email.click();
+  await ask(page, 'Fail once');
+  await email.click();
+  await page.getByRole('button', { name: 'Try again' }).click();
+  await expect(page.getByRole('button', { name: 'Stop' })).toBeHidden();
+  const account = await open(page, 3);
+  await expect(account.getByRole('figure', { name: 'Your words' })).toHaveText(/Fail once/);
+  const sent = account.getByRole('figure', { name: 'The state of 1 earlier screen, sent as screens' });
+  expect(Object.values(JSON.parse((await sent.locator('pre').textContent())!) as Record<string, { settings?: { email?: boolean } }>)[0]?.settings).toMatchObject({ email: false });
+});
+
+test('the suggestions stay after the first message, and a question no script matches says what the demo can answer', async ({ page }) => {
+  await page.goto('/');
+  await ask(page, 'What’s the weather?');
+  await expect(turns(page).nth(1)).toContainText('This demo answers from a script');
+  await expect(page.getByRole('list', { name: 'Suggestions' }).getByRole('button', { name: 'Fail once' })).toBeVisible();
+});
+
+test('a “Try” link pressed while a reply streams waits for it, then asks, with focus in the composer and never on <body>', async ({ page }) => {
+  await page.goto('/');
+  await composer(page).fill('Show my tasks');
+  await composer(page).press('Enter');
+  await expect(page.getByRole('button', { name: 'Stop' })).toBeVisible();
+  await nav(page).getByRole('link', { name: 'How it works' }).click();
+  await page.getByRole('link', { name: 'Try “What’s in my inbox?”' }).click();
+  // Read at once, while the first reply still streams: the chat's own return to the composer comes only as it ends.
+  await expect.poll(() => page.evaluate(() => document.activeElement?.tagName), { timeout: 500 }).toBe('TEXTAREA');
+  await expect(page.getByRole('button', { name: 'Stop' })).toBeVisible({ timeout: 1 });
+  await expect(page.getByText('Next, once this reply ends: “What’s in my inbox?”')).toBeVisible();
+  const seen = new Set<string | undefined>();
+  while (await page.getByRole('button', { name: 'Stop' }).isVisible()) seen.add(await page.evaluate(() => document.activeElement?.tagName));
+  expect([...seen].filter((t) => t !== 'TEXTAREA')).toEqual([]);
+  await expect(turns(page)).toHaveCount(4);
+  await expect(turns(page).nth(2)).toContainText('What’s in my inbox?');
 });
 
 test('the system prompt opens from an account, and its back link returns to the link the person used', async ({ page }) => {
@@ -104,21 +180,46 @@ test('the system prompt opens from an account, and its back link returns to the 
   await expect(link).toBeFocused();
 });
 
-test('How it works draws README.md’s loop, and each step’s link asks its question in Try it', async ({ page }) => {
+const loop = [...sectionOf('How it works').matchAll(/^\d+\. \*\*(.+?)\.\*\*/gm)].map((m) => m[1]!);
+
+test('How it works shows README.md’s section, block for block, with its links pointing at the repo', async ({ page }) => {
   await page.goto('/#/how-it-works');
-  const titles = [...readme.split('\n## How it works\n')[1]!.split('\n### What Lede adds')[0]!.matchAll(/^\d+\. \*\*(.+?)\*\*/gm)].map((m) => m[1]);
-  const steps = page.locator('ol.jrc-md-list > li');
-  await expect(steps.locator(':scope > p:first-child > strong')).toHaveText(titles);
-  await expect(steps.getByRole('link', { name: /^Try “/ })).toHaveCount(titles.length);
-  await steps.nth(0).getByRole('link', { name: 'Try “How’s my week?”' }).click();
-  await expect(page).toHaveURL(/#\/$/);
-  await expect(turns(page).nth(0)).toContainText('How’s my week?');
-  await expect(composer(page)).toBeFocused();
+  await shows(page, prose('How it works'));
+  await expect(page.locator('ol.jrc-md-list > li > p:first-child > strong')).toHaveText(loop.map((t) => `${t}.`));
+  await expect(page.getByRole('link', { name: '../json-render-chat-plain' })).toHaveAttribute('href', 'https://github.com/fairchild/lede-design/blob/main/integrations/json-render-chat/../json-render-chat-plain/README.md#side-by-side');
+});
+
+test('the loop at a glance links each step, and each step’s Try link asks a question whose reply shows a screen', async ({ page }) => {
+  await page.goto('/#/how-it-works');
+  const flow = page.getByRole('list', { name: 'The loop at a glance' }).getByRole('link');
+  await expect(flow).toHaveText(loop);
+  await flow.nth(2).click();
+  await expect(page.locator('#step-3')).toBeFocused();
+  for (let n = 0; n < loop.length; n++) {
+    await page.goto('about:blank');
+    await page.goto('/#/how-it-works');
+    const link = page.locator(`#step-${n + 1}`).getByRole('link', { name: /^Try “/ });
+    const question = (await link.textContent())!.match(/“(.+)”/)![1]!;
+    await link.click();
+    await expect(composer(page)).toBeFocused();
+    await expect(turns(page).nth(0)).toContainText(question);
+    await expect(page.getByRole('button', { name: 'Stop' })).toBeHidden();
+    await expect(turns(page).nth(1).locator('.jrc-screen').getByRole('heading', { level: 3 }), `step ${n + 1}’s question draws a screen`).toBeVisible();
+  }
+});
+
+test('the second step’s follow-up, “turn off push”, answers with the settings screen and push off', async ({ page }) => {
+  await page.goto('/');
+  await ask(page, 'Show my notification settings');
+  await ask(page, 'turn off push');
+  await expect(turns(page).nth(3).getByRole('switch', { name: /Push alerts/ })).toHaveAttribute('aria-checked', 'false');
 });
 
 test('Build it shows README.md’s code, block for block, and Copy puts it on the clipboard', async ({ page, context }) => {
   await context.grantPermissions(['clipboard-read', 'clipboard-write']);
   await page.goto('/#/build');
+  await shows(page, [...prose('Hand this to your coding agent'), ...prose('Build this in your app')]);
+  await expect(page.getByRole('link', { name: 'AGENTS.md' }).first()).toHaveAttribute('href', 'https://github.com/fairchild/lede-design/blob/main/integrations/json-render-chat/AGENTS.md');
   const shown = await page.locator('pre').allTextContents();
   expect(shown).toEqual([...fences('Hand this to your coding agent'), ...fences('Build this in your app')]);
   const rows = readme.split('\n## Build this in your app\n')[1]!.split(/\n## /)[0]!.match(/^ *\| `/gm)!.length;
