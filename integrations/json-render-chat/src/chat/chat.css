@@ -1,0 +1,23 @@
+/* The chat page's own layout, on Lede tokens. It needs Lede's styles (styles/lede/index.css) loaded first. */
+.jrc-app { min-height: 100dvh; color: var(--foreground); }
+.jrc-page { box-sizing: border-box; max-width: 48rem; margin: 0 auto; padding: var(--space-4) var(--space-4) 0; display: grid; gap: var(--space-6); }
+.jrc-empty { display: grid; gap: var(--space-3); }
+.jrc-empty > * { margin: 0; }
+.jrc-messages { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-6); }
+.jrc-message { display: grid; gap: var(--space-3); min-width: 0; scroll-margin-top: var(--space-4); }
+.jrc-message > * { margin: 0; }
+.jrc-message[data-role="user"] { justify-self: end; max-width: 85%; gap: var(--space-1); padding: var(--space-3) var(--space-4); border-radius: var(--radius-xl); background: var(--card); }
+.jrc-author { font-size: var(--text-footnote-size); line-height: var(--text-footnote-line-height); font-weight: var(--weight-semibold); color: var(--muted-foreground); }
+.jrc-text { white-space: pre-wrap; overflow-wrap: anywhere; }
+.jrc-spec { padding: var(--space-4); border-radius: var(--radius-xl); border: 1px solid var(--input); }
+.jrc-muted, .jrc-note, .jrc-ending { color: var(--muted-foreground); }
+.jrc-note, .jrc-ending { font-size: var(--text-footnote-size); line-height: var(--text-footnote-line-height); }
+.jrc-ending { font-style: italic; }
+.jrc-suggestions { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--space-2); }
+/* The composer stays at the foot of the window. Its layer sits above the rows, whose swipe uses a transform. */
+.jrc-footer { position: sticky; bottom: 0; z-index: var(--z-tabbar); display: grid; gap: var(--space-3); padding: var(--space-3) 0 var(--space-4); background: var(--background-grouped); border-top: 0.5px solid var(--border); }
+.jrc-footer > * { margin: 0; }
+.jrc-footer > .ld-btn { justify-self: start; }
+.jrc-composer { display: grid; gap: var(--space-2); }
+.jrc-composer .ld-field-input { background: var(--card); }
+.jrc-composer-actions { display: flex; justify-content: flex-end; gap: var(--space-2); }

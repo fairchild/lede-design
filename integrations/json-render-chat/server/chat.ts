@@ -4,7 +4,7 @@ import { pathToFileURL } from 'node:url';
 import { anthropic } from '@ai-sdk/anthropic';
 import { pipeJsonRender } from '@json-render/core';
 import { convertToModelMessages, createUIMessageStreamResponse, streamText, type UIMessage } from 'ai';
-import { catalog } from '@json-render-lede/catalog';
+import { catalog } from '@/json-render/catalog';
 
 // The reference backend for the chat. `handleChat` is a fetch-style handler, so it drops into any framework's route
 // (Hono, a Next.js route handler, a Worker). Run this file and it serves POST /api/chat on port 4882, which
@@ -26,7 +26,10 @@ export async function handleChat(request: Request): Promise<Response> {
   });
   // json-render's transform lifts each JSONL patch line out of the text into a `data-spec` part, which the client
   // reads with `buildSpecFromParts`. The prose stays as text parts, in order around it.
-  return createUIMessageStreamResponse({ stream: pipeJsonRender(result.toUIMessageStream()) });
+  // `onError` passes the provider's message, such as an invalid key, to the client. That suits development; in
+  // production, return a generic message here and log the error.
+  const stream = result.toUIMessageStream({ onError: (error) => (error instanceof Error ? error.message : 'The model call failed.') });
+  return createUIMessageStreamResponse({ stream: pipeJsonRender(stream) });
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {

@@ -1,8 +1,8 @@
 import { describe, expect, test } from 'vitest';
 import type { UIMessage, UIMessageChunk } from 'ai';
 import { buildSpecFromParts } from '@json-render/react';
-import { check } from '@json-render-lede/check';
-import { MockChatTransport } from '../src/mock-transport';
+import { check } from '@/json-render/check';
+import { MockChatTransport } from '../src/chat/mock-transport';
 
 /** Sends one prompt through the mock transport and collects what the client would receive. */
 async function ask(transport: MockChatTransport, text: string) {

@@ -8,11 +8,13 @@ import { PageHeader } from '@/components/lede/blocks/page-header';
 import { transport, chatApi as api } from './transport';
 import { SpecView, type SpecActions } from './spec-view';
 import { toChatMessage, type ChatMessage } from './chat-message';
+import './chat.css';
 
 const ASSISTANT = 'Daybook';
 const SUGGESTIONS = ['Show my notification settings', 'What’s in my inbox?', 'Help me sign up', 'Fail once'];
 
-export function App() {
+/** The chat page: the conversation, then the composer, which stays at the foot of the window. */
+export function Chat() {
   const [scheme, setScheme] = React.useState<'Light' | 'Dark'>(() => (matchMedia('(prefers-color-scheme: dark)').matches ? 'Dark' : 'Light'));
   const { messages, sendMessage, status, stop, error, regenerate } = useChat({ transport });
   const [draft, setDraft] = React.useState('');
@@ -42,12 +44,22 @@ export function App() {
     if (!busy && (document.activeElement === document.body || !document.activeElement)) focusComposer();
   }, [busy]);
 
-  // The conversation follows new content while the reader is at its end, and stays put once they scroll up.
-  const log = React.useRef<HTMLElement>(null);
-  const following = React.useRef(true);
+  // The window follows a reply as it grows, until the question that asked for it reaches the top: the question and
+  // the start of its reply stay in view together. Scrolling by hand stops the following until the next send.
+  const lastUser = messages.findLast((m) => m.role === 'user')?.id;
+  const following = React.useRef(false);
+  React.useEffect(() => {
+    following.current = true;
+    const stopFollowing = () => { following.current = false; };
+    addEventListener('wheel', stopFollowing, { passive: true });
+    addEventListener('touchmove', stopFollowing, { passive: true });
+    return () => { removeEventListener('wheel', stopFollowing); removeEventListener('touchmove', stopFollowing); };
+  }, [lastUser]);
   React.useLayoutEffect(() => {
-    const el = log.current;
-    if (el && following.current) el.scrollTop = el.scrollHeight;
+    const turn = lastUser && document.querySelector<HTMLElement>(`[data-message="${CSS.escape(lastUser)}"]`);
+    if (!turn || !following.current) return;
+    const top = turn.getBoundingClientRect().top + scrollY - parseFloat(getComputedStyle(turn).scrollMarginTop);
+    scrollTo({ top: Math.min(top, document.documentElement.scrollHeight - innerHeight) });
   });
 
   const note = (id: string) => (name: string, params: Record<string, unknown>) => {
@@ -81,7 +93,7 @@ export function App() {
           summary={`A chat whose replies can include screens that json-render builds from Lede. ${api ? `Replies come from ${api}.` : 'Replies come from a script, so it needs no network or key.'}`}
           actions={<SegmentedControl label="Appearance" size="sm" options={['Light', 'Dark']} value={scheme} onValueChange={(v) => setScheme(v as 'Light' | 'Dark')} />}
         />
-        <section ref={log} aria-label="Conversation" className="jrc-conversation" tabIndex={0} onScroll={(e) => { const el = e.currentTarget; following.current = el.scrollHeight - el.scrollTop - el.clientHeight < 48; }}>
+        <section aria-label="Conversation" className="jrc-conversation">
           {chat.length ? (
             <ol className="jrc-messages">
               {chat.map((m, i) => (
@@ -98,7 +110,7 @@ export function App() {
           )}
         </section>
         <div className="jrc-footer">
-          <p role="status" className="jrc-status">{statusText}</p>
+          <p role="status" className={status === 'error' ? 'jrc-status' : 'ld-sr-only'}>{statusText}</p>
           {status === 'error' ? <Button size="sm" onClick={() => void regenerate()}>Try again</Button> : null}
           <form ref={form} className="jrc-composer" onSubmit={(e) => { e.preventDefault(); send(draft); }}>
             <TextField
@@ -131,7 +143,6 @@ interface MessageProps {
 
 /** One turn: its author as a heading, its text and, where the reply has one, the screen its spec describes. */
 function Message({ message, live, notes, onAction }: MessageProps) {
-  const id = React.useId();
   const actions = React.useMemo<SpecActions>(() => ({
     open: (params) => onAction('open', params),
     archive: (params) => onAction('archive', params),
@@ -141,8 +152,8 @@ function Message({ message, live, notes, onAction }: MessageProps) {
   const parts = message.parts.flatMap((p) => (p.type === 'data' ? [{ type: `data-${p.name}`, data: p.data }] : []));
 
   return (
-    <li className="jrc-message" data-role={message.role}>
-      <h2 id={id} className="jrc-author">{message.author}</h2>
+    <li className="jrc-message" data-role={message.role} data-message={message.id}>
+      <h2 className="jrc-author">{message.author}</h2>
       {message.parts.map((part, i) => {
         if (part.type === 'data') return i === firstData ? <SpecView key="spec" parts={parts} streaming={live} actions={actions} /> : null;
         return part.text.trim() ? <p key={i} className="jrc-text">{part.text.trim()}</p> : null;

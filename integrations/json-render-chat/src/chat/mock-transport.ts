@@ -1,7 +1,7 @@
 import { pipeJsonRender, type Spec } from '@json-render/core';
 import type { ChatTransport, UIMessage, UIMessageChunk } from 'ai';
-import { specs } from '@json-render-lede/specs';
-import { toPatches } from '@json-render-lede/stream';
+import { specs } from '@/json-render/specs';
+import { toPatches } from '@/json-render/stream';
 
 interface Reply {
   text: string;
@@ -58,8 +58,12 @@ export function modelOutput(reply: Reply): string[] {
  */
 export class MockChatTransport implements ChatTransport<UIMessage> {
   private failed = new Set<RegExp>();
+  private delay: number;
 
-  constructor(private delay = 60) {}
+  /** `delay` is the pause before each chunk, in ms. Tests pass 0. */
+  constructor(delay = 60) {
+    this.delay = delay;
+  }
 
   async sendMessages({ messages, abortSignal }: Parameters<ChatTransport<UIMessage>['sendMessages']>[0]) {
     const prompt = textOf(messages.findLast((m) => m.role === 'user'));

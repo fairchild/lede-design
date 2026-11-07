@@ -1,5 +1,5 @@
 import { JSONUIProvider, Renderer, buildSpecFromParts } from '@json-render/react';
-import { registry, SpecHeadingLevel } from '@json-render-lede/registry';
+import { registry, SpecHeadingLevel } from '@/json-render/registry';
 
 /** The catalog actions a spec can run, each called with its params. */
 export type SpecActions = Partial<Record<'open' | 'archive' | 'submit', (params: Record<string, unknown>) => void>>;

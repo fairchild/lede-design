@@ -13,20 +13,23 @@ for bots on Slack, Teams and Discord, so it doesn't belong in a browser chat.
 
 ## Recipe
 
-1. Install the Lede items and the npm packages from step 1 of `README.md`. Lede is client-rendered and needs Tailwind v4,
-   because its tokens CSS uses `@theme` and `@custom-variant`. Import `styles/lede/index.css` once, after your
-   Tailwind import.
-2. Copy `../json-render/src/catalog.ts` and `../json-render/src/registry.tsx`. Keep their `@/components/lede/…`
-   imports. To change what a model may build, edit the catalog and the registry together. `../json-render/src/catalog-fit.ts`
-   fails `tsc` when a catalog prop isn't one the Lede component takes.
-3. Server: `streamText({ model, system: catalog.prompt({ mode: 'inline' }), messages: await convertToModelMessages(messages) })`,
-   then return `createUIMessageStreamResponse({ stream: pipeJsonRender(result.toUIMessageStream()) })`. Model:
-   `anthropic('claude-sonnet-5-5')`. The key is `ANTHROPIC_API_KEY` in the server's environment. `server/chat.ts`
-   is a working copy.
-4. Client: `useChat({ transport })`. Production uses `new DefaultChatTransport({ api: '/api/chat' })`. Development can
-   use `src/mock-transport.ts`, picked by `src/transport.ts` when `VITE_CHAT_API` is unset.
-5. In each assistant message, render text parts as text and pass `message.parts` to `src/spec-view.tsx`'s `SpecView`.
-6. Check it: run `tests/mock-transport.test.ts` (adapted to your script), then axe on the page with a reply showing.
+1. Follow “Build this in your app” in `README.md` step by step. It was run as written on a fresh create-vite
+   `react-ts` app, and `npm run build` passed. `scripts/copy-into.mjs` copies every file to the path its imports
+   expect (`src/json-render/`, `src/specs/`, `src/chat/`, `server/`), so imports need no rewriting: they use
+   `@/components/lede/…`, where `shadcn add` puts Lede, and `@/json-render/…`.
+2. To change what a model may build, edit `src/json-render/catalog.ts` and `registry.tsx` together.
+   `catalog-fit.ts` fails `tsc` when a catalog prop isn't one the Lede component takes.
+3. The server is `server/chat.ts`: `streamText({ model: anthropic('claude-sonnet-5-5'), system:
+   catalog.prompt({ mode: 'inline' }), messages: await convertToModelMessages(messages) })`, then
+   `createUIMessageStreamResponse({ stream: pipeJsonRender(result.toUIMessageStream({ onError })) })`. It exports
+   `handleChat(request)`, a fetch-style handler for any framework's route, and runs on its own under
+   `tsx --tsconfig tsconfig.server.json server/chat.ts`. The key is `ANTHROPIC_API_KEY` in the server's environment.
+4. The client picks its transport in `src/chat/transport.ts`: the scripted mock by default, or
+   `new DefaultChatTransport({ api })` when `VITE_CHAT_API` is set.
+5. In each assistant message, render its text parts first, then pass `message.parts` to `SpecView` in
+   `src/chat/spec-view.tsx`.
+6. Check it: `npm run build`, the mock test in `tests/mock-transport.test.ts` adapted to your script, then axe on
+   the page with a reply showing.
 
 ## Failure modes
 
@@ -41,7 +44,7 @@ Each one below broke this example while it was built, or was checked in the pack
 - `buildSpecFromParts` returns `null` until the first patch, and then a spec whose `root` is set before any element
   exists. Render only when `spec.elements[spec.root]` exists.
 - `JSONUIProvider` reads `initialState` once, when it mounts. Mount it after the `/state` patch arrives, or emit
-  `/state` before any element (as `toPatches` in `../json-render/src/stream.ts` does). Otherwise bound fields start
+  `/state` before any element (as `toPatches` in `src/json-render/stream.ts` does). Otherwise bound fields start
   empty.
 - `JSONUIProvider` keeps the `handlers` it mounted with. Pass handlers that don't close over changing state, such as
   ones that call a state setter with a function.
@@ -51,7 +54,7 @@ Each one below broke this example while it was built, or was checked in the pack
 **Validation**
 
 - `catalog.validate(spec)` checks the spec's shape and that each `type` is in the catalog. It doesn't parse props
-  against their Zod schemas. `../json-render/src/check.ts` adds that pass. Run it in tests and on any spec you store.
+  against their Zod schemas. `src/json-render/check.ts` adds that pass. Run it in tests and on any spec you store.
 - `Renderer` validates nothing. An unknown type draws the `fallback` prop, or nothing. A bad prop reaches the Lede
   component as it is. A component that throws is caught by a per-element error boundary and draws nothing.
 - Server rendering (`renderToString`, as in a test) has no error boundaries, so a throwing component fails the
@@ -67,8 +70,11 @@ Each one below broke this example while it was built, or was checked in the pack
 - Lede's TextField takes no `ref`. To focus the composer, query the `textarea` inside its `<form>`.
 - TextField's props are a union of input and textarea, so an inline `onChange` needs its event type written out:
   `(e: React.ChangeEvent<HTMLTextAreaElement>) => …`.
-- ListRow uses `transform` for its swipe, which puts rows above a `position: sticky` footer. Give the conversation a
-  scroll container of its own (`overflow-y: auto`) and keep the composer outside it.
+- ListRow uses `transform` for its swipe, which gives each row a stacking context. A `position: sticky` composer
+  needs `z-index: var(--z-tabbar)`, or rows scroll over it. Let the document scroll: a scroll container of the
+  conversation's own clips a tall screen inside a message.
+- Scrolling to the bottom on every chunk pushes the question out of view while a long reply streams. Follow the
+  reply until the question's turn reaches the top, and stop following when the person scrolls (`src/chat/Chat.tsx`).
 - A control that unmounts while focused, such as Stop when the reply ends or a row that an action hides, drops focus to
   `<body>`. Move focus to the composer, or to the next row, when that happens.
 - Announce a reply with a polite `role="status"` line, and don't move focus into new content.
@@ -82,3 +88,13 @@ Each one below broke this example while it was built, or was checked in the pack
   runtime, and a `.mjs` mapping loses the types.
 - With TypeScript's DOM lib, a `ReadableStream` isn't async-iterable. Read a transport's stream with `getReader()`.
 - `messages.findLast` needs `"lib": ["ES2023"]`.
+- create-vite's `tsconfig.app.json` sets `erasableSyntaxOnly`, which rules out constructor parameter properties
+  (`constructor(private delay = 60)` is TS1294), enums and namespaces. Declare the field and assign it.
+- It also sets `verbatimModuleSyntax`, so a type-only import needs `import type` or an inline `type`.
+- TypeScript 7 rejects `baseUrl` (TS5102). Write `paths` with `./`-relative targets and no `baseUrl`, in both
+  `tsconfig.json` and `tsconfig.app.json`; shadcn reads the first, `tsc -b` the second.
+- `tsconfig.app.json` includes only `src`, so `server/` isn't typechecked unless it has a tsconfig of its own.
+  `templates/tsconfig.server.json` is one; add it to `references` in `tsconfig.json`.
+- `toUIMessageStream()` sends a generic “An error occurred.” to the client unless you pass `onError`. The example
+  returns the error's message, which helps while you build; return something generic in production, since a
+  provider's message can name your account or model.
