@@ -40,7 +40,7 @@ interface Checks {
   /** Each field whose check held back an action, by name, with the browser's message for what it needs. */
   shown: ReadonlyMap<string, string>;
   show: (fields: Field[]) => void;
-  /** Called on a field's input: a field that now passes drops its error, and one that still fails keeps it. */
+  /** Called when a field's value changes: a field that now passes drops its error, and one that still fails keeps it. */
   recheck: (name: string, valid: boolean, message: string) => void;
 }
 const Checked = React.createContext<Checks | null>(null);
@@ -62,11 +62,21 @@ export function FieldChecks({ children }: { children: React.ReactNode }) {
   return <Checked.Provider value={checks}>{children}</Checked.Provider>;
 }
 
-/** A field's error, shown once its check holds back an action: the spec's `error`, or the browser's message without one. */
-function useFieldError(name: string | undefined, error: string | undefined) {
+/**
+ * A field's error, shown once its check holds back an action: the spec's `error`, or the browser's message without
+ * one. Each change to its value checks it again, whether the person typed it or an action or the stream set it.
+ */
+function useFieldError(name: string | undefined, error: string | undefined, value: unknown) {
   const checks = React.useContext(Checked);
+  const root = React.useContext(SpecRoot);
   const message = name === undefined ? undefined : checks?.shown.get(name);
-  return { error: message === undefined ? undefined : error || message, recheck: checks?.recheck };
+  const shown = message !== undefined;
+  React.useEffect(() => {
+    if (!shown || name === undefined) return;
+    const field = (root?.current ?? document).querySelector<Field>(`[name="${CSS.escape(name)}"]`);
+    if (field) checks?.recheck(name, field.validity.valid, field.validationMessage);
+  }, [value, shown, name, root, checks]);
+  return message === undefined ? undefined : error || message;
 }
 
 /**
@@ -150,7 +160,7 @@ const drawn = defineRegistry(catalog, {
       const [value, setValue] = useBoundProp(props.value, bindings?.value);
       const submit = on('submit');
       const checked = useCheckedEmit(emit);
-      const { error, recheck } = useFieldError(bindings?.value, props.error);
+      const error = useFieldError(bindings?.value, props.error, value);
       return (
         <TextField
           label={props.label}
@@ -172,7 +182,6 @@ const drawn = defineRegistry(catalog, {
           // A number field keeps a number in state, so a condition's gt and lt compare it.
           onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
             const input = e.currentTarget;
-            if (bindings?.value) recheck?.(bindings.value, input.validity.valid, input.validationMessage);
             setValue(props.type === 'number' && input.value !== '' ? (input as HTMLInputElement).valueAsNumber : input.value);
           }}
           onKeyDown={submit.bound && !props.rows ? (e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -187,7 +196,7 @@ const drawn = defineRegistry(catalog, {
     },
     Checkbox: ({ props, bindings, emit }) => {
       const [checked, setChecked] = useBoundProp(props.checked, bindings?.checked);
-      const { error, recheck } = useFieldError(bindings?.checked, props.error);
+      const error = useFieldError(bindings?.checked, props.error, checked);
       const errorId = React.useId();
       return (
         <div className="ld-field" data-invalid={error ? '' : undefined}>
@@ -200,12 +209,7 @@ const drawn = defineRegistry(catalog, {
               name={bindings?.checked}
               aria-describedby={error ? errorId : undefined}
               aria-invalid={error ? true : undefined}
-              onChange={(e) => {
-                const input = e.currentTarget;
-                if (bindings?.checked) recheck?.(bindings.checked, input.validity.valid, input.validationMessage);
-                setChecked(input.checked);
-                emit('change');
-              }}
+              onChange={(e) => { setChecked(e.currentTarget.checked); emit('change'); }}
             />
             <span className="ld-checkbox-label">{props.label}</span>
           </label>
@@ -216,7 +220,7 @@ const drawn = defineRegistry(catalog, {
     SegmentedControl: ({ props, bindings, emit }) => {
       const [value, setValue] = useBoundProp(props.value, bindings?.value);
       const errorId = React.useId();
-      const { error, recheck } = useFieldError(bindings?.value, props.error);
+      const error = useFieldError(bindings?.value, props.error, value);
       // Lede's SegmentedControl names its group with a hidden legend, for a screen where a heading beside it says what
       // it picks. A model's screen may have none, so the label shows here too, hidden from assistive tech, which
       // reads the legend. An error shows under it, as a TextField's does.
@@ -231,7 +235,7 @@ const drawn = defineRegistry(catalog, {
             required={props.required}
             aria-describedby={error ? errorId : undefined}
             aria-invalid={!!error}
-            onValueChange={(next) => { if (bindings?.value) recheck?.(bindings.value, true, ''); setValue(next); emit('change'); }}
+            onValueChange={(next) => { setValue(next); emit('change'); }}
           />
           {error ? <p id={errorId} className="ld-field-hint">{error}</p> : null}
         </div>

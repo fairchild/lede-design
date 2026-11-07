@@ -157,7 +157,9 @@ test('an action holds back while a field it reads fails, focus moves to that fie
   await expect(reply.getByRole('radio', { name: 'Low' })).toBeFocused();
   await expect(rows).toHaveCount(3);
 
+  await expect(reply.getByText('Choose a priority.')).toBeVisible();
   await reply.getByRole('radio', { name: 'High' }).check();
+  await expect(reply.getByText('Choose a priority.')).toBeHidden();
   await add.click();
   await expect(rows).toHaveCount(4);
   await expect(rows.last()).toContainText('Call the florist');

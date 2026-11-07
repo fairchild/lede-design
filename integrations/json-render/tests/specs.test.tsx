@@ -144,6 +144,22 @@ describe('the state of a screen that streams', () => {
     expect(store.get('/tasks')).toEqual([{ id: 'a' }]);
   });
 
+  test('a row the person switches on while the list streams keeps its switch, and every later row still arrives', () => {
+    const { store, sync } = specStore({});
+    sync({ tasks: [{ id: 'a', done: false }] });
+    store.set('/tasks/0/done', true);
+    sync({ tasks: [{ id: 'a', done: false }, { id: 'b', done: false }] });
+    sync({ tasks: [{ id: 'a', done: false }, { id: 'b', done: false }, { id: 'c', done: false }] });
+    expect(store.get('/tasks')).toEqual([{ id: 'a', done: true }, { id: 'b', done: false }, { id: 'c', done: false }]);
+  });
+
+  test('a value the person sets whole stays theirs below it too', () => {
+    const { store, sync } = specStore({});
+    store.set('/draft', { title: 'x' });
+    sync({ draft: { title: '' } });
+    expect(store.get('/draft/title')).toBe('x');
+  });
+
   test('a list the person adds to stays theirs, and the same state built again writes nothing', () => {
     const { store, sync } = specStore({ tasks: [{ id: 'a' }] });
     store.set('/tasks', [{ id: 'a' }, { id: 'mine' }]);

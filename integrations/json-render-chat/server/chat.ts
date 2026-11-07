@@ -47,7 +47,9 @@ export type Screens = z.infer<typeof screensSchema>;
  * The conversation as the model reads it. `convertToModelMessages` drops data parts, so without this the model never
  * sees the screens it sent, and a follow-up such as “turn off push” has nothing to refer to. Each reply's patches
  * become one text part, in the fenced form the inline prompt asks the model to write, with the state the person left
- * in that screen: what they typed and chose there reaches the model with their next message.
+ * in that screen: what they typed and chose there reaches the model with their next message. That state is the
+ * person's input, written into the assistant's turn, which a model trusts more than the user's. An app that wants the
+ * model to treat it as user input sends it as a part of the user's message instead.
  */
 const FENCE = '`'.repeat(3);
 

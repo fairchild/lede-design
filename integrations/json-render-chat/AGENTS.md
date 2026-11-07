@@ -33,6 +33,8 @@ for bots on Slack, Teams and Discord, so it doesn't belong in a browser chat.
    through `pipeJsonRender`. It exports `handleChat(request)`, a fetch-style handler for any framework's route, and
    runs on its own under `tsx --tsconfig tsconfig.server.json server/chat.ts`, where `pipeline` ends a response that
    fails without stopping the server. The key is `ANTHROPIC_API_KEY` in the server's environment.
+   The `screens` the client sends are the person's input, written into each earlier screen in the assistant's turn,
+   which a model trusts more than the user's; send them as a user part instead if the model should treat them as such.
    `tests/real.e2e.ts` drives this path with the AI SDK's `DefaultChatTransport` against a fake Anthropic.
 5. The client picks its transport in `src/chat/transport.ts`: the scripted mock by default, or
    `new DefaultChatTransport({ api })` when `VITE_CHAT_API` is set. Type the chat as

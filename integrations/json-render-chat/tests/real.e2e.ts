@@ -109,3 +109,30 @@ test('a field checks only what it says: a pattern holds back a short ZIP code, a
   await screen.getByRole('button', { name: 'Save' }).click();
   await expect(page.getByRole('list', { name: 'What you did here' })).toHaveText('You pressed Save.');
 });
+
+test('a row switched on while its list streams keeps its switch, and every later row still arrives', async ({ page }) => {
+  await ask(page, 'What’s left before the trip?');
+  const switches = page.locator('.jrc-screen').getByRole('switch');
+  await switches.first().click();
+  await expect(switches.first()).toBeChecked();
+  // With rows still to come, the switch went on before the list was whole.
+  expect(await switches.count()).toBeLessThan(5);
+  await expect(page.getByRole('button', { name: 'Stop' })).toBeHidden();
+  await expect(switches).toHaveCount(5);
+  await expect(switches.first()).toBeChecked();
+  await expect(switches.nth(1)).not.toBeChecked();
+});
+
+test('a control that leaves after the person has moved on doesn’t pull focus back into the screen', async ({ page }) => {
+  await ask(page, 'A quiz, please');
+  const screen = page.locator('.jrc-screen');
+  await expect(page.getByRole('button', { name: 'Stop' })).toBeHidden();
+  await screen.getByRole('button', { name: 'Check answers' }).focus();
+  await composer(page).focus();
+  // A click on the page's blank margin leaves focus on <body>, and the screen's control then goes without a press.
+  await page.mouse.click(5, 5);
+  await expect.poll(() => page.evaluate(() => document.activeElement === document.body)).toBe(true);
+  await screen.getByRole('button', { name: 'Check answers' }).evaluate((el) => (el as HTMLElement).click());
+  await expect(screen.getByRole('button', { name: 'Start over' })).toBeVisible();
+  expect(await page.evaluate(() => document.activeElement === document.body)).toBe(true);
+});

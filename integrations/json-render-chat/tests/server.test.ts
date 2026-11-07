@@ -60,6 +60,8 @@ test('the server starts, answers 404 off its route, refuses a body that is malfo
     expect((await fetch(`http://localhost:${port}/`)).status).toBe(404);
     const post = (body: string, type = 'application/json') => fetch(`http://localhost:${port}/api/chat`, { method: 'POST', headers: { 'content-type': type }, body });
     expect((await post('{}')).status).toBe(400);
+    const many = Array.from({ length: 201 }, (_, i) => ({ id: `u${i}`, role: 'user', parts: [{ type: 'text', text: 'x' }] }));
+    expect((await post(JSON.stringify({ messages: many }))).status).toBe(413);
     expect((await post('{"messages":[],"screens":{"a1":"x"}}')).status).toBe(400);
     expect((await post('{"messages":[]}', 'text/plain')).status).toBe(415);
     expect((await post(JSON.stringify({ messages: [{ id: 'u1', role: 'user', parts: [{ type: 'text', text: 'x'.repeat(1_100_000) }] }] }))).status).toBe(413);

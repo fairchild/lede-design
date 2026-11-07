@@ -72,14 +72,16 @@ const same = (a: unknown, b: unknown) => a === b || JSON.stringify(a) === JSON.s
 
 /**
  * The screen's state. A spec's state arrives as it streams; each value the person changes, by typing, a press or an
- * action, keeps their change, and the stream no longer writes it or anything under it. `sync` takes the spec's state
- * so far.
+ * action, keeps their change, and the stream no longer writes it or anything under it. A value the stream writes above
+ * one of theirs, such as a list that gains a row after they switched on an earlier one, still arrives, with their
+ * change written back on top. `sync` takes the spec's state so far.
  */
 export function specStore(initial: State = {}): { store: StateStore; sync: (state?: State) => void } {
   const inner = createStateStore(initial);
   const touched = new Set<string>();
   let sent = new Map(leaves(initial));
-  const theirs = (path: string) => [...touched].some((t) => path === t || path.startsWith(`${t}/`) || t.startsWith(`${path}/`));
+  const theirs = (path: string) => [...touched].some((t) => path === t || path.startsWith(`${t}/`));
+  const under = (path: string) => [...touched].filter((t) => t.startsWith(`${path}/`));
   const store: StateStore = {
     ...inner,
     set: (path, value) => { touched.add(path); inner.set(path, value); },
@@ -89,7 +91,8 @@ export function specStore(initial: State = {}): { store: StateStore; sync: (stat
     const next = new Map(leaves(state));
     const changed = [...next].filter(([path, value]) => !same(sent.get(path), value) && !theirs(path));
     sent = next;
-    if (changed.length) inner.update(Object.fromEntries(changed));
+    const kept = changed.flatMap(([path]) => under(path)).map((t) => [t, inner.get(t)] as const);
+    if (changed.length) inner.update(Object.fromEntries([...changed, ...kept]));
   };
   return { store, sync };
 }
