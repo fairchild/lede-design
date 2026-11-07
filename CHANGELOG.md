@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- `json-render`, titled SpecView, lets a model's reply be a Lede screen. It installs a json-render catalog of 12
+  Lede components for the model's prompt, a registry that draws each one, `check` for a spec's props and `SpecView`.
+  `integrations/json-render-chat` uses it in an AI SDK chat.
+- EmptyState's `headingLevel` takes 4.
+
 ## 0.4.0
 
 First public release. Lede is a design system for React, installed from its shadcn registry at
