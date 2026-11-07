@@ -1,7 +1,7 @@
 # Data table for Lede: proposal
 
 Status: agreed design for version 1, Oct 31, 2026; built Nov 1, 2026. The
-[amendment](#amendment-1-as-built-1-nov-2026) records where the build changed the API and why. Example data is neutral:
+[amendment](#amendment-1-as-built-nov-1-2026) records where the build changed the API and why. Example data is neutral:
 work items with an ID, title, status, assignee, due date and amount. Every outside fact links to a
 public source.
 
@@ -12,8 +12,8 @@ TanStack Table v9 is the foundation.
 ## Amendment 1: as built, Nov 1, 2026
 
 The build kept the proposal's shape: a real `<table>`, TanStack behind Lede's own
-types, Lede's selection model, one menu per table. Six code reviews, two reviews by the owner and the
-tests changed the API in the places below. Each change answers a case that review or testing found.
+types, Lede's selection model, one menu per table. Review and testing changed the API in the places below. Each
+change answers a case that review or testing found.
 
 ### API changes
 
@@ -147,7 +147,8 @@ major is absorbed inside the hook.
 
 ## Our measurement
 
-There was no published benchmark at the brief's sizes, so we measured. The harness:
+There was no published benchmark at the row counts of the draft, the first version of this proposal, so we
+measured. The harness:
 
 - **Variants:** a plain React `<table>` with memoized rows, TanStack Table v9.3.1 rendering the
   same markup and React Aria Components 1.22.1 `Table` with its documented defaults.
@@ -199,7 +200,7 @@ and TanStack 163 and 120. At 10,000 rows the two layouts were mixed. React Aria 
 
 ## Version 1 API
 
-### Changes from the brief's draft, and why
+### Changes from the draft, and why
 
 | Draft                                      | Proposal                                                                                                          | Why                                                                                                                                                 |
 | ------------------------------------------ | ----------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -428,7 +429,7 @@ const columns: Column<WorkItem>[] = [
       layout.
   - **Scroll:** the table scrolls sideways with the sticky first column.
 - **Density.** Row height and hit targets come from Lede's density (see Open questions: Lede has
-  two densities today, and the brief assumes three).
+  two densities today, and the draft assumes three).
 - **Tab order (version 1).** In each row, Tab reaches the checkbox, the row link, any cell
   controls and the actions menu, in that order.
   - At 50 rows a page that is about 200 tab stops, which is why the default page size should stay

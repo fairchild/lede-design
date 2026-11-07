@@ -3,10 +3,10 @@
 // `keyboard-paths.spec.ts` read it. The desktop project acts by keyboard and the phone project by touch, so the phone's
 // columns are the touch ones.
 //
-// A row the spec changes names the keyboard PR that builds it (`pending`), and its test is `test.fixme` until that PR
-// lands and deletes the marker. `FOCUS_PENDING=6 npm test -- tests/focus- tests/keyboard-paths` runs that PR's rows, which
-// fail until it lands, and `FOCUS_PENDING=all` runs every pending row. Every PR that adds a screen or an action adds its
-// rows here.
+// A row whose behavior isn't built yet says what it waits for (`pending`), and its test is `test.fixme` until the change
+// that builds it deletes the marker. `FOCUS_PENDING=all npm test -- tests/focus- tests/keyboard-paths` runs every pending
+// row, which fails until that change lands, and `FOCUS_PENDING=<text>` runs the rows whose reason contains the text.
+// Every change that adds a screen or an action adds its rows here.
 import { test, expect, type Locator, type Page } from '@playwright/test';
 import { expectLandsWithRows, expectNoBody, focusMoves, focusTrail, trailText, watchRows } from './focus-trail';
 
@@ -19,8 +19,8 @@ export interface Target { role: Role; name: string | RegExp; level?: number; in?
 export interface Spot { css: string; label: string; in?: Target; contains?: boolean }
 export type Where = Target | Spot;
 
-/** The keyboard PR that builds this, and how today differs from the spec. The row is `test.fixme` until then. */
-export type Pending = `keyboard PR ${number}: ${string}`;
+/** What the row waits for, and how today differs from the spec, such as `waits for Undo focus: focus stays on the notice`. The row is `test.fixme` until then. */
+export type Pending = `waits for ${string}: ${string}`;
 
 /** One value for both projects, or one each. */
 export type Each<T> = T | { desktop: T; phone: T };
@@ -342,7 +342,7 @@ export interface Action {
    * what today's code does too, so a pending row fails on its landing and doesn't time out here.
    */
   done?: (d: Driver) => Promise<void>;
-  /** Whether the row says the landing is in view. Arrivals always are; most actions leave scrolling to stage 4. */
+  /** Whether the row checks the landing is in view. Arrivals always do. An action's row checks it where the action scrolls to its landing. */
   inView?: boolean;
   /** The project the action exists on, when only one has it. */
   only?: Device;
@@ -1207,11 +1207,11 @@ export const ACTIONS: Action[] = [
 
 const DEVICES: Device[] = ['desktop', 'phone'];
 const RUN = process.env.FOCUS_PENDING;
-const runs = (reason: Pending) => RUN === 'all' || RUN === /^keyboard PR (\d+)/.exec(reason)![1];
+const runs = (reason: Pending) => RUN === 'all' || (!!RUN && reason.includes(RUN));
 
 /**
  * Declares one test that checks every part of a row that holds today, and one per pending reason that checks the parts
- * it names. A pending test is `test.fixme` with that reason, unless `FOCUS_PENDING` asks for its PR.
+ * it names. A pending test is `test.fixme` with that reason, unless `FOCUS_PENDING` asks for it.
  */
 export function rowTests<P extends string>(
   title: string,

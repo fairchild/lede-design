@@ -1,5 +1,5 @@
 import { useEffect, type ComponentType } from 'react';
-import { createBrowserRouter, Outlet, ScrollRestoration, useMatches, type Params } from 'react-router';
+import { createBrowserRouter, Outlet, ScrollRestoration, useLocation, useMatches, type Params } from 'react-router';
 // From `react-router/dom`, so a navigation can ask for `flushSync`.
 import { RouterProvider } from 'react-router/dom';
 import { LinkProvider } from '@lede/link';
@@ -40,8 +40,34 @@ function useDocumentTitle() {
   useEffect(() => { document.title = text ? `${text} · Lede` : 'Lede'; }, [text]);
 }
 
+/** The site's address. Every copy of the site, a preview's included, names the page there. */
+const SITE = 'https://lede.cloudcompute.com';
+
+/** Head elements the app adds and keeps up to date, found again by their selector. */
+function headElement(selector: string, tag: 'link' | 'meta', attributes: Record<string, string>) {
+  const found = document.head.querySelector(selector);
+  if (found) return found;
+  const el = document.createElement(tag);
+  for (const [name, value] of Object.entries(attributes)) el.setAttribute(name, value);
+  return document.head.appendChild(el);
+}
+
+/**
+ * Names the route as canonical, with `og:url`, as the title follows it. `index.html` has neither: a crawler that runs no
+ * script would read a static one as the home page's address on every deep link.
+ */
+function useCanonical() {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    const url = `${SITE}${pathname}`;
+    headElement('link[rel="canonical"]', 'link', { rel: 'canonical' }).setAttribute('href', url);
+    headElement('meta[property="og:url"]', 'meta', { property: 'og:url' }).setAttribute('content', url);
+  }, [pathname]);
+}
+
 function Root() {
   useDocumentTitle();
+  useCanonical();
   useFocusRestoration();
   return (
     <AppearanceRoot>

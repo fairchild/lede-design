@@ -121,6 +121,24 @@ test('Every page has its own document title', async ({ page }) => {
   await expect(page).toHaveTitle('Settings · Lede');
 });
 
+test('Each page names its own address as canonical, and keeps it in step after a link', async ({ page, request }) => {
+  // The shell every route serves names no address, so a crawler that runs no script finds no canonical at all.
+  const shell = await (await request.get('/components')).text();
+  expect(shell).not.toMatch(/rel="canonical"|property="og:url"/);
+  const canonical = page.locator('link[rel="canonical"]');
+  const ogUrl = page.locator('meta[property="og:url"]');
+  await page.goto('/');
+  await expect(canonical).toHaveAttribute('href', 'https://lede.cloudcompute.com/');
+  await page.goto('/components');
+  await expect(canonical).toHaveAttribute('href', 'https://lede.cloudcompute.com/components');
+  await expect(ogUrl).toHaveAttribute('content', 'https://lede.cloudcompute.com/components');
+  await page.getByRole('link', { name: 'Blocks' }).first().click();
+  await expect(page).toHaveURL(/\/blocks$/);
+  await expect(canonical).toHaveAttribute('href', 'https://lede.cloudcompute.com/blocks');
+  await expect(ogUrl).toHaveAttribute('content', 'https://lede.cloudcompute.com/blocks');
+  await expect(canonical).toHaveCount(1);
+});
+
 test('A work item’s tab is named for the item, and a missing one for its h1', async ({ page }) => {
   await page.goto('/app/work/WI-1001');
   const title = await page.getByRole('heading', { level: 1 }).textContent();
