@@ -1,6 +1,5 @@
 import * as React from 'react';
 import { useChat } from '@ai-sdk/react';
-import { buildSpecFromParts } from '@json-render/react';
 import { ThemeProvider } from '@/components/lede/theme-provider';
 import { Avatar } from '@/components/lede/avatar';
 import { Button } from '@/components/lede/button';
@@ -8,13 +7,14 @@ import { SegmentedControl } from '@/components/lede/segmented-control';
 import { TextField } from '@/components/lede/text-field';
 import { PageHeader } from '@/components/lede/blocks/page-header';
 import { catalog, type CatalogAction } from '@/components/lede/json-render/catalog';
+import { specFromParts } from '@/components/lede/json-render/patches';
 import { SpecView, type SpecHandlers } from '@/components/lede/json-render/spec-view';
 import { transport, chatApi } from './transport';
 import type { AppMessage } from './app-message';
 import { describe } from './describe';
+import { ASSISTANT } from './assistant';
 import './chat.css';
 
-const ASSISTANT = 'Daybook';
 const SUGGESTIONS = ['How’s my week?', 'What’s in my inbox?', 'Show my notification settings', 'Fail once'];
 const SCHEMES = ['System', 'Light', 'Dark'] as const;
 type Scheme = (typeof SCHEMES)[number];
@@ -118,7 +118,7 @@ export function Chat() {
     <ThemeProvider scheme={scheme === 'System' ? 'auto' : scheme === 'Dark' ? 'dark' : 'light'} surface="grouped" className="jrc-app">
       <main className="jrc-page">
         <PageHeader
-          title="Ask Daybook"
+          title={`Ask ${ASSISTANT}`}
           summary={chatApi ? `Replies come from ${chatApi}, and can bring a screen with them.` : 'Replies come from a script here, and can bring a screen with them.'}
           actions={<SegmentedControl label="Appearance" size="sm" options={[...SCHEMES]} value={scheme} onValueChange={(v) => setScheme(v as Scheme)} />}
         />
@@ -132,7 +132,6 @@ export function Chat() {
                   time={times[m.id]}
                   live={busy && i === messages.length - 1}
                   ending={m.id === failed ? 'failed' : endings[m.id]}
-                  failure={error?.message}
                   notes={notes[m.id] ?? []}
                   onNote={note}
                 />
@@ -161,7 +160,7 @@ export function Chat() {
               label="Message"
               rows={2}
               value={draft}
-              placeholder="Ask Daybook…"
+              placeholder={`Ask ${ASSISTANT}…`}
               onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setDraft(e.currentTarget.value)}
               onKeyDown={(e: React.KeyboardEvent<HTMLTextAreaElement>) => {
                 if (e.key === 'Escape' && busy) { e.preventDefault(); onStop(); }
@@ -185,14 +184,13 @@ interface TurnProps {
   time?: Date;
   live: boolean;
   ending?: Ending;
-  failure?: string;
   notes: string[];
   onNote: (id: string, text: string) => void;
 }
 
 /** One turn: its author and time as a heading, its text and then, when the reply has one, the screen its spec describes. */
-function Turn({ message, time, live, ending, failure, notes, onNote }: TurnProps) {
-  const spec = buildSpecFromParts(message.parts);
+function Turn({ message, time, live, ending, notes, onNote }: TurnProps) {
+  const spec = React.useMemo(() => specFromParts(message.parts), [message.parts]);
   const specRef = React.useRef(spec);
   specRef.current = spec;
   // json-render reads its handlers once, when the screen mounts, so these read the latest spec through a ref.
@@ -219,8 +217,15 @@ function Turn({ message, time, live, ending, failure, notes, onNote }: TurnProps
         {notes.length ? (
           <ul className="jrc-notes" aria-label="What you did here">{notes.map((n, i) => <li key={i}>{n}</li>)}</ul>
         ) : null}
-        {ending ? <p className="jrc-ending">{ending === 'stopped' ? 'You stopped this reply.' : `This reply failed: ${failure ?? 'unknown error'}`}</p> : null}
+        {ending && message.role === 'assistant' ? <Ending ending={ending} /> : null}
       </div>
+      {/* A reply that ends before it begins has no turn of its own, so its ending follows the question, outside it. */}
+      {ending && message.role === 'user' ? <Ending ending={ending} /> : null}
     </li>
   );
 }
+
+/** How a reply ended early. The status line above the composer says why a reply failed. */
+const Ending = ({ ending }: { ending: Ending }) => (
+  <p className="jrc-ending">{ending === 'stopped' ? 'You stopped this reply.' : 'This reply failed.'}</p>
+);

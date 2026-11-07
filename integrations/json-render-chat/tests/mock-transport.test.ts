@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import type { UIMessageChunk } from 'ai';
-import { buildSpecFromParts } from '@json-render/react';
+import { specFromParts } from '@/components/lede/json-render/patches';
 import { check } from '@/components/lede/json-render/check';
 import type { AppMessage } from '../src/chat/app-message';
 import { MockChatTransport } from '../src/chat/mock-transport';
@@ -16,7 +16,7 @@ export async function ask(transport: MockChatTransport, text: string) {
     chunks.push(value);
   }
   const text_ = chunks.flatMap((c) => (c.type === 'text-delta' ? [c.delta] : [])).join('');
-  const spec = buildSpecFromParts(chunks.filter((c) => c.type.startsWith('data-')) as Array<{ type: string; data: unknown }>);
+  const spec = specFromParts(chunks as Array<{ type: string; data?: unknown }>);
   return { chunks, text: text_, spec };
 }
 
@@ -48,4 +48,13 @@ test('“fail” fails once with an error chunk, then answers', async () => {
   const transport = new MockChatTransport(0);
   expect((await ask(transport, 'Fail once')).chunks.at(-1)).toMatchObject({ type: 'error' });
   expect((await ask(transport, 'Fail once')).chunks.at(-1)).toMatchObject({ type: 'finish' });
+});
+
+test('a reply that streams a list an item at a time builds the same spec on every render', async () => {
+  const { chunks } = await ask(new MockChatTransport(0), 'How’s my week?');
+  const paths = chunks.flatMap((c) => (c.type === 'data-spec' ? [(c.data as { patch: { path: string } }).patch.path] : []));
+  expect(paths).toContain('/state/meetings/2');
+  const parts = chunks as Array<{ type: string; data?: unknown }>;
+  const counts = [1, 2, 3].map(() => (specFromParts(parts)!.state as { meetings: unknown[] }).meetings.length);
+  expect(counts).toEqual([3, 3, 3]);
 });

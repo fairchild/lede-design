@@ -1,0 +1,18 @@
+I can set that up. Pick a restaurant and a time for Friday, and I'll request the table for 4.
+
+```spec
+{"op":"add","path":"/root","value":"screen"}
+{"op":"add","path":"/elements/screen","value":{"type":"Screen","props":{},"children":["header","details","time-section","contact","book"]}}
+{"op":"add","path":"/elements/header","value":{"type":"PageHeader","props":{"title":"Book a table","summary":"A table for 4 on Friday, November 13."},"children":[]}}
+{"op":"add","path":"/elements/details","value":{"type":"FormSection","props":{"legend":"Reservation","description":"Friday, November 13"},"children":["restaurant","party","notes"]}}
+{"op":"add","path":"/elements/restaurant","value":{"type":"TextField","props":{"label":"Restaurant","value":{"$bindState":"/booking/restaurant"},"placeholder":"Name or neighborhood","required":true},"children":[]}}
+{"op":"add","path":"/elements/party","value":{"type":"SegmentedControl","props":{"label":"Party size","options":["2 people","4 people","6 people"],"value":{"$bindState":"/booking/party"}},"children":[]}}
+{"op":"add","path":"/elements/notes","value":{"type":"TextField","props":{"label":"Notes for the restaurant","value":{"$bindState":"/booking/notes"},"placeholder":"Allergies, high chair, a birthday","rows":3},"children":[]}}
+{"op":"add","path":"/elements/time-section","value":{"type":"FormSection","props":{"legend":"Time"},"children":["time"]}}
+{"op":"add","path":"/elements/time","value":{"type":"SegmentedControl","props":{"label":"Time","options":["6:30 PM","7:00 PM","7:30 PM","8:00 PM"],"value":{"$bindState":"/booking/time"}},"children":[]}}
+{"op":"add","path":"/elements/contact","value":{"type":"FormSection","props":{"legend":"Contact"},"children":["phone","reminder"]}}
+{"op":"add","path":"/elements/phone","value":{"type":"TextField","props":{"label":"Phone","type":"tel","value":{"$bindState":"/booking/phone"},"hint":"The restaurant texts to confirm.","required":true},"children":[]}}
+{"op":"add","path":"/elements/reminder","value":{"type":"Switch","props":{"label":"Add to my calendar","checked":{"$bindState":"/booking/calendar"}},"children":[]}}
+{"op":"add","path":"/elements/book","value":{"type":"Button","props":{"label":"Request table","variant":"filled","block":true},"on":{"press":{"action":"submit","params":{"form":"booking","values":{"$state":"/booking"}}}},"children":[]}}
+{"op":"add","path":"/state/booking","value":{"restaurant":"","party":"4 people","time":"7:00 PM","notes":"","phone":"","calendar":true}}
+```

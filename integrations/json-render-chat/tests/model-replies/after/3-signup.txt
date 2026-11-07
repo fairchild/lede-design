@@ -1,0 +1,14 @@
+Sure. Fill in your name, email and a password, and you're set.
+
+```spec
+{"op":"add","path":"/root","value":"screen"}
+{"op":"add","path":"/elements/screen","value":{"type":"Screen","props":{},"children":["header","details","terms","create"]}}
+{"op":"add","path":"/elements/header","value":{"type":"PageHeader","props":{"title":"Create your account","summary":"It takes a minute, and you can change any of this later."},"children":[]}}
+{"op":"add","path":"/elements/details","value":{"type":"FormSection","props":{"legend":"Your details"},"children":["name","email","password"]}}
+{"op":"add","path":"/elements/name","value":{"type":"TextField","props":{"label":"Full name","value":{"$bindState":"/signup/name"},"required":true},"children":[]}}
+{"op":"add","path":"/elements/email","value":{"type":"TextField","props":{"label":"Email","type":"email","value":{"$bindState":"/signup/email"},"placeholder":"you@example.com","required":true},"children":[]}}
+{"op":"add","path":"/elements/password","value":{"type":"TextField","props":{"label":"Password","type":"password","value":{"$bindState":"/signup/password"},"hint":"At least 8 characters.","required":true},"children":[]}}
+{"op":"add","path":"/elements/terms","value":{"type":"Checkbox","props":{"label":"I agree to the terms of service","checked":{"$bindState":"/signup/terms"}},"children":[]}}
+{"op":"add","path":"/elements/create","value":{"type":"Button","props":{"label":"Create account","variant":"filled","block":true},"on":{"press":{"action":"submit","params":{"form":"signup","values":{"$state":"/signup"}}}},"children":[]}}
+{"op":"add","path":"/state/signup","value":{"name":"","email":"","password":"","terms":false}}
+```

@@ -103,7 +103,15 @@ export const { registry, handlers } = defineRegistry(catalog, {
     },
     SegmentedControl: ({ props, bindings, emit }) => {
       const [value, setValue] = useBoundProp(props.value, bindings?.value);
-      return <SegmentedControl label={props.label} options={props.options} value={value} onValueChange={(next) => { setValue(next); emit('change'); }} />;
+      // Lede's SegmentedControl names its group with a hidden legend, for a screen where a heading beside it says what
+      // it picks. A model's screen may have none, so the label shows here too, hidden from assistive tech, which
+      // reads the legend.
+      return (
+        <div className="ld-field">
+          <p className="ld-field-label" aria-hidden="true">{props.label}</p>
+          <SegmentedControl label={props.label} options={props.options} value={value} onValueChange={(next) => { setValue(next); emit('change'); }} />
+        </div>
+      );
     },
     FormSection: ({ props, children }) => <FormSection legend={props.legend} description={props.description}>{children}</FormSection>,
     EmptyState: ({ props, slots }) => (

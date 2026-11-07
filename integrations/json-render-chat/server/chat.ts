@@ -3,10 +3,10 @@ import { Readable } from 'node:stream';
 import { pathToFileURL } from 'node:url';
 import { anthropic } from '@ai-sdk/anthropic';
 import { pipeJsonRender, SPEC_DATA_PART_TYPE } from '@json-render/core';
-import { buildSpecFromParts } from '@json-render/react';
 import { convertToModelMessages, createUIMessageStreamResponse, streamText, type UIMessage } from 'ai';
 import { catalog, rules } from '@/components/lede/json-render/catalog';
-import { toPatches } from '@/components/lede/json-render/patches';
+import { ASSISTANT } from '../src/chat/assistant';
+import { specFromParts, toPatches } from '@/components/lede/json-render/patches';
 
 // The reference backend for the chat. `handleChat` is a fetch-style handler, so it drops into any framework's route
 // (Hono, a Next.js route handler, a Worker). Run this file and it serves POST /api/chat on port 4882, or on `PORT`,
@@ -15,7 +15,7 @@ import { toPatches } from '@/components/lede/json-render/patches';
 /** Inline mode asks the model for its prose first and then the spec as JSONL patches, in one text stream. */
 const system = catalog.prompt({
   mode: 'inline',
-  system: 'You are Daybook, the assistant in a calendar, inbox and settings app. Answer in a sentence or two, and add a screen when one helps the person act.',
+  system: `You are ${ASSISTANT}, the assistant in a calendar, inbox and settings app. Answer in a sentence or two, and add a screen when one helps the person act.`,
   customRules: rules,
 });
 
@@ -30,7 +30,7 @@ const FENCE = '`'.repeat(3);
 
 export function forModel(messages: UIMessage[]): UIMessage[] {
   return messages.map((message) => {
-    const spec = buildSpecFromParts(message.parts as Parameters<typeof buildSpecFromParts>[0]);
+    const spec = specFromParts(message.parts);
     if (!spec?.elements[spec.root]) return message;
     const parts = message.parts.filter((part) => part.type !== SPEC_DATA_PART_TYPE);
     return { ...message, parts: [...parts, { type: 'text', text: `\n\n${FENCE}spec\n${toPatches(spec).join('')}${FENCE}` }] };
@@ -54,7 +54,7 @@ export async function handleChat(request: Request): Promise<Response> {
     onError: ({ error }) => console.error(`Model call failed: ${reason(error)}`),
   });
   // json-render's transform lifts each JSONL patch line out of the text into a `data-spec` part, which the client
-  // reads with `buildSpecFromParts`. The prose stays as text parts, in order around it.
+  // reads with `specFromParts`. The prose stays as text parts, in order around it.
   // `onError` passes the provider's message, such as an invalid key, to the client. That suits development; in
   // production, return a generic message here and log the error.
   const stream = result.toUIMessageStream({ onError: reason });

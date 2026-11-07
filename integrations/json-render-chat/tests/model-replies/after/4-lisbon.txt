@@ -1,0 +1,13 @@
+Here's a two-day plan for Lisbon: Alfama and Belém on Saturday, then Sintra on Sunday. Tick off each stop as you go.
+
+```spec
+{"op":"add","path":"/root","value":"screen"}
+{"op":"add","path":"/elements/screen","value":{"type":"Screen","props":{},"children":["header","saturday","sunday"]}}
+{"op":"add","path":"/elements/header","value":{"type":"PageHeader","props":{"title":"Weekend in Lisbon","summary":"8 stops over two days, with Sintra as a day trip on Sunday."},"children":[]}}
+{"op":"add","path":"/elements/saturday","value":{"type":"ListGroup","props":{"title":"Saturday","summary":"Old town in the morning, Belém after lunch."},"repeat":{"statePath":"/saturday","key":"id"},"children":["saturday-stop"]}}
+{"op":"add","path":"/elements/saturday-stop","value":{"type":"ListRow","props":{"title":{"$item":"name"},"subtitle":{"$item":"note"},"value":{"$item":"time"},"checked":{"$bindItem":"done"}},"children":[]}}
+{"op":"add","path":"/state/saturday","value":[{"id":"s1","name":"Castelo de São Jorge","note":"Go early to beat the lines","time":"9:00 AM","done":false},{"id":"s2","name":"Alfama walk","note":"Down to the Sé cathedral","time":"11:00 AM","done":false},{"id":"s3","name":"Pastéis de Belém","note":"Take tram 15E","time":"1:30 PM","done":false},{"id":"s4","name":"Jerónimos Monastery","note":"Book tickets ahead","time":"2:30 PM","done":false}]}
+{"op":"add","path":"/elements/sunday","value":{"type":"ListGroup","props":{"title":"Sunday","summary":"Sintra by train, back for dinner in Bairro Alto."},"repeat":{"statePath":"/sunday","key":"id"},"children":["sunday-stop"]}}
+{"op":"add","path":"/elements/sunday-stop","value":{"type":"ListRow","props":{"title":{"$item":"name"},"subtitle":{"$item":"note"},"value":{"$item":"time"},"checked":{"$bindItem":"done"}},"children":[]}}
+{"op":"add","path":"/state/sunday","value":[{"id":"u1","name":"Train to Sintra","note":"From Rossio station, 40 minutes","time":"8:30 AM","done":false},{"id":"u2","name":"Pena Palace","note":"Timed entry","time":"10:00 AM","done":false},{"id":"u3","name":"Quinta da Regaleira","note":"The initiation well","time":"1:00 PM","done":false},{"id":"u4","name":"Dinner in Bairro Alto","note":"Fado at Tasca do Chico","time":"8:00 PM","done":false}]}
+```

@@ -31,7 +31,8 @@ for bots on Slack, Teams and Discord, so it doesn't belong in a browser chat.
    `new DefaultChatTransport({ api })` when `VITE_CHAT_API` is set. Type the chat as
    `useChat<AppMessage>`, where `AppMessage` is `UIMessage<unknown, { [SPEC_DATA_PART]: SpecDataPart }>`.
 6. In each assistant message, render its text parts first, then
-   `<SpecView spec={buildSpecFromParts(message.parts)} streaming={live} headingLevel={3} handlers={…} />`.
+   `<SpecView spec={specFromParts(message.parts)} streaming={live} headingLevel={3} handlers={…} />`, with
+   `specFromParts` from `components/lede/json-render/patches`, memoized on `message.parts`.
 7. Check it: `npm run build`, then the page in a browser with a reply showing: the question, the reply's text and then
    its screen, focus in the composer and axe clean. This repo's `tests/chat.e2e.ts` does that with Playwright.
 
@@ -81,6 +82,8 @@ event other than archive, flag and delete, add it to `rowEvent` in the catalog t
 json-render's own prompt tells a model to draw any list backed by a state array with `repeat`, and the model will. In
 this catalog, `repeat` goes on a ListGroup, with one ListRow child, and `rules` in `catalog.ts` (passed as
 `customRules` in `server/chat.ts`) says so: json-render's example would otherwise repeat Screen or PageHeader. The
+rules also say every control does something, since a model otherwise adds controls a spec can't act on, such as
+“Sort by”. The
 week reply in `src/chat/replies/week.json` is one.
 
 - Inside a repeat, `{ "$item": "title" }` in props reads the item's field, and `{ "$bindItem": "done" }` binds to it.
@@ -100,6 +103,11 @@ Each one below broke this example while it was built, or was checked in the pack
   `{ mode: 'inline' }`.
 - Without `pipeJsonRender` on the server, the patch lines arrive as plain text and the screen never draws. The
   client reads only `data-spec` parts.
+- `buildSpecFromParts` applies each patch's value in place, so a later patch such as `/state/items/0` writes into the
+  array an earlier patch carried, and the next build adds the items again: a list grows on every render. json-render's
+  prompt asks the model to stream arrays an item at a time, so every list a model sends hits this. Build with
+  `specFromParts`, which works on copies. `tests/model-replies.test.tsx` streams 16 replies a model wrote and checks
+  each list's rows appear once, render after render.
 - `buildSpecFromParts` returns `null` until the first patch, and then a spec whose `root` is set before any element
   exists. Render only when `spec.elements[spec.root]` exists.
 - `JSONUIProvider` reads `initialState` once, when it mounts. Mount it after the `/state` patch arrives, or emit
@@ -132,6 +140,9 @@ Each one below broke this example while it was built, or was checked in the pack
 - PageHeader is a screen's h1. In a spec the registry sets `focusOnMount={false}`, or it would take focus from the
   composer as each reply mounts. Under a message's author heading, pass `headingLevel={3}` to `SpecView`: the title
   becomes an h3 and its sections h4.
+- Lede's SegmentedControl names its group with a visually hidden legend, for screens where a heading beside it says
+  what it picks. A model's screen often has none, so the registry also shows the label above it, hidden from
+  assistive tech. Options still need to read on their own (“4 people”, not “4”).
 - Lede's TextField takes no `ref`. To focus the composer, query the `textarea` inside its `<form>`.
 - TextField's props are a union of input and textarea, so an inline `onChange` needs its event type written out:
   `(e: React.ChangeEvent<HTMLTextAreaElement>) => …`.

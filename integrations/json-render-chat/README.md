@@ -12,8 +12,8 @@ npm run build   # tokens, typecheck (app, server and tests), then the site
 npm test        # the mock and the server in Vitest, then the chat in a browser with Playwright and axe
 ```
 
-Try “how’s my week”, “show my notification settings”, “what’s in my inbox”, “help me sign up”, “any projects” or
-“fail”. The last one fails partway through once, and Try again then answers.
+Try “how’s my week”, “show my notification settings”, “what’s in my inbox”, “help me sign up”, “any projects”,
+“fail” or “offline”. The last two fail once, partway through or before a word arrives, and Try again then answers.
 
 ## Build this in your app
 
@@ -68,7 +68,9 @@ passed. Commands run in your app's folder, and `LEDE` is the path to a clone of 
    npm install -D tsx
    ```
 
-4. **Copy the chat.** Its files import Lede from `@/components/lede/…`, where step 2 put it, so they need no edits.
+4. **Copy the chat.** Its files import Lede from `@/components/lede/…`, where step 2 put it, so they build with no
+   edits. The assistant's name, Daybook, is `ASSISTANT` in `src/chat/assistant.ts`, which the page and the server's
+   prompt both read. The scripted replies in `src/chat/replies/` are sample data.
 
    ```bash
    cp -R $LEDE/integrations/json-render-chat/src/chat src/
@@ -82,6 +84,7 @@ passed. Commands run in your app's folder, and `LEDE` is the path to a clone of 
    | `src/chat/transport.ts` | The switch: the scripted mock, or `DefaultChatTransport` when `VITE_CHAT_API` is set |
    | `src/chat/mock-transport.ts` and `replies/*.json` | The scripted replies, which stream through `pipeJsonRender` like a model's |
    | `src/chat/app-message.ts` | `AppMessage`, a `UIMessage` whose data parts are json-render's spec patches |
+| `src/chat/assistant.ts` | `ASSISTANT`, the assistant's name |
 | `src/chat/describe.ts` | The words for each action's note, such as “You opened Venue review.” |
    | `server/chat.ts` | The backend: `handleChat`, a fetch-style handler for any framework's route |
    | `tsconfig.server.json` | Typechecks the server, which `tsconfig.app.json` leaves out |
@@ -93,10 +96,11 @@ passed. Commands run in your app's folder, and `LEDE` is the path to a clone of 
    mock. To check it by eye, take viewport screenshots: a full-page one draws the sticky composer where the window
    ended, partway down the page.
 
-6. **Use the real model.** Run the server, then the app pointed at it:
+6. **Use the real model.** Add a `server` script, then run the server and the app pointed at it:
 
    ```bash
-   ANTHROPIC_API_KEY=… npx tsx --tsconfig tsconfig.server.json server/chat.ts
+   npm pkg set scripts.server="tsx --tsconfig tsconfig.server.json server/chat.ts"
+   ANTHROPIC_API_KEY=… npm run server
    VITE_CHAT_API=/api/chat npm run dev
    ```
 
@@ -121,7 +125,7 @@ The key stays on the server. The browser only talks to `/api/chat`.
 
 The spec arrives as data parts. `catalog.prompt({ mode: 'inline' })` asks the model for its prose first and then the
 spec as JSONL patch lines, all in one text stream. On the server, json-render's `pipeJsonRender` lifts each patch line
-out of the text into a `data-spec` part. On the client, `buildSpecFromParts` applies the patches in order, so the
+out of the text into a `data-spec` part. On the client, `specFromParts` applies the patches in order, so the
 screen builds while the reply streams. json-render documents this path for the AI SDK. A tool would deliver the spec
 in one piece once the call ends.
 
@@ -142,6 +146,7 @@ screens it sent, and “turn off push” has nothing to refer to.
 | `templates/tsconfig.server.json` | The server's tsconfig for an app made with create-vite. |
 | `tests/mock-transport.test.ts` | Sends each scripted prompt through the mock and checks the spec against the catalog. |
 | `tests/describe.test.ts` | Checks each action's note, for literal params, params bound to state and rows drawn by repeat. |
+| `tests/model-replies.test.tsx` | Streams 16 replies a model wrote for 8 requests through the server's transform: each parses, passes the catalog and draws, with each list's rows once. |
 | `tests/server.test.ts` | Checks that the model sees earlier screens, then starts the server: its answers, and one log line per failed model call. |
 | `tests/chat.e2e.ts` | The chat in a browser: the order of a reply, an action's note, Stop, Escape, Try again, focus, the composer's scroll padding, spacing and axe. |
 

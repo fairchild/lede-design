@@ -107,6 +107,10 @@ To move to a later release, read the [CHANGELOG](CHANGELOG.md), change the versi
 The CLI's `owner/repo/item#tag` addresses don't work for Lede. `lede-theme` needs `lede.tokens.css`, which the build
 generates, and the `@lede/…` dependencies need a registry.
 
+For a chat whose replies hold Lede screens, on the AI SDK and json-render, follow
+[`integrations/json-render-chat`](integrations/json-render-chat/README.md). Its
+[`AGENTS.md`](integrations/json-render-chat/AGENTS.md) is the same recipe for a coding agent.
+
 ## Develop
 
 The docs site and Daybook run at http://localhost:5173 with `npm run dev`. Run `npm run build` before `npm test`.

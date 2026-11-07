@@ -72,3 +72,17 @@ test('a ListGroup that repeats over state draws one ListRow per item and passes 
   expect([...html.matchAll(/class="ld-row-title"[^>]*>([^<]*)</g)].map(([, t]) => t)).toEqual(['Venue review', 'Design critique']);
   expect(html.match(/<li\b/g)?.length).toBe(2);
 });
+
+test('a SegmentedControl shows its label, which Lede’s own control keeps for screen readers', () => {
+  const spec = {
+    root: 'screen',
+    state: { size: '4 people' },
+    elements: {
+      screen: { type: 'Screen', props: {}, children: ['size'] },
+      size: { type: 'SegmentedControl', props: { label: 'Party size', options: ['2 people', '4 people'], value: { $bindState: '/size' } }, children: [] },
+    },
+  } as unknown as (typeof specs)['Inbox'];
+  const html = renderToString(<SpecView spec={spec} />);
+  expect(html).toMatch(/<p class="ld-field-label" aria-hidden="true">Party size<\/p>/);
+  expect(html).toMatch(/<legend[^>]*>Party size<\/legend>/);
+});

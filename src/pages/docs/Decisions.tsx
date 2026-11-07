@@ -220,6 +220,7 @@ const GROUPS: Group[] = [
         heldBy: [
           <><Path to="scripts/check-registry.mjs" /> fails the item when a file it installs imports a component it doesn’t list.</>,
           <><Path to="registry/lede/json-render/catalog-fit.ts" /> and <Path to="integrations/json-render/tests/specs.test.tsx" />, which also checks each heading level <code>SpecView</code> takes, and the chat’s tests in <Path to="integrations/json-render-chat/tests/" />.</>,
+          <><Path to="integrations/json-render-chat/tests/model-replies.test.tsx" /> streams replies a model wrote from the chat’s prompt and fails on one that doesn’t parse, doesn’t pass the catalog, doesn’t draw or shows a list’s rows twice.</>,
         ],
       },
     ],

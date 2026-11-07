@@ -78,7 +78,7 @@ export const catalog = defineCatalog(schema, {
     SegmentedControl: {
       props: z.object({ label: text, options: z.array(text).min(2).max(5), value: text.optional() }),
       events: ['change'],
-      description: 'A choice of two to five options, such as a view or a period. They sit side by side, and stack on a narrow screen. Bind value with $bindState.',
+      description: 'A choice of two to five options, such as a view or a period. Its label shows above it. Give options that read on their own, such as “4 people” or “7:00 PM”. They sit side by side, and stack on a narrow screen. Bind value with $bindState.',
     },
     FormSection: {
       props: z.object({ legend: text, description: text.optional() }),
@@ -121,4 +121,5 @@ export const rules = [
   'Screen is the root of every spec, and there is one. PageHeader is its first child, and there is one.',
   'To list items from a state array, put repeat on a ListGroup, with one ListRow child that reads each item with $item.',
   'In action params, { "$item": "id" } is the item’s state path. To pass the value, write { "$template": "${id}" }.',
+  'Every control does something: it changes a setting, a value another element shows or a value an action sends, or it runs an action. A spec can’t sort or filter a list, so it has no sort or filter controls.',
 ];

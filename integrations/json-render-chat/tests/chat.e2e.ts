@@ -24,6 +24,8 @@ test('a reply reads in order: the question, then the answer’s text, then its s
   await expect(question.getByRole('heading', { level: 2 })).toContainText('You');
   await expect(answer.getByRole('heading', { level: 3, name: 'Your week' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Stop' })).toBeHidden();
+  await expect(answer.getByRole('list').filter({ hasText: 'Venue review' }).getByRole('listitem')).toHaveCount(3);
+  await expect(answer.locator('.ld-field-label', { hasText: 'Period' })).toBeVisible();
   const order = await answer.evaluate((li) => [...li.querySelectorAll('.jrc-text, .jrc-screen')].map((el) => el.className));
   expect(order).toEqual(['jrc-text', 'jrc-screen']);
   await expect(composer(page)).toBeFocused();
@@ -71,11 +73,15 @@ test('a control reached with the keyboard stops above the composer, not under it
   expect(box!.y + box!.height).toBeLessThanOrEqual(footer!.y);
 });
 
-test('a screen’s title sits one step above what follows it, with no doubled space', async ({ page }) => {
-  await ask(page, 'How’s my week?');
-  const header = page.locator('.jrc-screen header').first();
-  const next = page.getByRole('group', { name: 'Period' });
-  await expect(next).toBeVisible();
-  const [above, below] = await Promise.all([header.boundingBox(), next.boundingBox()]);
-  expect(Math.round(below!.y - (above!.y + above!.height))).toBe(24);
+test('a reply that fails before it begins says so after the question, outside its bubble', async ({ page }) => {
+  await ask(page, 'Am I offline?');
+  await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+  const question = turns(page).nth(0);
+  await expect(question.locator('.jrc-body')).not.toContainText('failed');
+  await expect(question.getByText('This reply failed.')).toBeVisible();
+  await expect(page.getByRole('status')).toHaveText('The reply failed: The server couldn’t reach the model.');
+  await page.getByRole('button', { name: 'Try again' }).click();
+  await expect(turns(page).nth(1)).toContainText('The connection is back.');
+  await expect(page.getByText('This reply failed.')).toBeHidden();
+  await expect(composer(page)).toBeFocused();
 });

@@ -11,15 +11,19 @@ import week from './replies/week.json';
 interface Reply {
   text: string;
   spec?: Spec;
-  /** Fails partway through the first time it's asked, and answers on a retry. */
-  failsOnce?: boolean;
+  /** Fails the first time it's asked, partway through or before a word arrives, and answers on a retry. */
+  failsOnce?: 'partway' | 'at once';
 }
 
 /** The scripted replies, matched in order by the first pattern the prompt contains. The last one always matches. */
 export const script: Array<{ match: RegExp; reply: Reply }> = [
   {
     match: /fail/i,
-    reply: { text: 'This reply fails partway through the first time, so you can see the error state.', failsOnce: true },
+    reply: { text: 'This reply fails partway through the first time, so you can see the error state.', failsOnce: 'partway' },
+  },
+  {
+    match: /offline/i,
+    reply: { text: 'The connection is back. This reply failed before it began the first time, as a server error does.', failsOnce: 'at once' },
   },
   {
     match: /week|calendar|schedule|meeting|busy/i,
@@ -87,6 +91,10 @@ export class MockChatTransport implements ChatTransport<AppMessage> {
     const model = new ReadableStream<UIMessageChunk>({
       start: (controller) => {
         controller.enqueue({ type: 'start' });
+        if (fails && reply.failsOnce === 'at once') {
+          controller.enqueue({ type: 'error', errorText: 'The server couldn’t reach the model.' });
+          return controller.close();
+        }
         controller.enqueue({ type: 'text-start', id: '1' });
       },
       pull: async (controller) => {
