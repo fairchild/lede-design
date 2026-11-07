@@ -1,4 +1,6 @@
-import type { ReactNode } from 'react';
+import { Fragment, useEffect, useLayoutEffect, type ReactNode } from 'react';
+import { useLocation } from 'react-router';
+import { focusLanding } from '@lede/input-modality';
 import { PageHeader } from '@lede/blocks/page-header';
 import { SummaryCard } from '@lede/blocks/summary-card';
 import { Disclosure } from '@lede/disclosure';
@@ -9,6 +11,9 @@ import { decisionCount } from './Decisions';
 import registry from '../../../registry.json';
 import { version } from '../../../package.json';
 import { CodeExample } from './CodeExample';
+import { REPO } from './DocsLayout';
+import { installSteps, type Block } from './readme-install';
+import readme from '../../../README.md?raw';
 
 const PRINCIPLES: Array<{ title: string; summary: string; rules: ReactNode[] }> = [
   {
@@ -65,10 +70,47 @@ const REGISTRY = `https://lede.cloudcompute.com/r/v${version}/{name}.json`;
 const INSTALL_CODE = `npx shadcn@latest registry add '@lede=${REGISTRY}'
 npx shadcn@latest add @lede/theme-provider @lede/data-table @lede/daily-brief @lede/inbox`;
 
+const README = `${REPO}#use-it-in-a-shadcn-project`;
+const STEPS = installSteps(readme);
+/** What each step's code shows, in order. A step the README adds later is named by its number. */
+const CODE_LABELS: Record<number, string[]> = { 2: ['CSS import'], 3: ['Import a component'], 4: ['Wrap your app', 'React Router adapter'] };
+
+/** README prose as the site writes it: code in `<code>`, links to the repo, and curly quotes outside code. */
+function inline(text: string): ReactNode[] {
+  return text.split(/(`[^`]+`|\[[^\]]+\]\([^)]+\))/).map((part, i) => {
+    if (part.startsWith('`')) return <code key={i}>{part.slice(1, -1)}</code>;
+    const link = part.match(/^\[([^\]]+)\]\(([^)]+)\)$/);
+    if (link) return <a key={i} href={/^https?:/.test(link[2]) ? link[2] : `${REPO}/blob/main/${link[2]}`}>{curly(link[1])}</a>;
+    return curly(part);
+  });
+}
+const curly = (text: string) => text.replace(/(^|[\s(])"/g, '$1“').replace(/"/g, '”').replace(/'/g, '’');
+
+function StepBlocks({ number, blocks, code }: { number: number; blocks: Block[]; code?: ReactNode }) {
+  let n = 0;
+  return blocks.map((block, i) => {
+    if (block.kind === 'text') return <p key={i}>{inline(block.text)}</p>;
+    if (code) return <Fragment key={i}>{code}</Fragment>;
+    const label = CODE_LABELS[number]?.[n] ?? `Step ${number} code${n ? ` ${n + 1}` : ''}`;
+    n += 1;
+    return <CodeExample key={i} label={label} language={block.language} code={block.code} defaultOpen />;
+  });
+}
+
 export function Overview() {
+  const { hash, key } = useLocation();
+  const toInstall = hash === '#install';
+  // A link to Install lands on its heading in the commit, as PageHeader does with the h1; the scroll waits a frame for
+  // the router's own.
+  useLayoutEffect(() => { if (toInstall && document.hasFocus()) focusLanding(document.getElementById('install')); }, [toInstall, key]);
+  useEffect(() => {
+    if (!toInstall) return undefined;
+    const frame = requestAnimationFrame(() => document.getElementById('install')?.scrollIntoView());
+    return () => cancelAnimationFrame(frame);
+  }, [toInstall, key]);
   return (
     <div className="ld-flow">
-      <PageHeader title="Lede" summary="A design system for React, installed from a shadcn registry. Every screen, section and row leads with its takeaway, and detail opens on request." />
+      <PageHeader focusOnMount={!toInstall} title="Lede" summary="A design system for React, installed from a shadcn registry. Every screen, section and row leads with its takeaway, and detail opens on request." />
       <section aria-labelledby="explore" className="docs-section docs-explore">
         <h2 id="explore" className="text-title-3">Explore</h2>
         <ul className="ld-summary-grid">
@@ -76,7 +118,7 @@ export function Overview() {
           <li><SummaryCard title="Components" figure={COMPONENTS} summary="Primitives on Base UI and native elements." href="/components" /></li>
           <li><SummaryCard title="Blocks" figure={BLOCKS} summary="Layouts and the larger parts of a screen." href="/blocks" /></li>
           <li><SummaryCard title="Layouts" figure={LAYOUTS.length} summary={LAYOUT_LINE} href="/layouts" /></li>
-          <li><SummaryCard title="Demo app" figure={FLOWS.length} summary={`Flows: ${listed(FLOWS)}.`} href="/app" /></li>
+          <li><SummaryCard title="Demo app" figure={FLOWS.length} summary={`Hero flows, whole screens built from blocks: ${listed(FLOWS)}.`} href="/app" /></li>
           <li><SummaryCard title="Decisions" figure={decisionCount} summary="How Lede is built and what keeps it that way." href="/decisions" /></li>
         </ul>
       </section>
@@ -90,9 +132,16 @@ export function Overview() {
         <p className="docs-actions"><Button variant="tinted" href="/decisions">Decisions: how Lede is built and checked</Button></p>
       </section>
       <section aria-labelledby="install" className="docs-section">
-        <h2 id="install" className="text-title-3">Install</h2>
-        <p className="docs-intro">Add Lede’s registry to your project, then add the items you need. The registry URL pins version {version}, and a release’s files never change. Each item brings in <code>lede-theme</code> and its other dependencies, and <code>@lede/theme-provider</code> stays in the list because your app wraps in it. Lede renders on the client only, so it suits a Vite app or another client-only React app. The README has the remaining steps.</p>
-        <CodeExample label="Install commands" language="shell" code={INSTALL_CODE} defaultOpen />
+        <h2 id="install" tabIndex={-1} className="text-title-3 docs-target">Install</h2>
+        <p className="docs-intro">Add Lede’s registry to your project, then add the items you need. The registry URL pins version {version}, and a release’s files never change. Lede renders on the client only, so it suits a Vite app or another client-only React app. The <a href={README}>README</a> lists what your project needs first and how to move to a later release.</p>
+        <ol className="docs-steps">
+          {STEPS.map((step) => (
+            <li key={step.number}>
+              {/* Step 1's code pins this build's version, which the README's copy repeats by hand. */}
+              <StepBlocks number={step.number} blocks={step.blocks} code={step.number === 1 ? <CodeExample label="Install commands" language="shell" code={INSTALL_CODE} defaultOpen /> : undefined} />
+            </li>
+          ))}
+        </ol>
       </section>
     </div>
   );

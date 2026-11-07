@@ -136,6 +136,40 @@ for (const route of ROUTES) {
   });
 }
 
+// At triple the text size on a 320px phone, every route still fits its width: a word longer than the line breaks, and a
+// control's label wraps inside the control, where a word too long for it would otherwise spill past its edge. A native
+// select draws its chosen option on one line, and the work list's sort option “Due, ascending” is wider than the screen
+// at this size, so that one cut on `/app/work` is the one allowed.
+async function inspectAt300(page: Page, route: string) {
+  const found = await page.evaluate(inspect);
+  const spilled = await page.evaluate(() => [...document.querySelectorAll<HTMLElement>('.ld-btn, .ld-bar-tool, .ld-bar-item, .ld-accent, .ld-switch')].flatMap((control) => {
+    if (!control.checkVisibility()) return [];
+    const box = control.getBoundingClientRect();
+    const text = document.createTreeWalker(control, NodeFilter.SHOW_TEXT);
+    let out = false;
+    for (let node = text.nextNode(); node && !out; node = text.nextNode()) {
+      if (node.parentElement?.closest('.ld-sr-only')) continue;
+      const range = document.createRange();
+      range.selectNodeContents(node);
+      out = [...range.getClientRects()].some((r) => r.width > 0 && (r.left < box.left - 1 || r.right > box.right + 1));
+    }
+    return out ? [`“${control.textContent?.trim().slice(0, 40)}” (${control.className}) spills past its edge`] : [];
+  }));
+  return { ...found, truncated: found.truncated.filter((t) => !(route === '/app/work' && t.startsWith('“Due, ascending” (select)'))), spilled };
+}
+for (const route of ROUTES) {
+  test(`${route} · at 300% text on a 320px phone, nothing scrolls sideways and nothing is cut off`, async ({ page, isMobile }) => {
+    test.skip(!isMobile, 'A phone is the narrow case.');
+    await atTextSize(page, 3);
+    await page.setViewportSize({ width: 320, height: 800 });
+    await settle(page, route, 3);
+    expect(await inspectAt300(page, route)).toEqual({ overflow: 0, overlaps: [], squeezed: [], clipped: [], truncated: [], spilled: [] });
+    if (!(await openPanels(page))) return;
+    await steady(page);
+    expect(await inspectAt300(page, route), 'with every panel open').toEqual({ overflow: 0, overlaps: [], squeezed: [], clipped: [], truncated: [], spilled: [] });
+  });
+}
+
 test('At 300% text on a phone, the workbench’s top bar wraps, shows its whole title and keeps every control on screen', async ({ page, isMobile }) => {
   test.skip(!isMobile, 'A phone is the narrow case.');
   await atTextSize(page, 3);

@@ -1,7 +1,6 @@
 @import "tailwindcss";
 /* Tailwind skips the files that CI's tiers 1 and 2 check without the whole suite (scripts/ci-tier.mjs): the Markdown
    the site doesn't render and tests/. A text-only or tests-only change can't add or drop a rule in the site's CSS. */
-@source not "../../README.md";
 @source not "../../CHANGELOG.md";
 @source not "../../CONTRIBUTING.md";
 @source not "../../CLAUDE.md";
@@ -22,6 +21,16 @@ html, body { margin: 0; background: var(--background-grouped); color: var(--fore
 .docs-mark-tile { fill: var(--primary); }
 .docs-mark-line { fill: var(--primary-foreground); }
 @media (forced-colors: active) { .docs-mark-tile { fill: CanvasText; } .docs-mark-line { fill: Canvas; } }
+/* The site's appearance and links out: in the sidebar on wide screens, at the page's foot on narrow ones. A link is a
+   line of footnote text, so it grows to `--size-hit-absolute-min` each way for a press. */
+.docs-footer { display: grid; gap: var(--space-3); }
+.docs-footer-links { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0 var(--space-4); font-size: var(--text-footnote-size); line-height: var(--text-footnote-line-height); }
+.docs-footer-links a { display: inline-flex; align-items: center; justify-content: center; min-height: var(--size-hit-absolute-min); min-width: var(--size-hit-absolute-min); }
+/* Its own box is the hit area, so the sidebar footer's overhang, which would reach the link on the line below, goes. */
+.ld-shell-footer .docs-footer-links a::after { content: none; }
+.docs-page-foot { margin-top: var(--space-8); padding-top: var(--space-4); border-top: 0.5px solid var(--border); }
+[data-theme$="-hc"] .docs-page-foot { border-top: 1px solid var(--input); }
+@media (width >= 56.25em) { .docs-page-foot { display: none; } }
 
 .docs-section { margin: 0 0 var(--space-8); }
 .docs-section > h2 { margin: 0 0 var(--space-1); overflow-wrap: break-word; }
@@ -36,10 +45,25 @@ html, body { margin: 0; background: var(--background-grouped); color: var(--fore
    its table while that table is on screen, never fixed over the next example. At the table's end it takes its own
    room below the last row rather than covering it. */
 .docs-section .ld-selection-bar { position: sticky; left: auto; right: auto; }
+/* A file named in prose links to it: the accent and an underline, so color isn't the only sign. */
+.docs-path, .docs-path code { color: var(--primary); }
+.docs-path { text-decoration: underline; text-underline-offset: 0.15em; }
 .docs-intro { margin: 0 0 var(--space-4); color: var(--muted-foreground); font-size: var(--text-subheadline-size); line-height: var(--text-subheadline-line-height); max-width: 68ch; }
 .docs-note { margin: var(--space-3) 0 0; }
+/* Install steps: the README's numbered steps, each its prose and then its code. */
+.docs-steps { margin: 0; padding-left: 1.4em; list-style: decimal; display: grid; gap: var(--space-6); font-size: var(--text-subheadline-size); line-height: var(--text-callout-line-height); }
+.docs-steps > li { min-width: 0; }
+.docs-steps > li > * + * { margin-top: var(--space-3); }
+.docs-steps p { margin: 0; max-width: 68ch; overflow-wrap: break-word; }
+.docs-steps > li::marker { font-weight: var(--weight-semibold); }
+/* A link inside a sentence takes the accent and an underline, so color isn't all that marks it. */
+:is(.docs-intro, .docs-steps, .docs-table caption) a { color: var(--primary); text-decoration: underline; text-underline-offset: 0.15em; }
+.docs-footer-links a { color: var(--primary); }
+.docs-steps p code { font-family: var(--font-mono); font-size: var(--text-code-size); }
 .docs-demo { display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: center; padding: var(--space-4); border-radius: var(--radius-lg); background: var(--card); }
 [data-theme$="-hc"] .docs-demo { box-shadow: 0 0 0 1px var(--input); }
+.docs-check { display: inline-flex; align-items: center; gap: var(--space-2); }
+.docs-usage { margin-top: var(--space-4); }
 .docs-demo-col { display: grid; gap: var(--space-4); align-items: stretch; }
 .docs-theme-panel { display: grid; gap: var(--space-4); padding: var(--space-4); border-radius: var(--radius-lg); }
 /* Code examples: one surface, the Disclosure's card, so a syntax color is measured against one background. */
@@ -67,7 +91,7 @@ html, body { margin: 0; background: var(--background-grouped); color: var(--fore
 /* Code in prose keeps to one line, so a name like `--radius` doesn't break at its hyphens. Where enlarged text leaves the
    window under `20em` of it, a long path would be wider than the line, so there it wraps. */
 :where(p, li, dd, td) > code { white-space: nowrap; }
-@media (width < 20em) { :where(p, li, dd, td) > code { white-space: normal; } }
+@media (width < 20em) { :where(p, li, dd, td) > code, .docs-regions code { white-space: normal; overflow-wrap: anywhere; } }
 /* Foundations: a token's name stays on one line, and a token table keeps room for its usage text. On a phone the table
    scrolls sideways instead. */
 .docs-table th[scope="row"] code { white-space: nowrap; }

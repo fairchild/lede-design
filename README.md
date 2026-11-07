@@ -1,7 +1,8 @@
 # <picture><source media="(prefers-color-scheme: dark)" srcset=".github/assets/mark-dark.png"><img alt="" src=".github/assets/mark-light.png" width="40" height="40" align="top"></picture> Lede
 
 Lede is a design system for React: components, blocks, layouts and hero flows, installed from a shadcn registry.
-Every screen, section and row leads with its takeaway, and detail opens on request.
+Every screen, section and row leads with its takeaway, and detail opens on request. The name is the journalist's word
+for a story's opening line, the one that tells the reader what matters.
 
 [Docs](https://lede.cloudcompute.com/) · [Daybook, the demo app](https://lede.cloudcompute.com/app) ·
 [Install](#use-it-in-a-shadcn-project) · [Changelog](CHANGELOG.md)
@@ -28,8 +29,9 @@ icons or assets.*
   StepIndicator, EmptyState, SelectionBar, AccentPicker and DataTable. DataTable is a `<table>` with sorting,
   selection, row links, row actions and optional cards for narrow containers, and `useServerRows` can fetch and cache
   its rows from a server.
-- **Hero flows**: DailyBriefFlow, InboxFlow (a message list and the open message), SettingsFlow with AppearanceFlow,
-  ProfileFlow and OnboardingFlow.
+- **Hero flows**: whole screens assembled from blocks. You pass data, hrefs and callbacks, and a flow fetches nothing
+  and imports no router: DailyBriefFlow, InboxFlow (a message list and the open message), SettingsFlow with
+  AppearanceFlow, ProfileFlow and OnboardingFlow.
 - **Theming**: `--primary` sets the accent, and `--radius` with `--radius-step` sets every corner except those of
   capsules and circles. A capsule is fully round except under ThemeProvider's `shape="square"`. ThemeProvider sets
   scheme, contrast, accent, shape, density and glass for a subtree. Put ThemeScope directly inside every portal,

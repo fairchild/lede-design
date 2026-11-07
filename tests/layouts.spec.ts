@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { test, expect, type Page } from '@playwright/test';
 import { WEEK_END, WORKSPACE_PROJECTS, WORKSPACE_STATS } from '../src/data/workspace';
 
@@ -19,17 +19,38 @@ async function openPreview(page: Page, title: string) {
 
 test('Layouts is one of five navigation places, and the demo stays reachable', async ({ page, isMobile }) => {
   await page.goto('/');
-  await expect(docsNav(page).getByRole('listitem')).toHaveText(['Overview', 'Foundations', 'Components', 'Blocks', 'Layouts']);
+  await expect(docsNav(page).getByRole('list').first().getByRole('listitem')).toHaveText(['Overview', 'Foundations', 'Components', 'Blocks', 'Layouts']);
   const footer = page.locator('.ld-shell-footer').getByRole('link', { name: 'Demo app' });
   if (isMobile) {
     await expect(footer).toBeHidden();
-    await page.getByRole('main').getByRole('link', { name: 'Demo app' }).click();
+    await page.locator('.docs-page-foot').getByRole('link', { name: 'Demo app' }).click();
   } else {
     await footer.click();
   }
   await expect(page).toHaveURL(/\/app$/);
   await page.goto('/layouts');
   await expect(docsNav(page).getByRole('link', { name: 'Layouts' })).toHaveAttribute('aria-current', 'page');
+});
+
+test('Decisions links each repo path it names to that file on GitHub', async ({ page }) => {
+  const { repository } = JSON.parse(readFileSync('package.json', 'utf8')) as { repository: { url: string } };
+  const files = `${repository.url.replace(/\.git$/, '')}/`;
+  await page.goto('/decisions');
+  const named = await page.locator('main code').evaluateAll((codes) => codes.map((code) => ({
+    text: code.textContent!,
+    href: code.parentElement instanceof HTMLAnchorElement ? code.parentElement.href : null,
+    // A Disclosure's summary sits in its button, where a link can't nest.
+    inButton: !!code.closest('button'),
+  })));
+  // A repo path by its shape, whether or not it exists: a folder with a slash, or a file with an extension.
+  const isPath = (text: string) => /^[\w.-]+(\/[\w.-]+)*\/?$/.test(text) && /\/|\.(md|json|ts|tsx|mjs|css)$/.test(text);
+  const paths = named.filter(({ text }) => isPath(text));
+  expect(paths.length).toBeGreaterThan(20);
+  expect(paths.filter(({ text }) => !existsSync(text)).map(({ text }) => text), 'missing from the repo').toEqual([]);
+  expect(paths.filter(({ href, inButton }) => !href && !inButton).map(({ text }) => text), 'unlinked').toEqual([]);
+  for (const { text, href } of paths.filter(({ href }) => href)) {
+    expect(href, text).toBe(`${files}${text.endsWith('/') ? 'tree' : 'blob'}/main/${text}`);
+  }
 });
 
 test('Overview counts what is there', async ({ page }) => {

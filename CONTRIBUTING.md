@@ -23,8 +23,9 @@ npm test
 `npm test` runs Playwright and axe on every route in all four themes, so run the build first. Use
 [conventional commits](https://www.conventionalcommits.org) (`feat:`, `fix:`, `chore:`).
 
-Changelog lines go in [CHANGELOG.md](CHANGELOG.md) under `## Unreleased`, and a breaking change or a rename says what
-a consumer has to change. A released section stays as it shipped, because it's the record of what that version did.
+In [CHANGELOG.md](CHANGELOG.md), add your lines under `## Unreleased` at the top, and create it if it isn't there. A
+release renames it to the version. A breaking change or a rename says what a consumer has to change, and a released
+section stays as it shipped, because it's the record of what that version did.
 
 A new or changed test or gate is shown failing once. Break the code it guards (a mutant), watch the check fail, put the
 code back and name the mutant in the pull request. A check seen only passing can pass whatever the code does.
@@ -49,8 +50,9 @@ Edit tokens in `tokens/tokens.json` (the CSS is generated from it), and list eve
 to `registryDependencies`.
 
 `npm run registry` also fails if a color has no pair or falls below its contrast floor. A new color token or
-`color-mix()` goes in `tokens/contrast.json`, with what it can sit on, and every pair meets its floor. In -hc, every rule
-that paints a control fill draws an `--input` edge, or `tokens/contrast.json` lists it as no control, with a reason.
+`color-mix()` goes in `tokens/contrast.json`, with what it can sit on, and every pair meets its floor. In the
+high-contrast themes (`light-hc` and `dark-hc`), every rule that paints a control fill draws an `--input` edge, or
+`tokens/contrast.json` lists it as no control, with a reason.
 `npm run contrast -- --report` prints every pair.
 
 The same command fails on a number or color in registry CSS that comes from no token. A choice is a token in

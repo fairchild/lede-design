@@ -11,7 +11,8 @@
 /* AppShell */
 .ld-shell { min-height: 100dvh; display: grid; grid-template-columns: 1fr; background: var(--background-grouped); color: var(--foreground); font-family: var(--font-sans); }
 .ld-shell-sidebar { display: none; }
-.ld-shell-main { min-width: 0; padding: var(--space-4) var(--space-4) calc(var(--size-control-lg) + var(--space-12)); outline: none; }
+/* A word wider than the page, as a long name can be at enlarged text, breaks to fit the line. */
+.ld-shell-main { min-width: 0; padding: var(--space-4) var(--space-4) calc(var(--size-control-lg) + var(--space-12)); outline: none; overflow-wrap: break-word; }
 /* A page title scrolled into view, as InboxFlow's is after an action, keeps the shell's top padding above it. */
 .ld-shell-main .ld-page-title { scroll-margin-top: var(--space-4); }
 /* Below the sidebar's breakpoint the tab bar floats over the page's foot, above the home indicator where there is one,
@@ -189,7 +190,7 @@
 .ld-step[data-state="done"] .ld-step-mark { background: color-mix(in srgb, var(--primary) 14%, transparent); color: var(--ld-primary-on-tint); }
 
 /* EmptyState */
-.ld-empty { display: grid; justify-items: center; gap: var(--space-2); padding: var(--space-12) var(--space-4); text-align: center; color: var(--muted-foreground); }
+.ld-empty { display: grid; justify-items: center; overflow-wrap: anywhere; gap: var(--space-2); padding: var(--space-12) var(--space-4); text-align: center; color: var(--muted-foreground); }
 .ld-empty-title { margin: 0; color: var(--foreground); }
 .ld-empty-text { margin: 0; max-width: var(--layout-measure-short-max-width); font-size: var(--text-subheadline-size); line-height: var(--text-subheadline-line-height); }
 .ld-empty-action { margin-top: var(--space-2); }
@@ -197,11 +198,6 @@
 /* SelectionBar */
 .ld-selection-bar { position: fixed; left: 0; right: 0; bottom: calc(var(--size-control-lg) + var(--space-8)); box-sizing: border-box; padding-inline: var(--space-2); display: flex; justify-content: center; z-index: var(--z-selection-bar); pointer-events: none; }
 .ld-selection-bar > * { pointer-events: auto; max-width: 100%; }
-/* When its parts don't fit on one line, the bar wraps them. One line is a capsule; more keep its ends' curve. */
-.ld-selection-bar .ld-bar {
-  flex-wrap: wrap; justify-content: center;
-  border-radius: calc(max(var(--size-hit-min), var(--text-subheadline-line-height)) / 2 + var(--space-1));
-}
 @media (width >= 56.25em) { .ld-selection-bar { bottom: var(--space-6); left: var(--layout-sidebar-width); } }
 .ld-selection-count { padding: 0 var(--space-3); font-size: var(--text-subheadline-size); line-height: var(--text-subheadline-line-height); font-weight: var(--weight-semibold); white-space: nowrap; }
 .ld-bar-tool-critical { color: var(--ld-destructive-on-tint); }
@@ -235,7 +231,7 @@
   width: var(--size-swatch); height: var(--size-swatch); border-radius: 999px;
   box-shadow: 0 0 0 var(--stroke-ring-offset) var(--card), 0 0 0 var(--ld-accent-ring) transparent;
 }
-.ld-accent-name { font-size: var(--text-footnote-size); line-height: var(--text-footnote-line-height); color: var(--muted-foreground); }
+.ld-accent-name { overflow-wrap: anywhere; text-align: center; font-size: var(--text-footnote-size); line-height: var(--text-footnote-line-height); color: var(--muted-foreground); }
 .ld-accent-input:checked ~ .ld-accent-swatch { box-shadow: 0 0 0 var(--stroke-ring-offset) var(--card), 0 0 0 var(--ld-accent-ring) var(--foreground); }
 .ld-accent-input:checked ~ .ld-accent-name { color: var(--foreground); font-weight: var(--weight-semibold); }
 .ld-accent-input:focus-visible ~ .ld-accent-swatch { outline: var(--stroke-ring) solid var(--ring); outline-offset: calc(var(--ld-accent-ring) + 1px); }
@@ -251,7 +247,8 @@
 .ld-inbox-row .ld-row-title { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; overflow-wrap: break-word; }
 /* An inbox row's subtitle previews the message, which holds the full text, so it keeps to one line at any text size. */
 @media (width < 20em) { .ld-inbox-row .ld-row-subtitle { white-space: nowrap; } }
-.ld-inbox-date { display: grid; justify-items: end; gap: var(--space-0_5); }
+/* At enlarged text a day's name can be wider than the room beside the title, so it breaks to fit. */
+.ld-inbox-date { display: grid; justify-items: end; gap: var(--space-0_5); overflow-wrap: anywhere; }
 .ld-inbox-count { padding: 0 var(--space-2); border-radius: var(--radius-capsule); background: var(--fill-control); color: var(--foreground); font-size: var(--text-footnote-size); line-height: var(--text-footnote-line-height); font-weight: var(--weight-semibold); }
 /* The outcome of the last action, and its Undo. It is a hit target tall with or without the action, so it holds still once
    Undo is used, and it wraps under larger text. The action's label lines up with the text when it wraps: the Button
@@ -316,6 +313,7 @@
 .ld-thread .ld-disc-head[data-panel-open] .ld-disc-summary { display: none; }
 @media (width < 20em) {
   .ld-thread .ld-disc-head { grid-template-columns: minmax(0, 1fr) auto; }
+  .ld-thread .ld-disc-meta { white-space: normal; }
   .ld-thread .ld-disc-summary { grid-row: 3; }
 }
 .ld-preview-card { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); }

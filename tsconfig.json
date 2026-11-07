@@ -15,7 +15,7 @@
     "noEmit": true,
     "types": ["vite/client", "node"],
     "baseUrl": ".",
-    "paths": { "@lede/*": ["registry/lede/*"], "@/*": ["src/*"] }
+    "paths": { "@lede/*": ["registry/lede/*"], "@/components/lede/*": ["registry/lede/*"], "@/*": ["src/*"] }
   },
   "include": ["src", "registry", "tests", "vite.config.ts", "playwright.config.ts"]
 }

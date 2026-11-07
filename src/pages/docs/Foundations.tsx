@@ -1,4 +1,5 @@
 import { useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { RouterLink } from '@/router-link';
 import { PageHeader } from '@lede/blocks/page-header';
 import { Disclosure } from '@lede/disclosure';
 import source from '../../../tokens/tokens.json';
@@ -99,13 +100,17 @@ export function Foundations() {
         title="Foundations"
         summary={`${colors.length} color tokens × ${tokens.color.themes.length} themes, ${styles.length} type styles and ${families.length} more token families`}
       />
+      <p className="docs-intro">
+        The four themes are <code>light</code>, <code>dark</code> and their high-contrast versions, <code>light-hc</code> and{' '}
+        <code>dark-hc</code>. The tables call the high-contrast pair -hc.
+      </p>
       {tokens.color.groups.map((group, i) => {
         const list = colors.filter((t) => t.group === group.id);
         return (
           <Disclosure key={group.id} title={group.name} summary={group.note} meta={String(list.length)} defaultOpen={i === 0} headingLevel={2}>
             <Scroll label={group.name}>
               <table className="docs-table docs-table-wide">
-                <caption>Swatches show the current theme. Change it in the demo app, under Settings → Appearance.</caption>
+                <caption>Swatches show the current theme. Change it with Automatic, Light or Dark at the foot of the sidebar or page, or in the demo app’s <RouterLink href="/app/settings/appearance">Settings → Appearance</RouterLink>.</caption>
                 <thead><tr><th scope="col">Swatch</th><th scope="col">Token</th><th scope="col">Usage</th></tr></thead>
                 <tbody>
                   {list.map((t) => (
