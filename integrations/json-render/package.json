@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "tokens": "node ../../scripts/build-tokens.mjs",
+    "tokens": "cd ../.. && node scripts/build-tokens.mjs",
     "dev": "npm run tokens && vite --port 4890",
     "build": "npm run tokens && tsc --noEmit && vite build",
     "test": "npm run tokens && vitest run"
