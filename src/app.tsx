@@ -1,5 +1,5 @@
 import { useEffect, type ComponentType } from 'react';
-import { createBrowserRouter, Outlet, ScrollRestoration, useMatches, type Params } from 'react-router';
+import { createBrowserRouter, Outlet, ScrollRestoration, useLocation, useMatches, type Params } from 'react-router';
 // From `react-router/dom`, so a navigation can ask for `flushSync`.
 import { RouterProvider } from 'react-router/dom';
 import { LinkProvider } from '@lede/link';
@@ -40,8 +40,22 @@ function useDocumentTitle() {
   useEffect(() => { document.title = text ? `${text} · Lede` : 'Lede'; }, [text]);
 }
 
+/** The site's address. Every copy of the site, a preview's included, names the page there. */
+const SITE = 'https://lede.cloudcompute.com';
+
+/** Points `index.html`'s canonical link and `og:url` at the route, as the title follows it. */
+function useCanonical() {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    const url = `${SITE}${pathname}`;
+    document.querySelector('link[rel="canonical"]')?.setAttribute('href', url);
+    document.querySelector('meta[property="og:url"]')?.setAttribute('content', url);
+  }, [pathname]);
+}
+
 function Root() {
   useDocumentTitle();
+  useCanonical();
   useFocusRestoration();
   return (
     <AppearanceRoot>

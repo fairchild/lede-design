@@ -335,7 +335,7 @@ test('a stale page coming back on screen in pages mode asks for its count again'
   assert.equal(t.counts.length, 2, 'the count, as old as the rows, is asked for again');
 });
 
-// ---- From the pre-review of this change -----------------------------------------------------------------------------
+// ---- From review of the fixes above ---------------------------------------------------------------------------------
 
 /** A plain offset server with `items` rows that gives its total on page 0 only. */
 const serveFirst = async (t: ReturnType<typeof setup>, items: number) => {

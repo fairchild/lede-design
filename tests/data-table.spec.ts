@@ -656,7 +656,8 @@ test.describe('DataTable', () => {
     }
   });
 
-  // Edge cases from the owner's review of 909e256, on /fixtures/data-table.
+  // Edge cases on /fixtures/data-table: selection while a new filter's rows load, cursor paging on reload, a change of
+  // page size, sorting by compare alone and density changes at runtime.
   const numbers = (page: Page, name: string) => page.getByRole('table', { name }).locator('tbody th[scope="row"]').allInnerTexts();
 
   // While a new filter's rows are on their way, the last view's rows are on screen; ticking them must do nothing.

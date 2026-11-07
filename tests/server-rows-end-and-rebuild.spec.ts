@@ -1,4 +1,5 @@
-// Findings from the data table's stage 8 review. Each test was shown failing before its fix.
+// The server-rows store at the end of a list and after a failed rebuild: finding the last page from a deep link, loading
+// more by offset and keeping the right count. Each test was shown failing before its fix.
 import { test } from '@playwright/test';
 import assert from 'node:assert/strict';
 import { ServerRowsStore, type ServerRowsConfig, type ServerRowsRequest } from '../registry/lede/blocks/server-rows-store';
