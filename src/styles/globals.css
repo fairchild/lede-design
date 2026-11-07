@@ -45,6 +45,9 @@ html, body { margin: 0; background: var(--background-grouped); color: var(--fore
    its table while that table is on screen, never fixed over the next example. At the table's end it takes its own
    room below the last row rather than covering it. */
 .docs-section .ld-selection-bar { position: sticky; left: auto; right: auto; }
+/* A file named in prose links to it: the accent and an underline, so color isn't the only sign. */
+.docs-path, .docs-path code { color: var(--primary); }
+.docs-path { text-decoration: underline; text-underline-offset: 0.15em; }
 .docs-intro { margin: 0 0 var(--space-4); color: var(--muted-foreground); font-size: var(--text-subheadline-size); line-height: var(--text-subheadline-line-height); max-width: 68ch; }
 .docs-note { margin: var(--space-3) 0 0; }
 /* Install steps: the README's numbered steps, each its prose and then its code. */

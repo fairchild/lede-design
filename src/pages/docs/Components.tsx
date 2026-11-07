@@ -130,7 +130,7 @@ export function Components() {
           <p className="m-0">Detail lives here.</p>
         </Disclosure>
       </Demo>
-      <Demo id="c-theme" item="theme-provider" title="ThemeProvider" summary="ThemeProvider sets the scheme, contrast, accent, shape, density and glass for a subtree. A nested provider inherits each of those it leaves unset except glass, and ThemeScope carries the theme into an overlay’s portal: open a row’s ••• menu in each panel to compare.">
+      <Demo id="c-theme" item="theme-provider" title="ThemeProvider" summary="ThemeProvider sets the scheme, contrast, accent, shape, density and glass (the translucent, blurred material of bars and toolbars) for a subtree. A nested provider inherits each of those it leaves unset except glass, and ThemeScope carries the theme into an overlay’s portal: open a row’s ••• menu in each panel to compare.">
         <div className="docs-demo-col">
           <ListGroup title="Page theme" summary="Set by the site" headingLevel={3}>
             <ListRow title="Weekly summary" subtitle="Follows your appearance settings" actions={ACTIONS} />
