@@ -1,21 +1,87 @@
 {
   "root": "screen",
-  "state": { "form": { "name": "Ada Lovelace", "email": "ada.example.com", "terms": false } },
+  "state": {
+    "tried": false,
+    "form": {
+      "name": "",
+      "email": "ada.example.com",
+      "terms": false
+    }
+  },
   "elements": {
-    "screen": { "type": "Screen", "props": {}, "children": ["header", "contact", "terms", "create"] },
+    "screen": {
+      "type": "Screen",
+      "props": {},
+      "children": [
+        "header",
+        "contact",
+        "terms",
+        "create"
+      ]
+    },
     "header": {
       "type": "PageHeader",
-      "props": { "title": "Create your account", "summary": "Two fields and you’re in. One of them needs a fix." },
+      "props": {
+        "title": "Create your account",
+        "summary": "Two fields and you’re in. The email needs a fix."
+      },
       "children": []
     },
     "contact": {
       "type": "FormSection",
-      "props": { "legend": "Contact details", "description": "We send your sign-in link to this address." },
-      "children": ["name", "email"]
+      "props": {
+        "legend": "Contact details",
+        "description": "We send your sign-in link to this address."
+      },
+      "children": [
+        "name",
+        "email"
+      ]
     },
     "name": {
       "type": "TextField",
-      "props": { "label": "Name", "required": true, "value": { "$bindState": "/form/name" } },
+      "props": {
+        "label": "Name",
+        "required": true,
+        "value": {
+          "$bindState": "/form/name"
+        },
+        "error": {
+          "$cond": {
+            "$and": [
+              {
+                "$state": "/tried"
+              },
+              {
+                "$state": "/form/name",
+                "not": true
+              }
+            ]
+          },
+          "$then": "Enter your name.",
+          "$else": ""
+        }
+      },
+      "on": {
+        "submit": [
+          {
+            "action": "setState",
+            "params": {
+              "statePath": "/tried",
+              "value": true
+            }
+          },
+          {
+            "action": "submit",
+            "params": {
+              "form": "signup",
+              "values": {
+                "$state": "/form"
+              }
+            }
+          }
+        ]
+      },
       "children": []
     },
     "email": {
@@ -26,19 +92,69 @@
         "required": true,
         "hint": "We never share it.",
         "error": "Enter an email address with an @, such as ada@example.com.",
-        "value": { "$bindState": "/form/email" }
+        "value": {
+          "$bindState": "/form/email"
+        }
+      },
+      "on": {
+        "submit": [
+          {
+            "action": "setState",
+            "params": {
+              "statePath": "/tried",
+              "value": true
+            }
+          },
+          {
+            "action": "submit",
+            "params": {
+              "form": "signup",
+              "values": {
+                "$state": "/form"
+              }
+            }
+          }
+        ]
       },
       "children": []
     },
     "terms": {
       "type": "Checkbox",
-      "props": { "label": "I agree to the terms of use", "checked": { "$bindState": "/form/terms" } },
+      "props": {
+        "label": "I agree to the terms of use",
+        "checked": {
+          "$bindState": "/form/terms"
+        }
+      },
       "children": []
     },
     "create": {
       "type": "Button",
-      "props": { "label": "Create account", "variant": "filled", "block": true },
-      "on": { "press": { "action": "submit", "params": { "form": "signup", "values": { "$state": "/form" } } } },
+      "props": {
+        "label": "Create account",
+        "variant": "filled",
+        "block": true
+      },
+      "on": {
+        "press": [
+          {
+            "action": "setState",
+            "params": {
+              "statePath": "/tried",
+              "value": true
+            }
+          },
+          {
+            "action": "submit",
+            "params": {
+              "form": "signup",
+              "values": {
+                "$state": "/form"
+              }
+            }
+          }
+        ]
+      },
       "children": []
     }
   }

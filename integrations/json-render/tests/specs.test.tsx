@@ -2,7 +2,7 @@ import { renderToString } from 'react-dom/server';
 import { describe, expect, test } from 'vitest';
 import { JSONUIProvider, Renderer, type ComponentRenderer } from '@json-render/react';
 import { SpecView } from '@/components/lede/json-render/spec-view';
-import { catalog } from '@/components/lede/json-render/catalog';
+import { catalog, functions } from '@/components/lede/json-render/catalog';
 import { registry } from '@/components/lede/json-render/registry';
 import { check } from '@/components/lede/json-render/check';
 import { specs } from '../src/specs';
@@ -85,4 +85,19 @@ test('a SegmentedControl shows its label, which Lede’s own control keeps for s
   const html = renderToString(<SpecView spec={spec} />);
   expect(html).toMatch(/<p class="ld-field-label" aria-hidden="true">Party size<\/p>/);
   expect(html).toMatch(/<legend[^>]*>Party size<\/legend>/);
+});
+
+test('a value computed in a repeat follows the state it reads', () => {
+  const at = (servings: string) => {
+    const spec = { ...specs.Recipe, state: { ...specs.Recipe.state, servings } };
+    const html = renderToString(<SpecView spec={spec} />);
+    return [...html.matchAll(/class="ld-row-value"[^>]*>([^<]*)</g)].map(([, t]) => t);
+  };
+  expect(at('4 people')).toEqual(['6', '400 g', '2', '1.5 tsp']);
+  expect(at('6 people')).toEqual(['9', '600 g', '3', '2.25 tsp']);
+});
+
+test('scale reads a number inside text, and shows the amount as it was when it has none', () => {
+  expect(functions.scale({ amount: 1.5, unit: 'tsp', from: 4, to: '2 people' })).toBe('0.75 tsp');
+  expect(functions.scale({ amount: 'a pinch', from: 4, to: 6 })).toBe('a pinch');
 });

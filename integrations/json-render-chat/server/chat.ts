@@ -5,7 +5,7 @@ import { anthropic } from '@ai-sdk/anthropic';
 import { pipeJsonRender, SPEC_DATA_PART_TYPE } from '@json-render/core';
 import { convertToModelMessages, createUIMessageStreamResponse, streamText, type UIMessage } from 'ai';
 import { catalog, rules } from '@/components/lede/json-render/catalog';
-import { ASSISTANT } from '../src/chat/assistant';
+import { ASSISTANT, DOMAIN } from '../src/chat/assistant';
 import { specFromParts, toPatches } from '@/components/lede/json-render/patches';
 
 // The reference backend for the chat. `handleChat` is a fetch-style handler, so it drops into any framework's route
@@ -15,7 +15,7 @@ import { specFromParts, toPatches } from '@/components/lede/json-render/patches'
 /** Inline mode asks the model for its prose first and then the spec as JSONL patches, in one text stream. */
 const system = catalog.prompt({
   mode: 'inline',
-  system: `You are ${ASSISTANT}, the assistant in a calendar, inbox and settings app. Answer in a sentence or two, and add a screen when one helps the person act.`,
+  system: `You are ${ASSISTANT}, the assistant in ${DOMAIN}. Answer in a sentence or two, and add a screen when one helps the person act.`,
   customRules: rules,
 });
 

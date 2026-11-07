@@ -1,4 +1,4 @@
-import { defineCatalog } from '@json-render/core';
+import { defineCatalog, type ComputedFunction } from '@json-render/core';
 import { schema } from '@json-render/react/schema';
 import { z } from 'zod';
 
@@ -6,6 +6,21 @@ const text = z.string();
 const tone = z.enum(['primary', 'critical']);
 const rowEvent = z.enum(['archive', 'flag', 'delete']);
 const inRepeat = 'Inside a repeat, pass the item’s id as { "$template": "${id}" }, since { "$item": "id" } in params is its state path.';
+
+const number = (value: unknown) => Number.parseFloat(String(value));
+const amount = new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 });
+
+/**
+ * Functions a spec calls with `{ "$computed": name, "args": { … } }`. SpecView hands them to json-render, and `rules`
+ * tells a model each one's args. Add one here and describe it in `rules`.
+ */
+export const functions = {
+  scale: ({ amount: value, from, to, unit }) => {
+    const scaled = (number(value) * number(to)) / number(from);
+    if (!Number.isFinite(scaled)) return String(value ?? '');
+    return unit ? `${amount.format(scaled)} ${String(unit)}` : amount.format(scaled);
+  },
+} satisfies Record<string, ComputedFunction>;
 
 /**
  * The Lede components a model may use. Each prop keeps the Lede component's own name and values, so a spec reads like
@@ -63,7 +78,8 @@ export const catalog = defineCatalog(schema, {
         required: z.boolean().optional(),
         rows: z.number().int().min(2).max(12).optional(),
       }),
-      description: 'A labeled text input. Bind value with $bindState. Word error as the fix, such as “Enter an email address with an @.” Set rows for text that runs past one line.',
+      events: ['submit'],
+      description: 'A labeled text input. Bind value with $bindState. Enter in a one-line field emits “submit”: bind it to what the form’s main Button does. Word error as the fix, such as “Enter an email address with an @.” Put an example in hint, not placeholder: a placeholder in the field reads as a value already entered. Set rows for text that runs past one line.',
     },
     Switch: {
       props: z.object({ label: text, checked: z.boolean().optional(), disabled: z.boolean().optional() }),
@@ -105,9 +121,10 @@ export const catalog = defineCatalog(schema, {
     archive: { params: z.object({ id: text }), description: `Archive an item by its id. ${inRepeat}` },
     submit: {
       params: z.object({ form: text, values: z.record(z.string(), z.unknown()).optional() }),
-      description: 'Send the named form. Pass what the person entered as values, read from state: { "$state": "/signup" }.',
+      description: 'Send the named form. Pass what the person entered as values, read from state: { "$state": "/signup" }. It doesn’t send while a required field is empty or an email or URL field doesn’t hold one: focus moves to that field instead.',
     },
   },
+  functions,
 });
 
 export type CatalogType = keyof typeof catalog.data.components;
@@ -121,5 +138,7 @@ export const rules = [
   'Screen is the root of every spec, and there is one. PageHeader is its first child, and there is one.',
   'To list items from a state array, put repeat on a ListGroup, with one ListRow child that reads each item with $item.',
   'In action params, { "$item": "id" } is the item’s state path. To pass the value, write { "$template": "${id}" }.',
+  'To show a value worked out from others, use { "$computed": "scale", "args": { "amount": …, "from": …, "to": …, "unit": … } }. It returns amount × to ÷ from as text, with unit after it, such as “300 g”. Each arg can be a literal, { "$state": … } or { "$item": … }, and a number inside text, such as “6 people”, counts as 6.',
+  'To check a field when its form is sent, add a setState of /tried to true before submit in the Button’s press and the field’s submit, and set the field’s error with $cond, such as { "$cond": { "$and": [{ "$state": "/tried" }, { "$state": "/timer/minutes", "not": true }] }, "$then": "Enter the minutes from the package.", "$else": "" }. Mark the field required, so the form doesn’t send while it is empty.',
   'Every control does something: it changes a setting, a value another element shows or a value an action sends, or it runs an action. A spec can’t sort or filter a list, so it has no sort or filter controls.',
 ];

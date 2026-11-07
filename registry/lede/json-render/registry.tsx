@@ -73,8 +73,9 @@ export const { registry, handlers } = defineRegistry(catalog, {
         {props.label}
       </Button>
     ),
-    TextField: ({ props, bindings }) => {
+    TextField: ({ props, bindings, on }) => {
       const [value, setValue] = useBoundProp(props.value, bindings?.value);
+      const submit = on('submit');
       return (
         <TextField
           label={props.label}
@@ -86,6 +87,9 @@ export const { registry, handlers } = defineRegistry(catalog, {
           rows={props.rows}
           value={value ?? ''}
           onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setValue(e.currentTarget.value)}
+          onKeyDown={submit.bound && !props.rows ? (e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+            if (e.key === 'Enter' && !e.nativeEvent.isComposing) { e.preventDefault(); submit.emit(); }
+          } : undefined}
         />
       );
     },

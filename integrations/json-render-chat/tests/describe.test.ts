@@ -9,7 +9,7 @@ test('a literal param picks the element, and its title names it', () => {
   expect(describe(inbox as Spec, 'open', { id: 'm1' })).toBe('You opened Grace Hopper.');
 });
 
-test('a param bound to state arrives as its value, and the element is still found', () => {
+test('a param bound to state arrives as its value, and of a field and a button that send one form, the button names it', () => {
   expect(describe(signup as Spec, 'submit', { form: 'signup', values: { name: 'Ada Lovelace' } }, 'wrong')).toBe('You pressed Create account.');
 });
 

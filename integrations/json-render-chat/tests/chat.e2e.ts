@@ -85,3 +85,22 @@ test('a reply that fails before it begins says so after the question, outside it
   await expect(page.getByText('This reply failed.')).toBeHidden();
   await expect(composer(page)).toBeFocused();
 });
+
+test('a form sends only when its fields pass, from Enter in a field as from its button, and the button names it', async ({ page }) => {
+  await ask(page, 'Help me sign up');
+  const reply = turns(page).nth(1);
+  const notes = reply.getByRole('list', { name: 'What you did here' });
+  const [name, email] = [reply.getByRole('textbox', { name: 'Name' }), reply.getByRole('textbox', { name: 'Email' })];
+  await expect(page.getByRole('button', { name: 'Stop' })).toBeHidden();
+  await name.press('Enter');
+  await expect(name).toBeFocused();
+  await expect(reply.getByText('Enter your name.')).toBeVisible();
+  await name.fill('Ada Lovelace');
+  await name.press('Enter');
+  await expect(email).toBeFocused();
+  await expect(notes).toHaveCount(0);
+  await email.fill('ada@example.com');
+  await email.press('Enter');
+  await expect(notes).toHaveText('You pressed Create account.');
+  await expect(reply.getByText('Enter your name.')).toBeHidden();
+});

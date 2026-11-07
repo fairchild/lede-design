@@ -269,7 +269,7 @@ const GROUPS: Group[] = [
         heldBy: [
           <>The <code>integrations</code> job in <Path to=".github/workflows/ci.yml" />, which runs each entry’s <code>npm run build</code> and <code>npm test</code>.</>,
           <>For json-render, <Path to="registry/lede/json-render/catalog-fit.ts" /> fails the typecheck on a catalog prop its Lede component doesn’t take, and <Path to="integrations/json-render/tests/specs.test.tsx" /> fails on a recorded spec with a type the registry can’t draw or a prop its schema rejects.</>,
-          <>The chat entry uses the same item. <Path to="integrations/json-render-chat/tests/mock-transport.test.ts" /> fails when the spec a scripted reply builds doesn’t pass the catalog, <Path to="integrations/json-render-chat/tests/server.test.ts" /> starts the server and checks that the model sees its earlier screens, and <Path to="integrations/json-render-chat/tests/chat.e2e.ts" /> drives the chat in a browser: a reply’s order, focus, Stop, Escape, Try again and axe.</>,
+          <>The chat entry uses the same item. <Path to="integrations/json-render-chat/tests/mock-transport.test.ts" /> fails when the spec a scripted reply builds doesn’t pass the catalog, <Path to="integrations/json-render-chat/tests/server.test.ts" /> starts the server and checks that the model sees its earlier screens, and <Path to="integrations/json-render-chat/tests/chat.e2e.ts" /> drives the chat in a browser: a reply’s order, focus, Stop, Escape, Try again, a form that doesn’t send while a field fails and axe.</>,
         ],
       },
     ],

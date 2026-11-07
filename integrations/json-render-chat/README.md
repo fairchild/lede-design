@@ -69,8 +69,9 @@ passed. Commands run in your app's folder, and `LEDE` is the path to a clone of 
    ```
 
 4. **Copy the chat.** Its files import Lede from `@/components/lede/…`, where step 2 put it, so they build with no
-   edits. The assistant's name, Daybook, is `ASSISTANT` in `src/chat/assistant.ts`, which the page and the server's
-   prompt both read. The scripted replies in `src/chat/replies/` are sample data.
+   edits. Who the assistant is lives in `src/chat/assistant.ts`: its name, Daybook, what it helps with and the prompts
+   an empty chat offers. The page and the server's prompt both read it, so that file is the one to change. The
+   scripted replies in `src/chat/replies/` and the patterns in `mock-transport.ts` that pick them are sample data.
 
    ```bash
    cp -R $LEDE/integrations/json-render-chat/src/chat src/
@@ -84,8 +85,8 @@ passed. Commands run in your app's folder, and `LEDE` is the path to a clone of 
    | `src/chat/transport.ts` | The switch: the scripted mock, or `DefaultChatTransport` when `VITE_CHAT_API` is set |
    | `src/chat/mock-transport.ts` and `replies/*.json` | The scripted replies, which stream through `pipeJsonRender` like a model's |
    | `src/chat/app-message.ts` | `AppMessage`, a `UIMessage` whose data parts are json-render's spec patches |
-| `src/chat/assistant.ts` | `ASSISTANT`, the assistant's name |
-| `src/chat/describe.ts` | The words for each action's note, such as “You opened Venue review.” |
+   | `src/chat/assistant.ts` | Who the assistant is: its name, what it helps with and the suggested prompts |
+   | `src/chat/describe.ts` | The words for each action's note, such as “You opened Venue review.” |
    | `server/chat.ts` | The backend: `handleChat`, a fetch-style handler for any framework's route |
    | `tsconfig.server.json` | Typechecks the server, which `tsconfig.app.json` leaves out |
 

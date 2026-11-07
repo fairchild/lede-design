@@ -83,8 +83,7 @@ json-render's own prompt tells a model to draw any list backed by a state array 
 this catalog, `repeat` goes on a ListGroup, with one ListRow child, and `rules` in `catalog.ts` (passed as
 `customRules` in `server/chat.ts`) says so: json-render's example would otherwise repeat Screen or PageHeader. The
 rules also say every control does something, since a model otherwise adds controls a spec can't act on, such as
-“Sort by”. The
-week reply in `src/chat/replies/week.json` is one.
+“Sort by”. The week reply in `src/chat/replies/week.json` is one.
 
 - Inside a repeat, `{ "$item": "title" }` in props reads the item's field, and `{ "$bindItem": "done" }` binds to it.
 - In action params, `{ "$item": "id" }` is the item's state path, such as `/meetings/0/id`, which suits `setState`.
@@ -92,6 +91,61 @@ week reply in `src/chat/replies/week.json` is one.
 - A row drawn by repeat has its title in state, so `describe()` names it from the control that ran the action.
 - `{ "$state": "/form" }` in params passes the value at that path when the action runs, after any change the same
   press made. The sign-up reply's `submit` sends its form that way.
+
+## Compute and validate
+
+A value worked out from others, such as an amount that follows the servings, comes from a function the spec calls
+with `$computed`. A check on a form comes from `$cond` on the field's `error` and from `required`, which keeps the
+form from sending. Both are in `rules`, so a model writes them too.
+
+**Computed values.** `functions` in `components/lede/json-render/catalog.ts` holds the functions a spec may call, and
+`SpecView` hands them to json-render. Lede ships `scale`: `amount × to ÷ from`, as text, with `unit` after it. Each arg
+can be a literal, `$state` or `$item`, and a number inside text counts, so a SegmentedControl's “6 people” is 6. The
+recipe in `integrations/json-render/specs/recipe.json` draws its ingredients with it:
+
+```json
+"servings": { "type": "SegmentedControl", "props": { "label": "Serves", "options": ["2 people", "4 people", "6 people"], "value": { "$bindState": "/servings" } }, "children": [] },
+"list": { "type": "ListGroup", "props": { "title": "Ingredients" }, "repeat": { "statePath": "/ingredients", "key": "id" }, "children": ["ingredient"] },
+"ingredient": {
+  "type": "ListRow",
+  "props": {
+    "title": { "$item": "name" },
+    "value": { "$computed": "scale", "args": { "amount": { "$item": "amount" }, "unit": { "$item": "unit" }, "from": { "$state": "/recipe/serves" }, "to": { "$state": "/servings" } } }
+  },
+  "children": []
+}
+```
+
+At “6 people”, 400 g of a recipe that serves 4 reads “600 g”. To add a function, add it to `functions` and describe
+its args in `rules`: json-render's prompt lists the names of the catalog's functions but not what they take. A name
+that isn't in `functions` draws nothing, with one console warning.
+
+**Checks when a form is sent.** The field's `error` reads state through `$cond`, and the press that sends the form
+first sets `/tried`, so the error shows only after a try. The sign-up reply, `src/chat/replies/signup.json`, does
+this for its Name:
+
+```json
+"name": {
+  "type": "TextField",
+  "props": {
+    "label": "Name", "required": true, "value": { "$bindState": "/form/name" },
+    "error": { "$cond": { "$and": [{ "$state": "/tried" }, { "$state": "/form/name", "not": true }] }, "$then": "Enter your name.", "$else": "" }
+  },
+  "on": { "submit": [
+    { "action": "setState", "params": { "statePath": "/tried", "value": true } },
+    { "action": "submit", "params": { "form": "signup", "values": { "$state": "/form" } } }
+  ] },
+  "children": []
+}
+```
+
+The Create account Button's `press` runs the same two actions. Enter in a one-line TextField emits `submit`, so a lone
+field sends its form from the keyboard, as its Button does.
+
+`SpecView` doesn't call your `submit` handler while a field in the screen fails its browser check: a `required` field
+that's empty, or an `email` or `url` field that doesn't hold one. Focus moves to the first such field, and its error
+shows, so a failed send isn't reported as sent. A check the browser can't make, such as a number in range, needs a
+handler that checks `values` itself.
 
 ## Failure modes
 

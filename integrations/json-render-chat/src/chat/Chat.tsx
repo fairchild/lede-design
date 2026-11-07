@@ -12,10 +12,9 @@ import { SpecView, type SpecHandlers } from '@/components/lede/json-render/spec-
 import { transport, chatApi } from './transport';
 import type { AppMessage } from './app-message';
 import { describe } from './describe';
-import { ASSISTANT } from './assistant';
+import { ASSISTANT, SUGGESTIONS } from './assistant';
 import './chat.css';
 
-const SUGGESTIONS = ['How’s my week?', 'What’s in my inbox?', 'Show my notification settings', 'Fail once'];
 const SCHEMES = ['System', 'Light', 'Dark'] as const;
 type Scheme = (typeof SCHEMES)[number];
 type Ending = 'stopped' | 'failed';

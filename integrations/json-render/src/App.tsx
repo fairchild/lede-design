@@ -6,7 +6,7 @@ import { Button } from '@/components/lede/button';
 import { Disclosure } from '@/components/lede/disclosure';
 import { SegmentedControl } from '@/components/lede/segmented-control';
 import { PageHeader } from '@/components/lede/blocks/page-header';
-import { catalog } from '@/components/lede/json-render/catalog';
+import { catalog, functions } from '@/components/lede/json-render/catalog';
 import { registry, handlers, actions, type ActionEvent } from '@/components/lede/json-render/registry';
 import { replay } from './stream';
 import { check } from '@/components/lede/json-render/check';
@@ -78,7 +78,7 @@ export function App() {
         </div>
         <div className="jr-layout">
           <section className="jr-preview" aria-label="Preview" aria-busy={streaming}>
-            <JSONUIProvider key={name} registry={registry} initialState={full.state ?? {}} handlers={actionHandlers} onStateChange={(changes) => setState((prev) => apply(prev, changes))}>
+            <JSONUIProvider key={name} registry={registry} functions={functions} initialState={full.state ?? {}} handlers={actionHandlers} onStateChange={(changes) => setState((prev) => apply(prev, changes))}>
               <Renderer spec={spec} registry={registry} loading={streaming} fallback={Unknown} />
             </JSONUIProvider>
           </section>
