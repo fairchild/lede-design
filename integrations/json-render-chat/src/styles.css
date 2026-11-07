@@ -1,0 +1,27 @@
+@import "tailwindcss";
+/* Lede's source and its generated tokens, straight from the repo: `npm run tokens` writes lede.tokens.css. */
+@source "../../../registry/lede";
+@source "../../json-render/src";
+@import "../../../registry/lede/lede.tokens.css";
+@import "../../../registry/lede/lede.components.css";
+@import "../../../registry/lede/lede.blocks.css";
+
+html, body { margin: 0; font-family: var(--font-sans); -webkit-font-smoothing: antialiased; }
+.jrc-app { min-height: 100dvh; color: var(--foreground); }
+.jrc-page { box-sizing: border-box; max-width: 48rem; margin: 0 auto; padding: var(--space-6) var(--space-4) var(--space-8); display: grid; gap: var(--space-6); }
+.jrc-messages { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-6); }
+.jrc-message { display: grid; gap: var(--space-2); min-width: 0; }
+.jrc-message > * { margin: 0; }
+.jrc-message[data-role="user"] { justify-self: end; max-width: 85%; padding: var(--space-3) var(--space-4); border-radius: var(--radius-xl); background: var(--fill-control); }
+.jrc-author { font-size: var(--text-footnote-size); line-height: var(--text-footnote-line-height); font-weight: var(--weight-semibold); color: var(--muted-foreground); }
+.jrc-text { white-space: pre-wrap; overflow-wrap: anywhere; }
+.jrc-spec { padding: var(--space-4); border-radius: var(--radius-xl); border: 1px solid var(--input); }
+.jrc-muted, .jrc-note, .jrc-ending { color: var(--muted-foreground); }
+.jrc-note, .jrc-ending { font-size: var(--text-footnote-size); line-height: var(--text-footnote-line-height); }
+.jrc-ending { font-style: italic; }
+.jrc-footer { position: sticky; bottom: 0; display: grid; gap: var(--space-3); padding: var(--space-3) 0 var(--space-4); background: var(--background-grouped); }
+.jrc-footer > * { margin: 0; }
+.jrc-status:empty { display: none; }
+.jrc-suggestions { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.jrc-composer { display: grid; gap: var(--space-2); }
+.jrc-composer-actions { display: flex; justify-content: flex-end; gap: var(--space-2); }

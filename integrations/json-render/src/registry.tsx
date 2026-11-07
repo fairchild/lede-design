@@ -13,18 +13,43 @@ import { SummaryCard } from '@/components/lede/blocks/summary-card';
 import { focusLanding } from '@/components/lede/input-modality';
 import { catalog } from './catalog';
 
+type Level = 2 | 3 | 4 | 5 | 6;
+
 /**
- * Each catalog type drawn by its Lede component. A spec renders inside this page's preview, below the page's own h1,
- * so its headings start at h2 and its PageHeader leaves focus where the reader is.
+ * The level of a spec's title. A spec renders below its host page's own h1, so it starts at h2 by default, and a host
+ * that puts it under another heading, such as a chat message's author, provides a deeper level. Sections sit one below.
+ */
+export const SpecHeadingLevel = React.createContext<2 | 3 | 4 | 5>(2);
+const useLevels = () => {
+  const title = React.useContext(SpecHeadingLevel);
+  return { title, section: (title + 1) as Level };
+};
+
+/**
+ * Each catalog type drawn by its Lede component. The spec's PageHeader leaves focus where the reader is. PageHeader
+ * takes an h1 or h2 only, so a deeper title draws its parts with the same classes.
  */
 export const { registry, handlers } = defineRegistry(catalog, {
   components: {
     Screen: ({ children }) => <div className="ld-flow ld-flow-stack">{children}</div>,
-    PageHeader: ({ props, slots }) => (
-      <PageHeader title={props.title} summary={props.summary} actions={slots?.actions} headingLevel={2} focusOnMount={false} />
-    ),
+    PageHeader: ({ props, slots }) => {
+      const { title } = useLevels();
+      if (title === 2) return <PageHeader title={props.title} summary={props.summary} actions={slots?.actions} headingLevel={2} focusOnMount={false} />;
+      const H = `h${title}` as 'h3';
+      return (
+        <header className="ld-page-header">
+          <div className="ld-page-header-row">
+            <div className="ld-page-header-text">
+              <H className="text-title-2 ld-page-title">{props.title}</H>
+              {props.summary ? <p className="ld-page-summary">{props.summary}</p> : null}
+            </div>
+            {slots?.actions ? <div className="ld-page-actions">{slots.actions}</div> : null}
+          </div>
+        </header>
+      );
+    },
     ListGroup: ({ props, children }) => (
-      <ListGroup title={props.title} summary={props.summary} footer={props.footer} headingLevel={3}>{children}</ListGroup>
+      <ListGroup title={props.title} summary={props.summary} footer={props.footer} headingLevel={useLevels().section}>{children}</ListGroup>
     ),
     ListRow: ({ props, bindings, emit, on }) => {
       const [checked, setChecked] = useBoundProp(props.checked, bindings?.checked);
@@ -84,8 +109,12 @@ export const { registry, handlers } = defineRegistry(catalog, {
       return <SegmentedControl label={props.label} options={props.options} value={value} onValueChange={(next) => { setValue(next); emit('change'); }} />;
     },
     FormSection: ({ props, children }) => <FormSection legend={props.legend} description={props.description}>{children}</FormSection>,
-    EmptyState: ({ props, slots }) => <EmptyState title={props.title} description={props.description} action={slots?.action} headingLevel={3} />,
-    SummaryCard: ({ props }) => <SummaryCard title={props.title} summary={props.summary} figure={props.figure} status={props.status} headingLevel={3} />,
+    EmptyState: ({ props, slots }) => (
+      <EmptyState title={props.title} description={props.description} action={slots?.action} headingLevel={Math.min(useLevels().section, 3) as 2 | 3} />
+    ),
+    SummaryCard: ({ props }) => (
+      <SummaryCard title={props.title} summary={props.summary} figure={props.figure} status={props.status} headingLevel={Math.min(useLevels().section, 4) as 3 | 4} />
+    ),
   },
   actions: {
     open: async (params) => report('open', params),
@@ -101,7 +130,7 @@ export const { registry, handlers } = defineRegistry(catalog, {
 function keepFocus(rowKey: string) {
   const row = document.querySelector(`[data-row-id="${CSS.escape(rowKey)}"]`);
   const sibling = (row?.nextElementSibling ?? row?.previousElementSibling)?.querySelector<HTMLElement>('.ld-row-target');
-  const title = row?.closest('.jr-preview')?.querySelector<HTMLElement>('h2');
+  const title = row?.closest('.ld-flow')?.querySelector<HTMLElement>('h2, h3, h4, h5');
   setTimeout(() => { if (!row?.isConnected && (document.activeElement === document.body || !document.activeElement)) focusLanding(sibling ?? title); }, 50);
 }
 
