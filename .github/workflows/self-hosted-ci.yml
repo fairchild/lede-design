@@ -1,26 +1,24 @@
-# The opt-in workflow the gondolin-ci skill dispatches: CI for one pull request, one suite at a time, on a single-use
-# micro-VM on the owner's laptop. It exists while GitHub-hosted runners are unavailable, and runs what ci.yml runs.
+# CI for one pull request on a runner you host, for when GitHub-hosted runners are unavailable. It runs what ci.yml
+# runs. docs/self-hosted-ci.md is the contract a person or an agent follows to serve it.
 #
-# Nothing about a pull request starts a run: there is no pull_request or push trigger, label or path filter. A run
-# exists because someone with write access dispatched one, naming the commit they read. The skill dispatches on the
-# default branch, so the definition that executes is main's copy of this file, and the pull request's code is checked
-# out as data. A dispatch at any other ref runs that ref's copy, which is why each job sends such a run to a hosted
-# runner.
+# Nothing about a pull request starts a run: there is no pull_request or push trigger. Someone with write access
+# dispatches it on the default branch, naming the commit they read, and the job refuses any other. The definition
+# that executes is the default branch's copy of this file, and the pull request's code is checked out as data. A
+# dispatch at any other ref runs on a GitHub-hosted runner.
 #
-# The run does not attach its checks to the pull request. It is read on its own.
+# Each job asks for a runner labelled self-hosted and pr-<number>, so a runner registered for one pull request takes
+# only that pull request's jobs. The run attaches no checks to the pull request; read it on its own.
 #
-# The guest is arm64 Linux with 4 CPUs that yield to whoever is using the laptop, so each suite is sized to finish
-# well inside its timeout at about half of a hosted runner's speed, and every timeout stays under the hour after
-# which the skill stops following a run. Setup actions' caches stay off: a run on the default branch writes to the
-# cache later jobs restore from (the skill's design, gap 2). The job's user has no root, and the guest image carries
-# Chromium's system libraries, so Playwright installs the browser without --with-deps.
-name: Opt-in PR Run
+# Timeouts assume a runner at about half a hosted runner's speed. Setup caches stay off, because a run on the default
+# branch writes the cache that later runs restore. Playwright installs Chromium without --with-deps, so the runner
+# needs Chromium's system libraries and no root.
+name: Self-hosted CI
 
 on:
   workflow_dispatch:
     inputs:
       pull_request:
-        description: Pull request number an opt-in runner is registered for
+        description: The pull request whose runner, labelled pr-<number>, takes the jobs
         required: true
         type: string
       head_sha:
@@ -31,14 +29,14 @@ on:
         description: Comma-separated subset of the jobs below
         required: false
         type: string
-        default: build
+        default: build,test-1,test-2,test-3,test-4,test-5,perf,integration-json-render,integration-json-render-chat
 
 permissions:
   contents: read
 
 # One runner serves one job, so a second dispatch for a pull request would queue for hours.
 concurrency:
-  group: optin-pr-${{ inputs.pull_request }}
+  group: self-hosted-pr-${{ inputs.pull_request }}
   cancel-in-progress: true
 
 defaults:
@@ -52,7 +50,7 @@ jobs:
     runs-on: >-
       ${{ github.event_name == 'workflow_dispatch'
       && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
-      && fromJSON(format('["self-hosted","optin","pr-{0}"]', inputs.pull_request))
+      && fromJSON(format('["self-hosted","pr-{0}"]', inputs.pull_request))
       || 'ubuntu-latest' }}
     timeout-minutes: 20
     steps:
@@ -68,13 +66,13 @@ jobs:
       - run: npm run build          # tokens → registry (public/r) → typecheck → site
 
   # The Playwright suite in five shards of desktop, phone and the strict projects. ci.yml uses four on hosted runners;
-  # the fifth keeps each shard well inside its timeout in the slower guest.
+  # the fifth keeps each shard well inside its timeout on a slower runner.
   test-1:
     if: contains(format(',{0},', inputs.suites), ',test-1,')
     runs-on: >-
       ${{ github.event_name == 'workflow_dispatch'
       && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
-      && fromJSON(format('["self-hosted","optin","pr-{0}"]', inputs.pull_request))
+      && fromJSON(format('["self-hosted","pr-{0}"]', inputs.pull_request))
       || 'ubuntu-latest' }}
     timeout-minutes: 50
     env: { SHARD: 1/5 }
@@ -102,7 +100,7 @@ jobs:
     runs-on: >-
       ${{ github.event_name == 'workflow_dispatch'
       && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
-      && fromJSON(format('["self-hosted","optin","pr-{0}"]', inputs.pull_request))
+      && fromJSON(format('["self-hosted","pr-{0}"]', inputs.pull_request))
       || 'ubuntu-latest' }}
     timeout-minutes: 50
     env: { SHARD: 2/5 }
@@ -113,7 +111,7 @@ jobs:
     runs-on: >-
       ${{ github.event_name == 'workflow_dispatch'
       && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
-      && fromJSON(format('["self-hosted","optin","pr-{0}"]', inputs.pull_request))
+      && fromJSON(format('["self-hosted","pr-{0}"]', inputs.pull_request))
       || 'ubuntu-latest' }}
     timeout-minutes: 50
     env: { SHARD: 3/5 }
@@ -124,7 +122,7 @@ jobs:
     runs-on: >-
       ${{ github.event_name == 'workflow_dispatch'
       && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
-      && fromJSON(format('["self-hosted","optin","pr-{0}"]', inputs.pull_request))
+      && fromJSON(format('["self-hosted","pr-{0}"]', inputs.pull_request))
       || 'ubuntu-latest' }}
     timeout-minutes: 50
     env: { SHARD: 4/5 }
@@ -135,20 +133,20 @@ jobs:
     runs-on: >-
       ${{ github.event_name == 'workflow_dispatch'
       && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
-      && fromJSON(format('["self-hosted","optin","pr-{0}"]', inputs.pull_request))
+      && fromJSON(format('["self-hosted","pr-{0}"]', inputs.pull_request))
       || 'ubuntu-latest' }}
     timeout-minutes: 50
     env: { SHARD: 5/5 }
     steps: *playwright
 
-  # The performance budget compares timings, so it runs alone. A guest sharing the laptop measures slower than a hosted
-  # runner, so a failure here is read against the host's load before the code.
+  # The performance budget compares timings, so it runs alone. A runner on a busy machine measures slower than a hosted
+  # one, so a failure here is read against the machine's load before the code.
   perf:
     if: contains(format(',{0},', inputs.suites), ',perf,')
     runs-on: >-
       ${{ github.event_name == 'workflow_dispatch'
       && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
-      && fromJSON(format('["self-hosted","optin","pr-{0}"]', inputs.pull_request))
+      && fromJSON(format('["self-hosted","pr-{0}"]', inputs.pull_request))
       || 'ubuntu-latest' }}
     timeout-minutes: 30
     env: { SHARD: perf }
@@ -161,7 +159,7 @@ jobs:
     runs-on: >-
       ${{ github.event_name == 'workflow_dispatch'
       && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
-      && fromJSON(format('["self-hosted","optin","pr-{0}"]', inputs.pull_request))
+      && fromJSON(format('["self-hosted","pr-{0}"]', inputs.pull_request))
       || 'ubuntu-latest' }}
     timeout-minutes: 30
     env: { ENTRY: json-render }
@@ -200,7 +198,7 @@ jobs:
     runs-on: >-
       ${{ github.event_name == 'workflow_dispatch'
       && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
-      && fromJSON(format('["self-hosted","optin","pr-{0}"]', inputs.pull_request))
+      && fromJSON(format('["self-hosted","pr-{0}"]', inputs.pull_request))
       || 'ubuntu-latest' }}
     timeout-minutes: 30
     env: { ENTRY: json-render-chat }
