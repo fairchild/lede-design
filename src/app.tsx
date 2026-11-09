@@ -54,15 +54,25 @@ function headElement(selector: string, tag: 'link' | 'meta', attributes: Record<
 
 /**
  * Names the route as canonical, with `og:url`, as the title follows it. `index.html` has neither: a crawler that runs no
- * script would read a static one as the home page's address on every deep link.
+ * script would read a static one as the home page's address on every deep link. A not-found route names no address and
+ * asks to stay out of search results, since the server answers every path with the same 200.
  */
 function useCanonical() {
   const { pathname } = useLocation();
+  const notFound = (useMatches().at(-1)?.handle as { notFound?: boolean } | undefined)?.notFound ?? false;
   useEffect(() => {
+    const drop = (selector: string) => document.head.querySelector(selector)?.remove();
+    if (notFound) {
+      drop('link[rel="canonical"]');
+      drop('meta[property="og:url"]');
+      headElement('meta[name="robots"]', 'meta', { name: 'robots', content: 'noindex' });
+      return;
+    }
+    drop('meta[name="robots"]');
     const url = `${SITE}${pathname}`;
     headElement('link[rel="canonical"]', 'link', { rel: 'canonical' }).setAttribute('href', url);
     headElement('meta[property="og:url"]', 'meta', { property: 'og:url' }).setAttribute('content', url);
-  }, [pathname]);
+  }, [pathname, notFound]);
 }
 
 function Root() {
@@ -136,7 +146,7 @@ const routes = () => createBrowserRouter(
             { path: 'settings/appearance', element: <AppearancePage />, handle: { title: 'Appearance' } },
             { path: 'profile', element: <ProfilePage />, handle: { title: 'Profile' } },
             // Inside the app, so a mistyped app address keeps the app around it.
-            { path: '*', element: <AppNotFound />, handle: { title: 'Page not found' } },
+            { path: '*', element: <AppNotFound />, handle: { title: 'Page not found', notFound: true } },
           ],
         },
         ...(FIXTURES ? [{
@@ -145,7 +155,7 @@ const routes = () => createBrowserRouter(
         }] : []),
         // Each step's h1, so the tab names the step.
         { path: 'app/welcome/:step?', element: <WelcomePage />, handle: { title: ({ step = '' }: Params) => WELCOME_TITLES[step] ?? 'Welcome' } },
-        { path: '*', element: <NotFound />, handle: { title: 'Page not found' } },
+        { path: '*', element: <NotFound />, handle: { title: 'Page not found', notFound: true } },
       ],
     },
   ],

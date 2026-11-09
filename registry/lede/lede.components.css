@@ -59,24 +59,26 @@
   outline: var(--stroke-ring) solid var(--ring); outline-offset: var(--stroke-ring-offset);
 }
 
-/* Button — native `<button>` or `<a>`. It keeps its label's width beside other items, and a label wider than the container wraps. */
+/* Button — native `<button>` or `<a>`. It keeps its label's width beside other items, and a label wider than the container wraps.
+   A one-line Button is a capsule: its corners are at least half of one line's height, the control or the line box,
+   whichever is taller. Past that they stop at `--radius-xl`, so a wrapped label makes a rounded rectangle. */
 .ld-btn {
   appearance: none; border: 0; margin: 0; font: inherit; font-family: var(--font-sans); text-decoration: none;
   display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2); box-sizing: border-box;
-  --ld-btn-control: var(--size-control-md); min-height: var(--ld-btn-control); padding: 0 var(--space-4);
-  font-size: var(--text-subheadline-size); line-height: var(--text-subheadline-line-height); font-weight: var(--weight-semibold); letter-spacing: normal;
-  border-radius: var(--radius-capsule); cursor: pointer; flex-shrink: 0; max-width: 100%; text-align: center;
+  --ld-btn-control: var(--size-control-md); --ld-btn-line: var(--text-subheadline-line-height); min-height: var(--ld-btn-control); padding: 0 var(--space-4);
+  font-size: var(--text-subheadline-size); line-height: var(--ld-btn-line); font-weight: var(--weight-semibold); letter-spacing: normal;
+  border-radius: min(var(--radius-capsule), max(var(--radius-xl), calc(max(var(--ld-btn-control), var(--ld-btn-line)) / 2))); cursor: pointer; flex-shrink: 0; max-width: 100%; text-align: center;
   -webkit-tap-highlight-color: transparent;
   transition: transform var(--ld-dur) var(--ld-spring), background-color var(--ld-dur) var(--ld-ease), opacity var(--ld-dur) var(--ld-ease);
 }
 /* With enlarged text on a narrow window a word can be wider than the line, so there a label also breaks inside one. */
 @media (width < 20em) { .ld-btn { overflow-wrap: anywhere; } }
 .ld-btn:active:not(:disabled, [aria-disabled="true"]) { transform: scale(var(--scale-pressed)); }
-.ld-btn-sm { --ld-btn-control: var(--size-control-sm); padding: 0 var(--space-3); font-size: var(--text-footnote-size); line-height: var(--text-footnote-line-height); }
+.ld-btn-sm { --ld-btn-control: var(--size-control-sm); --ld-btn-line: var(--text-footnote-line-height); padding: 0 var(--space-3); font-size: var(--text-footnote-size); line-height: var(--ld-btn-line); }
 /* A small Button answers a press over `--size-hit-absolute-min` where its height falls short of it, as in `touch`. */
 .ld-btn-sm { position: relative; }
 .ld-btn-sm::after { content: ""; position: absolute; inset: min(0px, calc((var(--size-control-sm) - var(--size-hit-absolute-min)) / 2)) 0; }
-.ld-btn-lg { --ld-btn-control: var(--size-control-lg); padding: 0 var(--space-5); font-size: var(--text-headline-size); line-height: var(--text-headline-line-height); }
+.ld-btn-lg { --ld-btn-control: var(--size-control-lg); --ld-btn-line: var(--text-headline-line-height); padding: 0 var(--space-5); font-size: var(--text-headline-size); line-height: var(--ld-btn-line); }
 .ld-btn-rounded { border-radius: var(--radius-sm); }
 .ld-btn-rounded.ld-btn-sm { border-radius: var(--radius-xs); }
 .ld-btn-rounded.ld-btn-lg { border-radius: var(--radius-md); }
@@ -437,8 +439,10 @@
 .ld-bar-tool {
   appearance: none; border: 0; margin: 0; background: transparent; font: inherit; color: var(--foreground);
   display: inline-flex; align-items: center; justify-content: center; gap: var(--space-1);
-  min-width: var(--size-hit-min); min-height: var(--size-hit-min); padding: 0 var(--space-3); border-radius: var(--radius-capsule);
+  min-width: var(--size-hit-min); min-height: var(--size-hit-min); padding: 0 var(--space-3);
   font-size: var(--text-subheadline-size); line-height: var(--text-subheadline-line-height); font-weight: var(--weight-medium); cursor: pointer;
+  /* A one-line tool is a capsule. A wrapped label keeps one line's curve, concentric with the toolbar's ends below. */
+  border-radius: min(var(--radius-capsule), calc(max(var(--size-hit-min), var(--text-subheadline-line-height)) / 2));
 }
 /* GlassToolbar wraps its parts when they don't fit on one line. One line is a capsule; more keep its ends' curve. */
 .ld-bar-tools {
