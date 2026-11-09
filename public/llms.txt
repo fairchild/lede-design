@@ -1,0 +1,25 @@
+# Lede
+
+> Lede is a design system for React: components, blocks, page layouts and hero flows, installed from a shadcn registry. Every screen, section and row leads with its takeaway, and detail opens on request.
+
+Lede renders on the client only, so it suits a Vite app or another client-only React app. Install from a release's registry, `https://lede.cloudcompute.com/r/v<version>/{name}.json`, added to `components.json` as `@lede`. Every item's file is at that URL with its name, such as `button` or `data-table`.
+
+## Docs
+
+- [Overview and install](https://lede.cloudcompute.com/): what Lede is, the install steps and the principles
+- [Foundations](https://lede.cloudcompute.com/foundations): tokens for color in four themes, type, spacing, radius, motion and more
+- [Components](https://lede.cloudcompute.com/components): the primitives, each with its install command and code
+- [Blocks](https://lede.cloudcompute.com/blocks): the larger parts of a screen, each with its install command and code
+- [Data table](https://lede.cloudcompute.com/blocks/data-table): DataTable and `useServerRows`, with examples
+- [Layouts](https://lede.cloudcompute.com/layouts): the page layouts AppShell, WorkbenchShell and MasterDetail
+- [Decisions](https://lede.cloudcompute.com/decisions): how Lede is built and what checks it
+
+## Source
+
+- [README](https://github.com/fairchild/lede-design#readme): install steps and what a project needs first
+- [CHANGELOG](https://github.com/fairchild/lede-design/blob/main/CHANGELOG.md): what each release changed
+- [CONTRIBUTING](https://github.com/fairchild/lede-design/blob/main/CONTRIBUTING.md): the layers, the rules and the writing rules
+
+## Optional
+
+- [Daybook](https://lede.cloudcompute.com/app): the demo app, built from Lede's hero flows

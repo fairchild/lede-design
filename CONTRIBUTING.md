@@ -45,7 +45,21 @@ docker stop pw-linux
 
 ## How the code is organized
 
-[CLAUDE.md](CLAUDE.md) has the layers and the rules, including semantic HTML first, tokens only and contrast targets.
+Lede has five layers, and dependencies only point down:
+
+1. `tokens/tokens.json` is the single source for color in four themes, type, weight, spacing, radius, stroke, shadow,
+   blur, size, layout, opacity, motion, layers and breakpoints. `npm run tokens` writes `src/styles/lede.tokens.css`
+   and `registry/lede/lede.tokens.css`, which are generated and git-ignored.
+2. `registry/lede/*.tsx` holds the components, styled by `lede.components.css`.
+3. `registry/lede/blocks/*.tsx` holds the blocks, page layouts among them, styled by `lede.blocks.css`.
+4. `registry/lede/flows/*.tsx` holds the hero flows. A flow takes data, hrefs and callbacks, and it fetches nothing and
+   imports no router.
+5. `src/` is the docs site and Daybook, the demo app, which wire the flows to React Router and sample data.
+
+Registry files use relative imports (`../list`) that match where they install (`components/lede/…`). Every file that
+installs is listed in `registry.json`. The `index.ts` barrels are for this repo only and don't install.
+`npm run registry` builds each item's JSON from `registry.json` into `public/r`.
+
 Edit tokens in `tokens/tokens.json` (the CSS is generated from it), and list every new registry file in `registry.json`.
 `npm run registry` fails if a registry file imports something its item doesn't install. Add the item that provides it
 to `registryDependencies`.
@@ -65,6 +79,47 @@ for `@media` and `@custom-media` only. Write them in range syntax, `(width < 56.
 one needs no smaller number. DataTable's card width, `breakpoint-card-narrow`, is px, because em in `@container` is the
 container's font size, and it can also be 0.02px less in a `max-width` query.
 `npm run literals -- --report` prints what each entry and breakpoint covers.
+
+## Rules
+
+- **Semantic HTML first.** Use the native element if one exists: `<button>`, `<a href>`, `<fieldset>`, `<nav>`,
+  `<section>` with a heading, `<ul>`. Base UI comes in only when HTML can't do the interaction, and ARIA only for what
+  HTML can't express. Navigation is a link and an action is a button. No `div role="button"`, and no interactive
+  element inside another.
+- **One h1 per screen.** It's the PageHeader's, and it takes focus on navigation. Regions are named, and headings step
+  down one level at a time.
+- **Focus.** Focus lands where the person acts next: the h1 to read, the first field that needs input to type and the
+  primary button to confirm. Enter acts, and Escape backs out one layer per press. Back and back links return to where
+  the person was. Each change moves focus once, in the same task, so `<body>` never shows, and an announcement follows
+  it. `tests/focus-table.ts` is the source of truth. Its `test.fixme` rows say what they wait for, and a pull request
+  that adds a screen or an action adds its rows there.
+- **Progressive disclosure.** Every screen, section and row leads with its takeaway (`summary`). Affordances stay quiet
+  and appear at the point of use. Expert paths, such as swipe, always have a visible twin.
+- **Tokens only.** Components use no raw colors or radii. They use shadcn's names (`--primary`, `--muted-foreground`)
+  or Lede's extras, and text on a tint uses `--ld-primary-on-tint`. Radii derive from `--radius` and `--radius-step`,
+  so nested corners are concentric.
+- **Prefixes.** Component classes start `ld-`, and component custom properties start `--ld-`. Tokens from
+  `tokens/tokens.json` keep their plain names (`--primary`, `--fill-control`, `--space-4`), type classes are `text-*`
+  and docs-site helpers start `docs-`. Two letters keep stacked class lists short. The prefix also sits inside `field-`
+  and `build-`, so a search for it uses `(?<![\w-])(--)?ld-`.
+- **Names.** A heading prop is `title`. A value callback is named for its controlled prop: `value` and
+  `onValueChange`, `checked` and `onCheckedChange`, `open` and `onOpenChange`. A wrapper that passes native input props
+  through keeps the DOM's `onChange`. Color that carries meaning is a `tone` declared with `ToneSubset<…>`, so a value
+  outside `Tone` fails the build. A registry title names the components you import to use the item, comma-separated
+  (`ListGroup, ListRow`), or the hook that is the item (`useServerRows`). Parts and helpers (`GlassToolbarButton`,
+  `ThemeScope`, `useDataTable`, `formatCount`) stay out of the title, and the description can name them. `lede-theme`
+  and `lede-utils` keep "Lede theme" and "Lede utils". A renamed prop keeps its old name for one release: optional,
+  marked `@deprecated` with the release that removes it, and the new name wins when both are passed.
+- **Overlays.** Every overlay puts `ThemeScope` directly inside its portal. A portal renders outside its
+  `ThemeProvider`'s wrapper, so without it the overlay loses its theme. `tests/theme-scope.spec.ts` checks every file
+  in `registry/` for this.
+- **Contrast.** Text meets 4.5:1 and UI 3:1. In the high-contrast themes text rises to 7:1, and UI stays at 3:1. Color
+  never carries meaning alone.
+- **User preferences.** Components respect `prefers-reduced-motion`, `prefers-reduced-transparency` and
+  `prefers-contrast`.
+- **Decisions.** The docs site's Decisions page (`src/pages/docs/Decisions.tsx`) records each decision about how Lede
+  is built: why, its cost and what holds it. A pull request that adds a gate, a test family or a rule adds its entry
+  there in the same pull request. A count on the page is computed from the file that owns it.
 
 ## Writing
 
