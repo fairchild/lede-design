@@ -26,10 +26,10 @@ on:
         required: true
         type: string
       suites:
-        description: Comma-separated subset of the jobs below
+        description: Comma-separated jobs to run. full runs everything on one runner; the others are for reruns
         required: false
         type: string
-        default: build,test-1,test-2,test-3,test-4,test-5,perf,integration-json-render,integration-json-render-chat
+        default: full
 
 permissions:
   contents: read
@@ -44,6 +44,61 @@ defaults:
     shell: bash
 
 jobs:
+  # Everything below in one job, so one runner covers the pull request: one checkout and one npm ci, then the build,
+  # the Playwright suite, perf and each integration. A later step still runs after an earlier one fails, so one run
+  # reports every suite. The Playwright web servers build their own copies, because those have the /fixtures/* pages
+  # and the strict one has React's development build; `npm run build`'s dist/ has neither.
+  full:
+    if: contains(format(',{0},', inputs.suites), ',full,')
+    runs-on: >-
+      ${{ github.event_name == 'workflow_dispatch'
+      && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+      && fromJSON(format('["self-hosted","pr-{0}"]', inputs.pull_request))
+      || 'ubuntu-latest' }}
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with: { ref: "${{ inputs.head_sha }}", persist-credentials: false }
+      - name: Confirm the tree is the commit that was read
+        env: { HEAD_SHA: "${{ inputs.head_sha }}" }
+        run: test "$(git rev-parse HEAD)" = "$HEAD_SHA"
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with: { node-version: 22, package-manager-cache: false }
+      - run: node scripts/ci-tier.mjs --self-test
+      - id: install
+        run: npm ci
+      - id: build
+        run: npm run build          # tokens → registry (public/r) → typecheck → site; the tests read the first two
+      - id: browser
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        run: npx playwright install chromium
+      - name: Playwright           # desktop, phone and strict-desktop
+        if: ${{ !cancelled() && steps.browser.outcome == 'success' }}
+        run: npx playwright test --project=desktop --project=phone --project=strict-desktop --reporter=list
+      - name: Performance budget   # alone, after the suite, with nothing else on the runner
+        if: ${{ !cancelled() && steps.browser.outcome == 'success' }}
+        run: npx playwright test --project=perf --no-deps --reporter=list
+      - name: Integrations         # each entry in integrations/ builds and runs its own tests
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: |
+          shopt -s nullglob
+          entries=(integrations/*/package.json)
+          if [ ${#entries[@]} -eq 0 ]; then
+            echo "::notice title=No integrations::This commit has no integrations/, so there is nothing to test."
+          fi
+          for manifest in "${entries[@]}"; do
+            dir=${manifest%/package.json}
+            echo "::group::$dir"
+            (
+              cd "$dir"
+              npm ci
+              npm run build
+              if [ -f playwright.config.ts ]; then npx playwright install chromium; fi
+              npm test
+            )
+            echo "::endgroup::"
+          done
+
   # The gates, the typecheck and the site, as `npm run build` runs them locally, and ci-tier's own cases.
   build:
     if: contains(format(',{0},', inputs.suites), ',build,')
@@ -65,8 +120,8 @@ jobs:
       - run: npm ci
       - run: npm run build          # tokens → registry (public/r) → typecheck → site
 
-  # The Playwright suite in five shards of desktop, phone and the strict projects. ci.yml uses four on hosted runners;
-  # the fifth keeps each shard well inside its timeout on a slower runner.
+  # The Playwright suite in five shards of desktop, phone and strict-desktop, for rerunning one part of a full run.
+  # ci.yml uses four on hosted runners; the fifth keeps each shard well inside its timeout on a slower runner.
   test-1:
     if: contains(format(',{0},', inputs.suites), ',test-1,')
     runs-on: >-
@@ -87,12 +142,12 @@ jobs:
       - run: npm ci
       - run: npm run registry       # the tests read its output: the generated tokens CSS and public/r
       - run: npx playwright install chromium
-      - name: Playwright           # axe in four themes on every route, plus behavior checks
+      - name: Playwright           # axe on every route, plus behavior checks
         run: |
           if [ "$SHARD" = perf ]; then
             npx playwright test --project=perf --no-deps --reporter=list
           else
-            npx playwright test --project=desktop --project=phone --project=strict-desktop --project=strict-phone --shard="$SHARD" --reporter=list
+            npx playwright test --project=desktop --project=phone --project=strict-desktop --shard="$SHARD" --reporter=list
           fi
 
   test-2:

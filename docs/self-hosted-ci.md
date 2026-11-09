@@ -29,15 +29,16 @@ code runs there with the runner's access.
 
    The machine needs Node 22, git and Chromium's system libraries. A Linux arm64 or x64 host works.
 
-3. Dispatch the run on the default branch. `suites` defaults to every suite; name a subset to run fewer.
+3. Dispatch the run on the default branch. `suites` defaults to `full`, one job that runs everything, so one
+   runner covers the pull request.
 
    ```sh
    gh workflow run self-hosted-ci.yml -R fairchild/lede-design --ref main \
-     -f pull_request=26 -f head_sha=<sha> -f suites=build
+     -f pull_request=26 -f head_sha=<sha>
    ```
 
-   One runner takes one job. To run several suites on single-use runners, register one per suite, or run them one
-   at a time.
+   To rerun one part, name it instead, such as `-f suites=test-3`. One runner takes one job, so each named suite
+   needs a runner of its own.
 
 4. Watch the run and report its URL with the result.
 
@@ -50,5 +51,9 @@ The run attaches no checks to the pull request. A merge on self-hosted CI names 
 
 ## Suites
 
-`build`, `test-1` to `test-5`, `perf`, `integration-json-render` and `integration-json-render-chat`, as listed in
-`.github/workflows/self-hosted-ci.yml`. perf compares timings, so read a failure there against the machine's load.
+`full` is the default. It runs, on one runner, one `npm ci`, the build, the Playwright suite, perf and each entry in
+`integrations/`, in that order, and a failure in one step still lets the later ones run. It has a 55-minute timeout.
+
+For reruns: `build`, `test-1` to `test-5`, `perf`, `integration-json-render` and `integration-json-render-chat`, as
+listed in `.github/workflows/self-hosted-ci.yml`. Each sets up from scratch. perf compares timings, so read a failure
+there against the machine's load.

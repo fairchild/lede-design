@@ -11,6 +11,8 @@ const strictSpecs = /focus-arrival|focus-actions|keyboard-paths/;
 export default defineConfig({
   testDir: 'tests',
   fullyParallel: true,
+  // A hosted runner has 2 vCPUs, where Playwright's default of half the cores would run 1 worker.
+  workers: process.env.CI ? 2 : undefined,
   // CI splits the suite across runners, and each writes a blob report that .github/workflows/ci.yml merges into one.
   reporter: process.env.CI ? [['github'], ['blob']] : 'list',
   // PW_CHROMIUM lets a machine with a different pre-installed Chromium run the suite; CI installs its own.
@@ -34,13 +36,14 @@ export default defineConfig({
     { name: 'fixtures', use: { ...devices['Desktop Chrome'] }, testMatch: /fixtures\.setup\.ts/ },
     { name: 'desktop', use: { ...devices['Desktop Chrome'] }, testIgnore: /perf-budget/, dependencies: ['fixtures'] },
     { name: 'phone', use: { ...devices['Pixel 7'] }, testIgnore: /perf-budget/, dependencies: ['fixtures'] },
-    // StrictMode replays effects only in React's development build, so these run the focus rows against that one.
+    // StrictMode replays effects only in React's development build, so strict-desktop runs the focus rows against that
+    // one. A replayed effect is the same at every viewport, so there's no strict phone project. The rows that only a
+    // finger can drive, the swipes, also run here by touch (`strictTouch` in tests/focus-table.ts).
     { name: 'strict-fixtures', use: { ...devices['Desktop Chrome'], baseURL: `http://localhost:${strictPort}` }, testMatch: /fixtures\.setup\.ts/ },
     { name: 'strict-desktop', use: { ...devices['Desktop Chrome'], baseURL: `http://localhost:${strictPort}` }, testMatch: strictSpecs, dependencies: ['strict-fixtures'] },
-    { name: 'strict-phone', use: { ...devices['Pixel 7'], baseURL: `http://localhost:${strictPort}` }, testMatch: strictSpecs, dependencies: ['strict-fixtures'] },
     // The performance budget compares timings, so it runs alone: after the other projects have finished, with nothing
     // else in the browser or on the machine competing for the CPU while it measures. In CI it runs with `--no-deps` on
     // a runner of its own.
-    { name: 'perf', use: { ...devices['Desktop Chrome'] }, testMatch: /perf-budget/, dependencies: ['desktop', 'phone', 'strict-desktop', 'strict-phone'] },
+    { name: 'perf', use: { ...devices['Desktop Chrome'] }, testMatch: /perf-budget/, dependencies: ['desktop', 'phone', 'strict-desktop'] },
   ],
 });

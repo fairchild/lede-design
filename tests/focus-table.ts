@@ -346,6 +346,11 @@ export interface Action {
   inView?: boolean;
   /** The project the action exists on, when only one has it. */
   only?: Device;
+  /**
+   * A phone row that only a finger can drive, such as a swipe. There's no strict phone project, so strict-desktop also
+   * runs it by touch, and StrictMode's replayed effects still see the touch path.
+   */
+  strictTouch?: boolean;
   /** Overrides the project's viewport, as the long-list rows do. */
   viewport?: Each<{ width: number; height: number }>;
   pending?: Partial<Record<Part, Each<Pending | undefined>>>;
@@ -495,12 +500,12 @@ export const ACTIONS: Action[] = [
     target: link(/Design review agenda/),
   },
   {
-    screen: 'Inbox', action: 'Swipe → Archive', setup: inbox, only: 'phone',
+    screen: 'Inbox', action: 'Swipe → Archive', setup: inbox, only: 'phone', strictTouch: true,
     act: (d) => swipeTo(d, 'Launch date: Tuesday or Thursday?', 'Archive'),
     target: link(/Design review agenda/),
   },
   {
-    screen: 'Inbox', action: 'Swipe → Delete', setup: inbox, only: 'phone',
+    screen: 'Inbox', action: 'Swipe → Delete', setup: inbox, only: 'phone', strictTouch: true,
     act: (d) => swipeTo(d, 'Launch date: Tuesday or Thursday?', 'Delete'),
     target: link(/Design review agenda/),
   },
@@ -1219,6 +1224,7 @@ export function rowTests<P extends string>(
   pending: Partial<Record<P, Each<Pending | undefined>>> = {},
   only: Device | undefined,
   run: (page: Page, device: Device, check: Set<P>) => Promise<void>,
+  { strictTouch = false }: { strictTouch?: boolean } = {},
 ) {
   const devices = DEVICES.filter((d) => !only || only === d);
   const reason = (part: P, device: Device) => (pending[part] === undefined ? undefined : each(pending[part]!, device));
@@ -1231,6 +1237,16 @@ export function rowTests<P extends string>(
       test.skip(!devices.includes(device), `This row runs on ${only} only.`);
       test.skip(holding(device).length === 0, `On ${device} every part is pending.`);
       await run(page, device, new Set(holding(device)));
+    });
+  }
+
+  if (strictTouch && holding('phone').length > 0) {
+    test.describe(() => {
+      test.use({ hasTouch: true });
+      test(`${title} · by touch under StrictMode`, async ({ page }, info) => {
+        test.skip(info.project.name !== 'strict-desktop', 'The phone project runs it by touch without StrictMode.');
+        await run(page, 'phone', new Set(holding('phone')));
+      });
     });
   }
 
