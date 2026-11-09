@@ -112,13 +112,19 @@ export function ChatPage({ actions, trace, ask, focusOnMount }: ChatPageProps) {
     if (fresh.length) setTimes((prev) => ({ ...prev, ...Object.fromEntries(fresh.map((m) => [m.id, new Date()])) }));
   }, [messages, times]);
 
-  /** Sends `text`, and clears the composer unless the text came from elsewhere, such as a waiting question. */
-  const send = (text: string, { keepDraft = false } = {}) => {
+  /**
+   * Sends `text`, and clears the composer unless the text came from elsewhere, such as a waiting question. A question
+   * held for its button waits again for this reply to end; `replace` drops it, as a newer Try link does.
+   */
+  const send = (text: string, { keepDraft = false, replace = false } = {}) => {
     if (!text.trim() || busy) return;
     record(questions, text.trim());
     void sendMessage({ text: text.trim() }, { body: body() });
     if (!keepDraft) setDraft('');
-    if (waiting?.text === text.trim()) {
+    if (waiting?.ready && !replace && waiting.text !== text.trim()) {
+      setWaiting({ text: waiting.text });
+      setSaid(`Next, once this reply ends: “${waiting.text}”.`);
+    } else {
       setWaiting(undefined);
       setSaid('');
     }
@@ -149,7 +155,7 @@ export function ChatPage({ actions, trace, ask, focusOnMount }: ChatPageProps) {
   React.useEffect(() => {
     if (!ask || asking.current === ask.key) return;
     asking.current = ask.key;
-    if (!busy) return send(ask.text, { keepDraft: true });
+    if (!busy) return send(ask.text, { keepDraft: true, replace: true });
     setWaiting({ text: ask.text });
     setSaid(waiting ? `Next, once this reply ends: “${ask.text}”, in place of “${waiting.text}”.` : `Next, once this reply ends: “${ask.text}”.`);
   });
@@ -162,9 +168,16 @@ export function ChatPage({ actions, trace, ask, focusOnMount }: ChatPageProps) {
   const cancelWaiting = () => {
     if (!waiting) return false;
     setWaiting(undefined);
-    setSaid(`You cancelled “${waiting.text}”.`);
+    setSaid(`You canceled “${waiting.text}”.`);
+    focusComposer();
     return true;
   };
+  // A cancel's note lasts while the reply it waited on streams.
+  const wasBusy = React.useRef(busy);
+  React.useEffect(() => {
+    if (wasBusy.current && !busy && !waiting) setSaid('');
+    wasBusy.current = busy;
+  });
 
   // A control that held focus can leave as the reply ends, such as Stop. Focus then returns to the composer, where the
   // person acts next, so it never falls to `<body>`. On load it lands there too: a chat's next act is to type.
@@ -282,7 +295,15 @@ export function ChatPage({ actions, trace, ask, focusOnMount }: ChatPageProps) {
           </ul>
         ) : null}
       </section>
-      <div className="jrc-footer">
+      {/* Escape backs out one layer per press anywhere in the footer: a waiting question first, then the reply. */}
+      <div
+        className="jrc-footer"
+        onKeyDown={(e: React.KeyboardEvent) => {
+          if (e.key !== 'Escape' || e.defaultPrevented || !(waiting || busy)) return;
+          e.preventDefault();
+          if (!cancelWaiting()) onStop();
+        }}
+      >
         <p role="status" className={failed ? 'jrc-status' : 'ld-sr-only'}>{statusText}</p>
         {failed ? <Button size="sm" onClick={retry}>Try again</Button> : null}
         <p role="status" className={said ? 'jrc-queued' : 'jrc-queued ld-sr-only'}>{said}</p>
@@ -295,14 +316,9 @@ export function ChatPage({ actions, trace, ask, focusOnMount }: ChatPageProps) {
             placeholder={`Ask ${ASSISTANT}…`}
             onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setDraft(e.currentTarget.value)}
             onKeyDown={(e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-              // Escape backs out one layer per press: a waiting question first, then the reply.
-              if (e.key === 'Escape' && (waiting || busy)) {
-                e.preventDefault();
-                if (!cancelWaiting()) onStop();
-              }
               if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); e.currentTarget.form?.requestSubmit(); }
             }}
-            hint="Enter sends, Shift+Enter starts a new line and Escape stops a reply."
+            hint="Enter sends and Shift+Enter starts a new line. Escape cancels a waiting question, then stops a reply."
           />
           <div className="jrc-composer-actions">
             {busy ? <Button type="button" onClick={onStop}>Stop</Button> : null}

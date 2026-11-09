@@ -231,9 +231,10 @@ The page is a sketch on Lede primitives until Lede's Chat block lands, and that 
 
 - The conversation is a named `<section>` holding an ordered list of turns. Each has its author and time as a heading:
   your turns sit in a bubble on the right, and the assistant's beside its avatar, text first and then the screen.
-- The composer is a `<form>`: Enter sends, Shift+Enter starts a new line, and Escape or Stop ends a streaming reply.
-  It stays at the foot of the window when the window is tall enough; with large text on a short screen it scrolls with
-  the page.
+- The composer is a `<form>`: Enter sends and Shift+Enter starts a new line. Escape, from the composer or a button
+  beside it, backs out one layer: it cancels a question waiting on a reply, and otherwise ends the reply, as Stop does.
+  The composer stays at the foot of the window when the window is tall enough; with large text on a short screen it
+  scrolls with the page.
 - Focus starts in the composer, since a chat's next act is to type, which departs from Lede's usual landing on the h1.
   It stays there after sending, Stop and Try again. A polite status line, visible only on an error, announces each
   reply's first sentence. New content isn't focused.

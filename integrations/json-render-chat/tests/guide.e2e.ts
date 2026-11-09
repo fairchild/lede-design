@@ -180,6 +180,8 @@ const slow = (page: Page) => page.addInitScript(() => {
 const waiting = (page: Page) => page.locator('p.jrc-queued[role="status"]');
 async function tryWhileStreaming(page: Page, ...questions: string[]) {
   await page.goto('/');
+  await expect(waiting(page), 'the live region is there, empty, before anything waits').toBeAttached();
+  await expect(waiting(page)).toHaveText('');
   await composer(page).fill('Show my tasks');
   await composer(page).press('Enter');
   for (const question of questions) {
@@ -205,10 +207,11 @@ test('Escape backs out one layer: the first cancels the waiting question and the
   await tryWhileStreaming(page, 'What’s in my inbox?');
   await expect(waiting(page)).toHaveText('Next, once this reply ends: “What’s in my inbox?”.');
   await composer(page).press('Escape');
-  await expect(waiting(page)).toHaveText('You cancelled “What’s in my inbox?”.');
+  await expect(waiting(page)).toHaveText('You canceled “What’s in my inbox?”.');
   await expect(page.getByRole('button', { name: 'Stop' })).toBeVisible();
   await composer(page).press('Escape');
   await expect(page.getByRole('button', { name: 'Stop' })).toBeHidden();
+  await expect(waiting(page), 'the cancel’s note leaves with its reply').toHaveText('');
   await page.waitForTimeout(500);
   await expect(turns(page)).toHaveCount(2);
 });
@@ -227,6 +230,46 @@ test('text typed while a question waits stays, and the question waits for a pres
   await expect(turns(page).nth(2)).toContainText('What’s in my inbox?');
   await expect(composer(page)).toHaveValue('and then my calendar');
   await expect(send).toBeHidden();
+});
+
+/** Leaves “What’s in my inbox?” held for its button, behind the draft “and then my calendar”. */
+async function heldBehindDraft(page: Page) {
+  await slow(page);
+  await tryWhileStreaming(page, 'What’s in my inbox?');
+  await composer(page).fill('and then my calendar');
+  const send = page.getByRole('button', { name: 'Send “What’s in my inbox?”' });
+  await expect(send).toBeVisible({ timeout: 30_000 });
+  return send;
+}
+
+test('sending your own text while a question is held puts the question back to wait on that reply', async ({ page }) => {
+  await heldBehindDraft(page);
+  await composer(page).press('Enter');
+  await expect(turns(page).nth(2)).toContainText('and then my calendar');
+  await expect(waiting(page)).toHaveText('Next, once this reply ends: “What’s in my inbox?”.');
+  await expect(turns(page)).toHaveCount(6, { timeout: 30_000 });
+  await expect(turns(page).nth(4)).toContainText('What’s in my inbox?');
+  await expect(waiting(page)).toHaveText('');
+});
+
+test('a new “Try” link while a question is held sends at once and drops the held one, its note and its button', async ({ page }) => {
+  const send = await heldBehindDraft(page);
+  await nav(page).getByRole('link', { name: 'How it works' }).click();
+  await page.getByRole('link', { name: 'Try “Help me sign up”' }).click();
+  await expect(turns(page).nth(2)).toContainText('Help me sign up');
+  await expect(waiting(page)).toHaveText('');
+  await expect(page.getByRole('button', { name: 'Stop' })).toBeHidden({ timeout: 30_000 });
+  await expect(send).toBeHidden();
+  await expect(composer(page)).toHaveValue('and then my calendar');
+});
+
+test('Escape on a held question’s button cancels it and moves focus to the composer', async ({ page }) => {
+  const send = await heldBehindDraft(page);
+  await send.focus();
+  await send.press('Escape');
+  await expect(waiting(page)).toHaveText('You canceled “What’s in my inbox?”.');
+  await expect(send).toBeHidden();
+  await expect(composer(page)).toBeFocused();
 });
 
 test('the system prompt opens from an account, and its back link returns to the link the person used', async ({ page }) => {
