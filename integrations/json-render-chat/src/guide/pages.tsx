@@ -39,12 +39,14 @@ const Flow = () => (
 
 export function HowItWorks() {
   const [lead, ...rest] = how;
+  const loop = rest.findIndex((b) => b.kind === 'heading' && b.text === 'The loop') + 1;
   return (
     <div className="jrc-page">
       <PageHeader title="How it works" summary={lead?.kind === 'p' ? inline(lead.text) : undefined} focusOnMount={false} />
-      <Flow />
       <div className="ld-prose jrc-md">
-        <Markdown blocks={rest} label="How it works" afterStep={(n) => <SeeIt n={n} />} />
+        <Markdown blocks={rest.slice(0, loop)} label="How it works" />
+        <Flow />
+        <Markdown blocks={rest.slice(loop)} label="How it works" afterStep={(n) => <SeeIt n={n} />} />
       </div>
     </div>
   );

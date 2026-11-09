@@ -32,12 +32,12 @@ function fences(title: string): string[] {
 
 /**
  * The words of one `## title` section of README.md as a reader sees them, a block at a time: each paragraph, list item
- * and table row, with Markdown's marks gone and quotes curled outside code. Code blocks are left to `fences`.
+ * and table row, with Markdown's marks gone. Quotes stay straight here, and `shows` straightens the page's, so which way
+ * a curly quote faces is left to the literal checks.
  */
 function prose(title: string): string[] {
-  const curl = (t: string) => t.replace(/(^|[\s(])"/g, '$1“').replace(/"/g, '”').replace(/(^|[\s(])'/g, '$1‘').replace(/'/g, '’');
   const words = (t: string) =>
-    t.split(/(````.+?````|``.+?``|`[^`]+`)/).map((part, i) => (i % 2 ? part.replace(/^(`+)\s?(.*?)\s?\1$/, '$2') : curl(part.replace(/\*\*/g, '').replace(/\[([^\]]+)\]\([^)]+\)/g, '$1'))))
+    t.split(/(````.+?````|``.+?``|`[^`]+`)/).map((part, i) => (i % 2 ? part.replace(/^(`+)\s?(.*?)\s?\1$/, '$2') : part.replace(/\*\*/g, '').replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')))
       .join('').replace(/\[`?([^\]]+?)`?\]\([^)]+\)/g, '$1');
   const body = sectionOf(title).replace(/^( *)```\w*\n[\s\S]*?\n\1```$/gm, '');
   return body.split(/\n\s*\n/).flatMap((chunk) => {
@@ -49,12 +49,13 @@ function prose(title: string): string[] {
   });
 }
 
-/** Expects the visible page to show each block, in order. */
+/** Expects the visible page to show each block, in order, reading its curly quotes as straight ones. */
 async function shows(page: Page, blocks: string[]) {
   await expect(h1(page)).toHaveCount(1);
-  const text = (await page.getByRole('main').innerText()).replace(/\s+/g, ' ');
+  const straight = (t: string) => t.replace(/[‘’]/g, "'").replace(/[“”]/g, '"');
+  const text = straight((await page.getByRole('main').innerText()).replace(/\s+/g, ' '));
   let at = 0;
-  for (const block of blocks) {
+  for (const block of blocks.map(straight)) {
     const found = text.indexOf(block, at);
     expect(found, `the page shows “${block.slice(0, 80)}…” after what came before it`).toBeGreaterThanOrEqual(0);
     at = found + block.length;
@@ -93,6 +94,7 @@ test('a reply’s account is closed at first and shows what was sent, what strea
   await ask(page, 'Show my tasks');
   const button = turns(page).nth(1).getByRole('button', { name: /How this reply was made/ });
   await expect(button).toHaveAttribute('aria-expanded', 'false');
+  await expect(trace(page).locator('pre')).toHaveCount(0);
   const account = await open(page);
   await expect(account.getByRole('figure', { name: 'Your words' })).toHaveText(/Show my tasks/);
   const count = Number((await button.textContent())!.match(/(\d+) patches/)![1]);
@@ -148,7 +150,7 @@ test('a retry’s account shows the state as the retry sent it', async ({ page }
 test('the suggestions stay after the first message, and a question no script matches says what the demo can answer', async ({ page }) => {
   await page.goto('/');
   await ask(page, 'What’s the weather?');
-  await expect(turns(page).nth(1)).toContainText('This demo answers from a script');
+  await expect(turns(page).nth(1)).toContainText('This demo answers from a script, so it can’t answer that. Try one of these: “How’s my week?”, “Show my tasks”, “What’s in my inbox?” or “Show my notification settings”.');
   await expect(page.getByRole('list', { name: 'Suggestions' }).getByRole('button', { name: 'Fail once' })).toBeVisible();
 });
 
@@ -170,6 +172,63 @@ test('a “Try” link pressed while a reply streams waits for it, then asks, wi
   await expect(turns(page).nth(2)).toContainText('What’s in my inbox?');
 });
 
+/** Slows the mock's stream, so a test can act while a reply is still streaming. */
+const slow = (page: Page) => page.addInitScript(() => {
+  const wait = window.setTimeout;
+  window.setTimeout = ((f: TimerHandler, ms?: number, ...rest: unknown[]) => wait(f, ms === 60 ? 150 : ms, ...rest)) as typeof window.setTimeout;
+});
+const waiting = (page: Page) => page.locator('p.jrc-queued[role="status"]');
+async function tryWhileStreaming(page: Page, ...questions: string[]) {
+  await page.goto('/');
+  await composer(page).fill('Show my tasks');
+  await composer(page).press('Enter');
+  for (const question of questions) {
+    await nav(page).getByRole('link', { name: 'How it works' }).click();
+    await page.getByRole('link', { name: `Try “${question}”` }).click();
+    await expect(composer(page)).toBeFocused();
+  }
+  await expect(page.getByRole('button', { name: 'Stop' })).toBeVisible();
+}
+
+test('a second “Try” link mid-stream takes the waiting question’s place, and the polite status says so', async ({ page }) => {
+  await slow(page);
+  await tryWhileStreaming(page, 'What’s in my inbox?', 'Help me sign up');
+  await expect(waiting(page)).toHaveText('Next, once this reply ends: “Help me sign up”, in place of “What’s in my inbox?”.');
+  await expect(turns(page)).toHaveCount(4, { timeout: 30_000 });
+  await expect(page.getByRole('button', { name: 'Stop' })).toBeHidden();
+  await expect(turns(page).nth(2)).toContainText('Help me sign up');
+  await expect(turns(page).filter({ hasText: 'What’s in my inbox?' })).toHaveCount(0);
+});
+
+test('Escape backs out one layer: the first cancels the waiting question and the reply streams on, the next stops it', async ({ page }) => {
+  await slow(page);
+  await tryWhileStreaming(page, 'What’s in my inbox?');
+  await expect(waiting(page)).toHaveText('Next, once this reply ends: “What’s in my inbox?”.');
+  await composer(page).press('Escape');
+  await expect(waiting(page)).toHaveText('You cancelled “What’s in my inbox?”.');
+  await expect(page.getByRole('button', { name: 'Stop' })).toBeVisible();
+  await composer(page).press('Escape');
+  await expect(page.getByRole('button', { name: 'Stop' })).toBeHidden();
+  await page.waitForTimeout(500);
+  await expect(turns(page)).toHaveCount(2);
+});
+
+test('text typed while a question waits stays, and the question waits for a press of its own button', async ({ page }) => {
+  await slow(page);
+  await tryWhileStreaming(page, 'What’s in my inbox?');
+  await composer(page).fill('and then my calendar');
+  const send = page.getByRole('button', { name: 'Send “What’s in my inbox?”' });
+  await expect(send).toBeVisible({ timeout: 30_000 });
+  await expect(waiting(page)).toHaveText('“What’s in my inbox?” is ready to send, and your message stays in the composer.');
+  await expect(turns(page)).toHaveCount(2);
+  await expect(composer(page)).toHaveValue('and then my calendar');
+  await send.click();
+  await expect(turns(page)).toHaveCount(4);
+  await expect(turns(page).nth(2)).toContainText('What’s in my inbox?');
+  await expect(composer(page)).toHaveValue('and then my calendar');
+  await expect(send).toBeHidden();
+});
+
 test('the system prompt opens from an account, and its back link returns to the link the person used', async ({ page }) => {
   await page.goto('/');
   await ask(page, 'How’s my week?');
@@ -181,26 +240,31 @@ test('the system prompt opens from an account, and its back link returns to the 
 });
 
 const loop = [...sectionOf('How it works').matchAll(/^\d+\. \*\*(.+?)\.\*\*/gm)].map((m) => m[1]!);
+/** Each step's own question, in the loop's order. */
+const asks = ['How’s my week?', 'Show my notification settings', 'What’s in my inbox?', 'Show my tasks', 'Help me sign up'];
 
 test('How it works shows README.md’s section, block for block, with its links pointing at the repo', async ({ page }) => {
   await page.goto('/#/how-it-works');
   await shows(page, prose('How it works'));
+  await expect(page.getByRole('main')).toContainText('such as open with an item’s id. SpecView’s onStateChange gives the chat each screen’s state');
+  await expect(page.getByRole('heading', { level: 2, name: 'The loop' })).toBeVisible();
   await expect(page.locator('ol.jrc-md-list > li > p:first-child > strong')).toHaveText(loop.map((t) => `${t}.`));
   await expect(page.getByRole('link', { name: '../json-render-chat-plain' })).toHaveAttribute('href', 'https://github.com/fairchild/lede-design/blob/main/integrations/json-render-chat/../json-render-chat-plain/README.md#side-by-side');
 });
 
-test('the loop at a glance links each step, and each step’s Try link asks a question whose reply shows a screen', async ({ page }) => {
+test('the loop at a glance links each step, and each step’s Try link asks that step’s own question, whose reply shows a screen', async ({ page }) => {
   await page.goto('/#/how-it-works');
-  const flow = page.getByRole('list', { name: 'The loop at a glance' }).getByRole('link');
+  const glance = page.getByRole('list', { name: 'The loop at a glance' });
+  const flow = glance.getByRole('link');
   await expect(flow).toHaveText(loop);
+  await expect(page.locator('h2:has-text("The loop") + ol.jrc-flow'), 'the flow follows its heading').toHaveCount(1);
   await flow.nth(2).click();
   await expect(page.locator('#step-3')).toBeFocused();
   for (let n = 0; n < loop.length; n++) {
     await page.goto('about:blank');
     await page.goto('/#/how-it-works');
-    const link = page.locator(`#step-${n + 1}`).getByRole('link', { name: /^Try “/ });
-    const question = (await link.textContent())!.match(/“(.+)”/)![1]!;
-    await link.click();
+    const question = asks[n]!;
+    await page.locator(`#step-${n + 1}`).getByRole('link', { name: `Try “${question}”` }).click();
     await expect(composer(page)).toBeFocused();
     await expect(turns(page).nth(0)).toContainText(question);
     await expect(page.getByRole('button', { name: 'Stop' })).toBeHidden();

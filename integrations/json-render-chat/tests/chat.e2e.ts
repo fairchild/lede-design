@@ -83,7 +83,7 @@ test('a reply that fails before it begins says so after the question, outside it
   const question = turns(page).nth(0);
   await expect(question.locator('.jrc-body')).not.toContainText('failed');
   await expect(question.getByText('This reply failed.')).toBeVisible();
-  await expect(page.getByRole('status')).toHaveText('The reply failed: The server couldn’t reach the model.');
+  await expect(page.locator('p.jrc-status[role="status"]')).toHaveText('The reply failed: The server couldn’t reach the model.');
   await page.getByRole('button', { name: 'Try again' }).click();
   await expect(turns(page).nth(1)).toContainText('The connection is back.');
   await expect(page.getByText('This reply failed.')).toBeHidden();

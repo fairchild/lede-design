@@ -313,7 +313,7 @@ const GROUPS: Group[] = [
         cost: <>A README change can change the site, so it runs the whole suite in CI. Step 1’s commands stay the site’s own, because they pin the version from <Path to="package.json" />.</>,
         heldBy: [
           <><Path to="tests/code-examples.spec.ts" /> reads each fenced block from step 2 of the README on and expects Overview to show it, character for character.</>,
-          <>The chat example’s guide draws How it works and Build it from <Path to="integrations/json-render-chat/README.md" /> the same way. <Path to="integrations/json-render-chat/tests/guide.e2e.ts" /> expects How it works and Build it to show each paragraph, list item and table row of their sections in order, with Markdown’s marks gone and quotes curled, each fenced block character for character and each relative link pointing at the repo. <Path to="integrations/json-render-chat/tests/markdown.test.tsx" /> fails when the README uses Markdown the renderer doesn’t draw.</>,
+          <>The chat example’s guide draws How it works and Build it from <Path to="integrations/json-render-chat/README.md" /> the same way. <Path to="integrations/json-render-chat/tests/guide.e2e.ts" /> expects How it works and Build it to show each paragraph, list item and table row of their sections in order, with Markdown’s marks gone, and each fenced block character for character. It checks that its links point at the repo and, with literal text, which way the curly quotes face. <Path to="integrations/json-render-chat/tests/markdown.test.tsx" /> fails when the README uses Markdown the renderer doesn’t draw, and checks the quotes after code and bold.</>,
         ],
       },
     ],

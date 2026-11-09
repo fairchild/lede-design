@@ -81,29 +81,35 @@ export function parse(markdown: string): Block[] {
   return out;
 }
 
-/** Curly quotes outside code, as the site writes README prose. */
+/**
+ * Curly quotes outside code, as the site writes README prose. A quote opens after a space, a bracket or an opening
+ * `**`, and before a word; anywhere else, such as after a code span or bold, it closes or is an apostrophe.
+ */
+const OPENS = /(?<=^|[\s([]|(?:^|[\s([])\*\*)(["'])(?=\S)/g;
 const curly = (text: string) =>
-  text.replace(/(^|[\s(])"/g, '$1“').replace(/"/g, '”').replace(/(^|[\s(])'/g, '$1‘').replace(/'/g, '’');
+  text.replace(OPENS, (q) => (q === '"' ? '“' : '‘')).replace(/"/g, '”').replace(/'/g, '’');
 
 const href = (to: string) => (/^(https?:|mailto:|#)/i.test(to) ? to : `${REPO}/${to.replace(/^[a-z]+:/i, '')}`);
 
 /** A line's code spans, then its links and bold, as React nodes. */
 export function inline(text: string): React.ReactNode[] {
   const codes: string[] = [];
-  // A code span opens and closes with the same run of backticks, and one space inside each end is dropped.
-  const held = text.replace(/(`+)(.+?)\1(?!`)/g, (_, _ticks: string, code: string) => {
+  const targets: string[] = [];
+  // A code span opens and closes with the same run of backticks, and one space inside each end is dropped. Code and
+  // link targets are held out of `curly`.
+  const held = curly(text.replace(/(`+)(.+?)\1(?!`)/g, (_, _ticks: string, code: string) => {
     codes.push(/^ .* $/.test(code) ? code.slice(1, -1) : code);
     return `\u0000${codes.length - 1}\u0000`;
-  });
+  }).replace(/\]\(([^)\s]+)\)/g, (_, to: string) => `](\u0001${targets.push(to) - 1}\u0001)`));
   const nodes = (part: string, key: string): React.ReactNode[] =>
     part.split(/(\[[^\]]+\]\([^)\s]+\)|\*\*.+?\*\*|\u0000\d+\u0000)/).filter(Boolean).map((piece, i) => {
       const k = `${key}.${i}`;
       const link = piece.match(/^\[([^\]]+)\]\(([^)\s]+)\)$/);
-      if (link) return <a key={k} href={href(link[2])}>{nodes(link[1], k)}</a>;
+      if (link) return <a key={k} href={href(targets[Number(link[2].slice(1, -1))] ?? link[2])}>{nodes(link[1], k)}</a>;
       if (/^\*\*.+\*\*$/.test(piece)) return <strong key={k}>{nodes(piece.slice(2, -2), k)}</strong>;
       const code = piece.match(/^\u0000(\d+)\u0000$/);
       if (code) return <code key={k}>{codes[Number(code[1])]}</code>;
-      return curly(piece);
+      return piece;
     });
   return nodes(held, 'i');
 }

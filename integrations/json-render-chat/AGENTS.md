@@ -20,11 +20,11 @@ for bots on Slack, Teams and Discord, so it doesn't belong in a browser chat.
    installing from this repo's registry served locally (`npm run registry`), and `npm run build` passed.
    `npx shadcn@latest add @lede/theme-provider @lede/avatar @lede/json-render --yes` installs the catalog, the registry,
    `prompt`, `catalog-fit`, `check`, `toPatches` and `SpecView` under `components/lede/json-render/`, with the Lede
-   components and npm packages they need, and the Avatar the chat page draws. The chat's own files, copied from `src/chat/` and `server/`, import them from
-   `@/components/lede/…`, so they need no edits. In a create-vite app, first replace `src/index.css` with
-   `@import "tailwindcss";`: its demo styles center every line in a bordered 1126px column and set `:root` to 18px,
-   which rescales Lede. Then end it with `@import "./styles/lede/index.css";`. Without that import the screens draw
-   unstyled with no build error; `SpecView` warns in the console in development.
+   components and npm packages they need, and the Avatar the chat page draws. The chat's own files, copied from
+   `src/chat/` and `server/`, import them from `@/components/lede/…`, so they need no edits. In a create-vite app, first
+   replace `src/index.css` with `@import "tailwindcss";`: its demo styles center every line in a bordered 1126px column
+   and set `:root` to 18px, which rescales Lede. Then end it with `@import "./styles/lede/index.css";`. Without that
+   import the screens draw unstyled with no build error; `SpecView` warns in the console in development.
 2. The registry URL is `https://lede.cloudcompute.com/r/v0.5.0/{name}.json`. Before v0.5.0 is tagged, use `/r/next/`
    in place of `/r/v0.5.0/`: the unreleased build of main. `shadcn init --defaults` also picks a style and may add a
    font, `tw-animate-css`, `src/components/ui/button.tsx` and `src/lib/utils.ts`; the chat uses none of them. From a clone,

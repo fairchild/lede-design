@@ -10,11 +10,13 @@ npm install
 npm run dev     # http://localhost:4880, with the scripted replies
 npm run build   # tokens, typecheck (app, server and tests), then the site
 npm test        # the mock and the server in Vitest, then the chat in a browser with Playwright and axe
-                # PW_PORT=4883 npm test starts its four servers from 4883 up, beside a dev server on 4881
+                # PW_PORT=4883 npm test starts its four servers from 4883 up, so they run beside
+                # npm run dev on 4880 and npm run preview on 4881
 ```
 
-Try “how’s my week”, “show my tasks”, “show my notification settings”, “what’s in my inbox”, “help me sign up”,
-“any projects”, “turn off push”, “fail” or “offline”. The last two fail once, partway through or before a word arrives, and Try again then answers.
+Try “how’s my week”, “show my tasks”, “show my notification settings”, “what’s in my inbox”, “help me sign up”, “any
+projects”, “turn off push”, “fail” or “offline”. The last two fail once, partway through or before a word arrives, and
+Try again then answers.
 
 The app opens on Try it, the chat, where each reply's “How this reply was made” shows what went to the model, what
 streamed back, the spec it built and what its screen did. How it works and Build it draw this README's sections of
@@ -177,13 +179,13 @@ message.
 ### What Lede adds
 
 json-render turns a model's spec into a React screen and keeps that screen's state. Lede draws each part with its own
-components and adds four guarantees for a screen that streams:
+components and adds four behaviors for a screen that streams:
 
 - A person's changes survive streaming. A value they typed or switched keeps their change while the rest of the reply
   streams in, and a list keeps gaining rows around it.
 - An action holds back on a failing field. It doesn't run while a field it reads fails its check, and the field shows
   why and takes focus.
-- Focus never drops. When the stream or an action removes the focused control, focus moves to its neighbor or the
+- Focus stays on the page. When the stream or an action removes the focused control, focus moves to its neighbor or the
   screen's title.
 - Follow-ups see what was typed. Each screen's state goes with the next message, so the model reads the form as the
   person left it.
