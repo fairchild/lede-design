@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { flushSync } from 'react-dom';
 import { Menu } from '@base-ui/react/menu';
 import { Table, type TableLabel } from '../table';
 import { Checkbox } from '../checkbox';
@@ -113,7 +114,8 @@ export function DataTable<Row>(props: DataTableProps<Row>) {
   const selectable = sel.enabled;
   const rows = model.rows;
   const summaryRef = React.useRef<HTMLParagraphElement>(null);
-  const retry = (fn: () => void) => () => { fn(); summaryRef.current?.focus(); };
+  // The retry's state commits first, so the summary already says what's happening when focus lands on it.
+  const retry = (fn: () => void) => () => { flushSync(fn); summaryRef.current?.focus(); };
   const pager = useLanding(root, summaryRef, paging, state.rows ?? 'current');
   const place = JSON.stringify([model.view, paging?.kind === 'pages' ? paging.page : null]);
   const { onFocus, note, forget } = useKeptPlace(root, summaryRef, rows, place, state.rows === 'previous');

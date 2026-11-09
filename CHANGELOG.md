@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+- DataTable's Try again moves focus to the summary line after the retry's state is in, so the summary has its text
+  when focus arrives. The narrow-layout sample on the docs page now compiles: it passes `noun`, and its columns fill
+  the card slots its comment describes.
+- Table: with `collapsible`, `caption` and `collapsible.summary` take a string, because both sit inside the toggle
+  button. A caption with a link, a control or a block element no longer type-checks there; pass the text and move the
+  rest out of the caption.
+- Table: a development build warns when `collapsible.open` switches between controlled and uncontrolled.
+- Table: the collapsible caption's corners match the table's box, and in the high-contrast themes the box's edge runs
+  unbroken past the sticky header.
+
 ## 0.4.0
 
 First public release. Lede is a design system for React, installed from its shadcn registry at

@@ -244,7 +244,7 @@ const GROUPS: Group[] = [
         title: 'Docs samples are code that compiles',
         summary: 'Each section on Components and Blocks ends with its item’s install command and, where it has one, the smallest working code for it.',
         why: 'A reader pastes a sample into an app, so it has to run there: with its imports and nothing the docs page defines for itself. Each sample is a file the typecheck reads, so a prop that changes breaks the build before it breaks the docs.',
-        cost: <>A new component or block needs a section with its install command, and usually a file in <Path to="src/pages/docs/samples/" /> named for its registry item.</>,
+        cost: <>A new component or block needs a section with its install command, and usually a file in <Path to="src/pages/docs/samples/" /> named for its registry item. Another example of the same item, such as DataTable’s narrow layout, is a file in <Path to="src/pages/docs/examples/" />, which the typecheck reads too.</>,
         heldBy: [
           <><code>npm run typecheck</code>, where <Path to="tsconfig.json" /> maps the install path <code>@/components/lede/*</code> to <code>registry/lede/*</code>.</>,
           <><Path to="tests/usage.spec.ts" />: every component and block in <Path to="registry.json" /> has an install command on its page, each command names real items, and each sample shows its file character for character.</>,

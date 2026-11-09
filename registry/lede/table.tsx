@@ -17,18 +17,21 @@ type Align = 'start' | 'end' | 'center';
 /**
  * A table that collapses to its caption (progressive disclosure). The caption becomes a button; `summary` is the
  * takeaway shown below the title, so a collapsed table still says what it holds. Open by default.
+ *
+ * The caption and the summary go inside that button, so both are plain text: a link, a control or a block element
+ * can't sit in a button. Pass `open` from the first render or never, as with any controlled prop.
  */
 export interface TableCollapsible {
-  summary?: React.ReactNode;
+  summary?: string;
   defaultOpen?: boolean;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
 }
 
-/** Only a captioned table can collapse: the caption is what stays, and what you press. */
+/** Only a captioned table can collapse: the caption is what stays, and what you press, so it's text. */
 type CollapsibleLabel =
-  | ({ caption: React.ReactNode } & Exclude<TableLabel, { 'aria-label': string } | { 'aria-labelledby': string }> & { collapsible?: TableCollapsible | boolean })
-  | (Exclude<TableLabel, { caption: React.ReactNode }> & { collapsible?: never });
+  | { caption: string; collapsible: TableCollapsible | true; 'aria-label'?: never; 'aria-labelledby'?: never }
+  | (TableLabel & { collapsible?: false });
 
 export type TableRootProps = CollapsibleLabel & {
   children: React.ReactNode;
@@ -49,12 +52,25 @@ export type TableRootProps = CollapsibleLabel & {
  * it where a block fills the width. A shrink-to-fit parent (`inline-block`, `float`, `fit-content`, `flex: none`)
  * gives it no width of its own. A sticky first column takes its width from Table.Columns, or is measured after layout.
  */
+// Bundlers replace `process.env.NODE_ENV` at build time. It's declared here so apps without Node's types type-check.
+declare const process: { env: { NODE_ENV?: string } };
+
 function Root(props: TableRootProps) {
   const { children, stickyFirstColumn, busy, className, ref } = props;
   const captionId = React.useId();
   const collapsible = 'caption' in props && props.caption != null && props.collapsible
     ? (props.collapsible === true ? {} : props.collapsible)
     : undefined;
+  // Development only: a table that switches between controlled and uncontrolled keeps whichever state it had, so a
+  // controlled close that stops passing `open` reopens the table. Warn once, as Disclosure does.
+  const controlled = React.useRef(collapsible?.open !== undefined);
+  const warned = React.useRef(false);
+  React.useEffect(() => {
+    if (process.env.NODE_ENV === 'production' || warned.current) return;
+    if (controlled.current === (collapsible?.open !== undefined)) return;
+    warned.current = true;
+    console.error(`Table: \`collapsible.open\` switched from ${controlled.current ? 'controlled to uncontrolled' : 'uncontrolled to controlled'}. Pass \`open\` from the first render or never.`);
+  });
   const [innerOpen, setInnerOpen] = React.useState(collapsible?.defaultOpen ?? true);
   const open = collapsible ? collapsible.open ?? innerOpen : true;
   const toggle = () => {

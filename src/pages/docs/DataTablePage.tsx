@@ -14,6 +14,7 @@ import { workColumns, formatMoney, StatusChip } from '@/work-columns';
 import { isExample, itemHref, type Example } from './DataTableItemPage';
 import { CodeExample } from './CodeExample';
 import CLIENT_CODE from './samples/data-table.tsx?raw';
+import NARROW_CODE from './examples/data-table-narrow.tsx?raw';
 import { restoreFocus } from '@/focus-restoration';
 
 /**
@@ -136,25 +137,6 @@ const COLLAPSE_CODE = `
   <Table.Head>…</Table.Head>
   <Table.Body>…</Table.Body>
 </Table.Root>`;
-
-const NARROW_CODE = `
-// In a pane narrower than narrowBelow (560px by default), rows become cards. A card leads with the
-// column marked card: 'title' (the row header when none is) and lists card: 1, 2 and 3 on the line
-// below it. A field keeps to one line, and one wider than the card wraps inside itself. card: 'status'
-// sits beside the text, where a long status narrows it, or under the text when the card is narrower
-// than 440px. Checkboxes and menus are named by the row header, so rows whose titles repeat stay
-// distinct; give it a numbered slot so that name shows on the card.
-<DataTable
-  caption="Work items in a narrow pane"
-  columns={columns}
-  rows={items}
-  getRowId={(r) => r.id}
-  rowHeader="id"
-  selectionMode="multiple"
-  rowActions={rowActions}
-  swipeActions // swipe a card for its actions; the ••• menu stays as the visible twin
-  narrow="cards" // or "scroll": keep the table, with a sticky first column
-/>`;
 
 const PARTS_CODE = `
 <Table.Root caption="Quarter totals">
@@ -480,7 +462,7 @@ export function DataTablePage() {
         <NarrowExample />
         <Code label="Code for a narrow container">{NARROW_CODE}</Code>
       </Section>
-      <Section id="dt-parts" title="Table parts" summary="The styled, stateless Table parts that DataTable is built from. Use them on their own for a small static table.">
+      <Section id="dt-parts" title="Table parts" summary="The styled Table parts that DataTable is built from. Use them on their own for a small static table.">
         <div className="docs-parts">
           <Table.Root caption="Quarter totals">
             <Table.Head>
