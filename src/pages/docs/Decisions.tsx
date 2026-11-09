@@ -44,7 +44,7 @@ const GROUPS: Group[] = [
         cost: <>The browser draws parts of a native control itself. The sort on a data table’s cards is a <code>{'<select>'}</code>, and its open list is the browser’s own.</>,
         heldBy: [
           <>The Semantic HTML first rule in <Path to="CONTRIBUTING.md" />, in review.</>,
-          <>axe, run on every route in all {THEMES} themes by <Path to="tests/a11y.spec.ts" />, first with every Disclosure and collapsible table closed and then with each one open, fails a control inside a button, a control without a name and ARIA that an element’s role doesn’t allow.</>,
+          <>axe, run on every route by <Path to="tests/a11y.spec.ts" />, in all {THEMES} themes on desktop and in <code>light</code> and <code>dark-hc</code> on a phone, first with every Disclosure and collapsible table closed and then with each one open, fails a control inside a button, a control without a name and ARIA that an element’s role doesn’t allow.</>,
         ],
       },
       {
@@ -53,7 +53,7 @@ const GROUPS: Group[] = [
         why: 'Screen-reader users move through a page by heading and by landmark, so the outline is how they find their way around it.',
         cost: <>A component that can sit at more than one depth takes its heading level as a prop, such as Disclosure’s <code>headingLevel</code>, so the page that places it keeps the outline in order.</>,
         heldBy: [
-          <><Path to="tests/a11y.spec.ts" /> loads every route in all {THEMES} themes and expects exactly one visible <code>{'<h1>'}</code>.</>,
+          <><Path to="tests/a11y.spec.ts" /> loads every route, in all {THEMES} themes on desktop and in <code>light</code> and <code>dark-hc</code> on a phone, and expects exactly one visible <code>{'<h1>'}</code>.</>,
           <>In the same test, axe’s <code>heading-order</code> rule fails a skipped level, and <code>landmark-unique</code> fails two landmarks of one kind with the same name.</>,
           <>The One h1 per screen rule in <Path to="CONTRIBUTING.md" />, in review, for naming each region.</>,
         ],
@@ -73,6 +73,7 @@ const GROUPS: Group[] = [
           <>Its -hc fill walk reads every rule in <Path to="registry/" /> that paints a control fill and fails one with no <code>--input</code> edge in -hc. Fields, selects, Switch tracks and the selected segment draw that edge in light and dark too, and the walk fails one that draws it only in -hc. <Path to="tokens/contrast.json" /> lists {NOT_CONTROLS} rules whose fill isn’t a control, each with its reason.</>,
           <>Its knob edge read measures a switch knob by its fill or the 1px edge that starts <code>shadow-knob</code>, whichever is stronger.</>,
           <><Path to="tests/contrast-gate.spec.ts" /> runs the gate on altered copies of its inputs, an -hc edge removed and a knob without its edge among them.</>,
+          <>axe in <Path to="tests/a11y.spec.ts" /> checks the text on screen on every route, in all {THEMES} themes on desktop. A phone renders DOM of its own, such as the tab bar and the data table’s cards, and runs axe in <code>light</code> and <code>dark-hc</code>, so its DOM is seen in a dark theme and a high-contrast one. What that gives up is a phone-only element whose colors fail only in <code>dark</code> or <code>light-hc</code>, such as a tab bar label drawn in <code>--border</code> in dark alone. Nothing checks that case. This gate measures only the pairs <Path to="tokens/contrast.json" /> declares, and it doesn’t read which tokens a CSS rule puts together.</>,
         ],
       },
       {
@@ -118,7 +119,7 @@ const GROUPS: Group[] = [
           <><Path to="tests/focus-trail.ts" /> samples the focused element on every frame, and a row fails when a frame shows <code>{'<body>'}</code> on the way to a landing. On a route change it holds because PageHeader focuses its heading in the same commit, after any other move.</>,
           <>An in-page link’s target has <code>tabindex="-1"</code>, so the browser moves focus there along with the view. <Path to="tests/focus-actions.spec.ts" /> checks the sidebar layout’s Projects link.</>,
           <><Path to="src/focus-restoration.ts" /> records the last element focused inside <code>{'<main>'}</code> on each history entry and focuses it again on Back, Forward and a link to the entry just before, such as a back link. InboxFlow returns a closed message to its row itself. The arrival table’s Back column and the back-link rows in <Path to="tests/focus-actions.spec.ts" /> check both.</>,
-          <>The <code>strict-desktop</code> and <code>strict-phone</code> projects run the focus and keyboard specs against React’s development build, where StrictMode runs each effect twice, as <code>npm run dev</code> and most apps in development do. A production build runs each effect once, so it can’t show a move lost to the second run. The cost is a second build on each test runner and the focus rows run twice (<Path to="playwright.config.ts" />).</>,
+          <>The <code>strict-desktop</code> project runs the focus and keyboard specs against React’s development build, where StrictMode runs each effect twice, as <code>npm run dev</code> and most apps in development do. A production build runs each effect once, so it can’t show a move lost to the second run. A replayed effect belongs to React’s lifecycle, which is the same at every viewport, so no phone project repeats this. A phone’s taps reach the same effects as desktop’s keys. The swipe rows, which only a finger can drive, also run in <code>strict-desktop</code> with the phone’s viewport and touch (<code>strictTouch</code> in <Path to="tests/focus-table.ts" />). What it no longer checks is an effect on any other phone path, such as a tap in the single-pane inbox, that breaks only when replayed. The phone project still runs those rows without StrictMode. The cost is a second build on each test runner and the focus rows run twice (<Path to="playwright.config.ts" />).</>,
           <>PageHeader focuses its heading on mount only when the document has focus, so it never pulls focus into an embedded frame or a background tab (<Path to="registry/lede/blocks/page-header.tsx" />). <Path to="tests/focus-arrival.spec.ts" />, <Path to="tests/onboarding.spec.ts" /> and <Path to="tests/a11y.spec.ts" /> check the heading has focus.</>,
           <>The profile and onboarding forms focus the first invalid field when a submit fails. <Path to="tests/profile.spec.ts" /> checks the profile’s Name, Email and Short bio, and <Path to="tests/focus-actions.spec.ts" /> checks onboarding’s Name and Email.</>,
           <>Escape backs out one layer per press. PageHeader’s <code>backOnEscape</code> activates the back link, and an open menu or dialog, an IME composition or a field the person changed keeps its Escape first. InboxFlow ends selection mode, then closes the open message, and ProfileFlow cancels an unchanged edit. The <code>escape</code> column of <Path to="tests/focus-table.ts" /> and the layer tests in <Path to="tests/keyboard-paths.spec.ts" /> check each one.</>,
@@ -184,7 +185,7 @@ const GROUPS: Group[] = [
         cost: 'An overlay a project builds itself needs ThemeScope too. The Components page shows how.',
         heldBy: [
           <><Path to="tests/theme-scope.spec.ts" /> reads every file under <Path to="registry/" /> and fails a <code>.Portal</code> without ThemeScope directly inside it, and any <code>createPortal</code>.</>,
-          'The same file opens menus inside the site’s provider and nested ones, in every theme, and checks that each takes its own provider’s theme.',
+          <>The same file opens menus inside the site’s provider and nested ones, in all {THEMES} themes, and checks that each takes its own provider’s theme. Each surface loads once and the page moves through the themes, by the emulated OS scheme and the stored high-contrast pref. It runs on desktop: a portal’s theme doesn’t depend on the viewport, and the data table’s cards are a 380px pane at any width. <Path to="tests/a11y.spec.ts" /> and <Path to="tests/row-menu.spec.ts" /> open row menus by touch on a phone.</>,
         ],
       },
     ],
@@ -276,6 +277,13 @@ const GROUPS: Group[] = [
           <>The “Before you open a pull request” section of <Path to="CONTRIBUTING.md" />, in review.</>,
           <><Path to="tests/contrast-gate.spec.ts" /> and <Path to="tests/literal-gate.spec.ts" /> run their gates on altered copies of their inputs, so those two keep their mutants in the suite.</>,
         ],
+      },
+      {
+        title: 'Self-hosted CI runs in one job',
+        summary: 'When hosted runners are unavailable, one job on one self-hosted runner covers a pull request: the build, the Playwright suite, perf and each integration.',
+        why: 'A self-hosted machine serves one runner at a time, so shards run one after another and each repeats the checkout, npm ci and the web servers’ builds. One job does that setup once.',
+        cost: <>The suite runs on one machine’s workers, so a run takes longer than hosted CI’s parallel shards. The per-suite jobs stay for rerunning one part, and each sets up from scratch. The Playwright web servers still build their own copies, because those have the <code>/fixtures/*</code> pages and the strict one has React’s development build.</>,
+        heldBy: [<><Path to=".github/workflows/self-hosted-ci.yml" />, whose <code>full</code> job is the default, and <Path to="docs/self-hosted-ci.md" />, which a person or an agent follows to serve it.</>],
       },
       {
         title: 'Released notes stay as shipped',

@@ -13,7 +13,7 @@ Lede is a content-first design system inspired by Apple's Human Interface Guidel
   - `registry/lede/`: primitives. `blocks/` holds layouts and higher-level components; `flows/` holds the hero flows.
   - `src/`: the docs site and demo app.
   - `registry.json`: the shadcn registry.
-  - `CONTRIBUTING.md`: the layers, the rules and the Writing section. `CLAUDE.md`: commands and agent notes.
+  - `CONTRIBUTING.md`: the layers, the rules and the Writing section. `CLAUDE.md`: the commands and how CI picks what to run.
 - **In a project that uses Lede:** components are under `components/lede/` (with `blocks/` and `flows/`), styles are under `styles/lede/`, and `components.json` may map `@lede` to a registry URL.
 - **A Lede design system page or artifact**, if the session has one: read its own overview first, then its tokens and each component's guidelines.
 

@@ -20,8 +20,9 @@ npm run build
 npm test
 ```
 
-`npm test` runs Playwright and axe on every route in all four themes, so run the build first. Use
-[conventional commits](https://www.conventionalcommits.org) (`feat:`, `fix:`, `chore:`).
+`npm test` runs Playwright and axe on every route, in all four themes on desktop and in `light` and `dark-hc` on a
+phone, so run the build first. Use [conventional commits](https://www.conventionalcommits.org) (`feat:`, `fix:`,
+`chore:`).
 
 In [CHANGELOG.md](CHANGELOG.md), add your lines under `## Unreleased` at the top, and create it if it isn't there. A
 release renames it to the version. A breaking change or a rename says what a consumer has to change, and a released
