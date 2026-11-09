@@ -120,8 +120,8 @@ npm test           # Playwright and axe on every route, in four themes
 npm run contrast   # the contrast check alone
 ```
 
-[CONTRIBUTING.md](CONTRIBUTING.md) covers pull requests and the Writing rules, and [CLAUDE.md](CLAUDE.md) the layers
-and conventions.
+[CONTRIBUTING.md](CONTRIBUTING.md) covers how the code is organized, the rules every component follows, pull
+requests and writing.
 
 ## License
 

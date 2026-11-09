@@ -43,7 +43,7 @@ const GROUPS: Group[] = [
         why: <>A native element brings its keyboard handling, form behavior and screen-reader semantics from the browser. SegmentedControl is a <code>{'<fieldset>'}</code> of radio inputs, and Checkbox is an <code>{'<input type="checkbox">'}</code>.</>,
         cost: <>The browser draws parts of a native control itself. The sort on a data table’s cards is a <code>{'<select>'}</code>, and its open list is the browser’s own.</>,
         heldBy: [
-          <>The Semantic HTML rule in <Path to="CLAUDE.md" />, in review.</>,
+          <>The Semantic HTML first rule in <Path to="CONTRIBUTING.md" />, in review.</>,
           <>axe, run on every route in all {THEMES} themes by <Path to="tests/a11y.spec.ts" />, first with every Disclosure and collapsible table closed and then with each one open, fails a control inside a button, a control without a name and ARIA that an element’s role doesn’t allow.</>,
         ],
       },
@@ -55,7 +55,7 @@ const GROUPS: Group[] = [
         heldBy: [
           <><Path to="tests/a11y.spec.ts" /> loads every route in all {THEMES} themes and expects exactly one visible <code>{'<h1>'}</code>.</>,
           <>In the same test, axe’s <code>heading-order</code> rule fails a skipped level, and <code>landmark-unique</code> fails two landmarks of one kind with the same name.</>,
-          <>The One h1 rule in <Path to="CLAUDE.md" />, in review, for naming each region.</>,
+          <>The One h1 per screen rule in <Path to="CONTRIBUTING.md" />, in review, for naming each region.</>,
         ],
       },
     ],
@@ -198,7 +198,7 @@ const GROUPS: Group[] = [
         why: <>Names that follow one pattern can be guessed from the ones you know. HTML’s names stay where the meaning matches, such as <code>onChange</code> on a wrapper that passes native input props through. Classes start <code>ld-</code> and component custom properties <code>--ld-</code>, which keeps them apart from a project’s own.</>,
         cost: <>A rename keeps its old name for one release, marked <code>@deprecated</code> with the release that removes it, and the new name wins when both are passed.</>,
         heldBy: [
-          <>The Names and Prefixes rules in <Path to="CLAUDE.md" />, in review. Names also covers registry titles, which name the components you import.</>,
+          <>The Names and Prefixes rules in <Path to="CONTRIBUTING.md" />, in review. Names also covers registry titles, which name the components you import.</>,
           <>Color that carries meaning is a <code>tone</code> declared with <code>ToneSubset</code>, so a value outside <code>Tone</code> fails the build’s typecheck.</>,
         ],
       },
@@ -208,7 +208,7 @@ const GROUPS: Group[] = [
         why: <>A flow drops into any React app, whatever its router or data layer. Its links render through LinkProvider, so they use the app’s own link component.</>,
         cost: <>The app does the wiring: fetching, routing and saving. Daybook’s pages in <Path to="src/pages/app/" /> show it for each flow.</>,
         heldBy: [
-          <>The layer rule in <Path to="CLAUDE.md" />, in review.</>,
+          <>The layers section of <Path to="CONTRIBUTING.md" />, in review.</>,
           <><Path to="scripts/check-registry.mjs" />, part of every build, fails a registry file whose relative import isn’t installed with it. The site’s <code>@/</code> and <code>@lede/</code> aliases fail there too, so a flow can’t import the docs site’s code.</>,
         ],
       },
