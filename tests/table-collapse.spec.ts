@@ -1,10 +1,8 @@
 // A collapsible table (Table.Root `collapsible`): the caption is a real button, the table keeps its name, and a
 // collapsed table shows only its caption, to sight and to assistive tech. Progressive disclosure: the caption carries
 // the summary, so a collapsed table still says what it holds.
-import { createElement } from 'react';
 import { test, expect, type Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
-import type { TableRootProps } from '../registry/lede/table';
 
 const DOCS = '/blocks/data-table';
 async function open(page: Page) {
@@ -25,15 +23,6 @@ test('open by default: the caption is a button, expanded, and the rows are there
 test('the toggle is named by the title and the summary, so a collapsed table still says what it holds', async ({ page }) => {
   await open(page);
   await expect(toggle(page)).toHaveAccessibleName(/^Quarter totals.*2 quarters/);
-});
-
-test('a collapsible caption and summary are text: a link would sit inside the button', () => {
-  // @ts-expect-error A collapsible table's caption is a string.
-  const linked: TableRootProps = { caption: createElement('a', { href: '#x' }, 'link'), collapsible: true, children: null };
-  // @ts-expect-error So is its summary.
-  const summarized: TableRootProps = { caption: 'Quarter totals', collapsible: { summary: createElement('a', { href: '#x' }, 'link') }, children: null };
-  const plain: TableRootProps = { caption: createElement('span', null, 'Quarter totals'), children: null };
-  expect([linked, summarized, plain]).toHaveLength(3);
 });
 
 test('the toggle’s corners follow the box: its top ones open, all four collapsed', async ({ page }) => {
@@ -58,21 +47,52 @@ test('in high contrast the box’s edge runs past the sticky header, which doesn
   expect(header.x + header.width).toBeLessThanOrEqual(box.x + box.width - 1);
 });
 
-test('a development build warns once when `open` stops being passed', async ({ page, baseURL, isMobile }) => {
-  test.skip(isMobile, 'One project is enough.');
-  // The strict server, on the next port, serves React's development build, where the warning runs.
+/** The strict server, on the next port, serves React's development build, where the warnings run. */
+function strictURL(baseURL: string | undefined, path: string) {
   const strict = new URL(baseURL!);
   strict.port = String(Number(strict.port) + 1);
+  return new URL(path, strict).href;
+}
+function tableErrors(page: Page) {
   const errors: string[] = [];
-  page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
-  await page.goto(new URL('/fixtures/table', strict).href);
+  page.on('console', (m) => { if (m.type() === 'error' && m.text().startsWith('Table:')) errors.push(m.text()); });
+  return errors;
+}
+
+test('a development build warns once when `open` stops being passed', async ({ page, baseURL, isMobile }) => {
+  test.skip(isMobile, 'One project is enough.');
+  const errors = tableErrors(page);
+  await page.goto(strictURL(baseURL, '/fixtures/table'));
   const button = page.getByRole('button', { name: /Quarter totals/ });
   await expect(button).toHaveAttribute('aria-expanded', 'false');
-  expect(errors.filter((e) => e.startsWith('Table:'))).toEqual([]);
+  expect(errors).toEqual([]);
   await page.getByRole('button', { name: 'Stop passing open' }).click();
-  await expect.poll(() => errors.filter((e) => e.startsWith('Table:'))).toEqual([
+  await expect.poll(() => errors).toEqual([
     'Table: `collapsible.open` switched from controlled to uncontrolled. Pass `open` from the first render or never.',
   ]);
+});
+
+test('a development build warns about a link in a collapsible caption, and not about <abbr>, <em> or <span lang>', async ({ page, baseURL, isMobile }) => {
+  test.skip(isMobile, 'One project is enough.');
+  const errors = tableErrors(page);
+  await page.goto(strictURL(baseURL, '/fixtures/table'));
+  await expect(page.getByRole('button', { name: /Totals in USD, audited.*totaux trimestriels/ })).toBeVisible();
+  // Effects have run once the page is up; the warnings come from them.
+  await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => setTimeout(r))));
+  expect(errors, 'phrasing content').toEqual([]);
+  await page.goto(strictURL(baseURL, '/fixtures/table?caption=link'));
+  await expect.poll(() => errors).toEqual([
+    'Table: the collapsible caption “Totals, see Q3” holds <a>, which can\'t sit inside its toggle button. Use text and phrasing elements such as <abbr>, <em> or <span lang>.',
+  ]);
+});
+
+test('a production build says nothing about a link in a collapsible caption', async ({ page, isMobile }) => {
+  test.skip(isMobile, 'One project is enough.');
+  const errors = tableErrors(page);
+  await page.goto('/fixtures/table?caption=link');
+  await expect(page.getByRole('button', { name: /Totals, see Q3/ })).toBeVisible();
+  await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => setTimeout(r))));
+  expect(errors).toEqual([]);
 });
 
 test('collapsed: only the caption shows, and the rows leave the accessibility tree', async ({ page }) => {

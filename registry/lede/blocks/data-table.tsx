@@ -114,7 +114,9 @@ export function DataTable<Row>(props: DataTableProps<Row>) {
   const selectable = sel.enabled;
   const rows = model.rows;
   const summaryRef = React.useRef<HTMLParagraphElement>(null);
-  // The retry's state commits first, so the summary already says what's happening when focus lands on it.
+  // The retry's state commits first, so the summary already says what's happening when focus lands on it. flushSync
+  // commits only what `retry` sets synchronously: one that sets its state after an `await` still lands on an empty
+  // summary, so a retry sets its loading state before it awaits.
   const retry = (fn: () => void) => () => { flushSync(fn); summaryRef.current?.focus(); };
   const pager = useLanding(root, summaryRef, paging, state.rows ?? 'current');
   const place = JSON.stringify([model.view, paging?.kind === 'pages' ? paging.page : null]);

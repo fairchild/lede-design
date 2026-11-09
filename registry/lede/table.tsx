@@ -18,19 +18,20 @@ type Align = 'start' | 'end' | 'center';
  * A table that collapses to its caption (progressive disclosure). The caption becomes a button; `summary` is the
  * takeaway shown below the title, so a collapsed table still says what it holds. Open by default.
  *
- * The caption and the summary go inside that button, so both are plain text: a link, a control or a block element
- * can't sit in a button. Pass `open` from the first render or never, as with any controlled prop.
+ * The caption and the summary go inside that button, so both hold phrasing content with nothing interactive: text,
+ * `<abbr>`, `<em>` or `<span lang>`, but no link, control, `[tabindex]` or block element. Development builds warn when
+ * the rendered button holds one. Pass `open` from the first render or never, as with any controlled prop.
  */
 export interface TableCollapsible {
-  summary?: string;
+  summary?: React.ReactNode;
   defaultOpen?: boolean;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
 }
 
-/** Only a captioned table can collapse: the caption is what stays, and what you press, so it's text. */
+/** Only a captioned table can collapse: the caption is what stays, and what you press. */
 type CollapsibleLabel =
-  | { caption: string; collapsible: TableCollapsible | true; 'aria-label'?: never; 'aria-labelledby'?: never }
+  | { caption: React.ReactNode; collapsible: TableCollapsible | true; 'aria-label'?: never; 'aria-labelledby'?: never }
   | (TableLabel & { collapsible?: false });
 
 export type TableRootProps = CollapsibleLabel & {
@@ -55,12 +56,16 @@ export type TableRootProps = CollapsibleLabel & {
 // Bundlers replace `process.env.NODE_ENV` at build time. It's declared here so apps without Node's types type-check.
 declare const process: { env: { NODE_ENV?: string } };
 
+/** What a collapsible caption's toggle button can't hold: anything interactive, and block content. */
+const NOT_IN_A_BUTTON = 'a, button, input, select, textarea, details, [tabindex], div, p, ul, ol, table, h1, h2, h3, h4, h5, h6';
+
 function Root(props: TableRootProps) {
   const { children, stickyFirstColumn, busy, className, ref } = props;
   const captionId = React.useId();
   const collapsible = 'caption' in props && props.caption != null && props.collapsible
     ? (props.collapsible === true ? {} : props.collapsible)
     : undefined;
+  const toggleRef = React.useRef<HTMLButtonElement>(null);
   // Development only: a table that switches between controlled and uncontrolled keeps whichever state it had, so a
   // controlled close that stops passing `open` reopens the table. Warn once, as Disclosure does.
   const controlled = React.useRef(collapsible?.open !== undefined);
@@ -70,6 +75,16 @@ function Root(props: TableRootProps) {
     if (controlled.current === (collapsible?.open !== undefined)) return;
     warned.current = true;
     console.error(`Table: \`collapsible.open\` switched from ${controlled.current ? 'controlled to uncontrolled' : 'uncontrolled to controlled'}. Pass \`open\` from the first render or never.`);
+  });
+  // Development only: the caption and summary render inside the toggle button, where interactive or block content is
+  // invalid and fails axe's nested-interactive. The type can't tell `<abbr>` from `<a>`, so the rendered DOM is read.
+  const nestedWarned = React.useRef(false);
+  React.useEffect(() => {
+    if (process.env.NODE_ENV === 'production' || nestedWarned.current) return;
+    const found = toggleRef.current?.querySelector(NOT_IN_A_BUTTON);
+    if (!found) return;
+    nestedWarned.current = true;
+    console.error(`Table: the collapsible caption “${toggleRef.current!.textContent}” holds <${found.localName}>, which can't sit inside its toggle button. Use text and phrasing elements such as <abbr>, <em> or <span lang>.`);
   });
   const [innerOpen, setInnerOpen] = React.useState(collapsible?.defaultOpen ?? true);
   const open = collapsible ? collapsible.open ?? innerOpen : true;
@@ -138,7 +153,7 @@ function Root(props: TableRootProps) {
             {collapsible ? (
               // A real button in the caption: the whole caption is its hit target, and its name (title and summary)
               // is also the table's name, so a collapsed table still says what it holds.
-              <button type="button" className="ld-table-toggle" aria-expanded={open} onClick={toggle}>
+              <button ref={toggleRef} type="button" className="ld-table-toggle" aria-expanded={open} onClick={toggle}>
                 <span className="ld-table-toggle-text">
                   <span className="ld-table-toggle-title">{props.caption}</span>
                   {collapsible.summary != null ? <span className="ld-table-toggle-summary">{collapsible.summary}</span> : null}

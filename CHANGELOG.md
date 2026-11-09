@@ -5,9 +5,9 @@
 - DataTable's Try again moves focus to the summary line after the retry's state is in, so the summary has its text
   when focus arrives. The narrow-layout sample on the docs page now compiles: it passes `noun`, and its columns fill
   the card slots its comment describes.
-- Table: with `collapsible`, `caption` and `collapsible.summary` take a string, because both sit inside the toggle
-  button. A caption with a link, a control or a block element no longer type-checks there; pass the text and move the
-  rest out of the caption.
+- Table: a development build warns when a collapsible table's caption or summary renders a link, a control, a
+  `[tabindex]` element or a block element, since both sit inside the toggle button. Phrasing content such as `<abbr>`,
+  `<em>` and `<span lang>` doesn't warn. The types are unchanged, so this isn't a breaking change.
 - Table: a development build warns when `collapsible.open` switches between controlled and uncontrolled.
 - Table: the collapsible caption's corners match the table's box, and in the high-contrast themes the box's edge runs
   unbroken past the sticky header.
