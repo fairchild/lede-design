@@ -72,19 +72,27 @@ test('a development build warns once when `open` stops being passed', async ({ p
   ]);
 });
 
-test('a development build warns about a link in a collapsible caption, and not about <abbr>, <em> or <span lang>', async ({ page, baseURL, isMobile }) => {
+test('a development build says nothing about <abbr>, <em> or <span lang> in a collapsible caption', async ({ page, baseURL, isMobile }) => {
   test.skip(isMobile, 'One project is enough.');
   const errors = tableErrors(page);
   await page.goto(strictURL(baseURL, '/fixtures/table'));
   await expect(page.getByRole('button', { name: /Totals in USD, audited.*totaux trimestriels/ })).toBeVisible();
-  // Effects have run once the page is up; the warnings come from them.
+  // The warnings come from effects, which have run by the next frame.
   await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => setTimeout(r))));
-  expect(errors, 'phrasing content').toEqual([]);
-  await page.goto(strictURL(baseURL, '/fixtures/table?caption=link'));
-  await expect.poll(() => errors).toEqual([
-    'Table: the collapsible caption “Totals, see Q3” holds <a>, which can\'t sit inside its toggle button. Use text and phrasing elements such as <abbr>, <em> or <span lang>.',
-  ]);
+  expect(errors).toEqual([]);
 });
+
+// Interactive phrasing content (a link, a label, an iframe) and content that isn't phrasing (a section, an li).
+for (const [kind, element, text] of [['link', 'a', 'Totals, see Q3'], ['label', 'label', 'Totals, by quarter'], ['iframe', 'iframe', 'Totals '], ['section', 'section', 'Totals by quarter'], ['li', 'li', 'Totals by quarter']]) {
+  test(`a development build warns about <${element}> in a collapsible caption`, async ({ page, baseURL, isMobile }) => {
+    test.skip(isMobile, 'One project is enough.');
+    const errors = tableErrors(page);
+    await page.goto(strictURL(baseURL, `/fixtures/table?caption=${kind}`));
+    await expect.poll(() => errors).toEqual([
+      `Table: the collapsible caption “${text}” holds <${element}>, which can't sit inside its toggle button. Use text and phrasing elements such as <abbr>, <em> or <span lang>.`,
+    ]);
+  });
+}
 
 test('a production build says nothing about a link in a collapsible caption', async ({ page, isMobile }) => {
   test.skip(isMobile, 'One project is enough.');

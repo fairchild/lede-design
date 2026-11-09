@@ -12,13 +12,22 @@ const body = (
   </Table.Body>
 );
 
+/** Captions a toggle button can't hold, picked by `?caption=`: interactive phrasing content, and block content. */
+const INVALID: Record<string, React.ReactNode> = {
+  link: <>Totals, <a href="#q3">see Q3</a></>,
+  label: <>Totals, <label>by quarter</label></>,
+  iframe: <>Totals <iframe title="Chart" src="about:blank" width={1} height={1} /></>,
+  section: <>Totals <section>by quarter</section></>,
+  li: <>Totals <li>by quarter</li></>,
+};
+
 /**
- * Collapsible tables for the development warnings: one whose `open` the page passes, then stops passing, and captions
- * with phrasing content. `?caption=link` adds one with a link, which can't sit inside the toggle button.
+ * Collapsible tables for the development warnings: one whose `open` the page passes, then stops passing, captions
+ * with phrasing content, and with `?caption=` one of INVALID's.
  */
 export function TableFixtures() {
   const [controlled, setControlled] = React.useState(true);
-  const link = new URLSearchParams(window.location.search).get('caption') === 'link';
+  const invalid = INVALID[new URLSearchParams(window.location.search).get('caption') ?? ''];
   return (
     <div className="ld-flow">
       <PageHeader title="Table fixtures" summary="Collapsible tables that development builds warn about, or don’t, for the automated tests." />
@@ -36,9 +45,9 @@ export function TableFixtures() {
           {body}
         </Table.Root>
       </section>
-      {link ? (
-        <section aria-label="A link" className="docs-section">
-          <Table.Root caption={<>Totals, <a href="#q3">see Q3</a></>} collapsible>
+      {invalid ? (
+        <section aria-label="Content a button can’t hold" className="docs-section">
+          <Table.Root caption={invalid} collapsible>
             {body}
           </Table.Root>
         </section>

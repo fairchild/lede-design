@@ -19,8 +19,8 @@ type Align = 'start' | 'end' | 'center';
  * takeaway shown below the title, so a collapsed table still says what it holds. Open by default.
  *
  * The caption and the summary go inside that button, so both hold phrasing content with nothing interactive: text,
- * `<abbr>`, `<em>` or `<span lang>`, but no link, control, `[tabindex]` or block element. Development builds warn when
- * the rendered button holds one. Pass `open` from the first render or never, as with any controlled prop.
+ * `<abbr>`, `<em>` or `<span lang>`, but no link, label, control, iframe, `[tabindex]` or block element. Development
+ * builds warn when the rendered button holds one. Pass `open` from the first render or never, as with any controlled prop.
  */
 export interface TableCollapsible {
   summary?: React.ReactNode;
@@ -56,8 +56,26 @@ export type TableRootProps = CollapsibleLabel & {
 // Bundlers replace `process.env.NODE_ENV` at build time. It's declared here so apps without Node's types type-check.
 declare const process: { env: { NODE_ENV?: string } };
 
-/** What a collapsible caption's toggle button can't hold: anything interactive, and block content. */
-const NOT_IN_A_BUTTON = 'a, button, input, select, textarea, details, [tabindex], div, p, ul, ol, table, h1, h2, h3, h4, h5, h6';
+/**
+ * A button holds phrasing content with nothing interactive in it. PHRASING is the HTML spec's phrasing content
+ * (https://html.spec.whatwg.org/multipage/dom.html#phrasing-content), with ruby's rt and rp. A custom element counts as
+ * phrasing, and SVG and MathML inside an <svg> or <math> are skipped, since those two are phrasing themselves.
+ */
+const PHRASING = new Set([
+  'a', 'abbr', 'area', 'audio', 'b', 'bdi', 'bdo', 'br', 'button', 'canvas', 'cite', 'code', 'data', 'datalist', 'del',
+  'dfn', 'em', 'embed', 'i', 'iframe', 'img', 'input', 'ins', 'kbd', 'label', 'link', 'map', 'mark', 'meta', 'meter',
+  'noscript', 'object', 'output', 'picture', 'progress', 'q', 'rp', 'rt', 'ruby', 's', 'samp', 'script', 'select',
+  'slot', 'small', 'source', 'span', 'strong', 'sub', 'sup', 'template', 'textarea', 'time', 'track', 'u', 'var',
+  'video', 'wbr',
+]);
+const INTERACTIVE = 'a[href], button, input, select, textarea, label, iframe, embed, audio[controls], video[controls], [tabindex], [contenteditable]:not([contenteditable="false"]), details';
+const HTML_NS = 'http://www.w3.org/1999/xhtml';
+
+/** The first element a button can't hold: one that isn't phrasing content, or one that's interactive. */
+function notInAButton(button: Element): Element | undefined {
+  return [...button.querySelectorAll('*')].find((el) => el.namespaceURI === HTML_NS
+    && ((!PHRASING.has(el.localName) && !el.localName.includes('-')) || el.matches(INTERACTIVE)));
+}
 
 function Root(props: TableRootProps) {
   const { children, stickyFirstColumn, busy, className, ref } = props;
@@ -81,7 +99,7 @@ function Root(props: TableRootProps) {
   const nestedWarned = React.useRef(false);
   React.useEffect(() => {
     if (process.env.NODE_ENV === 'production' || nestedWarned.current) return;
-    const found = toggleRef.current?.querySelector(NOT_IN_A_BUTTON);
+    const found = toggleRef.current && notInAButton(toggleRef.current);
     if (!found) return;
     nestedWarned.current = true;
     console.error(`Table: the collapsible caption “${toggleRef.current!.textContent}” holds <${found.localName}>, which can't sit inside its toggle button. Use text and phrasing elements such as <abbr>, <em> or <span lang>.`);
