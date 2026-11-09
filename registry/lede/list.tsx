@@ -9,7 +9,10 @@ import type { ToneSubset } from './tone';
 export interface ListGroupProps {
   /** The group's heading: a real heading, `<h2>` by default, that names the section. */
   title?: React.ReactNode;
-  /** The group's one-line takeaway beside the heading, such as "2 on" or "All up to date". */
+  /**
+   * The group's one-line takeaway beside the heading, such as "2 on" or "All up to date". It moves under the heading
+   * when the two don't fit.
+   */
   summary?: React.ReactNode;
   footer?: React.ReactNode;
   /** Heading level for `title`. Default 2. */
