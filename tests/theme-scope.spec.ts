@@ -269,11 +269,12 @@ test('A capsule survives a shadow root that loads the same CSS', async ({ page }
     root.innerHTML = '<button class="ld-btn">Capsule</button>';
     return getComputedStyle(root.firstElementChild!).borderRadius;
   });
-  // A capsule stops at --radius-xl, which a 36px Button never reaches, so it still reads as fully round.
+  // A capsule's radius stops at the larger of --radius-xl and half a one-line Button's height. Here that's 30px, over
+  // half of the 36px Button, so it still reads as fully round.
   expect(radius).toBe('30px');
 });
 
-// A capsule button shows --radius-capsule, capped at --radius-xl or half its height, and the md height; a rounded large one shows the derived --radius-md and the lg
+// A capsule button shows --radius-capsule, capped at the larger of --radius-xl and half its one-line height, and the md height; a rounded large one shows the derived --radius-md and the lg
 // height; a checkbox shows --ld-table-hit, which derives from the md height.
 const controls = (name: string) => h('span', { 'data-case': name },
   h(Button, null, 'Capsule'), h(Button, { shape: 'rounded', size: 'lg' }, 'Rounded'), h(Checkbox, { 'aria-label': 'Hit target' }));

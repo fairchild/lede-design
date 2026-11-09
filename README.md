@@ -33,9 +33,10 @@ icons or assets.*
   and imports no router: DailyBriefFlow, InboxFlow (a message list and the open message), SettingsFlow with
   AppearanceFlow, ProfileFlow and OnboardingFlow.
 - **Theming**: `--primary` sets the accent, and `--radius` with `--radius-step` sets every corner except those of
-  capsules and circles. A capsule is fully round except under ThemeProvider's `shape="square"`. ThemeProvider sets
-  scheme, contrast, accent, shape, density and glass for a subtree. Put ThemeScope directly inside every portal,
-  including one inside another overlay, so its content keeps the theme.
+  capsules and circles. A capsule is fully round except under ThemeProvider's `shape="square"`, and a Button whose
+  label wraps is a rounded rectangle. ThemeProvider sets scheme, contrast, accent, shape, density and glass for a
+  subtree. Put ThemeScope directly inside every portal, including one inside another overlay, so its content keeps the
+  theme.
 
 ## Use it in a shadcn project
 

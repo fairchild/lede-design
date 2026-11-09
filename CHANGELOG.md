@@ -2,8 +2,9 @@
 
 ## Unreleased
 
-- A Button whose label wraps is a rounded rectangle: its corners stop at `--radius-xl`, or half its control height
-  where that is larger. A one-line Button is still a capsule, and the default size doesn't change.
+- A Button whose label wraps is a rounded rectangle, with corners of `--radius-xl` or more. A one-line Button is
+  still a capsule and an icon-only one a circle, at every size, shape, density and text size.
+- A GlassToolbarButton whose label wraps keeps the curve of one line, so it stays concentric with the toolbar.
 
 ## 0.4.0
 
