@@ -7,7 +7,7 @@
 // that builds it deletes the marker. `FOCUS_PENDING=all npm test -- tests/focus- tests/keyboard-paths` runs every pending
 // row, which fails until that change lands, and `FOCUS_PENDING=<text>` runs the rows whose reason contains the text.
 // Every change that adds a screen or an action adds its rows here.
-import { test, expect, type Locator, type Page } from '@playwright/test';
+import { devices as browsers, test, expect, type Locator, type Page } from '@playwright/test';
 import { expectLandsWithRows, expectNoBody, focusMoves, focusTrail, trailText, watchRows } from './focus-trail';
 
 export type Device = 'desktop' | 'phone';
@@ -348,7 +348,7 @@ export interface Action {
   only?: Device;
   /**
    * A phone row that only a finger can drive, such as a swipe. There's no strict phone project, so strict-desktop also
-   * runs it by touch, and StrictMode's replayed effects still see the touch path.
+   * runs it with the phone's viewport and touch, and StrictMode's replayed effects still see the touch path.
    */
   strictTouch?: boolean;
   /** Overrides the project's viewport, as the long-list rows do. */
@@ -1242,7 +1242,9 @@ export function rowTests<P extends string>(
 
   if (strictTouch && holding('phone').length > 0) {
     test.describe(() => {
-      test.use({ hasTouch: true });
+      // The phone's own viewport and touch, so the swipe runs on the single-pane layout the phone project sees.
+      const { defaultBrowserType: _, ...phone } = browsers['Pixel 7'];
+      test.use(phone);
       test(`${title} · by touch under StrictMode`, async ({ page }, info) => {
         test.skip(info.project.name !== 'strict-desktop', 'The phone project runs it by touch without StrictMode.');
         await run(page, 'phone', new Set(holding('phone')));

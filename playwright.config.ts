@@ -38,7 +38,8 @@ export default defineConfig({
     { name: 'phone', use: { ...devices['Pixel 7'] }, testIgnore: /perf-budget/, dependencies: ['fixtures'] },
     // StrictMode replays effects only in React's development build, so strict-desktop runs the focus rows against that
     // one. A replayed effect is the same at every viewport, so there's no strict phone project. The rows that only a
-    // finger can drive, the swipes, also run here by touch (`strictTouch` in tests/focus-table.ts).
+    // finger can drive, the swipes, also run here with the phone's viewport and touch (`strictTouch` in
+    // tests/focus-table.ts).
     { name: 'strict-fixtures', use: { ...devices['Desktop Chrome'], baseURL: `http://localhost:${strictPort}` }, testMatch: /fixtures\.setup\.ts/ },
     { name: 'strict-desktop', use: { ...devices['Desktop Chrome'], baseURL: `http://localhost:${strictPort}` }, testMatch: strictSpecs, dependencies: ['strict-fixtures'] },
     // The performance budget compares timings, so it runs alone: after the other projects have finished, with nothing

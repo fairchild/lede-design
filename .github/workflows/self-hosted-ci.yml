@@ -45,8 +45,8 @@ defaults:
 
 jobs:
   # Everything below in one job, so one runner covers the pull request: one checkout and one npm ci, then the build,
-  # the Playwright suite, perf and each integration. A later step still runs after an earlier one fails, so one run
-  # reports every suite. The Playwright web servers build their own copies, because those have the /fixtures/* pages
+  # the Playwright suite, perf and each integration. Once npm ci passes, each later step runs whether or not the steps
+  # before it failed, so one run reports every suite. The Playwright web servers build their own copies, because those have the /fixtures/* pages
   # and the strict one has React's development build; `npm run build`'s dist/ has neither.
   full:
     if: contains(format(',{0},', inputs.suites), ',full,')
@@ -70,7 +70,7 @@ jobs:
       - id: build
         run: npm run build          # tokens → registry (public/r) → typecheck → site; the tests read the first two
       - id: browser
-        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: npx playwright install chromium
       - name: Playwright           # desktop, phone and strict-desktop
         if: ${{ !cancelled() && steps.browser.outcome == 'success' }}
@@ -86,18 +86,21 @@ jobs:
           if [ ${#entries[@]} -eq 0 ]; then
             echo "::notice title=No integrations::This commit has no integrations/, so there is nothing to test."
           fi
+          failed=()
           for manifest in "${entries[@]}"; do
             dir=${manifest%/package.json}
             echo "::group::$dir"
-            (
-              cd "$dir"
-              npm ci
-              npm run build
-              if [ -f playwright.config.ts ]; then npx playwright install chromium; fi
-              npm test
-            )
-            echo "::endgroup::"
+            # -e is off inside an if's condition, so the commands chain with &&. Each entry runs whatever the others do.
+            if (cd "$dir" && npm ci && npm run build \
+              && { [ ! -f playwright.config.ts ] || npx playwright install chromium; } && npm test); then
+              echo "::endgroup::"
+            else
+              echo "::endgroup::"
+              echo "::error title=$dir failed::See its group above."
+              failed+=("$dir")
+            fi
           done
+          [ ${#failed[@]} -eq 0 ]
 
   # The gates, the typecheck and the site, as `npm run build` runs them locally, and ci-tier's own cases.
   build:

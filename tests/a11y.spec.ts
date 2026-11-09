@@ -5,8 +5,9 @@ import { openPanels } from './open-panels';
 
 // Every route, in light, dark and both high-contrast themes: no axe violations, exactly one exposed h1, and still no
 // violations with every Disclosure and collapsible table open. A phone renders other DOM, such as the data table's cards
-// and the tab bar, but no other colors, so it runs in one light theme and one dark high-contrast one. Desktop runs all
-// four, and the build's contrast gate measures every token pair in every theme.
+// and the tab bar, from the same tokens, so it runs in one light theme and one dark high-contrast one. Desktop runs all
+// four. This gives up a phone-only element whose colors fail only in dark or light-hc: the build's contrast gate
+// measures only the pairs tokens/contrast.json declares and doesn't read which tokens a rule puts together.
 const PHONE_MODES = new Set(['light', 'dark-hc']);
 const MODES = [
   { name: 'light', scheme: 'light' as const, hc: false },

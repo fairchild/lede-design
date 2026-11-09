@@ -71,7 +71,7 @@ Every installed registry file must be listed in `registry.json`; the `index.ts` 
   dark-hc on a phone (run `npm run build` first).
   It builds and serves its own copy, `dist-fixtures/`, with the `/fixtures/*` test pages, and a second on the next
   port, `dist-strict/`, with React's development build, where the `strict-desktop` project runs the focus specs under
-  StrictMode, and the swipe rows by touch. `npm run dev` has the fixture pages too; `dist/` leaves them out.
+  StrictMode, and the swipe rows with the phone's viewport and touch. `npm run dev` has the fixture pages too; `dist/` leaves them out.
   First run: `npx playwright install chromium`. To use a Chromium you already have: `PW_CHROMIUM=/path/to/chrome npm test`.
   To run beside another server, use a free port of your own: `PW_PORT=4571 npm test`. Tests default to port 4300, away
   from `npm run preview` (4173), because outside CI they reuse whatever server is on their port; a first check fails

@@ -52,7 +52,8 @@ The run attaches no checks to the pull request. A merge on self-hosted CI names 
 ## Suites
 
 `full` is the default. It runs, on one runner, one `npm ci`, the build, the Playwright suite, perf and each entry in
-`integrations/`, in that order, and a failure in one step still lets the later ones run. It has a 55-minute timeout.
+`integrations/`, in that order. Once `npm ci` passes, each later step runs whether or not the steps before it failed,
+and every integration runs whether or not another fails. It has a 55-minute timeout.
 
 For reruns: `build`, `test-1` to `test-5`, `perf`, `integration-json-render` and `integration-json-render-chat`, as
 listed in `.github/workflows/self-hosted-ci.yml`. Each sets up from scratch. perf compares timings, so read a failure
