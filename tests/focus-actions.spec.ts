@@ -42,5 +42,5 @@ for (const row of ACTIONS) {
       expect(!move || said.t >= move.t, `“${said.text}” is said at ${said.t.toFixed(1)}ms, before focus moves to ${move?.focus} at ${move?.t.toFixed(1)}ms`).toBe(true);
     }
     if (check.has('check')) await row.check!(d);
-  });
+  }, { strictTouch: row.strictTouch });
 }

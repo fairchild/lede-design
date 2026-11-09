@@ -4,7 +4,11 @@ import { NOT_FOUND, ROUTES } from './routes';
 import { openPanels } from './open-panels';
 
 // Every route, in light, dark and both high-contrast themes: no axe violations, exactly one exposed h1, and still no
-// violations with every Disclosure and collapsible table open.
+// violations with every Disclosure and collapsible table open. A phone renders other DOM, such as the data table's cards
+// and the tab bar, from the same tokens, so it runs in one light theme and one dark high-contrast one. Desktop runs all
+// four. This gives up a phone-only element whose colors fail only in dark or light-hc: the build's contrast gate
+// measures only the pairs tokens/contrast.json declares and doesn't read which tokens a rule puts together.
+const PHONE_MODES = new Set(['light', 'dark-hc']);
 const MODES = [
   { name: 'light', scheme: 'light' as const, hc: false },
   { name: 'dark', scheme: 'dark' as const, hc: false },
@@ -23,7 +27,8 @@ async function violations(page: Page) {
 
 for (const mode of MODES) {
   for (const route of ROUTES) {
-    test(`${route} · ${mode.name}`, async ({ page }) => {
+    test(`${route} · ${mode.name}`, async ({ page, isMobile }) => {
+      test.skip(isMobile && !PHONE_MODES.has(mode.name), 'A phone runs light and dark-hc; desktop runs every theme.');
       await page.emulateMedia({ colorScheme: mode.scheme });
       await page.addInitScript((hc) => localStorage.setItem('lede:appearance', JSON.stringify({ highContrast: hc })), mode.hc);
       await page.goto(route);

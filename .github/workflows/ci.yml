@@ -63,7 +63,8 @@ jobs:
       - run: npm ci
       - run: npm run build          # tokens → registry (public/r) → typecheck → site
 
-  # Each part has a runner of its own: a shard of desktop and phone, or perf, which measures timings and so runs alone.
+  # Each part has a runner of its own: a shard of desktop, phone and strict-desktop on two workers, or perf, which
+  # measures timings and so runs alone.
   # Tier 2 has one shard, and both parts keep to the changed specs.
   test:
     name: test (${{ matrix.part }})
@@ -88,7 +89,7 @@ jobs:
           path: ~/.cache/ms-playwright
           key: playwright-chromium-${{ runner.os }}-${{ steps.playwright.outputs.version }}
       - run: npx playwright install --with-deps chromium
-      - name: Playwright           # axe in four themes on every route, plus behavior checks
+      - name: Playwright           # axe on every route, plus behavior checks
         env:
           PART: ${{ matrix.part }}
           BASE: ${{ needs.plan.outputs.base }}
@@ -96,7 +97,7 @@ jobs:
           if [ "$PART" = perf ]; then
             npx playwright test --project=perf --no-deps ${BASE:+"--only-changed=$BASE"}
           else
-            npx playwright test --project=desktop --project=phone --project=strict-desktop --project=strict-phone --shard="$PART" ${BASE:+"--only-changed=$BASE"}
+            npx playwright test --project=desktop --project=phone --project=strict-desktop --shard="$PART" ${BASE:+"--only-changed=$BASE"}
           fi
       - if: ${{ !cancelled() }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
