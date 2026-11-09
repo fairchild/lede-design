@@ -299,7 +299,8 @@ export function ChatPage({ actions, trace, ask, focusOnMount }: ChatPageProps) {
       <div
         className="jrc-footer"
         onKeyDown={(e: React.KeyboardEvent) => {
-          if (e.key !== 'Escape' || e.defaultPrevented || !(waiting || busy)) return;
+          // Escape during IME composition belongs to the IME, which cancels the composition with it.
+          if (e.key !== 'Escape' || e.nativeEvent.isComposing || e.keyCode === 229 || e.defaultPrevented || !(waiting || busy)) return;
           e.preventDefault();
           if (!cancelWaiting()) onStop();
         }}

@@ -173,16 +173,19 @@ test('a “Try” link pressed while a reply streams waits for it, then asks, wi
 });
 
 /** Slows the mock's stream, so a test can act while a reply is still streaming. */
-const slow = (page: Page) => page.addInitScript(() => {
+const slow = (page: Page, step = 150) => page.addInitScript((step) => {
   const wait = window.setTimeout;
-  window.setTimeout = ((f: TimerHandler, ms?: number, ...rest: unknown[]) => wait(f, ms === 60 ? 150 : ms, ...rest)) as typeof window.setTimeout;
-});
+  window.setTimeout = ((f: TimerHandler, ms?: number, ...rest: unknown[]) => wait(f, ms === 60 ? step : ms, ...rest)) as typeof window.setTimeout;
+}, step);
 const waiting = (page: Page) => page.locator('p.jrc-queued[role="status"]');
 async function tryWhileStreaming(page: Page, ...questions: string[]) {
+  await streamThenTry(page, 'Show my tasks', ...questions);
+}
+async function streamThenTry(page: Page, first: string, ...questions: string[]) {
   await page.goto('/');
   await expect(waiting(page), 'the live region is there, empty, before anything waits').toBeAttached();
   await expect(waiting(page)).toHaveText('');
-  await composer(page).fill('Show my tasks');
+  await composer(page).fill(first);
   await composer(page).press('Enter');
   for (const question of questions) {
     await nav(page).getByRole('link', { name: 'How it works' }).click();
@@ -261,6 +264,43 @@ test('a new “Try” link while a question is held sends at once and drops the 
   await expect(page.getByRole('button', { name: 'Stop' })).toBeHidden({ timeout: 30_000 });
   await expect(send).toBeHidden();
   await expect(composer(page)).toHaveValue('and then my calendar');
+});
+
+test('Escape on Stop backs out one layer per press too: the waiting question, then the reply, with focus in the composer', async ({ page }) => {
+  await slow(page);
+  await tryWhileStreaming(page, 'What’s in my inbox?');
+  const stop = page.getByRole('button', { name: 'Stop' });
+  await stop.focus();
+  await stop.press('Escape');
+  await expect(waiting(page)).toHaveText('You canceled “What’s in my inbox?”.');
+  await expect(stop).toBeVisible();
+  await stop.focus();
+  await stop.press('Escape');
+  await expect(stop).toBeHidden();
+  await expect(composer(page)).toBeFocused();
+  await page.waitForTimeout(500);
+  await expect(turns(page)).toHaveCount(2);
+});
+
+test('Escape on Try again cancels a question held behind a draft after a failed reply', async ({ page }) => {
+  await slow(page, 500);
+  await streamThenTry(page, 'Fail once', 'What’s in my inbox?');
+  await composer(page).fill('and then my calendar');
+  const again = page.getByRole('button', { name: 'Try again' });
+  await expect(again).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByRole('button', { name: 'Send “What’s in my inbox?”' })).toBeVisible();
+  await again.press('Escape');
+  await expect(waiting(page)).toHaveText('You canceled “What’s in my inbox?”.');
+  await expect(page.getByRole('button', { name: 'Send “What’s in my inbox?”' })).toBeHidden();
+  await expect(composer(page)).toBeFocused();
+});
+
+test('Escape during IME composition is left to the IME, and the waiting question stays', async ({ page }) => {
+  await slow(page);
+  await tryWhileStreaming(page, 'What’s in my inbox?');
+  await composer(page).dispatchEvent('keydown', { key: 'Escape', isComposing: true, bubbles: true });
+  await expect(page.getByRole('button', { name: 'Stop' })).toBeVisible();
+  await expect(waiting(page)).toHaveText('Next, once this reply ends: “What’s in my inbox?”.');
 });
 
 test('Escape on a held question’s button cancels it and moves focus to the composer', async ({ page }) => {
