@@ -57,6 +57,7 @@ Lede has five layers, and dependencies only point down:
 
 Registry files use relative imports (`../list`) that match where they install (`components/lede/…`). Every file that
 installs is listed in `registry.json`. The `index.ts` barrels are for this repo only and don't install.
+`npm run registry` builds each item's JSON from `registry.json` into `public/r`.
 
 Edit tokens in `tokens/tokens.json` (the CSS is generated from it), and list every new registry file in `registry.json`.
 `npm run registry` fails if a registry file imports something its item doesn't install. Add the item that provides it
@@ -117,7 +118,7 @@ container's font size, and it can also be 0.02px less in a `max-width` query.
   `prefers-contrast`.
 - **Decisions.** The docs site's Decisions page (`src/pages/docs/Decisions.tsx`) records each decision about how Lede
   is built: why, its cost and what holds it. A pull request that adds a gate, a test family or a rule adds its entry
-  there. A count on the page is computed from the file that owns it.
+  there in the same pull request. A count on the page is computed from the file that owns it.
 
 ## Writing
 

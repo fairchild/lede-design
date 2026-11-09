@@ -143,18 +143,40 @@ test('A not-found page names no canonical and asks not to be indexed, and the ne
   const canonical = page.locator('link[rel="canonical"]');
   const ogUrl = page.locator('meta[property="og:url"]');
   const robots = page.locator('meta[name="robots"]');
-  for (const path of ['/missing', '/app/nope']) {
-    await page.goto(path);
+  const notFound = async () => {
     await expect(page).toHaveTitle('Page not found · Lede');
     await expect(canonical).toHaveCount(0);
     await expect(ogUrl).toHaveCount(0);
     await expect(robots).toHaveAttribute('content', 'noindex');
-  }
+  };
+  const found = async (path: string) => {
+    await expect(canonical).toHaveAttribute('href', `https://lede.cloudcompute.com${path}`);
+    await expect(ogUrl).toHaveAttribute('content', `https://lede.cloudcompute.com${path}`);
+    await expect(robots).toHaveCount(0);
+  };
+  // No page links to a missing address, so the router is sent there as the browser's Back and Forward would send it.
+  const goInApp = (path: string) => page.evaluate((to) => {
+    history.pushState(null, '', to);
+    dispatchEvent(new PopStateEvent('popstate'));
+  }, path);
+
+  // A full load starts from the shell, which names no address.
+  await page.goto('/missing');
+  await notFound();
+
+  // Inside the app, a real page has named its address before the not-found page replaces it.
+  await page.goto('/components');
+  await found('/components');
+  await goInApp('/missing');
+  await notFound();
+  await goInApp('/blocks');
+  await expect(page).toHaveTitle('Blocks · Lede');
+  await found('/blocks');
+  await goInApp('/app/nope');
+  await notFound();
   await page.getByRole('main').getByRole('link', { name: 'Today' }).click();
   await expect(page).toHaveURL(/\/app$/);
-  await expect(canonical).toHaveAttribute('href', 'https://lede.cloudcompute.com/app');
-  await expect(ogUrl).toHaveAttribute('content', 'https://lede.cloudcompute.com/app');
-  await expect(robots).toHaveCount(0);
+  await found('/app');
 });
 
 test('A work item’s tab is named for the item, and a missing one for its h1', async ({ page }) => {

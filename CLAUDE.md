@@ -3,17 +3,9 @@
 Lede is a design system: Base UI primitives, semantic HTML, tokens as shadcn variables, shipped as a shadcn
 registry, with layouts (blocks) and hero flows. The docs site and demo app are the test bed.
 
-`CONTRIBUTING.md` holds the layers, the rules (semantic HTML first, one h1, focus, tokens only, prefixes, names,
-overlays, contrast, Decisions) and the Writing section. Read it before a non-trivial change; it is the one home for
-those rules, and this file adds only what an agent needs on top.
-
-## Agent notes
-- Every word a reader sees follows CONTRIBUTING's Writing section. Review your own copy against it before a PR.
-- A new or changed test or gate is run against a mutant of the code it guards and fails there. The PR names the mutant.
-- Reflow and text-size evidence comes from CI or the Playwright Linux container (recipe in `CONTRIBUTING.md`), never
-  from macOS fonts alone.
-- New CHANGELOG lines go under `## Unreleased`. A released section stays as it shipped.
-- Match the `ld-` prefix with `(?<![\w-])(--)?ld-`, never as a bare substring.
+Read `CONTRIBUTING.md` before a non-trivial change. It holds the layers, the rules, the Writing section and what a pull
+request needs, and this file doesn't repeat them. What follows is what an agent needs on top: the commands and how CI
+picks what to run.
 
 ## Commands
 - `npm run dev` — site at http://localhost:5173
