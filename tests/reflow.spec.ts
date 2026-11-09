@@ -444,3 +444,67 @@ test('At 200% text on a 1280px window, the layout previews open at Narrow', asyn
     await expect(page.getByRole('radio', { name: scale === 2 ? 'Narrow' : 'Wide' }).first(), `${scale}x`).toBeChecked();
   }
 });
+
+// A Button whose label wraps grows taller, and a capsule's radius would make it an oval. A one-line Button and an
+// icon-only one keep a capsule's or a circle's ends at every size, shape, density and text size, so their used radius
+// is what `--radius-capsule` alone gives. A wrapped Button is a rounded rectangle: its radius is under half its height,
+// and outside `square` it is at least `--radius-xl`. GlassToolbarButton follows the same shapes, with one line's curve
+// when it wraps. Every case is built in a box of its own shape and density on the page and read there.
+// Long enough to take four lines or more at every size, so even the smallest is taller than twice `--radius-xl`.
+const WRAPS = 'Approve the quarterly budget, send the signed copy to finance before Friday, ask the team to move the planning review to the week after the offsite and book a room for it with space for everyone who joins from the other office';
+for (const scale of [1, 2, 3]) {
+  test(`A wrapped Button is a rounded rectangle and a one-line or icon-only Button keeps its capsule, at ${scale * 100}% text`, async ({ page, isMobile }) => {
+    test.skip(!isMobile, 'A phone is the narrow case.');
+    await atTextSize(page, scale);
+    await page.setViewportSize({ width: 390, height: 800 });
+    await settle(page, '/components', scale);
+    const wrong = await page.evaluate((long) => {
+      const found: string[] = [];
+      const icon = '<span class="ld-btn-icon"><svg viewBox="0 0 24 24"></svg></span>';
+      const kinds = (size: string) => {
+        const btn = `ld-btn ld-btn-filled${size === 'md' ? '' : ` ld-btn-${size}`}`;
+        return [
+          { name: `${size} Button, one line`, cls: btn, html: 'Save', wraps: false },
+          { name: `${size} Button, icon only`, cls: `${btn} ld-btn-icononly`, html: icon, wraps: false },
+          { name: `${size} Button, wrapped`, cls: btn, html: long, wraps: true },
+        ];
+      };
+      const tools = [
+        { name: 'GlassToolbarButton, one line', cls: 'ld-bar-tool', html: 'Share', wraps: false },
+        { name: 'GlassToolbarButton, icon only', cls: 'ld-bar-tool ld-bar-tool-icon', html: icon, wraps: false },
+        { name: 'GlassToolbarButton, wrapped', cls: 'ld-bar-tool', html: long, wraps: true },
+      ];
+      for (const shape of ['soft', 'crisp', 'square']) for (const density of ['regular', 'compact', 'touch']) {
+        const box = document.createElement('div');
+        Object.assign(box.dataset, { theme: 'light', shape, density });
+        box.style.cssText = 'display: grid; justify-items: start; gap: 8px;';
+        document.querySelector('main')!.append(box);
+        const px = (name: string) => { box.style.paddingLeft = `var(${name})`; const v = parseFloat(getComputedStyle(box).paddingLeft); box.style.paddingLeft = ''; return v; };
+        const capsule = px('--radius-capsule');
+        const xl = px('--radius-xl');
+        for (const kind of [...['sm', 'md', 'lg'].flatMap(kinds), ...tools]) {
+          const el = document.createElement('button');
+          el.className = kind.cls;
+          el.innerHTML = kind.html;
+          box.append(el);
+          const { width, height } = el.getBoundingClientRect();
+          const style = getComputedStyle(el);
+          const oneLine = Math.max(parseFloat(style.minHeight) || 0, parseFloat(style.lineHeight));
+          const radius = parseFloat(style.borderTopLeftRadius);
+          const used = Math.min(radius, width / 2, height / 2);
+          const where = `${kind.name} in ${shape}, ${density} (${Math.round(width)}×${Math.round(height)}, radius ${Math.round(radius)})`;
+          if (!kind.wraps) {
+            if (Math.abs(used - Math.min(capsule, width / 2, height / 2)) > 0.5) found.push(`${where} isn't a capsule`);
+            continue;
+          }
+          if (height <= oneLine + 0.5) found.push(`${where} doesn't wrap`);
+          else if (radius >= height / 2 - 0.5) found.push(`${where} is an oval`);
+          else if (kind.cls.startsWith('ld-btn') && radius < Math.min(capsule, xl) - 0.5) found.push(`${where} has corners under --radius-xl`);
+        }
+        box.remove();
+      }
+      return found;
+    }, WRAPS);
+    expect(wrong).toEqual([]);
+  });
+}
