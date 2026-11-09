@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- A Button whose label wraps is a rounded rectangle: its corners stop at `--radius-xl`, or half its control height
+  where that is larger. A one-line Button is still a capsule, and the default size doesn't change.
+
 ## 0.4.0
 
 First public release. Lede is a design system for React, installed from its shadcn registry at

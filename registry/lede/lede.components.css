@@ -59,13 +59,15 @@
   outline: var(--stroke-ring) solid var(--ring); outline-offset: var(--stroke-ring-offset);
 }
 
-/* Button — native `<button>` or `<a>`. It keeps its label's width beside other items, and a label wider than the container wraps. */
+/* Button — native `<button>` or `<a>`. It keeps its label's width beside other items, and a label wider than the container wraps.
+   A one-line Button is a capsule. A wrapped label makes it taller, so its corners stop at `--radius-xl`, or half the
+   control's height where that is larger, and a Button of several lines is a rounded rectangle. */
 .ld-btn {
   appearance: none; border: 0; margin: 0; font: inherit; font-family: var(--font-sans); text-decoration: none;
   display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2); box-sizing: border-box;
   --ld-btn-control: var(--size-control-md); min-height: var(--ld-btn-control); padding: 0 var(--space-4);
   font-size: var(--text-subheadline-size); line-height: var(--text-subheadline-line-height); font-weight: var(--weight-semibold); letter-spacing: normal;
-  border-radius: var(--radius-capsule); cursor: pointer; flex-shrink: 0; max-width: 100%; text-align: center;
+  border-radius: min(var(--radius-capsule), max(var(--radius-xl), calc(var(--ld-btn-control) / 2))); cursor: pointer; flex-shrink: 0; max-width: 100%; text-align: center;
   -webkit-tap-highlight-color: transparent;
   transition: transform var(--ld-dur) var(--ld-spring), background-color var(--ld-dur) var(--ld-ease), opacity var(--ld-dur) var(--ld-ease);
 }

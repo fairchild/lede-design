@@ -444,3 +444,34 @@ test('At 200% text on a 1280px window, the layout previews open at Narrow', asyn
     await expect(page.getByRole('radio', { name: scale === 2 ? 'Narrow' : 'Wide' }).first(), `${scale}x`).toBeChecked();
   }
 });
+
+// A Button whose label wraps grows taller, and a capsule's radius would make it an oval. Its corners stop at
+// `--radius-xl` or half its control's height, so a wrapped Button is a rounded rectangle and a one-line Button is still
+// a capsule. Two copies of the page's first Button, one labeled "Save" and one with a label that takes four lines or
+// more, are read at each text size. Two lines can still be a capsule, since half their height is under `--radius-xl`.
+for (const scale of [1, 2, 3]) {
+  test(`A wrapped Button is a rounded rectangle and a one-line Button a capsule, at ${scale * 100}% text`, async ({ page, isMobile }) => {
+    test.skip(!isMobile, 'A phone is the narrow case.');
+    await atTextSize(page, scale);
+    await page.setViewportSize({ width: 390, height: 800 });
+    await settle(page, '/components', scale);
+    const shapes = await page.evaluate(() => {
+      const source = document.querySelector('.ld-btn:not(.ld-btn-rounded, .ld-btn-sm, .ld-btn-lg)')!;
+      const read = (label: string) => {
+        const button = source.cloneNode() as HTMLElement;
+        button.textContent = label;
+        source.parentElement!.append(button);
+        const { height } = button.getBoundingClientRect();
+        const style = getComputedStyle(button);
+        const oneLine = Math.max(parseFloat(style.minHeight), parseFloat(style.lineHeight));
+        const radius = parseFloat(style.borderTopLeftRadius);
+        button.remove();
+        return { wraps: height > oneLine + 0.5, capsule: radius >= height / 2 - 0.5 };
+      };
+      return { one: read('Save'), wrapped: read('Approve the quarterly budget, send the signed copy to finance before Friday and ask the team to move the planning review to the week after the offsite') };
+    });
+    expect(shapes.one).toEqual({ wraps: false, capsule: true });
+    expect(shapes.wrapped.wraps).toBe(true);
+    expect(shapes.wrapped.capsule, 'a wrapped Button keeps a capsule’s radius and turns into an oval').toBe(false);
+  });
+}

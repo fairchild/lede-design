@@ -225,8 +225,8 @@ const optionsOf = (prop: string) => [...new RegExp(`\\b${prop}\\?: ([^;]+);`).ex
 // What each option should come to. Literal, so a wrong value in tokens/tokens.json fails here. The first is the default.
 const SCALES: Record<string, Record<string, Record<string, string>>> = {
   shape: {
-    soft: { '--radius': '22px', '--radius-capsule': '999px', '--radius-xl': '30px', '--radius-lg': '22px', '--radius-md': '14px', '--radius-sm': '10px', '--radius-xs': '6px', capsuleRadius: '999px', roundedRadius: '14px' },
-    crisp: { '--radius': '12px', '--radius-capsule': '999px', '--radius-xl': '20px', '--radius-lg': '12px', '--radius-md': '4px', '--radius-sm': '2px', '--radius-xs': '2px', capsuleRadius: '999px', roundedRadius: '4px' },
+    soft: { '--radius': '22px', '--radius-capsule': '999px', '--radius-xl': '30px', '--radius-lg': '22px', '--radius-md': '14px', '--radius-sm': '10px', '--radius-xs': '6px', capsuleRadius: '30px', roundedRadius: '14px' },
+    crisp: { '--radius': '12px', '--radius-capsule': '999px', '--radius-xl': '20px', '--radius-lg': '12px', '--radius-md': '4px', '--radius-sm': '2px', '--radius-xs': '2px', capsuleRadius: '20px', roundedRadius: '4px' },
     square: { '--radius': '4px', '--radius-capsule': '6px', '--radius-xl': '12px', '--radius-lg': '4px', '--radius-md': '2px', '--radius-sm': '2px', '--radius-xs': '2px', capsuleRadius: '6px', roundedRadius: '2px' },
   },
   density: {
@@ -254,10 +254,11 @@ test('A capsule survives a shadow root that loads the same CSS', async ({ page }
     root.innerHTML = '<button class="ld-btn">Capsule</button>';
     return getComputedStyle(root.firstElementChild!).borderRadius;
   });
-  expect(radius).toBe('999px');
+  // A capsule stops at --radius-xl, which a 36px Button never reaches, so it still reads as fully round.
+  expect(radius).toBe('30px');
 });
 
-// A capsule button shows --radius-capsule and the md height; a rounded large one shows the derived --radius-md and the lg
+// A capsule button shows --radius-capsule, capped at --radius-xl or half its height, and the md height; a rounded large one shows the derived --radius-md and the lg
 // height; a checkbox shows --ld-table-hit, which derives from the md height.
 const controls = (name: string) => h('span', { 'data-case': name },
   h(Button, null, 'Capsule'), h(Button, { shape: 'rounded', size: 'lg' }, 'Rounded'), h(Checkbox, { 'aria-label': 'Hit target' }));
