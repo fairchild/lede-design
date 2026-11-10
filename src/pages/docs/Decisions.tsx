@@ -279,13 +279,6 @@ const GROUPS: Group[] = [
         ],
       },
       {
-        title: 'Self-hosted CI runs in one job',
-        summary: 'When hosted runners are unavailable, one job on one self-hosted runner covers a pull request: the build, the Playwright suite, perf and each integration.',
-        why: 'A self-hosted machine serves one runner at a time, so shards run one after another and each repeats the checkout, npm ci and the web servers’ builds. One job does that setup once.',
-        cost: <>The suite runs on one machine’s workers, so a run takes longer than hosted CI’s parallel shards. The per-suite jobs stay for rerunning one part, and each sets up from scratch. The Playwright web servers still build their own copies, because those have the <code>/fixtures/*</code> pages and the strict one has React’s development build.</>,
-        heldBy: [<><Path to=".github/workflows/self-hosted-ci.yml" />, whose <code>full</code> job is the default, and <Path to="docs/self-hosted-ci.md" />, which a person or an agent follows to serve it.</>],
-      },
-      {
         title: 'Released notes stay as shipped',
         summary: <>New changelog lines go under <code>{'##\u00a0Unreleased'}</code> at the top, and a release renames it to the version. A released section stays as it shipped.</>,
         why: 'A consumer reads a released section as the record of what that version did, so editing it later changes the record they upgraded from.',

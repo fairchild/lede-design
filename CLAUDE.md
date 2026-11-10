@@ -20,9 +20,6 @@ picks what to run.
   from `npm run preview` (4173), because outside CI they reuse whatever server is on their port; a first check fails
   if that server has no fixture pages.
 - `npm run contrast` — the contrast gate alone; `npm run contrast -- --report` prints every pair.
-- Self-hosted CI: `docs/self-hosted-ci.md` runs a PR's CI on a machine you control while hosted runners are
-  unavailable. Its default `full` job runs the build, the suite, perf and the integrations on one runner.
-  "Do self hosted" means run it for the PR in hand, in the background, and report the run URL.
 - CI runs what a PR into main can affect, and `check` is the one status to read. `scripts/ci-tier.mjs` sorts the
   PR's diff against main. A diff of only Markdown the site doesn't render (the root `CHANGELOG.md`, `CONTRIBUTING.md`
   and `CLAUDE.md`, plus Markdown in `docs/` and `.claude/`) runs the build. Overview renders the README's install steps,
