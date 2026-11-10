@@ -25,7 +25,7 @@ First public release. Lede is a design system for React, installed from its shad
   row that opened it as it closes.
 - WorkbenchShell: a shell too narrow for its main pane, with both panels collapsed, draws them at 0 wide where it
   drew `NaN`.
-- ThemeProvider: its doc comment and the README say that stock shadcn `dark:` utilities, high contrast and
+- ThemeProvider: its doc comment and the README's Limits say that stock shadcn `dark:` utilities, high contrast and
   `glass="solid"` reach a light provider nested in a dark one, as shadcn's own `.dark` class does.
 - DataTable's Try again moves focus to the summary line after the retry's state is in, so the summary has its text
   when focus arrives. The narrow-layout sample on the docs page now compiles: it passes `noun`, and its columns fill
