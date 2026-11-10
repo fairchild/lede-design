@@ -25,3 +25,13 @@ First public release. Lede is a design system for React, installed from its shad
 - A Button whose label wraps is a rounded rectangle, with corners of `--radius-xl` or more. A one-line Button is
   still a capsule and an icon-only one a circle, at every size, shape, density and text size.
 - A GlassToolbarButton whose label wraps keeps the curve of one line, so it stays concentric with the toolbar.
+- DataTable: an uncontrolled selection drops rows that were deleted, so after a bulk Archive the bar leaves with its
+  rows and the next action sends only what's selected. A row counts as deleted when it leaves `rows` while the view,
+  the page and `state.rows` stay the same, so a row on another page stays selected. `useDataTable` takes `paging` to
+  tell the two apart.
+- DataTable: "Select all N" becomes "Clear selection" in place and keeps focus, and Clear selection moves focus to the
+  summary line.
+- DataTable: when a sort or a page change fails to load, focus moves to Try again as the alert arrives.
+- DataTable shows its loading skeleton while `state.rows` is `'none'` and nothing failed, so a `useServerRows` table
+  never shows "No {noun}" or a count of 0 before its first request goes out.
+- DataTable: `sortable: true` works in server mode without `value` or `compare`, since the server sorts.

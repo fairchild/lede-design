@@ -9,8 +9,9 @@ import type { RowAction } from '@lede/list';
 
 /**
  * Test fixtures for edge cases the docs and demo don't exercise: a cursor-only server, a page size that changes at
- * runtime, a column sorted only by `compare`, card fields wider than their line, and tables in other locales. Not
- * linked from the navigation; tests/data-table.spec.ts drives it.
+ * runtime, a column sorted only by `compare`, card fields wider than their line, tables in other locales, an
+ * uncontrolled selection whose rows are archived and a server table's first frames. Not linked from the navigation;
+ * tests/data-table.spec.ts drives it.
  */
 type Item = { id: string; n: number; rank: number };
 const ITEMS: Item[] = Array.from({ length: 10 }, (_, n) => ({ id: `i${n}`, n, rank: [3, 1, 2, 9, 7, 8, 6, 4, 5, 0][n] }));
@@ -336,6 +337,65 @@ function RemovalFixture() {
 }
 
 /**
+ * An uncontrolled selection with a bulk Archive that removes its rows, in client pages of 3. Each Archive press is
+ * listed with the ids it received, so a test can see a second press send nothing already archived.
+ */
+function UncontrolledFixture() {
+  const [rows, setRows] = React.useState(() => NUMS.slice(0, 7));
+  const [page, setPage] = React.useState(0);
+  const [sent, setSent] = React.useState<string[]>([]);
+  const pageCount = Math.max(1, Math.ceil(rows.length / 3));
+  const at = Math.min(page, pageCount - 1);
+  const archive = (s: Selection) => {
+    setSent((all) => [...all, rows.filter((r) => isSelected(s, r.id)).map((r) => r.id).join(',')]);
+    setRows((all) => all.filter((r) => !isSelected(s, r.id)));
+  };
+  return (
+    <section aria-labelledby="fx-uncontrolled" className="docs-section">
+      <h2 id="fx-uncontrolled" className="text-title-3">Uncontrolled selection</h2>
+      <ol aria-label="Archive presses">{sent.map((ids, i) => <li key={i}>{ids || 'nothing'}</li>)}</ol>
+      <DataTable
+        aria-label="Uncontrolled fixture"
+        noun={noun}
+        columns={numColumns}
+        rows={rows.slice(at * 3, at * 3 + 3)}
+        getRowId={(r) => r.id}
+        rowHeader="n"
+        rowHref={(r) => `#${r.id}`}
+        total={rows.length}
+        paging={{ kind: 'pages', page: at, pageCount, onPageChange: setPage }}
+        selectionMode="multiple"
+        bulkActions={[{ label: 'Archive', onSelect: archive }]}
+      />
+    </section>
+  );
+}
+
+/**
+ * A server table mounted on demand, so a test watches its first frames. Its Label column is sortable with neither
+ * `value` nor `compare`: the server sorts.
+ */
+const labelColumns: Column<Item>[] = [
+  { id: 'n', label: 'Number', value: (r) => r.n },
+  { id: 'label', label: 'Label', cell: (r) => `Item ${r.n}`, sortable: true },
+];
+function ServerTable() {
+  const [view, setView] = React.useState<TableView>({ sort: [] });
+  const rows = useServerRows({ view, fetchRows: offsetRows, pageSize: 3 });
+  return <DataTable aria-label="Mounted server fixture" noun={noun} columns={labelColumns} getRowId={(r) => r.id} rowHeader="n" processing="server" view={view} onViewChange={setView} {...rows} />;
+}
+function MountedServerFixture() {
+  const [shown, setShown] = React.useState(false);
+  return (
+    <section aria-labelledby="fx-mounted" className="docs-section">
+      <h2 id="fx-mounted" className="text-title-3">A server table mounted later</h2>
+      <Button variant="gray" onClick={() => setShown(true)}>Show the server table</Button>
+      {shown ? <ServerTable /> : null}
+    </section>
+  );
+}
+
+/**
  * The hook alone, driven from a test through `window.ledeHookProbe`: its selection model, and a setter for
  * `state.rows`. For the headless contract the rendered table doesn't reach (its checkboxes are disabled).
  */
@@ -370,6 +430,8 @@ export function DataTableFixtures() {
       <LongFieldsFixture />
       <LocaleFixture />
       <RemovalFixture />
+      <UncontrolledFixture />
+      <MountedServerFixture />
       <HookProbe />
     </div>
   );
