@@ -105,3 +105,18 @@ test('without ResizeObserver it renders, keeps CSS\'s equal-share thumb and stay
   expect(await set.getAttribute('data-fit')).toBeNull();
   expect(errors).toEqual([]);
 });
+
+test('a value that matches no option checks no radio and shows no thumb, until an option is chosen', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto('/fixtures/segmented-control');
+  const region = page.getByRole('region', { name: 'No option matches' });
+  for (const name of ['Misspelled', 'Controlled']) {
+    const set = region.getByRole('group', { name });
+    await expect(set.getByRole('radio')).toHaveCount(3);
+    for (const radio of await set.getByRole('radio').all()) await expect(radio).not.toBeChecked();
+    await expect(set.locator('.ld-seg-thumb')).toBeHidden();
+    await set.getByRole('radio', { name: 'Week' }).check();
+    await expect(set.locator('.ld-seg-thumb')).toBeVisible();
+    await expect.poll(() => gap(set)).toBeLessThanOrEqual(1);
+  }
+});
