@@ -13,9 +13,10 @@ export interface PageHeaderProps {
   /** Back link for nested screens, such as `{ href: '/settings', label: 'Settings' }`. */
   back?: { href: string; label: string };
   /**
-   * Escape activates the back link, unless a layer above it took the key first: an open menu or dialog, a form being
-   * edited or a field whose text changed. Default `true` when `back` is set on a level 1 heading. A level 2 header sits
-   * inside another screen, so its Escape is off unless you turn it on.
+   * Escape activates the back link, unless a layer above it took the key first: an open menu or dialog, or the focused
+   * field when its text changed since it took focus. It doesn't see a form's other fields, so a form that must keep
+   * Escape while it has unsaved changes turns this off while dirty, as ProfileFlow does. Default `true` when `back` is
+   * set on a level 1 heading. A level 2 header sits inside another screen, so its Escape is off unless you turn it on.
    */
   backOnEscape?: boolean;
   /** One or two Buttons, at most one of them filled. */
@@ -23,8 +24,9 @@ export interface PageHeaderProps {
   /** Heading level: 1 for a screen's title, or 2 for a header shown inside another page. Default 1. */
   headingLevel?: 1 | 2;
   /**
-   * Focus the heading on mount, so people using a keyboard or a screen reader land on the new screen. It yields when
-   * something else in the same commit moved focus inside its `<main>`. Default `true`.
+   * Focus the heading on mount, and again each time this turns `true`, so people using a keyboard or a screen reader
+   * land on the new screen. A screen that shows its list again after a detail, such as InboxFlow, sets it back to `true`
+   * to land there. It yields when something else in the same commit moved focus inside its `<main>`. Default `true`.
    */
   focusOnMount?: boolean;
   /** The heading element, for moving focus here after an action removes the focused control. */
@@ -50,12 +52,23 @@ function overlayOpen() {
   try { return document.querySelector(':modal, :popover-open') !== null; } catch { return false; }
 }
 
+/** Active Escape handlers, latest last: the most recently activated one takes the press. */
+const layers: React.RefObject<(() => void) | undefined>[] = [];
+const focused = (e: FocusEvent) => remember(e.target as Element);
+function key(e: KeyboardEvent) {
+  if (e.key !== 'Escape' || e.repeat || e.defaultPrevented || e.isComposing || overlayOpen()) return;
+  if (e.target instanceof Element && fieldKeeps(e.target)) return;
+  e.preventDefault();
+  layers.at(-1)?.current?.();
+}
+
 /**
  * Escape backs out one layer per press: calls `onEscape` for a press no layer above took. An open menu, `<dialog>` or
  * popover closes first, an IME composition keeps its Escape, and so does a field the person changed. A held key's
- * repeats back out of nothing more. An inner layer
- * that handles Escape itself, such as SelectionBar, calls `preventDefault()` and this one leaves it. Pass
- * `undefined` when there's nothing to back out of. PageHeader uses it for `backOnEscape`.
+ * repeats back out of nothing more. Of several active callers, the one activated most recently takes the press, so an
+ * inner layer using this hook backs out before the screen's PageHeader. An inner layer that handles Escape itself,
+ * such as SelectionBar, calls `preventDefault()` and this one leaves it. Pass `undefined` when there's nothing to back
+ * out of. PageHeader uses it for `backOnEscape`.
  */
 export function useBackOnEscape(onEscape: (() => void) | undefined) {
   const run = React.useRef(onEscape);
@@ -64,19 +77,17 @@ export function useBackOnEscape(onEscape: (() => void) | undefined) {
   // In the commit that shows the screen, so an Escape pressed as it appears already backs out of it.
   React.useLayoutEffect(() => {
     if (!on) return undefined;
-    const key = (e: KeyboardEvent) => {
-      if (e.key !== 'Escape' || e.repeat || e.defaultPrevented || e.isComposing || overlayOpen()) return;
-      if (e.target instanceof Element && fieldKeeps(e.target)) return;
-      e.preventDefault();
-      run.current?.();
-    };
-    const focused = (e: FocusEvent) => remember(e.target as Element);
     remember(document.activeElement);
-    document.addEventListener('focusin', focused, true);
-    document.addEventListener('keydown', key);
+    if (layers.push(run) === 1) {
+      document.addEventListener('focusin', focused, true);
+      document.addEventListener('keydown', key);
+    }
     return () => {
-      document.removeEventListener('focusin', focused, true);
-      document.removeEventListener('keydown', key);
+      layers.splice(layers.lastIndexOf(run), 1);
+      if (layers.length === 0) {
+        document.removeEventListener('focusin', focused, true);
+        document.removeEventListener('keydown', key);
+      }
     };
   }, [on]);
 }

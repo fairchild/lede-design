@@ -30,3 +30,16 @@ First public release. Lede is a design system for React, installed from its shad
 - A SegmentedControl whose value matches no option shows no thumb, since no radio is checked. This covers a controlled
   `''`, a misspelled `defaultValue` and options that arrive after the first render. Choosing an option shows the thumb
   on it.
+- A glass Card is opaque under `prefers-reduced-transparency`, as every other glass surface is.
+- Enter on a Switch inside a form clicks the form's default button, as Enter on a native checkbox does: that button's
+  `onClick` runs, and a disabled default button means no submit. A form with no submit button still submits.
+- A Switch answers a press over `size-hit-min` in every density, though its track is drawn 30px tall.
+- An uncontrolled GlassBar of links marks the item whose `href` is the page's path, so a page loaded at its second
+  item no longer marks the first. A Cmd, Ctrl, Shift or Alt click leaves the mark where it is.
+- Checkbox runs the cleanup a React 19 callback ref returns.
+- StepIndicator's one-line summary is read on narrow screens, where it's all that shows. It's a group named "Progress",
+  since its steps aren't links.
+- Of several layers using `useBackOnEscape`, the most recently activated one takes Escape, so an inner layer backs out
+  before the screen's PageHeader.
+- The docs for PageHeader's `focusOnMount` and `backOnEscape` describe what they do: the heading takes focus each time
+  `focusOnMount` turns `true`, and `backOnEscape` yields to the focused field when its text changed.

@@ -171,6 +171,8 @@
   width: var(--size-switch-width); height: var(--size-switch-height); border-radius: var(--radius-capsule); background: var(--fill-control-strong); cursor: inherit;
   box-shadow: inset 0 0 0 1px var(--input); transition: background-color var(--ld-dur) var(--ld-ease);
 }
+/* The track is drawn shorter than a finger, so a press reaches it over `size-hit-min`, as on a small Button. */
+.ld-switch-track::after { content: ""; position: absolute; inset: min(0px, calc((var(--size-switch-height) - var(--size-hit-min)) / 2)) 0; }
 .ld-switch-track[data-checked] { background: var(--primary); box-shadow: none; }
 .ld-switch-track[data-disabled] { background: var(--fill-control); }
 .ld-switch-knob {
@@ -230,6 +232,10 @@
 .ld-card-pad-lg { --ld-pad: var(--space-6); }
 .ld-card-muted { background: var(--muted); }
 .ld-card-glass { background: var(--glass-tint); }
+/* `.ld-card-glass` comes after `.ld-glass`, so it repeats the glass's opaque fallback. */
+@media (prefers-reduced-transparency: reduce) {
+  .ld-card.ld-card-glass { background: var(--card); }
+}
 [data-theme$="-hc"] .ld-card { box-shadow: 0 0 0 1px var(--input); }
 .ld-concentric { border-radius: max(var(--radius-xs), calc(var(--ld-outer, var(--radius-lg)) - var(--ld-pad, var(--space-2)))); overflow: hidden; }
 
@@ -276,6 +282,8 @@
 .ld-row-primary.ld-row-target { margin-inline: calc(-1 * var(--space-2)); padding-inline: var(--space-2); }
 .ld-row-target:focus-visible { outline-offset: calc(-1 * var(--stroke-ring)); border-radius: var(--radius-xs); }
 .ld-row-trailing, .ld-row-more { position: relative; z-index: 2; }
+/* Off the baseline, so a Switch is centered in its row and its press area stays inside a 44px row. */
+.ld-row-trailing .ld-switch { vertical-align: top; }
 .ld-row-leading { flex: none; display: flex; width: var(--size-leading); height: var(--size-leading); margin-block: calc(-1 * var(--ld-row-pad)); align-items: center; justify-content: center; }
 /* Beside a leading slot, a value on a line of its own starts under the title: the slot hangs into an inset as wide as
    itself and its gap. */
