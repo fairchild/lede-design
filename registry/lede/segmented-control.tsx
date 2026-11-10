@@ -2,7 +2,8 @@ import * as React from 'react';
 import { cn } from './cn';
 
 export interface SegmentedOption { value: string; label: React.ReactNode; }
-export interface SegmentedControlProps {
+export interface SegmentedControlProps
+  extends Omit<React.ComponentProps<'fieldset'>, 'children' | 'defaultValue' | 'onChange'> {
   /** The group's accessible name, rendered as a visually hidden `<legend>`. */
   label: string;
   options: Array<SegmentedOption | string>;
@@ -11,26 +12,48 @@ export interface SegmentedControlProps {
   onValueChange?: (value: string) => void;
   /** Form field name. Defaults to a generated id. */
   name?: string;
+  /** The form the radios belong to, by id, when the control sits outside it. */
+  form?: string;
+  /** A choice is needed before the form submits. */
+  required?: boolean;
   size?: 'sm' | 'md';
   block?: boolean;
-  disabled?: boolean;
-  className?: string;
 }
 
 /**
  * A native `<fieldset>` of radio inputs: arrow keys, form submission and screen-reader semantics come from the browser.
  * It fits the width its container gives it, narrowing its labels' insets and then stacking them. An `auto` grid track
  * that holds it, or a flex item holding it without `min-width: 0`, gives it its labels' full width, so it can't fit.
+ * `name`, `form` and `required` go on each radio; other HTML attributes and `ref` go on the `<fieldset>`.
  */
-export function SegmentedControl(props: SegmentedControlProps) {
-  const opts = props.options.map((o) => (typeof o === 'string' ? { value: o, label: o } : o));
+export function SegmentedControl({
+  label, options, value: controlled, defaultValue, onValueChange, name, form, required, size, block, className, ref, ...rest
+}: SegmentedControlProps) {
+  const opts = options.map((o) => (typeof o === 'string' ? { value: o, label: o } : o));
   const autoName = React.useId();
-  const [inner, setInner] = React.useState(props.defaultValue ?? opts[0]?.value);
-  const value = props.value !== undefined ? props.value : inner;
+  const [inner, setInner] = React.useState(defaultValue ?? opts[0]?.value);
+  const value = controlled !== undefined ? controlled : inner;
   const idx = opts.findIndex((o) => o.value === value);
   // The segments' nodes are keyed by value, so new values mean new nodes to observe.
   const values = opts.map((o) => o.value).join('\n');
   const setRef = React.useRef<HTMLFieldSetElement>(null);
+  const fieldsetRef = React.useCallback(
+    (el: HTMLFieldSetElement | null) => {
+      setRef.current = el;
+      if (typeof ref === 'function') {
+        const cleanup = ref(el);
+        // React 19 calls a returned cleanup instead of calling the ref with `null`, so the consumer's runs too.
+        return () => {
+          setRef.current = null;
+          if (typeof cleanup === 'function') cleanup();
+          else ref(null);
+        };
+      }
+      if (ref) (ref as React.RefObject<HTMLFieldSetElement | null>).current = el;
+      return undefined;
+    },
+    [ref],
+  );
   const placed = React.useRef<{ idx: number; box: string } | null>(null);
   // Segments share the width equally until a label needs more. Labels that don't fit side by side narrow their insets,
   // then stack. The thumb takes CSS's equal share while the segments are equal (as in server markup, before this
@@ -88,24 +111,22 @@ export function SegmentedControl(props: SegmentedControlProps) {
     };
   }, [idx, values]);
   return (
-    <fieldset
-      ref={setRef}
-      className={cn('ld-seg', props.size === 'sm' && 'ld-seg-sm', props.block && 'ld-seg-block', props.className)}
-      disabled={props.disabled}
-    >
-      <legend className="ld-sr-only">{props.label}</legend>
+    <fieldset {...rest} ref={fieldsetRef} className={cn('ld-seg', size === 'sm' && 'ld-seg-sm', block && 'ld-seg-block', className)}>
+      <legend className="ld-sr-only">{label}</legend>
       <span className="ld-seg-thumb" aria-hidden="true" hidden={idx < 0} style={{ '--ld-seg-n': opts.length, '--ld-seg-i': idx } as React.CSSProperties} />
       {opts.map((o) => (
         <label key={o.value} className="ld-seg-item">
           <input
             type="radio"
             className="ld-seg-input"
-            name={props.name ?? autoName}
+            name={name ?? autoName}
+            form={form}
+            required={required}
             value={o.value}
             checked={o.value === value}
             onChange={() => {
-              if (props.value === undefined) setInner(o.value);
-              props.onValueChange?.(o.value);
+              if (controlled === undefined) setInner(o.value);
+              onValueChange?.(o.value);
             }}
           />
           <span className="ld-seg-label">{o.label}</span>

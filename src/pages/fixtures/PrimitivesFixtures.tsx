@@ -7,15 +7,27 @@ import { Switch } from '@lede/switch';
 import { PageHeader, useBackOnEscape } from '@lede/blocks/page-header';
 import { StepIndicator } from '@lede/blocks/step-indicator';
 
-/** A form with a Switch and a Submit button that counts its clicks and the form's submits. */
-function SwitchForm({ title, disabled }: { title: string; disabled?: boolean }) {
+const PICTURE = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1 1"%3E%3Crect width="1" height="1" fill="gray"/%3E%3C/svg%3E';
+
+/**
+ * A form with a Switch and a native checkbox beside it, which counts its submit button's clicks and the form's submits.
+ * `submit` is a Submit button, enabled or disabled, an image button, or none. `fields` is how many text fields it has.
+ * `preventEnter` gives the Switch an `onKeyDown` that prevents Enter's default.
+ */
+function SwitchForm({ title, submit = 'button', fields = 0, preventEnter = false }: {
+  title: string; submit?: 'button' | 'disabled' | 'image' | 'none'; fields?: number; preventEnter?: boolean;
+}) {
   const [submits, setSubmits] = React.useState(0);
   const [clicks, setClicks] = React.useState(0);
+  const click = () => setClicks((n) => n + 1);
   return (
     <section aria-label={title} className="docs-section">
       <form onSubmit={(e) => { e.preventDefault(); setSubmits((n) => n + 1); }}>
-        <Switch name="brief" label="Daily brief" />
-        <Button type="submit" disabled={disabled} onClick={() => setClicks((n) => n + 1)}>Submit</Button>
+        {Array.from({ length: fields }, (_, i) => <input key={i} type="text" aria-label={`Field ${i + 1}`} />)}
+        <Switch name="brief" label="Daily brief" onKeyDown={preventEnter ? (e) => { if (e.key === 'Enter') e.preventDefault(); } : undefined} />
+        <label><input type="checkbox" /> Native checkbox</label>
+        {submit === 'button' || submit === 'disabled' ? <Button type="submit" disabled={submit === 'disabled'} onClick={click}>Submit</Button> : null}
+        {submit === 'image' ? <input type="image" src={PICTURE} alt="Submit" width={24} height={24} onClick={click} /> : null}
       </form>
       <p>Submits: {submits} · Clicks: {clicks}</p>
     </section>
@@ -71,7 +83,12 @@ export function PrimitivesFixtures() {
         <Card padding="md" data-testid="plain">A plain card.</Card>
       </section>
       <SwitchForm title="Switch with a Submit button" />
-      <SwitchForm title="Switch with a disabled Submit button" disabled />
+      <SwitchForm title="Switch with a disabled Submit button" submit="disabled" />
+      <SwitchForm title="Switch with an image Submit button" submit="image" />
+      <SwitchForm title="Switch alone, no Submit button" submit="none" />
+      <SwitchForm title="Switch whose onKeyDown prevents Enter" preventEnter />
+      <SwitchForm title="Switch and one text field, no Submit button" submit="none" fields={1} />
+      <SwitchForm title="Switch and two text fields, no Submit button" submit="none" fields={2} />
       <section aria-label="Links with no value" className="docs-section">
         <GlassBar aria-label="Places" items={[{ value: 'other', label: 'Other page', href: '/fixtures/page-header' }, { value: 'here', label: 'This page', href: '/fixtures/primitives' }]} />
       </section>
