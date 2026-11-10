@@ -100,6 +100,9 @@ To move to a later release, read the [CHANGELOG](CHANGELOG.md), change the versi
   on white.
 - **Install from the registry URL.** The CLI's `owner/repo/item#tag` addresses don't work for Lede: `lede-theme` needs
   a CSS file the build generates, and the `@lede/…` dependencies need a registry.
+- **Nested themes reach stock shadcn utilities.** A light [`ThemeProvider`](https://lede.cloudcompute.com/components#c-theme)
+  inside a dark one sets Lede's tokens, and stock `dark:` utilities, high contrast and `glass="solid"` still match
+  inside it, as under shadcn's own `.dark` class.
 
 ## Develop
 

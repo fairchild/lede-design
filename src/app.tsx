@@ -126,6 +126,8 @@ const routes = () => createBrowserRouter(
               { path: 'fixtures/segmented-control', lazy: load(() => import('@/pages/fixtures/SegmentedFixtures'), 'SegmentedFixtures'), handle: { title: 'Segmented control fixtures' } },
               { path: 'fixtures/page-header', lazy: load(() => import('@/pages/fixtures/PageHeaderFixtures'), 'PageHeaderFixtures'), handle: { title: 'Page header fixtures' } },
               { path: 'fixtures/list-row', lazy: load(() => import('@/pages/fixtures/ListRowFixtures'), 'ListRowFixtures'), handle: { title: 'List row fixtures' } },
+              { path: 'fixtures/list-focus', lazy: load(() => import('@/pages/fixtures/ListFocusFixtures'), 'ListFocusFixtures'), handle: { title: 'List focus fixtures' } },
+              { path: 'fixtures/master-detail', lazy: load(() => import('@/pages/fixtures/ListFocusFixtures'), 'MasterDetailFixtures'), handle: { title: 'Master detail fixture' } },
               { path: 'fixtures/table', lazy: load(() => import('@/pages/fixtures/TableFixtures'), 'TableFixtures'), handle: { title: 'Table fixtures' } },
               { path: 'fixtures/pass-through', lazy: load(() => import('@/pages/fixtures/PassThroughFixtures'), 'PassThroughFixtures'), handle: { title: 'Pass-through fixtures' } },
               { path: 'fixtures/primitives', lazy: load(() => import('@/pages/fixtures/PrimitivesFixtures'), 'PrimitivesFixtures'), handle: { title: 'Primitives fixtures' } },

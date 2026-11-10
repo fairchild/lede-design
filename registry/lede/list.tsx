@@ -2,6 +2,7 @@ import * as React from 'react';
 import { Menu } from '@base-ui/react/menu';
 import { useMove } from '@react-aria/interactions';
 import { cn } from './cn';
+import { focusLanding } from './input-modality';
 import { useLinkComponent } from './link';
 import { ThemeScope } from './theme-provider';
 import type { ToneSubset } from './tone';
@@ -41,6 +42,51 @@ export function ListGroup(props: ListGroupProps) {
   );
 }
 
+const TABBABLE = ':is(a[href], button, input, select, textarea, [tabindex]):not(:disabled, [tabindex="-1"])';
+/** Where focus goes in a row: its link or button, else its first control. The swipe actions sit outside `.ld-row`. */
+const rowTarget = (row: Element) =>
+  row.querySelector<HTMLElement>('.ld-row-target') ?? row.querySelector<HTMLElement>(`.ld-row ${TABBABLE}`);
+const hasFocus = () => {
+  const at = document.activeElement as HTMLElement | null;
+  return !!at && at !== document.body && at.isConnected && at.checkVisibility();
+};
+const moveTo = (el: HTMLElement) => {
+  el.focus({ preventScroll: true });
+  el.scrollIntoView({ block: 'nearest' });
+};
+
+/**
+ * Notes the reader's place before a row action runs, and returns what keeps it when the action takes the row away:
+ * the next row, else the one before, else the group's heading, else the next visible control in reading order. A
+ * parent that moved focus itself, as InboxFlow does, keeps its choice, and so does one that took the whole group away,
+ * as a navigation does.
+ */
+function keepPlace(li: HTMLLIElement) {
+  const rows = [...(li.parentElement?.children ?? [])];
+  const at = rows.indexOf(li);
+  const near = [...rows.slice(at + 1), ...rows.slice(0, at).reverse()];
+  const group = li.closest('.ld-list') ?? li.parentElement!;
+  const heading = group.querySelector<HTMLElement>('.ld-list-title');
+  const following = [...document.querySelectorAll<HTMLElement>(TABBABLE)]
+    .filter((el) => !group.contains(el) && !!(group.compareDocumentPosition(el) & Node.DOCUMENT_POSITION_FOLLOWING));
+  return () => {
+    if (li.isConnected || !group.isConnected || hasFocus()) return;
+    const row = near.filter((r) => r.isConnected).map(rowTarget).find(Boolean);
+    if (row) return moveTo(row);
+    if (heading?.isConnected) {
+      heading.tabIndex = -1;
+      focusLanding(heading);
+      heading.scrollIntoView({ block: 'nearest' });
+    } else {
+      const next = following.find((el) => el.isConnected && el.checkVisibility() && !el.closest('[inert]'));
+      if (next) moveTo(next);
+    }
+  };
+}
+
+/** The place the latest row action noted. An action on another row replaces it. */
+let latestPlace: (() => void) | null = null;
+
 export interface RowAction {
   label: string;
   /** Default `'primary'`. `'critical'` for destructive actions. */
@@ -69,7 +115,7 @@ export interface ListRowProps {
   href?: string;
   /** The row's `href` is the page being shown, such as the open message. Adds `aria-current="page"`. */
   current?: boolean;
-  /** Acts in place: the row renders a real `<button>`. Use `href` for navigation. */
+  /** Acts in place: the row renders a real `<button>`. Use `href` for navigation. With `href`, it runs on the link's click too. */
   onClick?: (e: React.MouseEvent) => void;
   /** Disclosure chevron. Default `true` when `href` or `onClick` is set. */
   chevron?: boolean;
@@ -92,7 +138,7 @@ export interface ListRowProps {
 /** An action's narrowest width, as in the CSS; the swipe distance before the actions are measured. */
 const ACTION_W = 76;
 /** Base UI menu items for row actions; disabled ones stay listed, with their reason. */
-export function RowActionItems({ actions }: { actions: RowAction[] }) {
+export function RowActionItems({ actions, onAction }: { actions: RowAction[]; onAction?: (run: () => void) => void }) {
   return (
     <>
       {actions.map((a, i) => (
@@ -100,7 +146,7 @@ export function RowActionItems({ actions }: { actions: RowAction[] }) {
           key={i}
           disabled={a.disabled}
           className={cn('ld-menu-item', a.tone === 'critical' && 'ld-menu-item-critical', a.disabledReason && 'ld-menu-item-reason')}
-          onClick={() => a.onSelect?.()}
+          onClick={() => (onAction ? onAction(() => a.onSelect?.()) : a.onSelect?.())}
         >
           <span>{a.label}</span>
           {a.disabled && a.disabledReason ? <span className="ld-menu-item-hint">{a.disabledReason}</span> : null}
@@ -121,7 +167,12 @@ const Dots = () => (
   </svg>
 );
 
-/** An `<li>` whose primary target is a real `<a>` (`href`) or `<button>` (`onClick`). The swipe is a touch and pen shortcut, through React Aria's `useMove`. */
+/**
+ * An `<li>` whose primary target is a real `<a>` (`href`) or `<button>` (`onClick`). The swipe is a touch and pen
+ * shortcut, through React Aria's `useMove`. An action that removes its row moves focus to the next row, else the one
+ * before, else the group's heading. A parent that moves focus itself after removing a row does it in a layout effect
+ * or inside `flushSync`, so its move comes first and the row leaves it there.
+ */
 export function ListRow(props: ListRowProps) {
   const Link = useLinkComponent();
   const actions = props.actions ?? [];
@@ -141,7 +192,40 @@ export function ListRow(props: ListRowProps) {
   const actionsRef = React.useRef<HTMLDivElement>(null);
   // `inert` takes the hidden swipe buttons out of the tab order. It's set on the element, since React 18 and 19 treat
   // an `inert` prop differently.
-  React.useEffect(() => { if (actionsRef.current) actionsRef.current.inert = !open; }, [open]);
+  // A swipe action that leaves its row in place closes the actions, so focus moves from its button to the row first.
+  React.useLayoutEffect(() => {
+    const el = actionsRef.current;
+    if (!el) return;
+    if (!open && el.contains(document.activeElement)) {
+      const to = el.parentElement && rowTarget(el.parentElement);
+      if (to) to.focus({ preventScroll: true });
+    }
+    el.inert = !open;
+  }, [open]);
+  // An action that takes its row away keeps the reader's place, once the row has left and the parent has had its turn.
+  const liRef = React.useRef<HTMLLIElement>(null);
+  const place = React.useRef<(() => void) | null>(null);
+  // The place holds until the row leaves, so a row a server removes later keeps it too. The next action on any row
+  // replaces it, and focus moving on to a visible element outside the row lets it go. Focus that drops to <body> as the
+  // row leaves has no `relatedTarget`, so that blur keeps it. The ••• menu returns focus to its trigger after the popup
+  // has gone, so the menu's blur has none either.
+  const release = (e: React.FocusEvent<HTMLLIElement>) => {
+    const to = e.relatedTarget;
+    if (!place.current || !(to instanceof HTMLElement) || !to.checkVisibility()) return;
+    if (e.currentTarget.contains(to)) return;
+    if (latestPlace === place.current) latestPlace = null;
+    place.current = null;
+  };
+  const act = (run: () => void) => {
+    const keep = liRef.current && keepPlace(liRef.current);
+    place.current = latestPlace = keep;
+    run();
+    keep?.();
+  };
+  React.useLayoutEffect(() => () => {
+    const keep = place.current;
+    if (keep && keep === latestPlace) { latestPlace = null; queueMicrotask(keep); }
+  }, []);
   // Fit the actions to the row: labels grow with the text, then `tight` holds them at the default size, then `menu`
   // closes the row and leaves them to the ••• menu. Re-fit when a label, the text size or the row's width changes.
   React.useLayoutEffect(() => {
@@ -212,7 +296,7 @@ export function ListRow(props: ListRowProps) {
     </>
   );
   const primary = props.href ? (
-    <Link className="ld-row-primary ld-row-target" href={props.href} aria-current={props.current ? 'page' : undefined}>{content}</Link>
+    <Link className="ld-row-primary ld-row-target" href={props.href} aria-current={props.current ? 'page' : undefined} onClick={props.onClick}>{content}</Link>
   ) : props.onClick ? (
     <button type="button" className="ld-row-primary ld-row-target" onClick={props.onClick}>{content}</button>
   ) : (
@@ -226,6 +310,8 @@ export function ListRow(props: ListRowProps) {
         (open || dx != null) && 'ld-row-revealed', props.actionsVisible && 'ld-row-actions-visible', props.className,
       )}
       data-row-id={props.rowKey}
+      ref={liRef}
+      onBlur={release}
     >
       {swipeable ? (
         <div ref={actionsRef} className="ld-row-actions" aria-hidden={!open}>
@@ -235,7 +321,7 @@ export function ListRow(props: ListRowProps) {
               type="button"
               disabled={a.disabled}
               className={cn('ld-row-action', a.tone === 'critical' && 'ld-row-action-critical', a.tone === 'neutral' && 'ld-row-action-neutral')}
-              onClick={() => { setOpen(false); a.onSelect?.(); }}
+              onClick={() => { setOpen(false); act(() => a.onSelect?.()); }}
             >
               {a.label}
             </button>
@@ -264,7 +350,7 @@ export function ListRow(props: ListRowProps) {
               <ThemeScope>
                 <Menu.Positioner className="ld-menu-positioner" sideOffset={6} align="end">
                   <Menu.Popup className="ld-menu">
-                    <RowActionItems actions={actions} />
+                    <RowActionItems actions={actions} onAction={act} />
                   </Menu.Popup>
                 </Menu.Positioner>
               </ThemeScope>
