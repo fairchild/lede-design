@@ -11,7 +11,7 @@ export type TableLabel =
 /** Matches `aria-sort`. */
 export type SortDirection = 'ascending' | 'descending';
 /** Column width in px. `preferred` sets the `<col>`, and `min` is the narrowest it gets: past that, the table scrolls. */
-export interface ColumnWidth { min?: number; preferred?: number; max?: number; }
+export interface ColumnWidth { min?: number; preferred?: number; }
 type Align = 'start' | 'end' | 'center';
 
 /**
@@ -44,15 +44,6 @@ export type TableRootProps = CollapsibleLabel & {
   ref?: React.Ref<HTMLDivElement>;
 };
 
-/**
- * A real `<table>` in a box. When the table is wider than its box, the box scrolls and becomes a named, focusable
- * region so people using a keyboard can scroll it. Otherwise it only clips and adds no tab stop, and the header sticks
- * to the page. Truncated cells get their full text as a hover title, measured when the pointer arrives.
- *
- * The box takes the width its container gives it: it is an inline-size container, so column widths can be CSS. Put
- * it where a block fills the width. A shrink-to-fit parent (`inline-block`, `float`, `fit-content`, `flex: none`)
- * gives it no width of its own. A sticky first column takes its width from Table.Columns, or is measured after layout.
- */
 // Bundlers replace `process.env.NODE_ENV` at build time. It's declared here so apps without Node's types type-check.
 declare const process: { env: { NODE_ENV?: string } };
 
@@ -77,6 +68,15 @@ function notInAButton(button: Element): Element | undefined {
     && ((!PHRASING.has(el.localName) && !el.localName.includes('-')) || el.matches(INTERACTIVE)));
 }
 
+/**
+ * A real `<table>` in a box. When the table is wider than its box, the box scrolls and becomes a named, focusable
+ * region so people using a keyboard can scroll it. Otherwise it only clips and adds no tab stop, and the header sticks
+ * to the page. Truncated cells get their full text as a hover title, measured when the pointer arrives.
+ *
+ * The box takes the width its container gives it: it is an inline-size container, so column widths can be CSS. Put
+ * it where a block fills the width. A shrink-to-fit parent (`inline-block`, `float`, `fit-content`, `flex: none`)
+ * gives it no width of its own. A sticky first column takes its width from Table.Columns, or is measured after layout.
+ */
 function Root(props: TableRootProps) {
   const { children, stickyFirstColumn, busy, className, ref } = props;
   const captionId = React.useId();
@@ -240,7 +240,7 @@ function columnWidths(widths: ReadonlyArray<ColumnWidth | number | string | unde
   const specs = widths.map((w): Spec =>
     typeof w === 'string' ? { css: w }
     : typeof w === 'number' ? { css: `${w}px` }
-    : w ? { min: w.min ?? w.preferred ?? AUTO_MIN, preferred: Math.max(w.min ?? 0, Math.min(w.preferred ?? w.min ?? AUTO_MIN, w.max ?? Infinity)) }
+    : w ? { min: w.min ?? w.preferred ?? AUTO_MIN, preferred: Math.max(w.min ?? 0, w.preferred ?? w.min ?? AUTO_MIN) }
     : { auto: true },
   );
   const base: string[] = [];
@@ -298,11 +298,14 @@ function Body({ className, ...rest }: React.HTMLAttributes<HTMLTableSectionEleme
 export interface RowProps extends React.HTMLAttributes<HTMLTableRowElement> {
   /** Styling only. The row's checkbox carries the selection for assistive tech, since table rows take no `aria-selected`. */
   selected?: boolean;
-  /** The row holds a stretched Table.RowLink. */
+  /**
+   * @deprecated Since 0.4.0, and removed in 0.5.0: a row that holds a Table.RowLink is linked on its own. Passing it
+   * changes nothing.
+   */
   linked?: boolean;
 }
-function Row({ selected, linked, className, ...rest }: RowProps) {
-  return <tr className={cn('ld-table-row', linked && 'ld-table-row-linked', className)} data-selected={selected || undefined} {...rest} />;
+function Row({ selected, linked: _linked, className, ...rest }: RowProps) {
+  return <tr className={cn('ld-table-row', className)} data-selected={selected || undefined} {...rest} />;
 }
 
 interface CellBase {
@@ -380,9 +383,12 @@ export interface RowLinkProps extends Omit<React.AnchorHTMLAttributes<HTMLAnchor
   href: string;
 }
 /**
- * A real link in the row-header cell, stretched over its `<tr>` (`position: relative`) with `::after`. Other controls
- * in the row sit above it. There is no click handler on the row: middle-click, the context menu and links lists all
- * work.
+ * A real link in the row-header cell, stretched over its `<tr>` with `::after`. Every other control in the row (a link,
+ * button, field or `[tabindex]` element, in any cell) sits above it and takes its own clicks. There is no click handler
+ * on the row: middle-click, the context menu and links lists all work.
+ *
+ * A `sticky` row-header cell is positioned, so it confines the stretched link to that cell. To keep the whole row one
+ * target there, put a twin link in another cell, out of the tab order and hidden from assistive tech, as DataTable does.
  */
 function RowLink({ className, ...rest }: RowLinkProps) {
   const Link = useLinkComponent();

@@ -209,7 +209,7 @@
    ".ld-disc-head:active": "A hover, press or highlight: it follows the pointer or the keyboard, and the control is drawn at rest.",
    ".ld-bar-tool:hover": "A hover, press or highlight: it follows the pointer or the keyboard, and the control is drawn at rest.",
    ".ld-table-toggle:active": "A hover, press or highlight: it follows the pointer or the keyboard, and the control is drawn at rest.",
-   ".ld-table-row-linked:hover > *": "A hover, press or highlight: it follows the pointer or the keyboard, and the control is drawn at rest.",
+   ".ld-table-row:has(.ld-table-link):hover > *": "A hover, press or highlight: it follows the pointer or the keyboard, and the control is drawn at rest.",
    ".ld-table-more:hover": "A hover, press or highlight: it follows the pointer or the keyboard, and the control is drawn at rest.",
    ".ld-table-more[data-popup-open]": "Its menu is open, and the menu shows that.",
    ".ld-step-mark": "A step's number, which its label names. It isn't a control.",

@@ -363,6 +363,9 @@
 /* A field keeps to one line and a line breaks between fields; a field wider than the line wraps inside itself, so
    nothing is cut off. */
 .ld-dt-card-field { display: inline-block; max-width: 100%; }
+/* A card with no link, checkbox or actions: its title takes focus, as the table's row header does. */
+.ld-dt-card-title { border-radius: var(--radius-xs); }
+.ld-dt-card-title:focus-visible { outline: var(--stroke-ring) solid var(--ring); outline-offset: var(--stroke-ring-offset); }
 /* In a card narrower than 440px the status moves under the text, which then has the card's whole width. */
 .ld-dt-cards { container: ld-dt-cards / inline-size; }
 @container ld-dt-cards (max-width: 439.98px) {
