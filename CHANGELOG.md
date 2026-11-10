@@ -12,6 +12,11 @@ First public release. Lede is a design system for React, installed from its shad
 
 ### Fixed before release
 
+- useServerRows: a page whose `nextCursor` is `null` ends the list and settles the count at the rows through it,
+  whatever the page's length. A `fetchCount` answer below the rows held from the first row on reads as a lower bound
+  of those rows, so Load more and Next stay offered.
+- useServerRows: the first render, and a server render, show the table loading until the first rows arrive. They
+  showed the empty state.
 - The registry's error responses (404, 412, 503 and 405) carry `access-control-allow-origin: *` like its JSON does, so a
   page fetching an item can read why it failed. An `OPTIONS` request under `/r/` answers the CORS preflight.
 - Files under `/media/` are typed by their extension alone and sent with `content-security-policy: sandbox` and
