@@ -62,7 +62,8 @@ installs is listed in `registry.json`. The `index.ts` barrels are for this repo 
 
 Edit tokens in `tokens/tokens.json` (the CSS is generated from it), and list every new registry file in `registry.json`.
 `npm run registry` fails if a registry file imports something its item doesn't install. Add the item that provides it
-to `registryDependencies`.
+to `registryDependencies`, or the package to `dependencies`. It also fails a dynamic import with a computed path, two
+files with one target and a file under `registry/` that no item lists.
 
 `npm run registry` also fails if a color has no pair or falls below its contrast floor. A new color token or
 `color-mix()` goes in `tokens/contrast.json`, with what it can sit on, and every pair meets its floor. In the
@@ -70,7 +71,8 @@ high-contrast themes (`light-hc` and `dark-hc`), every rule that paints a contro
 `tokens/contrast.json` lists it as no control, with a reason.
 `npm run contrast -- --report` prints every pair.
 
-The same command fails on a number or color in registry CSS that comes from no token. A choice is a token in
+The same command fails on a number or color in registry CSS that comes from no token. A named color such as `white`
+and a Tailwind palette utility in `@apply`, such as `bg-red-500`, are colors too. A choice is a token in
 `tokens/tokens.json`, and a value that follows from tokens is a `calc()` of them. The few numbers that are neither, such
 as zero, hairlines and the `2` that doubles a token in a `calc()`, are listed in `tokens/literal-exceptions.json` with
 their reasons, and an entry nothing matches fails the build. A number in a media or container query equals a
