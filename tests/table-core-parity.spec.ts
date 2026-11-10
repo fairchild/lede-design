@@ -12,7 +12,7 @@ test.skip(({ isMobile }) => isMobile, 'No browser: one project is enough.');
 
 const PIN = {
   version: '0.1.0',
-  commit: '4499f50',
+  commit: '4499f50fd6201b8a72aba83e7fe4e5f46419f152',
   /** registry/lede/blocks/server-rows-store.ts ↔ src/server-rows-store.ts, all but the import lines. */
   store: 'a73ad5609889567ea68fa98b7662a261608d56bd53f9ffa1fbb8f3d1a34e49c5',
   /** The shared types and two selection functions in use-data-table.ts ↔ src/types.ts and src/selection.ts, as code. */
