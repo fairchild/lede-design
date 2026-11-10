@@ -13,22 +13,22 @@ Lede is a content-first design system inspired by Apple's Human Interface Guidel
   - `registry/lede/`: primitives. `blocks/` holds layouts and higher-level components; `flows/` holds the hero flows.
   - `src/`: the docs site and demo app.
   - `registry.json`: the shadcn registry.
-  - `CLAUDE.md`: the layer rules and commands.
+  - `CONTRIBUTING.md`: the layers, the rules and the Writing section. `CLAUDE.md`: the commands and how CI picks what to run.
 - **In a project that uses Lede:** components are under `components/lede/` (with `blocks/` and `flows/`), styles are under `styles/lede/`, and `components.json` may map `@lede` to a registry URL.
 - **A Lede design system page or artifact**, if the session has one: read its own overview first, then its tokens and each component's guidelines.
 
-Read the repo's current `README.md` or `CLAUDE.md` before building. Token names and component APIs change, so don't work from memory.
+Read the repo's current `README.md` or `CONTRIBUTING.md` before building. Token names and component APIs change, so don't work from memory.
 
 ## Choose the layer
 1. A **flow**, if one fits: `DailyBriefFlow`, `InboxFlow`, `SettingsFlow` / `AppearanceFlow`, `OnboardingFlow`, `ProfileFlow`.
 2. Otherwise compose **blocks**: `AppShell`, `WorkbenchShell`, `PageHeader`, `SummaryCard`, `MasterDetail`, `FormSection`, `StepIndicator`, `EmptyState`, `SelectionBar`, `AccentPicker`, `DataTable` (with `useServerRows` for server-side rows).
-3. Build from **primitives**: `Button`, `SegmentedControl`, `Switch`, `TextField`, `Card`, `ListGroup` / `ListRow`, `Checkbox`, `Table` (stateless table parts), `Disclosure`, `Avatar`, `GlassBar` / `GlassToolbar`, `ThemeProvider`, `ThemeScope`, `LinkProvider`.
+3. Build from **primitives**: `Button`, `SegmentedControl`, `Switch`, `TextField`, `Card`, `ListGroup` / `ListRow`, `Checkbox`, `Table` (table parts, with an optional collapsible caption), `Disclosure`, `Avatar`, `GlassBar` / `GlassToolbar`, `ThemeProvider`, `ThemeScope`, `LinkProvider`.
 
 Flows are router-agnostic: data, hrefs and callbacks go in, and they do no fetching. Add a new pattern only when no existing one fits, and document why.
 
 ## By context
-- **Working in the Lede repo:** follow `CLAUDE.md`. Edit `tokens/tokens.json`, never generated CSS. `npm run build` and `npm test` (Playwright + axe in all four themes) must pass.
-- **Another React app:** Lede is client-rendered, so use a Vite app or another client-only React app; server rendering isn't supported yet. Install from the hosted registry, following the README's "Use it in a shadcn project": `npx shadcn@latest registry add '@lede=https://lede.cloudcompute.com/r/v0.4.0/{name}.json'`, then `npx shadcn@latest add @lede/theme-provider @lede/<item>`. A release's URL pins its version; before a release is tagged, `/r/next/{name}.json` on the same site is the unreleased build of main. Each component brings in `lede-theme`. In a create-vite app, first replace `src/index.css` with `@import "tailwindcss";`: its demo styles center every line in a bordered 1126px column and set `:root` to 18px, which rescales Lede. Import `styles/lede/index.css` after the shadcn globals; without it Lede draws unstyled, with no build error. Wrap the app in `<ThemeProvider surface="grouped" className="min-h-dvh">`, so the page itself takes the theme, and in `LinkProvider` with the router's link component.
+- **Working in the Lede repo:** follow `CONTRIBUTING.md` and `CLAUDE.md`. Edit `tokens/tokens.json`, never generated CSS. `npm run build` and `npm test` (Playwright + axe in all four themes) must pass.
+- **Another React app:** Lede is client-rendered, so use a Vite app or another client-only React app; server rendering isn't supported yet. Install from the hosted registry, following the README's "Use it in a shadcn project": add `https://lede.cloudcompute.com/r/v<version>/{name}.json` as `@lede`, pinned to a release, then `npx shadcn@latest add @lede/theme-provider @lede/<item>`. Each component brings in `lede-theme`. Import `styles/lede/index.css` after the shadcn globals. Wrap the app in `<ThemeProvider surface="grouped" className="min-h-dvh">`, so the page itself takes the theme, and in `LinkProvider` with the router's link component.
 - **A plain HTML page or artifact with no build step:** copy the token values into `:root`, `[data-theme="…"]`, `[data-theme][data-shape="…"]` and `[data-theme][data-density="…"]` blocks under the same names (`--primary`, `--muted-foreground`, `--radius`…). A value keyed by theme, shape or density puts its first key in `:root`. `data-shape` and `data-density` go on an element that also has `data-theme`, so the blocks apply and the derived radii and hit sizes recalculate. Each type style becomes `--text-<style>-size`, `-line-height` and `-weight`, plus `-letter-spacing` if the style has one. A token's `reducedMotion` value goes, with `!important`, in a `:root, [data-theme]` block inside `@media (prefers-reduced-motion: reduce)`, and a family marked `emit: false` isn't copied. Mirror the component markup and class names. Never invent tokens.
 - **A chat whose replies hold Lede screens (AI SDK and json-render):** install `@lede/json-render`, then follow `integrations/json-render-chat/AGENTS.md` in the source repository. It gives the recipe and the mistakes that break it.
 - **A design or mockup:** compose from the blocks and flows, and apply the rules below.

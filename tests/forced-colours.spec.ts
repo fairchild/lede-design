@@ -77,7 +77,9 @@ for (const scheme of ['light', 'dark'] as const) {
       await page.addStyleTag({ content: '* { font-weight: 400 !important; }' });
       await page.emulateMedia({ forcedColors: 'active', reducedMotion: 'reduce' });
       expect(await page.evaluate(() => matchMedia('(forced-colors: active)').matches)).toBe(true);
-      await page.evaluate(() => Promise.all(document.getAnimations().map((animation) => animation.finished)));
+      // An animation that's cancelled meanwhile, such as a skeleton row's when the rows arrive, rejects `finished` and is
+      // over too, so each one is waited on until it settles either way.
+      await page.evaluate(() => Promise.allSettled(document.getAnimations().map((animation) => animation.finished)));
       const forced = await painted();
       expect(forced.length).toBe(normal.length);
       for (const [i, control] of forced.entries()) {
@@ -231,7 +233,9 @@ for (const theme of EDGE_THEMES) {
       });
       expect(edges).toBeGreaterThan(0);
       await page.emulateMedia({ forcedColors: 'active', reducedMotion: 'reduce' });
-      await page.evaluate(() => Promise.all(document.getAnimations().map((animation) => animation.finished)));
+      // An animation that's cancelled meanwhile, such as a skeleton row's when the rows arrive, rejects `finished` and is
+      // over too, so each one is waited on until it settles either way.
+      await page.evaluate(() => Promise.allSettled(document.getAnimations().map((animation) => animation.finished)));
       const missing = await page.evaluate((standIns) => {
         // Forced colours keep a fill's alpha and make its colour Canvas, so a fill is compared by colour alone.
         const channels = (colour: string) => colour.match(/[\d.]+/g)?.map(Number) ?? [0, 0, 0, 0];

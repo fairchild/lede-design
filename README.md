@@ -1,8 +1,7 @@
 # <picture><source media="(prefers-color-scheme: dark)" srcset=".github/assets/mark-dark.png"><img alt="" src=".github/assets/mark-light.png" width="40" height="40" align="top"></picture> Lede
 
-Lede is a design system for React: components, blocks, layouts and hero flows, installed from a shadcn registry.
-Every screen, section and row leads with its takeaway, and detail opens on request. The name is the journalist's word
-for a story's opening line, the one that tells the reader what matters.
+Lede is a design system for React, installed from a shadcn registry. Every screen, section and row leads with its
+takeaway, and detail opens on request. The name is the journalist's word for a story's opening line.
 
 [Docs](https://lede.cloudcompute.com/) · [Daybook, the demo app](https://lede.cloudcompute.com/app) ·
 [Install](#use-it-in-a-shadcn-project) · [Changelog](CHANGELOG.md)
@@ -12,42 +11,32 @@ for a story's opening line, the one that tells the reader what matters.
   <img alt="Daybook's inbox: a list of messages beside the open one, each row leading with its subject and sender." src="docs/screenshots/inbox-light.png">
 </picture>
 
+## What's in it
+
+| Layer | What it is | Examples |
+| --- | --- | --- |
+| [Tokens](https://lede.cloudcompute.com/foundations) | Color in four themes, type, spacing, radius and motion, under shadcn's variable names. | `--primary`, `--radius`, `--fill-control` |
+| [Components](https://lede.cloudcompute.com/components) | Primitives, each a native element where HTML has one. | Button, Switch, ListGroup, Table |
+| [Blocks](https://lede.cloudcompute.com/blocks) | The larger parts of a screen, page layouts among them. | AppShell, PageHeader, DataTable |
+| [Flows](https://lede.cloudcompute.com/app) | Whole screens built from blocks. You pass data, hrefs and callbacks. | InboxFlow, OnboardingFlow |
+
+Each layer builds on the one above it, and you install only the items you use. Stock shadcn components take on Lede's
+theme too, because the tokens keep shadcn's names.
+
+Components use [Base UI](https://base-ui.com) for the interactions HTML can't do, and ARIA only for what HTML can't
+express. [Decisions](https://lede.cloudcompute.com/decisions) records how Lede is built and what checks it.
+
 Lede is inspired by Apple's Human Interface Guidelines: **Hierarchy, Harmony, Consistency** and **Progressive
 disclosure**.
 
 *Lede is an independent project with no affiliation with Apple, and Apple doesn't endorse it. It ships no Apple fonts,
 icons or assets.*
 
-- **Components**: ThemeProvider, Button, SegmentedControl, Switch, TextField, Checkbox, Avatar, Card, ListGroup with
-  ListRow, Disclosure, Table and GlassBar with GlassToolbar. Each is a native element where HTML has one, with
-  [Base UI](https://base-ui.com) for the interactions HTML can't do and ARIA only for what HTML can't express.
-- **Tokens** for color in four themes (`light`, `dark`, `light-hc` and `dark-hc`), type, spacing, radius, motion and
-  more. The colors and radius that shadcn/ui defines keep its variable names (`--primary`, `--radius`), so stock shadcn
-  components take on Lede too, and Lede's extras have names of their own (`--fill-control`). Tailwind v4 utilities map
-  to both (`bg-primary`, `bg-fill-control`, `rounded-lg`).
-- **Blocks**: AppShell and WorkbenchShell for page layouts, PageHeader, SummaryCard, MasterDetail, FormSection,
-  StepIndicator, EmptyState, SelectionBar, AccentPicker and DataTable. DataTable is a `<table>` with sorting,
-  selection, row links, row actions and optional cards for narrow containers, and `useServerRows` can fetch and cache
-  its rows from a server.
-- **Hero flows**: whole screens assembled from blocks. You pass data, hrefs and callbacks, and a flow fetches nothing
-  and imports no router: DailyBriefFlow, InboxFlow (a message list and the open message), SettingsFlow with
-  AppearanceFlow, ProfileFlow and OnboardingFlow.
-- **Theming**: `--primary` sets the accent, and `--radius` with `--radius-step` sets every corner except those of
-  capsules and circles. A capsule is fully round except under ThemeProvider's `shape="square"`. ThemeProvider sets
-  scheme, contrast, accent, shape, density and glass for a subtree. Put ThemeScope directly inside every portal,
-  including one inside another overlay, so its content keeps the theme.
-
 ## Use it in a shadcn project
 
-Lede installs from its hosted registry. Each release has its own URL, and a release's files never change, so pin the
-version in the URL.
-
-You need Node 22.12 or later and a project with React 19, Tailwind v4, the `@/*` path alias and a `components.json`.
-`npx shadcn@latest init` creates that file, and stops if the alias is missing.
-
-Lede renders on the client only, so use it in a Vite app or another client-only React app. It doesn't support server
-rendering yet: registry files have no `'use client'`, so Next's App Router fails at build. Inside a `'use client'` file
-it builds, but `scheme="auto"` doesn't follow a dark OS after hydration.
+You need Node 22.12 or later and a client-rendered React 19 project, such as a Vite app, with Tailwind v4, the `@/*`
+path alias and a `components.json`. `npx shadcn@latest init` creates that file. [Limits](#limits) covers server
+rendering.
 
 In an app made with create-vite, replace `src/index.css` first. Its demo styles center every line in a bordered 1126px
 column and set `:root` to 18px, which rescales Lede, and `shadcn init` merges into whatever `:root` it finds:
@@ -57,16 +46,15 @@ printf '@import "tailwindcss";\n' > src/index.css
 ```
 
 1. Add the registry and the items you want. Keep `@lede/theme-provider` in the list: step 4 needs it, and most items
-   don't install it. The CLI follows each item's `@lede/…` dependencies through the same registry, which brings in
-   `lede-theme`, and installs the npm packages they need.
+   don't install it.
 
    ```bash
    npx shadcn@latest registry add '@lede=https://lede.cloudcompute.com/r/v0.4.0/{name}.json'
    npx shadcn@latest add @lede/theme-provider @lede/data-table @lede/daily-brief @lede/inbox
    ```
 
-   The CLI copies the source into your project. The registry URL stays in `components.json`, so a later `add` installs
-   from the same release.
+   The CLI copies the source into your project and installs what each item depends on. The URL pins a release, and a
+   release's files never change.
 
 2. Import the styles once, at the end of your global CSS file, after your shadcn globals. The path is relative to that
    file. This one suits `src/index.css`.
@@ -76,15 +64,15 @@ printf '@import "tailwindcss";\n' > src/index.css
    ```
 
 3. Import each component from its own file. Components land in `components/lede/` and styles in `styles/lede/`, under
-   `src/` if your project has one. There is no barrel file.
+   `src/` if your project has one.
 
    ```tsx
    import { ListGroup, ListRow } from '@/components/lede/list';
    ```
 
-4. Wrap your app in `ThemeProvider` and `LinkProvider`. `body` stays white, so `surface="grouped"` and `min-h-dvh` make
-   the wrapper paint the theme's background and cover it. Without them a dark theme puts light text on white.
-   `LinkProvider` routes Lede's links through your router, so leave it out if you have none.
+4. Wrap your app in `ThemeProvider` and `LinkProvider`. `surface="grouped"` and `min-h-dvh` make the wrapper paint the
+   theme's background over the whole page. `LinkProvider` routes Lede's links through your router, so leave it out if
+   you have none.
 
    ```tsx
    import { LinkProvider } from '@/components/lede/link';
@@ -111,8 +99,17 @@ printf '@import "tailwindcss";\n' > src/index.css
 To move to a later release, read the [CHANGELOG](CHANGELOG.md), change the version in the registry URL in
 `components.json` and run the same `add` with `-o`. That overwrites your copies, including any edits you made to them.
 
-The CLI's `owner/repo/item#tag` addresses don't work for Lede. `lede-theme` needs `lede.tokens.css`, which the build
-generates, and the `@lede/…` dependencies need a registry.
+## Limits
+
+- **Client rendering only.** Registry files have no `'use client'`, so Next's App Router fails at build. Inside a
+  `'use client'` file it builds, but `scheme="auto"` doesn't follow a dark OS after hydration.
+- **`body` stays white.** Without `surface="grouped"` and `min-h-dvh` on `ThemeProvider`, a dark theme puts light text
+  on white.
+- **Install from the registry URL.** The CLI's `owner/repo/item#tag` addresses don't work for Lede: `lede-theme` needs
+  a CSS file the build generates, and the `@lede/…` dependencies need a registry.
+- **Nested themes reach stock shadcn utilities.** A light [`ThemeProvider`](https://lede.cloudcompute.com/components#c-theme)
+  inside a dark one sets Lede's tokens, and stock `dark:` utilities, high contrast and `glass="solid"` still match
+  inside it, as under shadcn's own `.dark` class.
 
 For a chat whose replies hold Lede screens, on the AI SDK and json-render, follow
 [`integrations/json-render-chat`](integrations/json-render-chat/README.md). Its
@@ -131,8 +128,8 @@ npm test           # Playwright and axe on every route, in four themes
 npm run contrast   # the contrast check alone
 ```
 
-[CONTRIBUTING.md](CONTRIBUTING.md) covers pull requests and the Writing rules, and [CLAUDE.md](CLAUDE.md) the layers
-and conventions.
+[CONTRIBUTING.md](CONTRIBUTING.md) covers how the code is organized, the rules every component follows, pull
+requests and writing.
 
 [`integrations/`](integrations/) holds small apps that show Lede beside other projects, starting with json-render.
 

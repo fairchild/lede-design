@@ -227,7 +227,7 @@ type SortItem = { columnId: string; direction: SortDirection };
 /** Everything a saved view stores. Version 2 adds optional keys; none is ever renamed or removed. */
 type TableView = {
   sort: SortItem[]; // v1: length 0 or 1
-  // v2: filter? (shipped in Unreleased), columnOrder?, columnVisibility?, columnWidths?, pinning?, density?, grouping?
+  // v2: filter? (shipped in 0.4.0), columnOrder?, columnVisibility?, columnWidths?, pinning?, density?, grouping?
 };
 type ViewChange = { type: "sort"; sort: SortItem[] };
 // v2 adds: 'filter' | 'columns' | 'resize' | 'pin' | 'group' (callers keep a default branch)
