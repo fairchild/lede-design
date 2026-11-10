@@ -52,25 +52,22 @@ function overlayOpen() {
   try { return document.querySelector(':modal, :popover-open') !== null; } catch { return false; }
 }
 
-/** Active Escape handlers, latest last: the most recently activated one takes the press. */
-const layers: React.RefObject<(() => void) | undefined>[] = [];
+type Layer = React.RefObject<(() => void) | undefined>;
+/**
+ * Active Escape handlers, latest last. A screen's PageHeader is the outermost layer by definition, so screens stack
+ * below every other layer whatever order they activated in, and the top inner layer takes the press.
+ */
+const screens: Layer[] = [];
+const inner: Layer[] = [];
 const focused = (e: FocusEvent) => remember(e.target as Element);
 function key(e: KeyboardEvent) {
   if (e.key !== 'Escape' || e.repeat || e.defaultPrevented || e.isComposing || overlayOpen()) return;
   if (e.target instanceof Element && fieldKeeps(e.target)) return;
   e.preventDefault();
-  layers.at(-1)?.current?.();
+  (inner.at(-1) ?? screens.at(-1))?.current?.();
 }
 
-/**
- * Escape backs out one layer per press: calls `onEscape` for a press no layer above took. An open menu, `<dialog>` or
- * popover closes first, an IME composition keeps its Escape, and so does a field the person changed. A held key's
- * repeats back out of nothing more. Of several active callers, the one activated most recently takes the press, so an
- * inner layer using this hook backs out before the screen's PageHeader. An inner layer that handles Escape itself,
- * such as SelectionBar, calls `preventDefault()` and this one leaves it. Pass `undefined` when there's nothing to back
- * out of. PageHeader uses it for `backOnEscape`.
- */
-export function useBackOnEscape(onEscape: (() => void) | undefined) {
+function useEscapeLayer(onEscape: (() => void) | undefined, stack: Layer[]) {
   const run = React.useRef(onEscape);
   React.useLayoutEffect(() => { run.current = onEscape; });
   const on = onEscape !== undefined;
@@ -78,18 +75,33 @@ export function useBackOnEscape(onEscape: (() => void) | undefined) {
   React.useLayoutEffect(() => {
     if (!on) return undefined;
     remember(document.activeElement);
-    if (layers.push(run) === 1) {
+    stack.push(run);
+    if (screens.length + inner.length === 1) {
       document.addEventListener('focusin', focused, true);
       document.addEventListener('keydown', key);
     }
     return () => {
-      layers.splice(layers.lastIndexOf(run), 1);
-      if (layers.length === 0) {
+      stack.splice(stack.lastIndexOf(run), 1);
+      if (screens.length + inner.length === 0) {
         document.removeEventListener('focusin', focused, true);
         document.removeEventListener('keydown', key);
       }
     };
-  }, [on]);
+  }, [on, stack]);
+}
+
+/**
+ * Escape backs out one layer per press: calls `onEscape` for a press no layer above took. An open menu, `<dialog>` or
+ * popover closes first, an IME composition keeps its Escape, and so does a field the person changed. A held key's
+ * repeats back out of nothing more. The press goes to the caller of this hook activated most recently, and to the
+ * screen's level 1 PageHeader only when no caller of this hook is active, so an inner layer backs out first even when
+ * it opened in the same commit as the screen or the screen turned `backOnEscape` back on while it was open. A level 2
+ * PageHeader with `backOnEscape` counts as one of these callers: it sits inside another screen. An inner layer that
+ * handles Escape itself, such as SelectionBar, calls `preventDefault()` and this one leaves it. Pass `undefined` when
+ * there's nothing to back out of. PageHeader uses it for `backOnEscape`.
+ */
+export function useBackOnEscape(onEscape: (() => void) | undefined) {
+  useEscapeLayer(onEscape, inner);
 }
 
 /** A `<header>` with the screen's `<h1>` and its one-line summary: the top level of progressive disclosure. */
@@ -98,7 +110,7 @@ export function PageHeader(props: PageHeaderProps) {
   const ref = React.useRef<HTMLHeadingElement>(null);
   const H = `h${props.headingLevel ?? 1}` as 'h1';
   const backRef = React.useRef<HTMLAnchorElement>(null);
-  useBackOnEscape(props.back && (props.backOnEscape ?? H === 'h1') ? () => backRef.current?.click() : undefined);
+  useEscapeLayer(props.back && (props.backOnEscape ?? H === 'h1') ? () => backRef.current?.click() : undefined, H === 'h1' ? screens : inner);
   React.useImperativeHandle(props.headingRef, () => ref.current as HTMLHeadingElement);
   // Where focus was as the screen rendered, before its commit moved it. Read in render, which runs before every effect
   // of the commit: StrictMode replays the effects, and a second run would read the move it should yield to.

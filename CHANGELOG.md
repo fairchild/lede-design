@@ -87,7 +87,8 @@ First public release. Lede is a design system for React, installed from its shad
 - Checkbox runs the cleanup a React 19 callback ref returns.
 - StepIndicator's one-line summary is read on narrow screens, where it's all that shows. It's a group named "Progress",
   since its steps aren't links.
-- Of several layers using `useBackOnEscape`, the most recently activated one takes Escape, so an inner layer backs out
-  before the screen's PageHeader.
+- An inner layer using `useBackOnEscape` takes Escape before the screen's PageHeader, even when both opened in the
+  same commit or the screen turned `backOnEscape` back on while the layer was open. Of several inner layers, the most
+  recently activated one takes it.
 - The docs for PageHeader's `focusOnMount` and `backOnEscape` describe what they do: the heading takes focus each time
   `focusOnMount` turns `true`, and `backOnEscape` yields to the focused field when its text changed.

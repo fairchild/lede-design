@@ -22,9 +22,9 @@ function SwitchForm({ title, disabled }: { title: string; disabled?: boolean }) 
   );
 }
 
-/** A layer inside the screen that backs out on Escape before the screen's back link. */
-function InnerLayer() {
-  const [open, setOpen] = React.useState(false);
+/** A layer inside the screen that backs out on Escape before the screen's back link. `?inner=open` mounts it open. */
+function InnerLayer({ initiallyOpen = false }: { initiallyOpen?: boolean }) {
+  const [open, setOpen] = React.useState(initiallyOpen);
   const opener = React.useRef<HTMLButtonElement>(null);
   useBackOnEscape(open ? () => { setOpen(false); opener.current?.focus(); } : undefined);
   return (
@@ -54,9 +54,16 @@ function CheckboxRef() {
 
 /** Primitives and small blocks in the states their specs drive. Not linked from the navigation. */
 export function PrimitivesFixtures() {
+  // Open on mount, the inner layer renders before the PageHeader, so its layout effect runs first in the same commit.
+  const [innerFirst] = React.useState(() => new URLSearchParams(window.location.search).get('inner') === 'open');
+  const [screenEscape, setScreenEscape] = React.useState(true);
   return (
     <div className="ld-flow">
-      <PageHeader title="Primitives fixtures" summary="Small primitives and blocks in the states the automated tests drive." back={{ href: '/fixtures/page-header', label: 'Page header fixtures' }} />
+      {innerFirst ? <InnerLayer initiallyOpen /> : null}
+      <PageHeader title="Primitives fixtures" summary="Small primitives and blocks in the states the automated tests drive." back={{ href: '/fixtures/page-header', label: 'Page header fixtures' }} backOnEscape={screenEscape} />
+      <section aria-label="Screen Escape" className="docs-section">
+        <label><Checkbox checked={screenEscape} onChange={(e) => setScreenEscape(e.target.checked)} /> Escape goes back</label>
+      </section>
       <section aria-label="Glass card" className="docs-section">
         <div style={{ padding: 24, background: 'repeating-linear-gradient(45deg, var(--primary) 0 12px, var(--background) 12px 24px)' }}>
           <Card surface="glass" padding="md" data-testid="glass">A glass card over stripes.</Card>
@@ -71,7 +78,7 @@ export function PrimitivesFixtures() {
       <section aria-label="Steps" className="docs-section">
         <StepIndicator steps={['Account', 'Preferences', 'Review']} current={1} />
       </section>
-      <InnerLayer />
+      {innerFirst ? null : <InnerLayer />}
       <CheckboxRef />
     </div>
   );
