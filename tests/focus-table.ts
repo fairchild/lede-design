@@ -413,6 +413,10 @@ const footBelowBar = async (page: Page) => {
   const bar = (await page.locator('.ld-shell-tabbar > *').boundingBox())!;
   return row.y + row.height - bar.y;
 };
+/** ListFocusFixtures and MasterDetailFixtures: a list whose row actions remove rows, and a MasterDetail with no focus code. */
+const listFocus = async ({ page }: Driver) => { await page.goto('/fixtures/list-focus'); };
+const masterDetail = async ({ page }: Driver) => { await page.goto('/fixtures/master-detail'); };
+const stackedView = { desktop: { width: 800, height: 800 }, phone: { width: 412, height: 800 } };
 const removalFixture = async ({ page }: Driver) => {
   await page.goto('/fixtures/data-table');
   await page.getByRole('region', { name: 'Removal' }).locator('[data-row-id="n0"]').waitFor();
@@ -1212,6 +1216,41 @@ export const ACTIONS: Action[] = [
       await expect(summary, 'the summary has its text when focus arrives').toHaveAttribute('data-text-at-focus', /\S/);
     },
   })),
+
+  // ListRow keeps the reader's place when a row action removes its row and the parent moves no focus, as the docs
+  // sample's Delete does. Its fixture removes rows with a plain state update.
+  ...([
+    ['the middle row', 'Work phone', link(/^Tablet/)],
+    ['the last row', 'Tablet', link(/^Work phone/)],
+  ] as const).flatMap(([where, name, target]): Action[] => [
+    { screen: 'List', action: `Row ••• → Delete on ${where}`, setup: listFocus, act: (d) => d.choose(more(name), 'Delete'), target },
+    { screen: 'List', action: `Swipe → Delete on ${where}`, setup: listFocus, only: 'phone', strictTouch: true, act: (d) => swipeTo(d, name, 'Delete'), target },
+  ]),
+  {
+    screen: 'List', action: 'Row ••• → Delete on a group’s only row', setup: listFocus,
+    act: (d) => d.choose(more('Desk computer'), 'Delete'), target: h2('Last device'),
+  },
+  {
+    screen: 'List', action: 'Row ••• → End on an untitled group’s only row', setup: listFocus,
+    act: (d) => d.choose(more('Guest session'), 'End'), target: button('After the list'),
+  },
+  {
+    // The row stays, so the swipe actions close and their button goes inert: focus moves to the row's link first.
+    screen: 'List', action: 'Swipe → Mark read, the row stays', setup: listFocus, only: 'phone', strictTouch: true,
+    act: (d) => swipeTo(d, 'Weekly summary', 'Mark read'), target: link(/^Weekly summary/),
+    check: async ({ page }) => { await expect(locate(page, link(/^Weekly summary/))).toContainText('Read'); },
+  },
+
+  // MasterDetail moves focus when its panes swap, for a caller with no focus code. Stacked under 1100px.
+  {
+    screen: 'Master detail', action: 'Open an item from its row', setup: masterDetail, viewport: stackedView,
+    act: (d) => d.press(button(/^Team offsite/)), target: h2('Team offsite'),
+  },
+  {
+    screen: 'Master detail', action: 'Close an item', viewport: stackedView,
+    setup: async (d) => { await masterDetail(d); await d.press(button(/^Team offsite/)); await locate(d.page, h2('Team offsite')).waitFor(); },
+    act: (d) => d.press(button('Close')), target: button(/^Team offsite/),
+  },
 ];
 
 // ——— How a row becomes tests ———

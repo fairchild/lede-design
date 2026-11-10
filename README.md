@@ -36,7 +36,9 @@ icons or assets.*
   capsules and circles. A capsule is fully round except under ThemeProvider's `shape="square"`, and a Button whose
   label wraps is a rounded rectangle. ThemeProvider sets scheme, contrast, accent, shape, density and glass for a
   subtree. Put ThemeScope directly inside every portal, including one inside another overlay, so its content keeps the
-  theme.
+  theme. A light provider nested in a dark one sets Lede's tokens for its subtree, and stock shadcn `dark:` utilities
+  still match inside it, as they do under shadcn's own `.dark` class. High contrast and `glass="solid"` reach nested
+  providers the same way.
 
 ## Use it in a shadcn project
 

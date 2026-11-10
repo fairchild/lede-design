@@ -12,6 +12,17 @@ First public release. Lede is a design system for React, installed from its shad
 
 ### Fixed before release
 
+- ListRow: a row with `href` runs its `onClick` too. A row action that removes its row keeps the reader's place: focus
+  moves to the next row, else the one before, else the group's heading, else the next control in reading order. A
+  parent that moves focus itself, as InboxFlow does, keeps its choice. A swipe action that leaves its row in place
+  moves focus to the row as the actions close.
+- MasterDetail: a `detail` of `false`, `true`, `''` or `0` counts as nothing selected, so `selected && <Message />`
+  works. When the panes swap on a narrow screen, focus moves to the detail's first heading as it opens and back to the
+  row that opened it as it closes.
+- WorkbenchShell: a shell too narrow for its main pane, with both panels collapsed, draws them at 0 wide where it
+  drew `NaN`.
+- ThemeProvider: its doc comment and the README say that stock shadcn `dark:` utilities, high contrast and
+  `glass="solid"` reach a light provider nested in a dark one, as shadcn's own `.dark` class does.
 - DataTable's Try again moves focus to the summary line after the retry's state is in, so the summary has its text
   when focus arrives. The narrow-layout sample on the docs page now compiles: it passes `noun`, and its columns fill
   the card slots its comment describes.
