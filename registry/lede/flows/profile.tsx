@@ -117,12 +117,13 @@ export function ProfileFlow({ value, onSave, back }: ProfileFlowProps) {
     const next = clean(draft);
     const found = validate(next);
     const first = CHECKED.find((k) => found[k]);
-    // The field is invalid and described by its error before focus reaches it. Focus already there fires no event, so
-    // the errors are also announced, after the move.
+    // The field is invalid and described by its error before focus reaches it, so the move reads the error. Focus
+    // already there fires no event, so then the errors are announced instead.
     flushSync(() => { setErrors(found); setSave('idle'); });
     if (first) {
-      inputs.current[first]?.focus();
-      announce(CHECKED.flatMap((k) => found[k] ?? []).join(' '), 'polite', 1000);
+      const field = inputs.current[first];
+      if (field && field === document.activeElement) announce(CHECKED.flatMap((k) => found[k] ?? []).join(' '), 'polite', 1000);
+      else field?.focus();
       return;
     }
     setSave('saving');

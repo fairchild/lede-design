@@ -26,7 +26,8 @@ export type DataTableProps<Row> = TableLabel &
     rowHref?: (row: Row) => string;
     /**
      * A visible ••• menu per row, read when it renders, so it reflects current state. Disabled actions stay listed
-     * with their reason. Keep it stable with `useCallback`: the card layout's memoized rows take it as an input.
+     * with their reason. It's called during render, for every row on every render, so keep it cheap. Keep it stable
+     * with `useCallback`: the card layout's memoized rows take it as an input.
      */
     rowActions?: (row: Row) => RowAction[];
     /** Opt-in touch swipe to reveal the row actions in the card layout. The menu is always there too. */
