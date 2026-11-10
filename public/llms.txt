@@ -16,7 +16,7 @@ Lede renders on the client only, so it suits a Vite app or another client-only R
 
 ## Source
 
-- [README](https://github.com/fairchild/lede-design#readme): install steps and what a project needs first
+- [README](https://github.com/fairchild/lede-design#readme): what Lede is and how to install it
 - [CHANGELOG](https://github.com/fairchild/lede-design/blob/main/CHANGELOG.md): what each release changed
 - [CONTRIBUTING](https://github.com/fairchild/lede-design/blob/main/CONTRIBUTING.md): the layers, the rules and the writing rules
 
