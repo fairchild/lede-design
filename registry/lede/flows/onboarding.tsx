@@ -28,10 +28,12 @@ export interface OnboardingFlowProps {
   /** Called with each accent as it's chosen, so the page can preview it. */
   onAccentPreview?: (accent: Preset) => void;
   /**
-   * Saves the answers when the person presses Finish. A returned promise keeps Review up, with Finish pending, until it
-   * settles: it resolves to the done step, and a rejection stays on Review with an inline error that shows the
-   * rejection's message when it's an `Error` with one, or asks the person to try again. Finish fires once per press
-   * until then. Without a promise the flow moves on at once.
+   * Saves the answers when the person presses Finish. Return the save's promise: Review stays up, with Finish pending,
+   * until it settles. It resolves to the done step, and a rejection or a throw stays on Review with an inline error
+   * that shows the message when it's an `Error` with one, or asks the person to try again. A save that settles after
+   * the step changed, such as by the browser's Back, moves nothing. A callback that returns nothing asks for the done
+   * step at once, and Finish stays spent until the step changes, so a controlled `step` that stays on Review leaves it
+   * pending.
    */
   onComplete: (data: OnboardingData) => void | Promise<void>;
   /** Where "Get started" goes after finishing. */
@@ -100,25 +102,29 @@ export function OnboardingFlow(props: OnboardingFlowProps) {
   const step = held ? 0 : (props.step ?? inner);
   const inputs = React.useRef<Partial<Record<keyof Errors, HTMLInputElement | null>>>({});
 
-  // Finish fires once until its save settles. A save without a promise counts as pending until the step changes.
+  // Finish fires once until its save settles. A save without a promise counts as pending until the step changes. Each
+  // step change starts a new run, so a save that settles in an earlier one moves nothing.
   const [finish, setFinish] = React.useState<{ state: 'idle' | 'saving' } | { state: 'failed'; message: string; n: number }>({ state: 'idle' });
   const finishing = React.useRef(false);
   const mounted = React.useRef(true);
   React.useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
-  React.useEffect(() => { finishing.current = false; setFinish({ state: 'idle' }); }, [step]);
+  const run = React.useRef(0);
+  React.useEffect(() => { run.current += 1; finishing.current = false; setFinish({ state: 'idle' }); }, [step]);
   const saving = finish.state === 'saving';
   const complete = async (e: React.FormEvent) => {
     e.preventDefault();
     if (finishing.current) return;
     finishing.current = true;
-    const saved = props.onComplete(data);
-    if (!saved) { go(3); return; }
-    setFinish({ state: 'saving' });
+    const pressed = run.current;
+    const current = () => mounted.current && run.current === pressed;
     try {
+      const saved = props.onComplete(data);
+      if (!saved) { go(3); return; }
+      setFinish({ state: 'saving' });
       await saved;
-      if (mounted.current) go(3);
+      if (current()) go(3);
     } catch (error) {
-      if (!mounted.current) return;
+      if (!current()) return;
       finishing.current = false;
       setFinish((now) => ({ state: 'failed', message: (error instanceof Error && error.message.trim()) || RETRY, n: (now.state === 'failed' ? now.n : 0) + 1 }));
     }
@@ -157,16 +163,17 @@ export function OnboardingFlow(props: OnboardingFlowProps) {
     );
   }
 
-  // The field is invalid and described by its error before focus reaches it. Focus already there fires no event, so the
-  // errors are also announced, after the move.
+  // The field is invalid and described by its error before focus reaches it, so the move reads the error. Focus already
+  // there fires no event, so then the errors are announced instead.
   const submitAccount = (e: React.FormEvent) => {
     e.preventDefault();
     const found = validate(data);
     const first = (['name', 'email'] as const).find((k) => found[k]);
     if (!first) { setErrors({}); setHeld(false); go(1); return; }
     flushSync(() => setErrors(found));
-    inputs.current[first]?.focus();
-    announce([found.name, found.email].filter(Boolean).join(' '), 'polite', 1000);
+    const field = inputs.current[first];
+    if (field && field === document.activeElement) announce([found.name, found.email].filter(Boolean).join(' '), 'polite', 1000);
+    else field?.focus();
   };
 
   return (

@@ -45,8 +45,11 @@ First public release. Lede is a design system for React, installed from its shad
 - OnboardingFlow: a controlled `step` past Account with no valid account waits for Continue, so the keystroke that
   makes the account valid no longer switches steps under the cursor.
 - ProfileFlow and OnboardingFlow: a field with an error checks itself again on each change, so the error leaves once
-  the value is fixed. A failed submit makes the field invalid before focus reaches it and announces the errors, so a
-  field that already had focus is heard too.
+  the value is fixed. A failed submit makes the field invalid before focus reaches it, so the move reads the error.
+  When focus was already on that field the errors are announced instead, so a screen reader says them once.
+- OnboardingFlow: an `onComplete` that throws as Finish is pressed shows its error on Review, and Finish works again.
+  A save that settles after the step changed, such as by the browser's Back, no longer moves to the done step.
+- DataTable: the `rowActions` doc says it's called during render for every row, so it should be cheap.
 - TextField takes a `ref` to its `<input>` or `<textarea>`.
 - An invalid TextField shows the focus ring outside its red edge when focused, as errors send focus there.
 - DataTable: an uncontrolled selection drops rows that were deleted, so after a bulk Archive the bar leaves with its
