@@ -16,8 +16,20 @@ export interface SwitchProps {
 }
 
 /**
- * Base UI Switch inside an enclosing `<label>`. Space toggles it, and Enter submits its form, as a native checkbox's
- * does. Given a `name`, it submits with the form through its hidden native input.
+ * Implicit submission, as Enter in a native checkbox does it: a click on the form's default button, which runs its
+ * `onClick`, or nothing when that button is disabled. A form with no submit button is submitted directly.
+ */
+function submitImplicitly(form: HTMLFormElement) {
+  const isSubmit = (el: Element): el is HTMLButtonElement | HTMLInputElement =>
+    (el instanceof HTMLButtonElement && el.type === 'submit') || (el instanceof HTMLInputElement && (el.type === 'submit' || el.type === 'image'));
+  const button = [...form.elements].find(isSubmit);
+  if (!button) form.requestSubmit();
+  else if (!button.matches(':disabled')) button.click();
+}
+
+/**
+ * Base UI Switch inside an enclosing `<label>`. Space toggles it, and Enter in a form presses the form's default
+ * button, as a native checkbox's does. Given a `name`, it submits with the form through its hidden native input.
  */
 export function Switch(props: SwitchProps) {
   const control = (
@@ -29,10 +41,10 @@ export function Switch(props: SwitchProps) {
       disabled={props.disabled}
       name={props.name}
       aria-label={props.label ? undefined : props['aria-label']}
-      // Enter submits the enclosing form, as it does from a native checkbox. Base UI's switch is a `<span>`, which doesn't.
+      // Base UI's switch is a `<span>`, which Enter doesn't submit from, so this does what a native checkbox's Enter does.
       onKeyDown={(e) => {
         const form = e.key === 'Enter' ? e.currentTarget.closest('form') : null;
-        if (form) { e.preventDefault(); form.requestSubmit(); }
+        if (form) { e.preventDefault(); submitImplicitly(form); }
       }}
     >
       <BaseSwitch.Thumb className="ld-switch-knob" />

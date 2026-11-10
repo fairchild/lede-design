@@ -117,7 +117,7 @@
       "name": "switch",
       "type": "registry:component",
       "title": "Switch",
-      "description": "A Base UI Switch in an enclosing `<label>`. Enter submits its form, as a checkbox's does. Given a `name`, it submits with a form through a hidden native input.",
+      "description": "A Base UI Switch in an enclosing `<label>`, where Enter presses its form's default button, as in a checkbox. Given a `name`, it submits with a form through a hidden native input.",
       "registryDependencies": [
         "@lede/lede-theme",
         "@lede/lede-utils"

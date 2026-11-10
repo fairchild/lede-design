@@ -127,6 +127,7 @@ const routes = () => createBrowserRouter(
               { path: 'fixtures/page-header', lazy: load(() => import('@/pages/fixtures/PageHeaderFixtures'), 'PageHeaderFixtures'), handle: { title: 'Page header fixtures' } },
               { path: 'fixtures/list-row', lazy: load(() => import('@/pages/fixtures/ListRowFixtures'), 'ListRowFixtures'), handle: { title: 'List row fixtures' } },
               { path: 'fixtures/table', lazy: load(() => import('@/pages/fixtures/TableFixtures'), 'TableFixtures'), handle: { title: 'Table fixtures' } },
+              { path: 'fixtures/primitives', lazy: load(() => import('@/pages/fixtures/PrimitivesFixtures'), 'PrimitivesFixtures'), handle: { title: 'Primitives fixtures' } },
             ] : []),
           ],
         },
