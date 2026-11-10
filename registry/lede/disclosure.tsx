@@ -23,7 +23,7 @@ export interface DisclosureProps extends Omit<React.ComponentProps<'section'>, '
 /**
  * Base UI Collapsible: a `<section>`, a heading holding a `<button aria-expanded>` and a panel kept in the DOM as
  * `hidden="until-found"`, so find-in-page can reveal it. Other HTML attributes and `ref` go on the `<section>`, so an
- * `id` makes the whole level a deep-link target.
+ * `id` makes the whole level a deep-link target: a link to it scrolls to the level and leaves it closed.
  */
 export function Disclosure({
   title, summary, meta, open, defaultOpen, onOpenChange, variant, headingLevel = 3, children, className, ref, ...rest

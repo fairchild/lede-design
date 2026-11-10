@@ -156,8 +156,17 @@ function Root(props: TableRootProps) {
   const setRef = React.useCallback(
     (el: HTMLDivElement | null) => {
       scrollRef.current = el;
-      if (typeof ref === 'function') ref(el);
-      else if (ref) (ref as React.RefObject<HTMLDivElement | null>).current = el;
+      if (typeof ref === 'function') {
+        const cleanup = ref(el);
+        // React 19 calls a returned cleanup instead of calling the ref with `null`, so the consumer's runs too.
+        return () => {
+          scrollRef.current = null;
+          if (typeof cleanup === 'function') cleanup();
+          else ref(null);
+        };
+      }
+      if (ref) (ref as React.RefObject<HTMLDivElement | null>).current = el;
+      return undefined;
     },
     [ref],
   );

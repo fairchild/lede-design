@@ -43,7 +43,26 @@ test('a SegmentedControl\'s attributes and ref land on its <fieldset>, and form 
 
 test('an Avatar\'s attributes and ref land on its initials <span>, or its <img>', async ({ page }) => {
   await expect(await landsOn(page, 'pass-avatar', 'span')).toHaveAttribute('title', 'Hana Sato');
-  await expect(await landsOn(page, 'pass-avatar-picture', 'img')).toHaveAttribute('title', 'Ren Ito');
+  const img = await landsOn(page, 'pass-avatar-picture', 'img');
+  await expect(img).toHaveAttribute('title', 'Ren Ito');
+  for (const [name, value] of [['loading', 'lazy'], ['decoding', 'async'], ['referrerpolicy', 'no-referrer'], ['crossorigin', 'anonymous']]) {
+    await expect(img).toHaveAttribute(name, value);
+  }
+});
+
+test('a link to a Disclosure\'s id scrolls to the level and leaves it closed', async ({ page }) => {
+  const section = page.locator('#pass-disclosure');
+  await expect(section).not.toBeInViewport();
+  await page.getByRole('link', { name: 'Go to the level' }).click();
+  await expect(page).toHaveURL(/#pass-disclosure$/);
+  await expect(section).toBeInViewport();
+  await expect(section.getByRole('button', { name: /A level/ })).toHaveAttribute('aria-expanded', 'false');
+});
+
+test('a SegmentedControl\'s and a Table.Root\'s ref run the cleanup a React 19 ref callback returns', async ({ page }) => {
+  const region = page.getByRole('region', { name: 'Ref cleanups' });
+  await region.getByRole('button', { name: 'Toggle the refs' }).click();
+  await expect(region.getByText('SegmentedControl cleanups: 1 · Table cleanups: 1')).toBeVisible();
 });
 
 test('a Table.Root\'s attributes land on its <table>, and className, style and ref on the scroll box', async ({ page }) => {

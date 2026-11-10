@@ -93,8 +93,12 @@ First public release. Lede is a design system for React, installed from its shad
   `aria-describedby`, and a `ref`. Each lands on the element the person sees and acts on: Switch's `role="switch"`
   element (its `id` and form props go on the native checkbox Base UI keeps, so `<label htmlFor>` names it), the
   `<fieldset>`, the `<section>`, the `<img>` or initials `<span>` and the `<nav>`. Switch and SegmentedControl also
-  take `required` and `form`, and Switch takes `value`, `uncheckedValue` and `readOnly`.
+  take `required` and `form`, and Switch takes `value`, `uncheckedValue`, `readOnly` and `inputRef`. Switch's type
+  names each prop it supports and holds no Base UI type.
+- A Switch's `onKeyDown` that prevents Enter's default stops the implicit submit.
+- Avatar passes `loading`, `decoding`, `referrerPolicy` and `crossOrigin` to its `<img>`.
 - Table.Root passes HTML attributes to its `<table>`, while `className`, `style` and `ref` stay on the scroll box.
+- SegmentedControl and Table.Root run the cleanup a React 19 callback ref returns, as Checkbox does.
 - Checkbox puts `style` and `hidden` on its wrapper with `className`, so `<Checkbox hidden />` hides the drawn box too.
   Every other attribute and the `ref` go on the input.
 - Button takes `ref` as a plain prop, as React 19 allows, and no longer wraps itself in `forwardRef`. A ref typed for

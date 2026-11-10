@@ -47,6 +47,15 @@ for (const [section, submits, clicks] of SWITCH_FORMS) {
   });
 }
 
+test('Enter on a Switch whose onKeyDown prevents its default submits nothing', async ({ page }) => {
+  await open(page);
+  const region = page.getByRole('region', { name: 'Switch whose onKeyDown prevents Enter' });
+  await region.getByRole('switch', { name: 'Daily brief' }).press('Enter');
+  // The Submit button beside it still submits, so the zero below is the Switch's doing.
+  await region.getByRole('button', { name: 'Submit' }).click();
+  await expect(region.getByText('Submits: 1 · Clicks: 1')).toBeVisible();
+});
+
 test('A GlassBar of links with no value marks the page it loaded on, and a click that opens a new tab leaves it', async ({ page, context }) => {
   await open(page);
   const bar = page.getByRole('navigation', { name: 'Places' });

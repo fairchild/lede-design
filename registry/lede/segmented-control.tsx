@@ -40,8 +40,17 @@ export function SegmentedControl({
   const fieldsetRef = React.useCallback(
     (el: HTMLFieldSetElement | null) => {
       setRef.current = el;
-      if (typeof ref === 'function') ref(el);
-      else if (ref) (ref as React.RefObject<HTMLFieldSetElement | null>).current = el;
+      if (typeof ref === 'function') {
+        const cleanup = ref(el);
+        // React 19 calls a returned cleanup instead of calling the ref with `null`, so the consumer's runs too.
+        return () => {
+          setRef.current = null;
+          if (typeof cleanup === 'function') cleanup();
+          else ref(null);
+        };
+      }
+      if (ref) (ref as React.RefObject<HTMLFieldSetElement | null>).current = el;
+      return undefined;
     },
     [ref],
   );
