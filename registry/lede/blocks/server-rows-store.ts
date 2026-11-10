@@ -7,7 +7,7 @@ export interface ServerRowsRequest {
   /** The previous page's `nextCursor` (load-more mode), for cursor-paged servers. */
   cursor?: string;
   limit: number;
-  /** Aborted when the request is out of date (the view or page changed) or the table unmounts. */
+  /** Aborted when the request is out of date (the view or page changed) or the store is stopped. */
   signal: AbortSignal;
 }
 /**
@@ -21,15 +21,19 @@ export interface ServerRowsResponse<Row> {
   rows: Row[];
   /**
    * A number, or `{ atLeast }` while the server computes the exact count: `fetchCount` is then called, unless a short
-   * offset page at or past the bound settles the count itself. A number on each page keeps the count current without
-   * `fetchCount`. Either is a non-negative finite number; anything else (NaN, a string, `{ atLeast: 'x' }`) fails the
-   * request. Leave it out when the server doesn't know. The rows win over a number below them: a total less than the
-   * rows through this page is read as `{ atLeast }` of them, so the rest of the list stays reachable. Those rows are
-   * `offset` plus these; for an empty page in pages mode, they are the rows on earlier pages the store holds and
-   * still trusts, which leaves out pages from before the last `reload()` and pages older than `staleAfter`.
+   * offset page at or past the bound, or a page with a `null` cursor, settles the count itself. A number on each page
+   * keeps the count current without `fetchCount`. Either is a non-negative finite number; anything else (NaN, a
+   * string, `{ atLeast: 'x' }`) fails the request. Leave it out when the server doesn't know. The rows win over a
+   * number below them: a total less than the rows through this page is read as `{ atLeast }` of them, so the rest of
+   * the list stays reachable. Those rows are `offset` plus these; for an empty page in pages mode, they are the rows
+   * through the furthest earlier page the store holds and still trusts: fetched since the last `reload()` and newer
+   * than `staleAfter`.
    */
   total?: Total;
-  /** Next page's cursor, or `null` when this is the last page. Omit for offset-only servers. */
+  /**
+   * Next page's cursor, or `null` when this is the last page. A `null` settles the count at the rows through this page,
+   * unless this page's `{ atLeast }` is above them. Omit for offset-only servers.
+   */
   nextCursor?: string | null;
 }
 export interface ServerCountRequest { view: TableView; signal: AbortSignal; }
@@ -50,9 +54,13 @@ export interface ServerRowsConfig<Row> {
    * again when a count it gave is redone (reload, revalidation, a count older than `staleAfter`), when a page fetched
    * while the count is redone can't settle it and when an empty page in pages mode finds the count too high. A count
    * that pages settle themselves isn't asked for.
+   *
+   * The rows win here too, but only the rows held from the first row on, with no gap, through pages the store still
+   * trusts: a count below them is read as `{ atLeast }` of the furthest rows held. Rows past a gap (a deep link) don't
+   * prove the rows before them, so a count above the unbroken rows is exact and clamps the page.
    */
   fetchCount?: (request: ServerCountRequest) => Promise<number>;
-  /** Rows per request. Default 50: mounting or sorting 500 rows costs 100–300 ms on a mid-range tablet. */
+  /** Rows per request. Default 50: rendering or sorting 500 rows costs 100–300 ms on a mid-range tablet. */
   pageSize?: number;
   /** `'load-more'` appends pages, and `'pages'` shows one page at a time. Default `'load-more'`. */
   mode?: 'load-more' | 'pages';
@@ -138,10 +146,11 @@ function withDefaults<Row>(c: ServerRowsConfig<Row>): Config<Row> {
 }
 
 /**
- * The server-side row model, independent of React. One `sync()` reconciles what is wanted with what is cached and
- * in flight: it aborts requests that are out of date, starts the one that is due and asks for the exact count.
+ * The server-side row model, independent of any UI framework. One `sync()` reconciles what is wanted with what is
+ * cached and in flight: it aborts requests that are out of date, starts the one that is due and asks for the exact
+ * count.
  *
- * A *visit* is one stay on a view and page: it starts on mount, on a new view or page size, on a page change and on
+ * A *visit* is one stay on a view and page: it starts on `start()`, on a new view or page size, on a page change and on
  * reload. Within a visit nothing is retried by itself (a failed page waits for `retry()`, a failed count for the next
  * visit), and what is on screen is checked for staleness once, when the visit starts. A new visit starts afresh.
  */
@@ -180,12 +189,12 @@ export class ServerRowsStore<Row> {
     this.snap = this.compute();
   }
 
-  // ---- React glue -------------------------------------------------------------------------------------------------
+  // ---- Subscription -------------------------------------------------------------------------------------------------
   subscribe = (fn: () => void) => { this.listeners.add(fn); return () => { this.listeners.delete(fn); }; };
   getSnapshot = () => this.snap;
-  /** Start fetching (on mount): a new visit. */
+  /** Start fetching, as when the table appears: a new visit. */
   start = () => { this.active = true; this.newVisit(); this.sync(); };
-  /** Abort everything in flight (on unmount). The cache is kept for a StrictMode or Activity remount. */
+  /** Abort everything in flight, as when the table goes away. The cache is kept for a later `start()`. */
   stop = () => { this.active = false; this.abortAll(); this.emit(); };
 
   /**
@@ -308,6 +317,11 @@ export class ServerRowsStore<Row> {
     const newest = Math.max(-Infinity, ...pages.map((p) => p?.seq ?? -Infinity));
     return newest < (e.recountSeq ?? -Infinity) ? e.exact : undefined;
   }
+  /** Pages that prove their rows: fetched since the count was redone, and still fresh. */
+  private trusted(e: Entry<Row>) {
+    const since = e.recount ? e.recountSeq ?? -Infinity : -Infinity;
+    return (page: Page<Row>) => page.seq > since && !this.stale(page);
+  }
   private setExact(e: Entry<Row>, n: number, from: 'page' | 'count') {
     e.exact = n;
     e.exactAt = this.cfg.now();
@@ -419,9 +433,7 @@ export class ServerRowsStore<Row> {
         // Rows win (see `ServerRowsResponse.total`). Before an empty page, pages older than `staleAfter` or than a
         // recount may hold deleted rows, so they don't count; a stale empty page may have rows now, so it ends nothing.
         const paged = this.cfg.mode === 'pages';
-        const since = e.recount ? e.recountSeq ?? -Infinity : -Infinity;
-        const trusted = (page: Page<Row>) => page.seq > since && !this.stale(page);
-        const proven = n > 0 || !paged ? reached : reach(into, p, pageSize, trusted);
+        const proven = n > 0 || !paged ? reached : reach(into, p, pageSize, this.trusted(e));
         const next = into[p + 1];
         const atEnd = paged && (n === 0 ? proven === offset : n === pageSize && next?.rows.length === 0 && !this.stale(next));
         const total: Total | undefined = typeof res.total === 'number' && res.total < proven ? (atEnd ? proven : { atLeast: proven }) : res.total;
@@ -437,8 +449,10 @@ export class ServerRowsStore<Row> {
           }
           // By offset, a page shorter than `limit` is the end of the list, unless its own bound says there are more
           // rows than it shows. A short page with rows says how many there are now: `offset` skipped, and these. So
-          // does an empty one in load-more mode, where the pages before it were fetched just now, in order.
-          const ends = res.nextCursor === undefined && n < pageSize && !(total && total.atLeast > reached);
+          // does an empty one in load-more mode, where the pages before it were fetched just now, in order, and so
+          // does a page whose cursor is `null`, whatever its length.
+          const last = res.nextCursor === null || (res.nextCursor === undefined && n < pageSize);
+          const ends = last && !(total && total.atLeast > reached);
           if (ends && (n > 0 || p === 0 || this.cfg.mode === 'load-more')) this.setExact(e, reached, 'page');
           else if (ends && e.exact != null && e.exact > offset) {
             // Pages mode: the pages before may be old, so an empty page proves only that there are fewer rows than the
@@ -488,7 +502,17 @@ export class ServerRowsStore<Row> {
         if (typeof n !== 'number' || !Number.isFinite(n) || n < 0) throw new Error('The count is not a number.');
         const e = this.entry(key);
         // A total learned since the count was asked (from a page) is newer: keep it.
-        if (!ctrl.signal.aborted && (e.exactSeq ?? -Infinity) < asked) this.setExact(e, n, 'count');
+        if (ctrl.signal.aborted || (e.exactSeq ?? -Infinity) >= asked) return;
+        // Rows win, as over a page's total, but only rows held without a gap from the first row overrule a count: rows
+        // past a gap (a deep link) leave the rows before them unproven. The bound is then the furthest rows held.
+        const trusted = this.trusted(e);
+        const held = unbroken(e.pages, trusted);
+        if (n >= held) this.setExact(e, n, 'count');
+        else {
+          this.dropExact(e);
+          const furthest = this.cfg.mode === 'pages' ? reach(e.pages, Infinity, this.cfg.pageSize, trusted) : held;
+          e.total = { atLeast: Math.max(furthest, lowerBound(e.total) ?? 0) };
+        }
       })
       .catch(() => undefined) // a failed count leaves `{ atLeast }`, and the next visit asks again
       .finally(() => {
@@ -662,6 +686,15 @@ function reach<Row>(pages: ReadonlyArray<Page<Row> | undefined>, p: number, page
     const q = Number(k);
     const page = pages[q];
     if (q < p && page && page.rows.length > 0 && trusted(page)) n = Math.max(n, q * pageSize + page.rows.length);
+  }
+  return n;
+}
+/** The rows the `trusted` pages hold from the first row on, up to the first page missing or not trusted. */
+function unbroken<Row>(pages: ReadonlyArray<Page<Row> | undefined>, trusted: (page: Page<Row>) => boolean) {
+  let n = 0;
+  for (const page of pages) {
+    if (!page || !trusted(page)) break;
+    n += page.rows.length;
   }
   return n;
 }

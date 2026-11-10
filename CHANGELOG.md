@@ -12,6 +12,9 @@ First public release. Lede is a design system for React, installed from its shad
 
 ### Fixed before release
 
+- useServerRows: a page whose `nextCursor` is `null` ends the list and settles the count at the rows through it,
+  whatever the page's length. A `fetchCount` answer below the rows held from the first row on reads as a lower bound
+  of those rows, so Load more and Next stay offered.
 - DataTable's Try again moves focus to the summary line after the retry's state is in, so the summary has its text
   when focus arrives. The narrow-layout sample on the docs page now compiles: it passes `noun`, and its columns fill
   the card slots its comment describes.
