@@ -1,0 +1,85 @@
+import * as React from 'react';
+import { Button } from '@lede/button';
+import { Card } from '@lede/card';
+import { Checkbox } from '@lede/checkbox';
+import { GlassBar } from '@lede/glass-bar';
+import { Switch } from '@lede/switch';
+import { PageHeader, useBackOnEscape } from '@lede/blocks/page-header';
+import { StepIndicator } from '@lede/blocks/step-indicator';
+
+/** A form with a Switch and a Submit button that counts its clicks and the form's submits. */
+function SwitchForm({ title, disabled }: { title: string; disabled?: boolean }) {
+  const [submits, setSubmits] = React.useState(0);
+  const [clicks, setClicks] = React.useState(0);
+  return (
+    <section aria-label={title} className="docs-section">
+      <form onSubmit={(e) => { e.preventDefault(); setSubmits((n) => n + 1); }}>
+        <Switch name="brief" label="Daily brief" />
+        <Button type="submit" disabled={disabled} onClick={() => setClicks((n) => n + 1)}>Submit</Button>
+      </form>
+      <p>Submits: {submits} · Clicks: {clicks}</p>
+    </section>
+  );
+}
+
+/** A layer inside the screen that backs out on Escape before the screen's back link. `?inner=open` mounts it open. */
+function InnerLayer({ initiallyOpen = false }: { initiallyOpen?: boolean }) {
+  const [open, setOpen] = React.useState(initiallyOpen);
+  const opener = React.useRef<HTMLButtonElement>(null);
+  useBackOnEscape(open ? () => { setOpen(false); opener.current?.focus(); } : undefined);
+  return (
+    <section aria-label="Inner layer" className="docs-section">
+      <Button ref={opener} variant="gray" onClick={() => setOpen(true)}>Open the inner layer</Button>
+      {open ? <p>The inner layer is open.</p> : null}
+    </section>
+  );
+}
+
+/** A Checkbox whose ref callback returns a cleanup, for React 19. */
+function CheckboxRef() {
+  const [shown, setShown] = React.useState(true);
+  const [cleanups, setCleanups] = React.useState(0);
+  const ref = React.useCallback((el: HTMLInputElement | null) => {
+    if (!el) return undefined;
+    return () => setCleanups((n) => n + 1);
+  }, []);
+  return (
+    <section aria-label="Checkbox ref" className="docs-section">
+      {shown ? <label><Checkbox ref={ref} /> Pick me</label> : null}
+      <Button variant="gray" onClick={() => setShown((s) => !s)}>Toggle the checkbox</Button>
+      <p>Ref cleanups: {cleanups}</p>
+    </section>
+  );
+}
+
+/** Primitives and small blocks in the states their specs drive. Not linked from the navigation. */
+export function PrimitivesFixtures() {
+  // Open on mount, the inner layer renders before the PageHeader, so its layout effect runs first in the same commit.
+  const [innerFirst] = React.useState(() => new URLSearchParams(window.location.search).get('inner') === 'open');
+  const [screenEscape, setScreenEscape] = React.useState(true);
+  return (
+    <div className="ld-flow">
+      {innerFirst ? <InnerLayer initiallyOpen /> : null}
+      <PageHeader title="Primitives fixtures" summary="Small primitives and blocks in the states the automated tests drive." back={{ href: '/fixtures/page-header', label: 'Page header fixtures' }} backOnEscape={screenEscape} />
+      <section aria-label="Screen Escape" className="docs-section">
+        <label><Checkbox checked={screenEscape} onChange={(e) => setScreenEscape(e.target.checked)} /> Escape goes back</label>
+      </section>
+      <section aria-label="Glass card" className="docs-section">
+        <div style={{ padding: 24, background: 'repeating-linear-gradient(45deg, var(--primary) 0 12px, var(--background) 12px 24px)' }}>
+          <Card surface="glass" padding="md" data-testid="glass">A glass card over stripes.</Card>
+        </div>
+        <Card padding="md" data-testid="plain">A plain card.</Card>
+      </section>
+      <SwitchForm title="Switch with a Submit button" />
+      <SwitchForm title="Switch with a disabled Submit button" disabled />
+      <section aria-label="Links with no value" className="docs-section">
+        <GlassBar aria-label="Places" items={[{ value: 'other', label: 'Other page', href: '/fixtures/page-header' }, { value: 'here', label: 'This page', href: '/fixtures/primitives' }]} />
+      </section>
+      <section aria-label="Steps" className="docs-section">
+        <StepIndicator steps={['Account', 'Preferences', 'Review']} current={1} />
+      </section>
+      {innerFirst ? null : <InnerLayer />}
+      <CheckboxRef />
+    </div>
+  );
+}

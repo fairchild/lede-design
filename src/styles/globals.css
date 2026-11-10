@@ -60,7 +60,7 @@ html, body { margin: 0; background: var(--background-grouped); color: var(--fore
 :is(.docs-intro, .docs-steps, .docs-table caption) a { color: var(--primary); text-decoration: underline; text-underline-offset: 0.15em; }
 .docs-footer-links a { color: var(--primary); }
 .docs-steps p code { font-family: var(--font-mono); font-size: var(--text-code-size); }
-.docs-demo { display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: center; padding: var(--space-4); border-radius: var(--radius-lg); background: var(--card); }
+.docs-demo { display: flex; flex-wrap: wrap; gap: var(--space-4) var(--space-3); align-items: center; padding: var(--space-4); border-radius: var(--radius-lg); background: var(--card); }
 [data-theme$="-hc"] .docs-demo { box-shadow: 0 0 0 1px var(--input); }
 .docs-check { display: inline-flex; align-items: center; gap: var(--space-2); }
 .docs-usage { margin-top: var(--space-4); }

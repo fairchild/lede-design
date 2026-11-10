@@ -32,7 +32,7 @@ async function settle(page: Page) {
 function short(): string[] {
   // A neighbor's overhang may take a sliver of a target's edge, as the row ••• does on a phone, and no more.
   const EDGE = 4;
-  const TARGETS = 'a[href], button, input:not([type="hidden"]), select, textarea, summary, [role="separator"][tabindex]';
+  const TARGETS = 'a[href], button, input:not([type="hidden"]), select, textarea, summary, [role="switch"], [role="separator"][tabindex]';
   const name = (el: Element) => (el.getAttribute('aria-label') || el.textContent || el.getAttribute('name') || el.tagName).trim().replace(/\s+/g, ' ').slice(0, 40);
   const inSentence = (el: Element) => getComputedStyle(el).display === 'inline' && (el.parentElement?.textContent?.trim().length ?? 0) > (el.textContent?.trim().length ?? 0);
   const slid = (el: Element) => new DOMMatrix(getComputedStyle(el.closest('.ld-row') ?? document.body).transform).e !== 0;

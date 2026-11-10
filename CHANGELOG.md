@@ -56,8 +56,11 @@ First public release. Lede is a design system for React, installed from its shad
 - OnboardingFlow: a controlled `step` past Account with no valid account waits for Continue, so the keystroke that
   makes the account valid no longer switches steps under the cursor.
 - ProfileFlow and OnboardingFlow: a field with an error checks itself again on each change, so the error leaves once
-  the value is fixed. A failed submit makes the field invalid before focus reaches it and announces the errors, so a
-  field that already had focus is heard too.
+  the value is fixed. A failed submit makes the field invalid before focus reaches it, so the move reads the error.
+  When focus was already on that field the errors are announced instead, so a screen reader says them once.
+- OnboardingFlow: an `onComplete` that throws as Finish is pressed shows its error on Review, and Finish works again.
+  A save that settles after the step changed, such as by the browser's Back, no longer moves to the done step.
+- DataTable: the `rowActions` doc says it's called during render for every row, so it should be cheap.
 - TextField takes a `ref` to its `<input>` or `<textarea>`.
 - An invalid TextField shows the focus ring outside its red edge when focused, as errors send focus there.
 - DataTable: an uncontrolled selection drops rows that were deleted, so after a bulk Archive the bar leaves with its
@@ -86,3 +89,17 @@ First public release. Lede is a design system for React, installed from its shad
   a sort answered with a skeleton keeps focus on the Sort menu.
 - DataTable cards: a card with no link, checkbox or actions takes focus on its title, so Load more lands on the first
   new card, as it lands on the row header in the table layout.
+- A glass Card is opaque under `prefers-reduced-transparency`, as every other glass surface is.
+- Enter on a Switch inside a form clicks the form's default button, as Enter on a native checkbox does: that button's
+  `onClick` runs, and a disabled default button means no submit. A form with no submit button still submits.
+- A Switch answers a press over `size-hit-min` in every density, though its track is drawn 30px tall.
+- An uncontrolled GlassBar of links marks the item whose `href` is the page's path, so a page loaded at its second
+  item no longer marks the first. A Cmd, Ctrl, Shift or Alt click leaves the mark where it is.
+- Checkbox runs the cleanup a React 19 callback ref returns.
+- StepIndicator's one-line summary is read on narrow screens, where it's all that shows. It's a group named "Progress",
+  since its steps aren't links.
+- An inner layer using `useBackOnEscape` takes Escape before the screen's PageHeader, even when both opened in the
+  same commit or the screen turned `backOnEscape` back on while the layer was open. Of several inner layers, the most
+  recently activated one takes it.
+- The docs for PageHeader's `focusOnMount` and `backOnEscape` describe what they do: the heading takes focus each time
+  `focusOnMount` turns `true`, and `backOnEscape` yields to the focused field when its text changed.

@@ -44,6 +44,37 @@ test('a refused save stays on Review with its reason, and Finish can try again',
   await expect(slow(page).getByRole('heading', { level: 1, name: 'You’re all set, Ada' })).toBeVisible();
 });
 
+test('a save that throws as Finish is pressed stays on Review with its reason, and Finish works again', async ({ page }) => {
+  await page.goto('/fixtures/onboarding');
+  await slow(page).getByRole('button', { name: 'Throw on the next Finish' }).click();
+  await slow(page).getByRole('button', { name: 'Continue' }).click();
+  await slow(page).getByRole('button', { name: 'Continue' }).click();
+  const finish = slow(page).getByRole('button', { name: 'Finish', exact: true });
+  await finish.press('Enter');
+  await expect(slow(page).getByRole('alert')).toHaveText('The form couldn’t be sent.');
+  await expect(finish).toBeFocused();
+  await finish.press('Enter');
+  await expect(slow(page).getByText('Saves asked for: 1')).toBeVisible();
+  await slow(page).getByRole('button', { name: 'Finish save' }).click();
+  await expect(slow(page).getByRole('heading', { level: 1, name: 'You’re all set, Ada' })).toBeVisible();
+});
+
+test('a save that settles after a controlled step moved on leaves the step where it is', async ({ page }) => {
+  const flow = page.getByRole('region', { name: 'Controlled finish' });
+  await page.goto('/fixtures/onboarding');
+  await flow.getByRole('button', { name: 'Continue' }).click();
+  await flow.getByRole('button', { name: 'Continue' }).click();
+  await flow.getByRole('button', { name: 'Finish', exact: true }).press('Enter');
+  await expect(flow.getByRole('button', { name: 'Finishing…' })).toBeVisible();
+  await flow.getByRole('button', { name: 'Show Preferences' }).click();
+  await expect(flow.getByRole('heading', { level: 1, name: 'Make it yours' })).toBeVisible();
+  await flow.getByRole('button', { name: 'Finish save' }).click();
+  await expect(flow.getByText('Step asked for: 1')).toBeVisible();
+  await page.waitForTimeout(300);
+  await expect(flow.getByRole('heading', { level: 1, name: 'Make it yours' })).toBeVisible();
+  await expect(flow.getByText('Step asked for: 1')).toBeVisible();
+});
+
 test('a controlled step past Account waits for Continue, not for the keystroke that makes the account valid', async ({ page }) => {
   await page.goto('/fixtures/onboarding');
   await expect(held(page).getByRole('heading', { level: 1, name: 'Create your account' })).toBeVisible();

@@ -9,6 +9,7 @@
 // Every change that adds a screen or an action adds its rows here.
 import { devices as browsers, test, expect, type Locator, type Page } from '@playwright/test';
 import { expectLandsWithRows, expectNoBody, focusMoves, focusTrail, trailText, watchRows } from './focus-trail';
+import { heard } from './spoken';
 
 export type Device = 'desktop' | 'phone';
 type Role = Parameters<Page['getByRole']>[0];
@@ -80,6 +81,11 @@ const watchInvalidAtFocus = (page: Page, name: string) => page.getByRole('textbo
     el.setAttribute('data-at-focus', `${el.getAttribute('aria-invalid')} ${described.trim()}`);
   }, { once: true });
 });
+/** Focus moved to the field reads its error, so a second reading through a live region would repeat it. */
+const expectUnsaid = async (page: Page, text: string) => {
+  await page.waitForTimeout(300);
+  expect((await heard(page)).map((s) => s.text), `“${text}” is read with the field, and not announced again`).not.toContain(text);
+};
 const expectInvalidAtFocus = async (page: Page, name: string, error: string) =>
   expect(page.getByRole('textbox', { name, exact: true }), `${name} is invalid and described by its error as focus arrives`).toHaveAttribute('data-at-focus', `true ${error}`);
 
@@ -1166,9 +1172,9 @@ export const ACTIONS: Action[] = [
     },
     act: (d) => d.press(button('Save changes')),
     target: field('Name'),
-    says: 'Enter your name.',
     check: async ({ page }) => {
       await expectInvalidAtFocus(page, 'Name', 'Enter your name.');
+      await expectUnsaid(page, 'Enter your name.');
       expect(await ringShows(page, field('Name')), 'the invalid Name field shows the focus ring').toBe(true);
     },
   },
@@ -1227,8 +1233,10 @@ export const ACTIONS: Action[] = [
     },
     act: (d) => d.press(button('Continue')),
     target: field('Name'),
-    says: 'Enter the name you want people to see.',
-    check: ({ page }) => expectInvalidAtFocus(page, 'Name', 'Enter the name you want people to see.'),
+    check: async ({ page }) => {
+      await expectInvalidAtFocus(page, 'Name', 'Enter the name you want people to see.');
+      await expectUnsaid(page, 'Enter the name you want people to see.');
+    },
   },
   {
     screen: 'Onboarding', action: 'Enter with errors from the invalid field',
@@ -1255,7 +1263,7 @@ export const ACTIONS: Action[] = [
     setup: async ({ page }) => { await page.goto('/app/welcome'); await page.getByRole('textbox', { name: 'Email', exact: true }).fill('ada@'); },
     act: (d) => d.press(button('Continue')),
     target: field('Email'),
-    says: 'Enter a complete email address, like name@example.com.',
+    check: ({ page }) => expectUnsaid(page, 'Enter a complete email address, like name@example.com.'),
   },
   {
     screen: 'Onboarding', action: 'Cancel',
