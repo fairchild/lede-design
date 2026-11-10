@@ -128,6 +128,7 @@ const routes = () => createBrowserRouter(
               { path: 'fixtures/list-row', lazy: load(() => import('@/pages/fixtures/ListRowFixtures'), 'ListRowFixtures'), handle: { title: 'List row fixtures' } },
               { path: 'fixtures/table', lazy: load(() => import('@/pages/fixtures/TableFixtures'), 'TableFixtures'), handle: { title: 'Table fixtures' } },
               { path: 'fixtures/pass-through', lazy: load(() => import('@/pages/fixtures/PassThroughFixtures'), 'PassThroughFixtures'), handle: { title: 'Pass-through fixtures' } },
+              { path: 'fixtures/primitives', lazy: load(() => import('@/pages/fixtures/PrimitivesFixtures'), 'PrimitivesFixtures'), handle: { title: 'Primitives fixtures' } },
             ] : []),
           ],
         },

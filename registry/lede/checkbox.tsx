@@ -22,8 +22,17 @@ export function Checkbox({ indeterminate = false, className, ref, ...rest }: Che
   const setRef = React.useCallback(
     (el: HTMLInputElement | null) => {
       inner.current = el;
-      if (typeof ref === 'function') ref(el);
-      else if (ref) (ref as React.RefObject<HTMLInputElement | null>).current = el;
+      if (typeof ref === 'function') {
+        const cleanup = ref(el);
+        // React 19 calls a returned cleanup instead of calling the ref with `null`, so the consumer's runs too.
+        return () => {
+          inner.current = null;
+          if (typeof cleanup === 'function') cleanup();
+          else ref(null);
+        };
+      }
+      if (ref) (ref as React.RefObject<HTMLInputElement | null>).current = el;
+      return undefined;
     },
     [ref],
   );
