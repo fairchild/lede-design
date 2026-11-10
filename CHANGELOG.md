@@ -12,6 +12,10 @@ First public release. Lede is a design system for React, installed from its shad
 
 ### Fixed before release
 
+- The registry's error responses (404, 412, 503 and 405) carry `access-control-allow-origin: *` like its JSON does, so a
+  page fetching an item can read why it failed. An `OPTIONS` request under `/r/` answers the CORS preflight.
+- Files under `/media/` are typed by their extension alone and sent with `content-security-policy: sandbox` and
+  `nosniff`, so a file can't run as a page on the site's origin.
 - DataTable's Try again moves focus to the summary line after the retry's state is in, so the summary has its text
   when focus arrives. The narrow-layout sample on the docs page now compiles: it passes `noun`, and its columns fill
   the card slots its comment describes.
