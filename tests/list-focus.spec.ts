@@ -53,3 +53,20 @@ test("after an action that keeps its row, focus moving on lets the row's place g
   await page.evaluate(() => new Promise(requestAnimationFrame));
   await expect(page.getByRole('link', { name: /^Sync/ })).not.toBeFocused();
 });
+
+test("a click that focuses nothing lets the row's place go too, as a button does in Safari", async ({ page }) => {
+  await page.goto('/fixtures/list-focus');
+  await page.getByRole('button', { name: 'More actions for Weekly summary' }).click();
+  await page.getByRole('menuitem', { name: 'Mark read' }).click();
+  await expect(page.getByRole('link', { name: /^Weekly summary/ })).toContainText('Read');
+  await expect(page.getByRole('button', { name: 'More actions for Weekly summary' })).toBeFocused();
+  // Safari on macOS doesn't focus a button on click: the press blurs the row with no `relatedTarget`, then the click runs.
+  await page.getByRole('button', { name: 'Dismiss the summary' }).evaluate((button: HTMLElement) => {
+    (document.activeElement as HTMLElement).blur();
+    button.click();
+  });
+  await expect(page.getByRole('link', { name: /^Weekly summary/ })).toHaveCount(0);
+  await page.evaluate(() => new Promise(requestAnimationFrame));
+  await expect(page.getByRole('link', { name: /^Sync/ })).not.toBeFocused();
+  expect(await page.evaluate(() => document.activeElement === document.body)).toBe(true);
+});

@@ -206,13 +206,15 @@ export function ListRow(props: ListRowProps) {
   const liRef = React.useRef<HTMLLIElement>(null);
   const place = React.useRef<(() => void) | null>(null);
   // The place holds until the row leaves, so a row a server removes later keeps it too. The next action on any row
-  // replaces it, and focus moving on to a visible element outside the row lets it go. Focus that drops to <body> as the
-  // row leaves has no `relatedTarget`, so that blur keeps it. The ••• menu returns focus to its trigger after the popup
-  // has gone, so the menu's blur has none either.
+  // replaces it, and focus moving on from the row lets it go: to a visible element outside it, or to nothing while the
+  // row is still here, as a click on plain text does, or on a button in Safari. The blurs that keep it: the row leaving
+  // with focus inside it, the window losing focus, and the ••• menu closing. That menu sits outside the row, and focus
+  // returns to its trigger after the popup has gone.
   const release = (e: React.FocusEvent<HTMLLIElement>) => {
+    const li = e.currentTarget;
     const to = e.relatedTarget;
-    if (!place.current || !(to instanceof HTMLElement) || !to.checkVisibility()) return;
-    if (e.currentTarget.contains(to)) return;
+    if (!place.current) return;
+    if (to instanceof HTMLElement ? !to.checkVisibility() || li.contains(to) : !li.isConnected || !li.contains(e.target) || !document.hasFocus()) return;
     if (latestPlace === place.current) latestPlace = null;
     place.current = null;
   };
