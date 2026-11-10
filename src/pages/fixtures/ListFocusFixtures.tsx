@@ -9,7 +9,7 @@ const DEVICES = ['Old laptop', 'Work phone', 'Tablet'];
 
 /**
  * Row actions that remove their row with nothing in the parent to move focus, as the docs sample's Delete does, a row
- * whose action leaves it in place, one whose action navigates to Settings, and a row with both `href` and `onClick`. Not linked from the navigation;
+ * whose action leaves it in place, one whose action navigates to Settings, one a server removes a moment after its action, a button that removes a row and itself, and a row with both `href` and `onClick`. Not linked from the navigation;
  * `tests/focus-table.ts` and `tests/list-focus.spec.ts` drive it.
  */
 export function ListFocusFixtures() {
@@ -18,6 +18,8 @@ export function ListFocusFixtures() {
   const [untitled, setUntitled] = React.useState(true);
   const [archive, setArchive] = React.useState(true);
   const [read, setRead] = React.useState(false);
+  const [summary, setSummary] = React.useState(true);
+  const [server, setServer] = React.useState(true);
   const [clicks, setClicks] = React.useState(0);
   const navigate = useNavigate();
   const remove = (name: string) => setDevices((d) => d.filter((x) => x !== name));
@@ -44,10 +46,12 @@ export function ListFocusFixtures() {
         </ListGroup>
       ) : null}
       <ListGroup title="Mail">
-        <ListRow title="Weekly summary" subtitle={read ? 'Read' : 'Unread'} href="#summary" actions={[{ label: read ? 'Mark unread' : 'Mark read', onSelect: () => setRead((r) => !r) }]} />
+        {summary ? <ListRow title="Weekly summary" subtitle={read ? 'Read' : 'Unread'} href="#summary" actions={[{ label: read ? 'Mark unread' : 'Mark read', onSelect: () => setRead((r) => !r) }]} /> : null}
         <ListRow title="Sync" href="#sync" actions={[{ label: 'Open settings', onSelect: () => navigate('/app/settings') }]} />
+        {server ? <ListRow title="Server copy" href="#server" actions={[{ label: 'Archive later', onSelect: () => setTimeout(() => setServer(false), 300) }]} /> : null}
         <ListRow title="Counted link" subtitle={`Clicks: ${clicks}`} href="#counted" onClick={() => setClicks((c) => c + 1)} />
       </ListGroup>
+      {summary ? <Button variant="gray" onClick={() => setSummary(false)}>Dismiss the summary</Button> : null}
     </div>
   );
 }

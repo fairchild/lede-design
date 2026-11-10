@@ -41,3 +41,15 @@ test('a row action that takes its whole group away leaves focus to the parent', 
   await expect(page.getByRole('link', { name: /^Weekly summary/ })).not.toBeFocused();
   expect(await page.evaluate(() => document.activeElement === document.body)).toBe(true);
 });
+
+test("after an action that keeps its row, focus moving on lets the row's place go", async ({ page }) => {
+  await page.goto('/fixtures/list-focus');
+  await page.getByRole('button', { name: 'More actions for Weekly summary' }).click();
+  await page.getByRole('menuitem', { name: 'Mark read' }).click();
+  await expect(page.getByRole('link', { name: /^Weekly summary/ })).toContainText('Read');
+  // The button removes the row and itself, so focus drops to <body>, and the row's old place doesn't take it.
+  await page.getByRole('button', { name: 'Dismiss the summary' }).click();
+  await expect(page.getByRole('link', { name: /^Weekly summary/ })).toHaveCount(0);
+  await page.evaluate(() => new Promise(requestAnimationFrame));
+  await expect(page.getByRole('link', { name: /^Sync/ })).not.toBeFocused();
+});

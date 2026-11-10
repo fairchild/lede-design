@@ -1377,6 +1377,22 @@ export const ACTIONS: Action[] = [
     act: (d) => d.choose(more('Guest session'), 'End'), target: button('After the list'),
   },
   {
+    // The row leaves a moment after its action, as a server's reply removes it. Focus went back to the ••• from the menu,
+    // inside the row, so the place still holds.
+    screen: 'List', action: 'Row ••• → an action whose row leaves later', setup: listFocus,
+    act: (d) => d.choose(more('Server copy'), 'Archive later'),
+    done: ({ page }) => page.getByRole('link', { name: /^Server copy/ }).waitFor({ state: 'detached' }),
+    target: link(/^Counted link/),
+  },
+  {
+    // The swipe actions close and focus moves from their button to the row's link, inside the row, so the place holds
+    // for the removal that follows.
+    screen: 'List', action: 'Swipe → an action whose row leaves later', setup: listFocus, only: 'phone', strictTouch: true,
+    act: (d) => swipeTo(d, 'Server copy', 'Archive later'),
+    done: ({ page }) => page.getByRole('link', { name: /^Server copy/ }).waitFor({ state: 'detached' }),
+    target: link(/^Counted link/),
+  },
+  {
     // The action navigates, so the whole list leaves and the new screen's h1 takes focus, with no stop on the way.
     screen: 'List', action: 'Row ••• → an action that navigates', setup: listFocus,
     act: marked((d) => d.choose(more('Sync'), 'Open settings')),
