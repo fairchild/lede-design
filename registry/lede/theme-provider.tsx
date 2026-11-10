@@ -112,6 +112,11 @@ export function ThemeScope({ children }: { children?: React.ReactNode }) {
   return content;
 }
 
+/**
+ * Sets scheme, contrast, accent, shape, density and glass for its subtree. Providers nest, and Lede's tokens follow the
+ * nearest one. Stock shadcn `dark:` utilities match any dark ancestor, as shadcn's own `.dark *` does, so a light
+ * provider inside a dark one still gets them, and high contrast and `glass="solid"` reach nested providers the same way.
+ */
 export function ThemeProvider(props: ThemeProviderProps) {
   const nearest = React.useContext(ScopeContext);
   const unset = nearest ? 'inherit' : 'auto';

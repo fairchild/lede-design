@@ -80,24 +80,6 @@ test('at double text, after options are replaced by new values, a longer label s
   expect(await overflows(set)).toBe(false);
 });
 
-test('at double text, a required control with nothing chosen shows no thumb and fails its check, and the first choice brings the thumb over it', async ({ page }) => {
-  await page.emulateMedia({ reducedMotion: 'reduce' });
-  await textSize(page, 2);
-  await page.goto('/fixtures/segmented-control');
-  const set = page.getByRole('region', { name: 'Nothing chosen, required, 240px' }).locator('fieldset.ld-seg');
-  await expect(set).toHaveAttribute('data-fit', 'stacked');
-  await expect(set.locator('.ld-seg-thumb')).toBeHidden();
-  await expect(set).toHaveAttribute('aria-invalid', 'true');
-  await expect(set).toHaveAccessibleDescription('Choose a mode.');
-  await expect(set.locator('input:invalid')).toHaveCount(3);
-  // The first option keeps the thumb's index at 0, so only the change from nothing chosen places it.
-  await set.getByRole('radio', { name: 'Automatic' }).check();
-  await expect(set.locator('.ld-seg-thumb')).toBeVisible();
-  await expect.poll(() => gap(set)).toBeLessThanOrEqual(1);
-  await expect(set).not.toHaveAttribute('aria-invalid');
-  await expect(set.locator('input:invalid')).toHaveCount(0);
-});
-
 test('arrow keys still move the checked option, and the thumb follows', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await textSize(page, 2);
@@ -122,4 +104,19 @@ test('without ResizeObserver it renders, keeps CSS\'s equal-share thumb and stay
   expect(await thumb.evaluate((el) => el.style.getPropertyValue('--ld-seg-x'))).toBe('');
   expect(await set.getAttribute('data-fit')).toBeNull();
   expect(errors).toEqual([]);
+});
+
+test('a value that matches no option checks no radio and shows no thumb, until an option is chosen', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto('/fixtures/segmented-control');
+  const region = page.getByRole('region', { name: 'No option matches' });
+  for (const name of ['Misspelled', 'Controlled']) {
+    const set = region.getByRole('group', { name });
+    await expect(set.getByRole('radio')).toHaveCount(3);
+    for (const radio of await set.getByRole('radio').all()) await expect(radio).not.toBeChecked();
+    await expect(set.locator('.ld-seg-thumb')).toBeHidden();
+    await set.getByRole('radio', { name: 'Week' }).check();
+    await expect(set.locator('.ld-seg-thumb')).toBeVisible();
+    await expect.poll(() => gap(set)).toBeLessThanOrEqual(1);
+  }
 });

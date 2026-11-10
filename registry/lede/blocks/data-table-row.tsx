@@ -29,6 +29,8 @@ interface DataRowProps<Row> {
   href: string | undefined;
   /** The table's one actions menu; each row has a Base UI trigger attached to it. */
   menu: Menu.Handle<string> | undefined;
+  /** This row has actions: a row whose `rowActions` returns none keeps its empty cell and gets no •••. */
+  hasActions: boolean;
   sticky: boolean;
   locale: string | undefined;
 }
@@ -45,7 +47,7 @@ export const DataRow = React.memo(function DataRow<Row>(p: DataRowProps<Row>) {
   // the tab order and hidden from assistive tech, then covers the rest of the row, so the whole row stays one target.
   const needsTwin = !!p.href && p.sticky && columns[0]?.id === p.rowHeader;
   return (
-    <Table.Row selected={p.selected} linked={!!p.href} data-row-id={id}>
+    <Table.Row selected={p.selected} data-row-id={id}>
       {p.selected !== undefined ? (
         <Table.Cell className="ld-table-check" sticky={p.sticky}>
           <Checkbox
@@ -77,9 +79,11 @@ export const DataRow = React.memo(function DataRow<Row>(p: DataRowProps<Row>) {
       })}
       {p.menu ? (
         <Table.Cell className="ld-table-actions">
-          <Menu.Trigger handle={p.menu} payload={id} className="ld-table-more" aria-label={`More actions for ${name}`}>
-            <Dots />
-          </Menu.Trigger>
+          {p.hasActions ? (
+            <Menu.Trigger handle={p.menu} payload={id} className="ld-table-more" aria-label={`More actions for ${name}`}>
+              <Dots />
+            </Menu.Trigger>
+          ) : null}
         </Table.Cell>
       ) : null}
     </Table.Row>

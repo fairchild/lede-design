@@ -237,10 +237,15 @@ test.describe('DataTable', () => {
     await pick('Error');
     const alert = section.getByRole('alert');
     await expect(alert).toContainText('Couldn’t load work items.');
-    // Nothing loaded, so the table can't say how many there are: no "0 work items" beside the alert.
-    await expect(section.getByText(/^0 work items/)).toHaveCount(0);
+    // Nothing loaded, so the table can't say how many there are: the summary beside the alert says nothing.
+    const summary = section.locator('.ld-dt-summary');
+    await expect(summary).toBeEmpty();
     await expect(alert).toContainText('The server didn’t answer in time.');
+    // Focus lands on the summary once the retry's state is in, so it has its text as focus arrives.
+    await summary.evaluate((el) => el.addEventListener('focus', () => { el.setAttribute('data-text-at-focus', el.textContent ?? ''); }, { once: true }));
     await alert.getByRole('button', { name: 'Try again' }).click();
+    await expect(summary).toBeFocused();
+    await expect(summary).toHaveAttribute('data-text-at-focus', /\S/);
     await expect(table.locator('tbody tr')).toHaveCount(5);
     await expect(section.getByRole('alert')).toHaveCount(0);
 
@@ -275,9 +280,12 @@ test.describe('DataTable', () => {
     await expect(bar).toBeInViewport(); // while its table is on screen, the bar floats in view
     await page.locator('#dt-states').scrollIntoViewIfNeeded();
     await page.evaluate(() => document.getElementById('dt-states')!.scrollIntoView({ block: 'center' }));
-    const barBox = (await bar.boundingBox())!;
-    const clientBox = (await client.boundingBox())!;
-    expect(barBox.y + barBox.height).toBeLessThanOrEqual(clientBox.y + clientBox.height + 1);
+    // Both edges in one read: rows that load in the examples between two reads move the page under the second one.
+    const [barBottom, clientBottom] = await bar.evaluate((el) => [
+      el.getBoundingClientRect().bottom,
+      el.closest('section[aria-labelledby="dt-client"]')!.getBoundingClientRect().bottom,
+    ]);
+    expect(barBottom).toBeLessThanOrEqual(clientBottom + 1);
     await expect(bar).not.toBeInViewport();
   });
 
@@ -463,8 +471,11 @@ test.describe('DataTable', () => {
     await expect(section.getByRole('alert')).toContainText('Couldn’t load work items.');
     await expect(section.getByRole('table')).toHaveCount(0);
     await expect(section.getByRole('button', { name: 'Load more' })).toHaveCount(0); // no pager under the alert
-    await expect(section.getByText(/^0 work items/)).toHaveCount(0); // nor a count of rows it never loaded
+    const summary = section.locator('.ld-dt-summary');
+    await expect(summary).toBeEmpty(); // nor a count of rows it never loaded
     await section.getByRole('button', { name: 'Try again' }).click();
+    // The rows and sort below would already hold on the previous rows, so this waits for the retry to finish first.
+    await expect(summary).toHaveText(/^50 of [^·]+$/);
     await expect(serverTable(page).locator('tbody tr')).toHaveCount(50);
     await expect(serverTable(page).getByRole('columnheader', { name: 'Assignee' })).toHaveAttribute('aria-sort', 'ascending');
   });
@@ -656,6 +667,45 @@ test.describe('DataTable', () => {
     }
   });
 
+  test.describe('controls in linked rows', () => {
+    const table = (page: Page) => page.getByRole('table', { name: 'Row controls fixture' });
+    /** Clicks a cell near its end, away from what it holds, where the row link's `::after` is on top. */
+    const clickEnd = async (cell: Locator) => {
+      await cell.scrollIntoViewIfNeeded();
+      const box = (await cell.boundingBox())!;
+      await cell.page().mouse.click(box.x + box.width - 4, box.y + box.height / 2);
+    };
+
+    test('a Button in a linked row’s cell takes the press, and the rest of the row navigates', async ({ page }) => {
+      await open(page, FIXTURES);
+      const row = table(page).locator('[data-row-id="n1"]');
+      await row.getByRole('button', { name: 'Count 1' }).click();
+      await expect(page.getByTestId('row-presses')).toHaveText('Pressed n1');
+      expect(new URL(page.url()).hash).toBe('');
+      await clickEnd(row.locator('td').first());
+      await expect(page).toHaveURL(/#rc-n1$/);
+      await expect(page.getByTestId('row-presses')).toHaveText('Pressed n1');
+    });
+
+    test('a row whose rowActions returns none has no ••• and keeps its cell', async ({ page }) => {
+      await open(page, FIXTURES);
+      await expect(table(page).getByRole('button', { name: 'More actions for 1', exact: true })).toBeVisible();
+      await expect(table(page).getByRole('button', { name: 'More actions for 0', exact: true })).toHaveCount(0);
+      await expect(table(page).locator('[data-row-id="n0"] td')).toHaveCount(2);
+      await clickEnd(table(page).locator('[data-row-id="n0"] .ld-table-actions'));
+      await expect(page).toHaveURL(/#rc-n0$/);
+    });
+
+    test('Table.RowLink covers its own row without `linked`', async ({ page }) => {
+      await open(page, FIXTURES);
+      const rows = page.getByRole('table', { name: 'Rows without linked' }).getByRole('row');
+      await clickEnd(rows.nth(0).getByRole('cell'));
+      await expect(page).toHaveURL(/#bare-Q1$/);
+      await clickEnd(rows.nth(1).getByRole('cell'));
+      await expect(page).toHaveURL(/#bare-Q2$/);
+    });
+  });
+
   // Edge cases on /fixtures/data-table: selection while a new filter's rows load, cursor paging on reload, a change of
   // page size, sorting by compare alone and density changes at runtime.
   const numbers = (page: Page, name: string) => page.getByRole('table', { name }).locator('tbody th[scope="row"]').allInnerTexts();
@@ -829,6 +879,67 @@ test.describe('DataTable', () => {
     await expect.poll(ranks).toEqual(['1', '2', '3'].map((n) => `#${n}`));
     await table.getByRole('button', { name: 'Rank' }).click();
     await expect.poll(ranks).toEqual(['3', '2', '1'].map((n) => `#${n}`));
+  });
+
+  test('server mode: a sortable column needs neither value nor compare, since the server sorts', async ({ page }) => {
+    await open(page, FIXTURES);
+    const region = page.getByRole('region', { name: 'A server table mounted later' });
+    await region.getByRole('button', { name: 'Show the server table' }).click();
+    const table = region.getByRole('table', { name: 'Mounted server fixture' });
+    await expect(table.locator('tbody tr[data-row-id]')).toHaveCount(3);
+    const sort = table.getByRole('button', { name: 'Label' });
+    await expect(sort, 'the Label header is a sort button').toBeVisible({ timeout: 2000 });
+    await sort.click();
+    await expect(table.getByRole('columnheader', { name: 'Label' })).toHaveAttribute('aria-sort', 'ascending');
+  });
+
+  test('a server table never shows its empty state or a zero count before its first rows', async ({ page }) => {
+    await open(page, FIXTURES);
+    const region = page.getByRole('region', { name: 'A server table mounted later' });
+    // What every commit rendered, even one a later commit in the same task replaced, so a frame that never paints
+    // still counts: the text nodes added and removed, and the text a node had before it changed.
+    await region.evaluate((el) => {
+      const said: string[] = [];
+      (window as unknown as { said: string[] }).said = said;
+      new MutationObserver((records) => {
+        for (const r of records) {
+          for (const n of [...r.addedNodes, ...r.removedNodes]) said.push(n.textContent ?? '');
+          if (r.oldValue != null) said.push(r.oldValue);
+        }
+      }).observe(el, { childList: true, subtree: true, characterData: true, characterDataOldValue: true });
+    });
+    await region.getByRole('button', { name: 'Show the server table' }).click();
+    const table = region.getByRole('table', { name: 'Mounted server fixture' });
+    await expect(table.locator('tbody tr[data-row-id]')).toHaveCount(3);
+    const said = await page.evaluate(() => (window as unknown as { said: string[] }).said);
+    expect(said.filter((t) => /No items|^0 items/.test(t)), 'nothing said there were no items').toEqual([]);
+    expect(said.some((t) => t.includes('Loading items…')), 'the first commit says the rows are loading').toBe(true);
+  });
+
+  test('uncontrolled selection: archived rows leave it, and rows on another page stay', async ({ page }) => {
+    await open(page, FIXTURES);
+    const region = page.getByRole('region', { name: 'Uncontrolled selection' });
+    const table = region.getByRole('table', { name: 'Uncontrolled fixture' });
+    const bar = page.getByRole('toolbar', { name: /selected/ });
+    const presses = region.getByRole('list', { name: 'Archive presses' }).getByRole('listitem');
+    await table.getByRole('checkbox', { name: 'Select 0' }).check();
+    // A page change isn't a removal: the row is elsewhere, still selected.
+    await region.getByRole('button', { name: 'Next' }).click();
+    await expect(table.getByRole('checkbox', { name: 'Select 3' })).toBeVisible();
+    await expect(bar).toHaveAccessibleName('1 entry selected');
+    await region.getByRole('button', { name: 'Previous' }).click();
+    await expect(table.getByRole('checkbox', { name: 'Select 0' })).toBeChecked();
+    await table.getByRole('checkbox', { name: 'Select 1' }).check();
+    await bar.getByRole('button', { name: 'Archive' }).click();
+    await expect(presses).toHaveText(['n0,n1']);
+    // The archived rows left the selection with the table, so the bar left too.
+    await expect(bar).toHaveCount(0);
+    await expect(table.getByRole('checkbox', { name: 'Select all entries on this page' })).not.toBeChecked();
+    // The next Archive sends only what's selected now.
+    await table.getByRole('checkbox', { name: 'Select 2' }).check();
+    await expect(bar).toHaveAccessibleName('1 entry selected');
+    await bar.getByRole('button', { name: 'Archive' }).click();
+    await expect(presses).toHaveText(['n0,n1', 'n2']);
   });
 
   test('density: control columns follow a density change at runtime', async ({ page }) => {
@@ -1018,6 +1129,47 @@ test.describe('DataTable at 320px and in forced colours', () => {
     expect(after.up).toBe(1);
     expect(after.down).toBe(0);
     expect(after.stroke).toBe(after.colour);
+  });
+});
+
+test.describe('SelectionBar placement', () => {
+  test.skip(({ isMobile }) => isMobile, 'Viewport set explicitly.');
+  const centerOf = (b: { x: number; width: number }) => b.x + b.width / 2;
+  const select = async (page: Page, checkbox: Locator) => {
+    await checkbox.check();
+    const bar = page.getByRole('toolbar', { name: /selected/ });
+    await expect(bar).toBeVisible();
+    return (await bar.boundingBox())!;
+  };
+
+  for (const width of [390, 900, 1400]) {
+    test(`with no AppShell it centers in the viewport and sits clear of its foot · ${width}px`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 800 });
+      await page.goto('/fixtures/bare-table');
+      const bar = await select(page, page.getByRole('checkbox', { name: 'Select 0' }));
+      expect(Math.abs(centerOf(bar) - width / 2), 'the bar’s center is the viewport’s').toBeLessThanOrEqual(1);
+      expect(bar.y + bar.height).toBeLessThan(800);
+      // No tab bar to clear: the bar sits near the foot, not a tab bar's height above it.
+      expect(800 - (bar.y + bar.height)).toBeLessThan(48);
+    });
+  }
+
+  test('in AppShell it centers beside the sidebar on a desktop', async ({ page }) => {
+    await page.setViewportSize({ width: 1400, height: 800 });
+    await page.goto('/app/work');
+    const sidebar = (await page.locator('.ld-shell-sidebar').boundingBox())!;
+    const bar = await select(page, page.getByRole('checkbox', { name: 'Select WI-1018' }));
+    const main = sidebar.x + sidebar.width;
+    expect(Math.abs(centerOf(bar) - (main + (1400 - main) / 2)), 'the bar’s center is the main column’s').toBeLessThanOrEqual(1);
+  });
+
+  test('in AppShell on a phone it floats above the tab bar', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 800 });
+    await page.goto('/app/work');
+    const bar = await select(page, page.getByRole('checkbox', { name: 'Select WI-1018' }));
+    const tabbar = (await page.locator('.ld-shell-tabbar > *').boundingBox())!;
+    expect(bar.y + bar.height, 'the bar ends above the tab bar').toBeLessThanOrEqual(tabbar.y);
+    expect(Math.abs(centerOf(bar) - 390 / 2)).toBeLessThanOrEqual(1);
   });
 });
 

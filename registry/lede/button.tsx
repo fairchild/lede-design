@@ -17,8 +17,10 @@ type Common = {
   block?: boolean;
 };
 export type ButtonProps =
-  | (Common & React.ButtonHTMLAttributes<HTMLButtonElement> & { href?: undefined })
-  | (Common & React.AnchorHTMLAttributes<HTMLAnchorElement> & { href: string });
+  | (Common & Omit<React.ComponentProps<'button'>, 'ref'> & { href?: undefined; ref?: ButtonRef<HTMLButtonElement> })
+  | (Common & Omit<React.ComponentProps<'a'>, 'ref'> & { href: string; ref?: ButtonRef<HTMLAnchorElement> });
+/** The element's own ref, or one typed for either element, as a Button that may become a link takes. */
+type ButtonRef<E extends HTMLElement> = React.Ref<E> | React.Ref<HTMLButtonElement | HTMLAnchorElement>;
 
 export function buttonClass(p: Common & { iconOnly?: boolean; className?: string }) {
   const { variant = 'gray', size = 'md' } = p;
@@ -29,11 +31,10 @@ export function buttonClass(p: Common & { iconOnly?: boolean; className?: string
   );
 }
 
-/** A native `<button>`, or a native `<a>` when given `href`. */
-export const Button = React.forwardRef<HTMLButtonElement | HTMLAnchorElement, ButtonProps>(function Button(props, ref) {
+/** A native `<button>`, or a native `<a>` when given `href`. HTML attributes and `ref` go on that element. */
+export function Button(props: ButtonProps) {
   const Link = useLinkComponent();
-  const { variant, size, shape, tone, icon, block, className, children, ...rest } = props as Common &
-    React.HTMLAttributes<HTMLElement> & { href?: string };
+  const { variant, size, shape, tone, icon, block, className, children, ...rest } = props;
   const cls = buttonClass({ variant, size, shape, tone, block, className, iconOnly: !!icon && !children });
   const inner = (
     <>
@@ -41,13 +42,6 @@ export const Button = React.forwardRef<HTMLButtonElement | HTMLAnchorElement, Bu
       {children}
     </>
   );
-  if (rest.href !== undefined) {
-    const anchor = rest as React.AnchorHTMLAttributes<HTMLAnchorElement> & { href: string };
-    return <Link ref={ref as React.Ref<HTMLAnchorElement>} {...anchor} className={cls}>{inner}</Link>;
-  }
-  return (
-    <button ref={ref as React.Ref<HTMLButtonElement>} type="button" {...(rest as React.ButtonHTMLAttributes<HTMLButtonElement>)} className={cls}>
-      {inner}
-    </button>
-  );
-});
+  if (rest.href !== undefined) return <Link {...(rest as React.ComponentProps<'a'> & { href: string })} className={cls}>{inner}</Link>;
+  return <button type="button" {...(rest as React.ComponentProps<'button'>)} className={cls}>{inner}</button>;
+}

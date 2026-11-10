@@ -81,6 +81,43 @@ test('fails a raw color, as hex or a color function, and inside color-mix() too'
   expect(output).toContain('3 problem(s)');
 });
 
+test('fails a named color, inside a function too, and lets through transparent, currentColor, inherit and system colors', () => {
+  const { status, output, line } = gate((dir) => append(dir, [
+    '.ld-x {',
+    '  color: white;',
+    '  background: RebeccaPurple;',
+    '  border-color: light-dark(white, black);',
+    '  outline: 1px solid color-mix(in oklab, var(--primary), tomato);',
+    '  fill: transparent; stroke: currentColor; caret-color: inherit; accent-color: Canvas;',
+    '  --ld-x-edge: var(--border, navy);',
+    '}',
+  ].join('\n')));
+  expect(status).toBe(1);
+  expect(output).toContain(`${BLOCKS}:${line + 1}  .ld-x  color  white: try a color token`);
+  expect(output).toContain(`${BLOCKS}:${line + 2}  .ld-x  background  RebeccaPurple`);
+  expect(output).toContain(`${BLOCKS}:${line + 3}  .ld-x  border-color  white`);
+  expect(output).toContain(`${BLOCKS}:${line + 3}  .ld-x  border-color  black`);
+  expect(output).toContain(`${BLOCKS}:${line + 4}  .ld-x  outline  tomato`);
+  expect(output).toContain(`${BLOCKS}:${line + 6}  .ld-x  --ld-x-edge  navy`);
+  expect(output).not.toContain(`${BLOCKS}:${line + 5}`);
+  expect(output).toContain('6 problem(s)');
+});
+
+test('fails a Tailwind palette utility in @apply, behind variants too, and lets through token utilities', () => {
+  const { status, output, line } = gate((dir) => append(dir, [
+    '.ld-x { @apply bg-red-500 hover:text-white; }',
+    '.ld-x { @apply border-x-slate-200/50 ring-offset-black; }',
+    '.ld-x { @apply bg-primary text-muted-foreground border-border text-body; }',
+  ].join('\n')));
+  expect(status).toBe(1);
+  expect(output).toContain(`${BLOCKS}:${line}  @apply bg-red-500 hover:text-white  @apply  bg-red-500: try a color token`);
+  expect(output).toContain(`${BLOCKS}:${line}  @apply bg-red-500 hover:text-white  @apply  text-white`);
+  expect(output).toContain(`${BLOCKS}:${line + 1}  @apply border-x-slate-200/50 ring-offset-black  @apply  border-x-slate-200`);
+  expect(output).toContain(`${BLOCKS}:${line + 1}  @apply border-x-slate-200/50 ring-offset-black  @apply  ring-offset-black`);
+  expect(output).not.toContain(`${BLOCKS}:${line + 2}`);
+  expect(output).toContain('5 problem(s)');
+});
+
 test('walks every CSS file under registry/, in new folders too', () => {
   const { status, output } = gate((dir) => {
     write(dir, 'registry/lede/blocks/x.css', '.ld-x { width: 13px; }\n');

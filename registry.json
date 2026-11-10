@@ -117,7 +117,7 @@
       "name": "switch",
       "type": "registry:component",
       "title": "Switch",
-      "description": "A Base UI Switch in an enclosing `<label>`. Enter submits its form, as a checkbox's does. Given a `name`, it submits with a form through a hidden native input.",
+      "description": "A Base UI Switch in an enclosing `<label>`, where Enter presses its form's default button, as in a checkbox. Given a `name`, it submits with a form through a hidden native input.",
       "registryDependencies": [
         "@lede/lede-theme",
         "@lede/lede-utils"
@@ -273,7 +273,7 @@
       "name": "table",
       "type": "registry:component",
       "title": "Table",
-      "description": "The stateless Table parts for a real `<table>`, with a sticky header and an optional sticky first column. A table wider than its box becomes a named scroll region, and a captioned one can collapse to its caption.",
+      "description": "The Table parts for a real `<table>`, with a sticky header and an optional sticky first column. A table wider than its box becomes a named scroll region, and a captioned one can collapse to its caption, with Root holding the open state unless you control it.",
       "registryDependencies": [
         "@lede/lede-theme",
         "@lede/lede-utils"
@@ -687,6 +687,9 @@
       "type": "registry:block",
       "title": "OnboardingFlow",
       "description": "A hero flow for a three-step sign-up that runs on Enter: native forms with inline errors, a review of every answer and a done screen.",
+      "dependencies": [
+        "@react-aria/live-announcer@^3.5.1"
+      ],
       "registryDependencies": [
         "@lede/lede-theme",
         "@lede/lede-utils",
@@ -717,6 +720,9 @@
       "type": "registry:block",
       "title": "ProfileFlow",
       "description": "A hero flow for a profile: who this is, then the details, edited on the same page. A save is announced, and a failed save keeps the edits with an inline error.",
+      "dependencies": [
+        "@react-aria/live-announcer@^3.5.1"
+      ],
       "registryDependencies": [
         "@lede/lede-theme",
         "@lede/lede-utils",
