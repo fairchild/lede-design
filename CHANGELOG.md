@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- ListRow: after an action that keeps its row, a click that focuses nothing lets the row's saved place go, as a click
+  on a focusable element already did. Safari on macOS doesn't focus a button on click, so a button there that later
+  removed the row moved focus to the row beside it.
+
 ## 0.4.0
 
 First public release. Lede is a design system for React, installed from its shadcn registry at
