@@ -3,7 +3,8 @@
 // known by its first line. Looks at declaration values (custom properties and var() fallbacks included), the preludes
 // of @media, @container and @supports, and statement at-rules such as @apply and @custom-media. Comments, strings,
 // url(), selectors, @import, @charset and @layer names are skipped. A literal is any number, with any unit or none,
-// outside an identifier, and any #hex or color function. A media query can't read a custom property, so a number in
+// outside an identifier, and any #hex, color function or named color (system colors such as Canvas, transparent and
+// currentColor aren't literals), and in @apply a Tailwind palette utility such as bg-red-500. A media query can't read a custom property, so a number in
 // @media, @container or @custom-media equals a breakpoint token in the same unit: px, or em for a text-size breakpoint.
 // A px one may also be 0.02px less in a max-width or max-height. An em one is for @media and @custom-media only, where em
 // is the browser's text size (in @container it's the container's font size), and is written in range syntax.
@@ -27,7 +28,22 @@ const MATH = new Set(['calc', 'min', 'max', 'clamp']);
 const QUERIES = new Set(['@media', '@container', '@custom-media']);
 const COLOR = /^(rgba?|hsla?|hwb|lab|lch|oklab|oklch|color)$/i;
 const NUMBER = /^([+-]?(?:\d*\.\d+|\d+)(?:e[+-]?\d+)?)(%|[a-z]*)$/i;
-const TOKEN = /(?<fn>[a-z_-][\w-]*)?\(|(?<close>\))|(?<hex>#[\w-]+)|-*[a-z_][\w-]*|(?<num>[+-]?(?:\d*\.\d+|\d+)(?:e[+-]?\d+)?)(?<unit>%|[a-z]+)?|\s+|./gis;
+const NAMED = new Set(('aliceblue antiquewhite aqua aquamarine azure beige bisque black blanchedalmond blue blueviolet brown '
+  + 'burlywood cadetblue chartreuse chocolate coral cornflowerblue cornsilk crimson cyan darkblue darkcyan darkgoldenrod darkgray '
+  + 'darkgreen darkgrey darkkhaki darkmagenta darkolivegreen darkorange darkorchid darkred darksalmon darkseagreen darkslateblue '
+  + 'darkslategray darkslategrey darkturquoise darkviolet deeppink deepskyblue dimgray dimgrey dodgerblue firebrick floralwhite '
+  + 'forestgreen fuchsia gainsboro ghostwhite gold goldenrod gray green greenyellow grey honeydew hotpink indianred indigo ivory '
+  + 'khaki lavender lavenderblush lawngreen lemonchiffon lightblue lightcoral lightcyan lightgoldenrodyellow lightgray lightgreen '
+  + 'lightgrey lightpink lightsalmon lightseagreen lightskyblue lightslategray lightslategrey lightsteelblue lightyellow lime '
+  + 'limegreen linen magenta maroon mediumaquamarine mediumblue mediumorchid mediumpurple mediumseagreen mediumslateblue '
+  + 'mediumspringgreen mediumturquoise mediumvioletred midnightblue mintcream mistyrose moccasin navajowhite navy oldlace olive '
+  + 'olivedrab orange orangered orchid palegoldenrod palegreen paleturquoise palevioletred papayawhip peachpuff peru pink plum '
+  + 'powderblue purple rebeccapurple red rosybrown royalblue saddlebrown salmon sandybrown seagreen seashell sienna silver skyblue '
+  + 'slateblue slategray slategrey snow springgreen steelblue tan teal thistle tomato turquoise violet wheat white whitesmoke '
+  + 'yellow yellowgreen').split(' '));
+/** A Tailwind utility that paints with the palette, behind any variants: `hover:bg-red-500/50`, `text-white`. */
+const PALETTE = /^-?(?:bg|text|border(?:-[xytrblse])?|outline|ring(?:-offset)?|inset-ring|divide|fill|stroke|from|via|to|accent|caret|decoration|shadow|inset-shadow|drop-shadow|placeholder|scrollbar-thumb|scrollbar-track)-(?:(?:slate|gray|zinc|neutral|stone|taupe|mauve|mist|olive|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)-\d+|black|white)$/i;
+const TOKEN = /(?<fn>[a-z_-][\w-]*)?\(|(?<close>\))|(?<hex>#[\w-]+)|(?<ident>-*[a-z_][\w-]*)|(?<num>[+-]?(?:\d*\.\d+|\d+)(?:e[+-]?\d+)?)(?<unit>%|[a-z]+)?|\s+|./gis;
 
 /** The tokens.json families a property's numbers come from, so a failure can say where to look. */
 const FAMILIES = [
@@ -155,7 +171,7 @@ function scan(source, text, start, context) {
   let [previous, beforeOperator, lastWasNumber] = [null, false, false];
   TOKEN.lastIndex = 0;
   for (let match = TOKEN.exec(text); match; match = TOKEN.exec(text)) {
-    const { fn, close, hex, num, unit } = match.groups;
+    const { fn, close, hex, ident, num, unit } = match.groups;
     const at = start + match.index;
     const functions = stack.filter(Boolean);
     const found = (literal) => literals.push({ ...context, ...literal, line: context.lineAt(at), fn: functions.at(-1) ?? null });
@@ -170,6 +186,7 @@ function scan(source, text, start, context) {
     if (match[0].endsWith('(')) stack.push((fn ?? '').toLowerCase());
     else if (close) stack.pop();
     else if (hex) found({ kind: 'color', text: hex });
+    else if (ident && (NAMED.has(ident.toLowerCase()) || (context.property === '@apply' && PALETTE.test(ident)))) found({ kind: 'color', text: ident });
     else if (num) {
       // A factor scales a token: a bare number across the * or / makes a new number, which is a choice.
       const rest = text.slice(TOKEN.lastIndex);

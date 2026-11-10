@@ -61,7 +61,7 @@ html, body { margin: 0; background: var(--background-grouped); color: var(--fore
 :is(.docs-intro, .docs-steps, .docs-table caption) a { color: var(--primary); text-decoration: underline; text-underline-offset: 0.15em; }
 .docs-footer-links a { color: var(--primary); }
 .docs-steps p code { font-family: var(--font-mono); font-size: var(--text-code-size); }
-.docs-demo { display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: center; padding: var(--space-4); border-radius: var(--radius-lg); background: var(--card); }
+.docs-demo { display: flex; flex-wrap: wrap; gap: var(--space-4) var(--space-3); align-items: center; padding: var(--space-4); border-radius: var(--radius-lg); background: var(--card); }
 [data-theme$="-hc"] .docs-demo { box-shadow: 0 0 0 1px var(--input); }
 .docs-check { display: inline-flex; align-items: center; gap: var(--space-2); }
 .docs-usage { margin-top: var(--space-4); }
@@ -108,7 +108,6 @@ html, body { margin: 0; background: var(--background-grouped); color: var(--fore
 .docs-concentric > div > div > div { height: 64px; border-radius: var(--radius-xs); background: var(--card); }
 .onboarding-main { min-height: 100dvh; padding: var(--space-8) var(--space-4); box-sizing: border-box; display: grid; justify-content: center; align-content: start; outline: none; }
 .onboarding-main > * { width: min(560px, calc(100vw - 2 * var(--space-4))); }
-.docs-onboarding-error { margin: var(--space-4) 0 0; padding: 0 var(--space-4); color: var(--destructive); overflow-wrap: anywhere; }
 /* Room below Cancel for its focus ring (stroke-ring outside a stroke-ring-offset gap), clear of the progress list. */
 .docs-onboarding-cancel { margin: 0 0 var(--space-2); }
 

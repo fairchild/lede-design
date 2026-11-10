@@ -43,8 +43,8 @@ const GROUPS: Group[] = [
         why: <>A native element brings its keyboard handling, form behavior and screen-reader semantics from the browser. SegmentedControl is a <code>{'<fieldset>'}</code> of radio inputs, and Checkbox is an <code>{'<input type="checkbox">'}</code>.</>,
         cost: <>The browser draws parts of a native control itself. The sort on a data table’s cards is a <code>{'<select>'}</code>, and its open list is the browser’s own.</>,
         heldBy: [
-          <>The Semantic HTML rule in <Path to="CLAUDE.md" />, in review.</>,
-          <>axe, run on every route in all {THEMES} themes by <Path to="tests/a11y.spec.ts" />, first with every Disclosure and collapsible table closed and then with each one open, fails a control inside a button, a control without a name and ARIA that an element’s role doesn’t allow.</>,
+          <>The Semantic HTML first rule in <Path to="CONTRIBUTING.md" />, in review.</>,
+          <>axe, run on every route by <Path to="tests/a11y.spec.ts" />, in all {THEMES} themes on desktop and in <code>light</code> and <code>dark-hc</code> on a phone, first with every Disclosure and collapsible table closed and then with each one open, fails a control inside a button, a control without a name and ARIA that an element’s role doesn’t allow.</>,
         ],
       },
       {
@@ -53,9 +53,9 @@ const GROUPS: Group[] = [
         why: 'Screen-reader users move through a page by heading and by landmark, so the outline is how they find their way around it.',
         cost: <>A component that can sit at more than one depth takes its heading level as a prop, such as Disclosure’s <code>headingLevel</code>, so the page that places it keeps the outline in order.</>,
         heldBy: [
-          <><Path to="tests/a11y.spec.ts" /> loads every route in all {THEMES} themes and expects exactly one visible <code>{'<h1>'}</code>.</>,
+          <><Path to="tests/a11y.spec.ts" /> loads every route, in all {THEMES} themes on desktop and in <code>light</code> and <code>dark-hc</code> on a phone, and expects exactly one visible <code>{'<h1>'}</code>.</>,
           <>In the same test, axe’s <code>heading-order</code> rule fails a skipped level, and <code>landmark-unique</code> fails two landmarks of one kind with the same name.</>,
-          <>The One h1 rule in <Path to="CLAUDE.md" />, in review, for naming each region.</>,
+          <>The One h1 per screen rule in <Path to="CONTRIBUTING.md" />, in review, for naming each region.</>,
         ],
       },
     ],
@@ -73,15 +73,16 @@ const GROUPS: Group[] = [
           <>Its -hc fill walk reads every rule in <Path to="registry/" /> that paints a control fill and fails one with no <code>--input</code> edge in -hc. Fields, selects, Switch tracks and the selected segment draw that edge in light and dark too, and the walk fails one that draws it only in -hc. <Path to="tokens/contrast.json" /> lists {NOT_CONTROLS} rules whose fill isn’t a control, each with its reason.</>,
           <>Its knob edge read measures a switch knob by its fill or the 1px edge that starts <code>shadow-knob</code>, whichever is stronger.</>,
           <><Path to="tests/contrast-gate.spec.ts" /> runs the gate on altered copies of its inputs, an -hc edge removed and a knob without its edge among them.</>,
+          <>axe in <Path to="tests/a11y.spec.ts" /> checks the text on screen on every route, in all {THEMES} themes on desktop. A phone renders DOM of its own, such as the tab bar and the data table’s cards, and runs axe in <code>light</code> and <code>dark-hc</code>, so its DOM is seen in a dark theme and a high-contrast one. What that gives up is a phone-only element whose colors fail only in <code>dark</code> or <code>light-hc</code>, such as a tab bar label drawn in <code>--border</code> in dark alone. Nothing checks that case. This gate measures only the pairs <Path to="tokens/contrast.json" /> declares, and it doesn’t read which tokens a CSS rule puts together.</>,
         ],
       },
       {
         title: 'Large text reflows',
         summary: 'At 200% browser text on a phone, no page scrolls sideways and text is cut off only where a component truncates it on purpose. At 300% on a 320px phone, no page scrolls sideways either.',
         why: 'Type sizes are in rem, so they follow the reader’s text size setting, and every layout makes room for that. Rows keep their text clear of their values, and at 360px and 412px wide no page grows wider than at 100%.',
-        cost: <>Large text makes a screen longer. A row’s value moves under its title when the two don’t fit side by side. In a window under {REFLOW} of the browser’s text size (<code>breakpoint-reflow</code>), a row’s subtitle wraps, a group’s summary moves under its title the same way and SummaryCard’s figure takes the smaller <code>title-1</code>. GlassBar’s labels stop growing at their default size, so its places still fit. SelectionBar wraps its count and actions onto lines of their own.</>,
+        cost: <>Large text makes a screen longer. A row’s value and a group’s summary move under the title when the two don’t fit side by side. In a window under {REFLOW} of the browser’s text size (<code>breakpoint-reflow</code>), a row’s subtitle wraps and SummaryCard’s figure takes the smaller <code>title-1</code>. GlassBar’s labels stop growing at their default size, so its places still fit. SelectionBar wraps its count and actions onto lines of their own.</>,
         heldBy: [
-          <><Path to="tests/reflow.spec.ts" /> loads every route at 200% text at 320, 390 and 412px wide, every route at 300% at 320px, and the workbench at 300% at 390 and 412px too. It reads each route first with every Disclosure and collapsible table closed and then with each one open, since a closed panel’s text takes no space. It fails on a page that scrolls sideways, text cut off by a box that clips it, a row’s title or subtitle under its value and a title beside its value narrower than its longest word. A component’s own ellipsis or line clamp passes, except on a row subtitle (an inbox preview aside), the workbench’s title and a select’s chosen option, which must show in full. At 300% it also fails on a Button, GlassBar or GlassToolbar item, accent swatch or Switch whose label runs past its edge. One cut passes there: on <code>/app/work</code>, the sort select’s “Due, ascending”, since a select draws its option on one line and that option is wider than the screen at 300%.</>,
+          <><Path to="tests/reflow.spec.ts" /> loads every route at 200% text at 320, 390 and 412px wide, every route at 300% at 320px, and the workbench at 300% at 390 and 412px too. It reads each route first with every Disclosure and collapsible table closed and then with each one open, since a closed panel’s text takes no space. It fails on a page that scrolls sideways, text cut off by a box that clips it, a row’s title or subtitle under its value and a title beside its value narrower than its longest word. At 100% text at 320 and 390px it reads every route only for a title beside its value narrower than its longest word, where a word wider than the whole line may break. At 200% and 300% text on a 1280px window it reads <code>/app/settings</code> and the list fixture for the same, and it fails on a group summary under its title that doesn’t start at the title’s edge. A component’s own ellipsis or line clamp passes, except on a row subtitle (an inbox preview aside), the workbench’s title and a select’s chosen option, which must show in full. At 300% it also fails on a Button, GlassBar or GlassToolbar item, accent swatch or Switch whose label runs past its edge. One cut passes there: on <code>/app/work</code>, the sort select’s “Due, ascending”, since a select draws its option on one line and that option is wider than the screen at 300%.</>,
           <><Path to="tests/a11y.spec.ts" /> checks that no page is wider at 200% text than at 100%, at the phone widths it tests.</>,
           <>The same spec selects a message at 200% and 300% text on phones and fails when a SelectionBar label is cut off, two of its parts cross or a part leaves the screen. It also fails when SelectionBar reaches down over the tab bar.</>,
           <>CI runs both on Linux. A page that fits with macOS fonts can fail there, and the Linux container that <Path to="CONTRIBUTING.md" /> describes, with DejaVu Sans, reproduces those failures. Reflow results come from CI or that container.</>,
@@ -102,9 +103,9 @@ const GROUPS: Group[] = [
         title: 'Hit areas are measured',
         summary: <>Every control answers a press over at least 24×24px in every density, and over 44×44px in <code>touch</code>. Wherever a finger can be used, a row’s ••• answers over 44×44px too.</>,
         why: 'A target is the area a press reaches, which can be larger than the box that’s drawn, so it’s measured where the press lands. A small control drawn at its size keeps a dense layout dense and still takes a finger.',
-        cost: <><code>touch</code> makes controls 36, 44 and 56px tall, and the ••• 44px, so screens are longer. Small Buttons, SegmentedControl options and AppShell footer links reach the hit area with an overhang that a neighbor closer than half the difference would share. On a phone in <code>regular</code> the row •••’s overhang takes 2px of the row link, and the check lets a neighbor take up to 4px of a target’s edge. A link inside a sentence and a row slid aside to show its actions are exempt.</>,
+        cost: <><code>touch</code> makes controls 36, 44 and 56px tall, and the ••• 44px, so screens are longer. Small Buttons, SegmentedControl options, Switches and AppShell footer links reach the hit area with an overhang that a neighbor closer than half the difference would share. On a phone in <code>regular</code> the row •••’s overhang takes 2px of the row link, and the check lets a neighbor take up to 4px of a target’s edge. A link inside a sentence and a row slid aside to show its actions are exempt.</>,
         heldBy: [
-          <><Path to="tests/hit-area.spec.ts" /> presses around the center of every link, button, input, select and divider on every route, in each density, with <code>elementFromPoint</code>, so a pseudo-element’s hit area counts and a neighbor’s doesn’t. On a phone it also checks the ••• in <code>regular</code> and <code>compact</code>.</>,
+          <><Path to="tests/hit-area.spec.ts" /> presses around the center of every link, button, input, select, switch and divider on every route, in each density, with <code>elementFromPoint</code>, so a pseudo-element’s hit area counts and a neighbor’s doesn’t. On a phone it also checks the ••• in <code>regular</code> and <code>compact</code>.</>,
         ],
       },
       {
@@ -118,12 +119,12 @@ const GROUPS: Group[] = [
           <><Path to="tests/focus-trail.ts" /> samples the focused element on every frame, and a row fails when a frame shows <code>{'<body>'}</code> on the way to a landing. On a route change it holds because PageHeader focuses its heading in the same commit, after any other move.</>,
           <>An in-page link’s target has <code>tabindex="-1"</code>, so the browser moves focus there along with the view. <Path to="tests/focus-actions.spec.ts" /> checks the sidebar layout’s Projects link.</>,
           <><Path to="src/focus-restoration.ts" /> records the last element focused inside <code>{'<main>'}</code> on each history entry and focuses it again on Back, Forward and a link to the entry just before, such as a back link. InboxFlow returns a closed message to its row itself. The arrival table’s Back column and the back-link rows in <Path to="tests/focus-actions.spec.ts" /> check both.</>,
-          <>The <code>strict-desktop</code> and <code>strict-phone</code> projects run the focus and keyboard specs against React’s development build, where StrictMode runs each effect twice, as <code>npm run dev</code> and most apps in development do. A production build runs each effect once, so it can’t show a move lost to the second run. The cost is a second build on each test runner and the focus rows run twice (<Path to="playwright.config.ts" />).</>,
+          <>The <code>strict-desktop</code> project runs the focus and keyboard specs against React’s development build, where StrictMode runs each effect twice, as <code>npm run dev</code> and most apps in development do. A production build runs each effect once, so it can’t show a move lost to the second run. A replayed effect belongs to React’s lifecycle, which is the same at every viewport, so no phone project repeats this. A phone’s taps reach the same effects as desktop’s keys. The swipe rows, which only a finger can drive, also run in <code>strict-desktop</code> with the phone’s viewport and touch (<code>strictTouch</code> in <Path to="tests/focus-table.ts" />). What it no longer checks is an effect on any other phone path, such as a tap in the single-pane inbox, that breaks only when replayed. The phone project still runs those rows without StrictMode. The cost is a second build on each test runner and the focus rows run twice (<Path to="playwright.config.ts" />).</>,
           <>PageHeader focuses its heading on mount only when the document has focus, so it never pulls focus into an embedded frame or a background tab (<Path to="registry/lede/blocks/page-header.tsx" />). <Path to="tests/focus-arrival.spec.ts" />, <Path to="tests/onboarding.spec.ts" /> and <Path to="tests/a11y.spec.ts" /> check the heading has focus.</>,
-          <>The profile and onboarding forms focus the first invalid field when a submit fails. <Path to="tests/profile.spec.ts" /> checks the profile’s Name, Email and Short bio, and <Path to="tests/focus-actions.spec.ts" /> checks onboarding’s Name and Email.</>,
-          <>Escape backs out one layer per press. PageHeader’s <code>backOnEscape</code> activates the back link, and an open menu or dialog, an IME composition or a field the person changed keeps its Escape first. InboxFlow ends selection mode, then closes the open message, and ProfileFlow cancels an unchanged edit. The <code>escape</code> column of <Path to="tests/focus-table.ts" /> and the layer tests in <Path to="tests/keyboard-paths.spec.ts" /> check each one.</>,
+          <>The profile and onboarding forms focus the first invalid field when a submit fails. The field is invalid and described by its error before focus arrives, and the errors are announced after the move, so a field that already had focus is heard too. A field with an error checks itself again on each change, so the error leaves once the value is fixed. <Path to="tests/profile.spec.ts" /> and <Path to="tests/onboarding-flow.spec.ts" /> check the profile’s Name, Email and Short bio and onboarding’s Name and Email, and the error rows in <Path to="tests/focus-table.ts" /> check what is said.</>,
+          <>Escape backs out one layer per press. PageHeader’s <code>backOnEscape</code> activates the back link, and an open menu or dialog, an IME composition or a field the person changed keeps its Escape first. InboxFlow ends selection mode, then closes the open message, and ProfileFlow cancels an unchanged edit. Of several layers using <code>useBackOnEscape</code>, the one activated last takes the press. The <code>escape</code> column of <Path to="tests/focus-table.ts" /> and the layer tests in <Path to="tests/keyboard-paths.spec.ts" /> check each one, and <Path to="tests/primitives.spec.ts" /> checks an inner layer backs out before its PageHeader.</>,
           <>DataTable’s Next and Previous move focus to the summary line above the new page, and Load more moves it to the first new row, in the commit that renders them. The paging rows in <Path to="tests/focus-table.ts" /> check every frame from the press to the landing, in client and server mode, in Work and on the docs page.</>,
-          <>Enter acts. OnboardingFlow runs on Enter from Replay onboarding to Today: each step is a native <code>{'<form>'}</code>, its arrival target takes focus in the commit that shows it, and PageHeader yields to that move. Lede’s Switch submits its form on Enter, as a checkbox does. On touch, Daybook starts Account at its h1, so the on-screen keyboard doesn’t cover the step (<Path to="registry/lede/input-modality.ts" />). The <code>enter</code> column of <Path to="tests/focus-table.ts" /> and the onboarding tests in <Path to="tests/keyboard-paths.spec.ts" /> check each step.</>,
+          <>Enter acts. OnboardingFlow runs on Enter from Replay onboarding to Today: each step is a native <code>{'<form>'}</code>, its arrival target takes focus in the commit that shows it, and PageHeader yields to that move. Enter on Lede’s Switch clicks its form’s default button, as Enter on a checkbox does. On touch, Daybook starts Account at its h1, so the on-screen keyboard doesn’t cover the step (<Path to="registry/lede/input-modality.ts" />). The <code>enter</code> column of <Path to="tests/focus-table.ts" /> and the onboarding tests in <Path to="tests/keyboard-paths.spec.ts" /> check each step.</>,
           <>Menus come from Base UI, which returns focus to the trigger when a menu closes. <Path to="tests/row-menu.spec.ts" /> checks this on a data table row and <Path to="tests/focus-actions.spec.ts" /> on an Inbox row.</>,
           <>A removal keeps the reader’s place. InboxFlow and DataTable move focus to the row that took the removed one’s place, else the one before, in the commit that takes the row away, so no frame shows <code>{'<body>'}</code>. Below the sidebar’s breakpoint a focus target scrolls clear of the tab bar. The removal rows in <Path to="tests/focus-table.ts" />, <Path to="tests/a11y.spec.ts" /> and the 32px tests in <Path to="tests/inbox.spec.ts" /> check the landing, the tab bar and the sticky notice. An Undo whose restore renders later keeps focus on its button until the messages are back, and a DataTable’s Done whose checkbox has gone, as it does when the table becomes cards, lands on the summary line. Side by side, Enter on the open message’s row moves focus to its title.</>,
         ],
@@ -158,7 +159,7 @@ const GROUPS: Group[] = [
           <><Path to="tests/reduced-motion.spec.ts" /> checks for 1ms and a linear spring under reduced motion, with motion tokens a project sets after Lede.</>,
           <><Path to="tests/forced-colours.spec.ts" /> checks that each control on the routes it walks keeps a boundary, a focus ring and a state beyond font weight, and that each edge drawn with <code>box-shadow</code>, in any theme, has a twin in forced colors.</>,
           <><Path to="tests/theme-scope.spec.ts" /> checks that <code>prefers-contrast: more</code> moves each provider to its high-contrast theme.</>,
-          <>Under reduced transparency, glass draws as a solid card. That’s one rule in <Path to="registry/lede/lede.components.css" />, held in review.</>,
+          <>Under reduced transparency, glass draws as a solid card. <Path to="tests/primitives.spec.ts" /> checks that a glass Card has the plain card’s color and no blur there.</>,
         ],
       },
     ],
@@ -172,7 +173,8 @@ const GROUPS: Group[] = [
         why: <>One source makes a theme, a density or a corner shape a single change that every component follows. The file holds all {tokenFamilies.count} token families, and <code>npm run tokens</code> generates the CSS from it, so the two can’t drift apart.</>,
         cost: 'A new value needs a token, or an exception with its reason. A media query can’t read a custom property, so breakpoints are written out as numbers, and the gate matches each one to its token.',
         heldBy: [
-          <><code>npm run literals</code> (<Path to="scripts/check-literals.mjs" />), part of every build, fails on a number or color in registry CSS that comes from no token.</>,
+          <><code>npm run literals</code> (<Path to="scripts/check-literals.mjs" />), part of every build, fails on a number or color in registry CSS that comes from no token. A color is a hex value, a color function, a named color such as <code>white</code> or a Tailwind palette utility in <code>@apply</code>, such as <code>bg-red-500</code>.</>,
+          <>Before 0.4.0 was released, the gate read only hex values and color functions, so a named color or a palette utility would have passed. The registry CSS had none.</>,
           <><Path to="tokens/literal-exceptions.json" /> holds {exceptions.length} exceptions, each with its reason, and the gate fails one that matches nothing.</>,
           <><Path to="tests/literal-gate.spec.ts" /> runs the gate on altered copies of the CSS.</>,
         ],
@@ -184,7 +186,7 @@ const GROUPS: Group[] = [
         cost: 'An overlay a project builds itself needs ThemeScope too. The Components page shows how.',
         heldBy: [
           <><Path to="tests/theme-scope.spec.ts" /> reads every file under <Path to="registry/" /> and fails a <code>.Portal</code> without ThemeScope directly inside it, and any <code>createPortal</code>.</>,
-          'The same file opens menus inside the site’s provider and nested ones, in every theme, and checks that each takes its own provider’s theme.',
+          <>The same file opens menus inside the site’s provider and nested ones, in all {THEMES} themes, and checks that each takes its own provider’s theme. Each surface loads once and the page moves through the themes, by the emulated OS scheme and the stored high-contrast pref. It runs on desktop: a portal’s theme doesn’t depend on the viewport, and the data table’s cards are a 380px pane at any width. <Path to="tests/a11y.spec.ts" /> and <Path to="tests/row-menu.spec.ts" /> open row menus by touch on a phone.</>,
         ],
       },
     ],
@@ -198,7 +200,7 @@ const GROUPS: Group[] = [
         why: <>Names that follow one pattern can be guessed from the ones you know. HTML’s names stay where the meaning matches, such as <code>onChange</code> on a wrapper that passes native input props through. Classes start <code>ld-</code> and component custom properties <code>--ld-</code>, which keeps them apart from a project’s own.</>,
         cost: <>A rename keeps its old name for one release, marked <code>@deprecated</code> with the release that removes it, and the new name wins when both are passed.</>,
         heldBy: [
-          <>The Names and Prefixes rules in <Path to="CLAUDE.md" />, in review. Names also covers registry titles, which name the components you import.</>,
+          <>The Names and Prefixes rules in <Path to="CONTRIBUTING.md" />, in review. Names also covers registry titles, which name the components you import.</>,
           <>Color that carries meaning is a <code>tone</code> declared with <code>ToneSubset</code>, so a value outside <code>Tone</code> fails the build’s typecheck.</>,
         ],
       },
@@ -208,8 +210,9 @@ const GROUPS: Group[] = [
         why: <>A flow drops into any React app, whatever its router or data layer. Its links render through LinkProvider, so they use the app’s own link component.</>,
         cost: <>The app does the wiring: fetching, routing and saving. Daybook’s pages in <Path to="src/pages/app/" /> show it for each flow.</>,
         heldBy: [
-          <>The layer rule in <Path to="CLAUDE.md" />, in review.</>,
-          <><Path to="scripts/check-registry.mjs" />, part of every build, fails a registry file whose relative import isn’t installed with it. The site’s <code>@/</code> and <code>@lede/</code> aliases fail there too, so a flow can’t import the docs site’s code.</>,
+          <>The layers section of <Path to="CONTRIBUTING.md" />, in review.</>,
+          <><Path to="scripts/check-registry.mjs" />, part of every build, fails a registry file whose relative import isn’t installed with it. The site’s <code>@/</code> and <code>@lede/</code> aliases fail there too, so a flow can’t import the docs site’s code. It also fails a dynamic import with a computed path, two files with one target and a file under <Path to="registry/" /> that no item lists.</>,
+          <><Path to="tests/registry-gate.spec.ts" /> runs the gate on altered copies of the registry.</>,
         ],
       },
     ],
@@ -223,7 +226,8 @@ const GROUPS: Group[] = [
         why: 'Source in your project can be read and changed like your own code. Each package is one more to keep up to date.',
         cost: <>Moving to a later tag runs the same <code>add</code> with <code>-o</code>, which overwrites your copies, edits included.</>,
         heldBy: [
-          <>Review. Each item lists its packages under <code>dependencies</code> in <Path to="registry.json" />, which this page reads: {codeList(PACKAGES)}.</>,
+          <>Each item lists its packages under <code>dependencies</code> in <Path to="registry.json" />, which this page reads: {codeList(PACKAGES)}. Review keeps the list short.</>,
+          <><Path to="scripts/check-registry.mjs" />, part of every build, fails a registry file that imports a package its item and their registryDependencies don’t list. React and React DOM are the packages no item lists. Before 0.4.0 was released, the gate read only relative imports, so an unlisted package would have passed.</>,
         ],
       },
       {
@@ -244,10 +248,20 @@ const GROUPS: Group[] = [
         title: 'Docs samples are code that compiles',
         summary: 'Each section on Components and Blocks ends with its item’s install command and, where it has one, the smallest working code for it.',
         why: 'A reader pastes a sample into an app, so it has to run there: with its imports and nothing the docs page defines for itself. Each sample is a file the typecheck reads, so a prop that changes breaks the build before it breaks the docs.',
-        cost: <>A new component or block needs a section with its install command, and usually a file in <Path to="src/pages/docs/samples/" /> named for its registry item.</>,
+        cost: <>A new component or block needs a section with its install command, and usually a file in <Path to="src/pages/docs/samples/" /> named for its registry item. Another example of the same item, such as DataTable’s narrow layout, is a file in <Path to="src/pages/docs/examples/" />, which the typecheck reads too.</>,
         heldBy: [
           <><code>npm run typecheck</code>, where <Path to="tsconfig.json" /> maps the install path <code>@/components/lede/*</code> to <code>registry/lede/*</code>.</>,
           <><Path to="tests/usage.spec.ts" />: every component and block in <Path to="registry.json" /> has an install command on its page, each command names real items, and each sample shows its file character for character.</>,
+        ],
+      },
+      {
+        title: 'The table store follows table-core',
+        summary: <>The server-rows store behind useServerRows is a copy of the one in <code>@fairchild/table-core</code>, kept identical to a pinned release.</>,
+        why: 'The store installs with the block as source, so a project needs no package for it. The store is maintained and tested in table-core, and a copy that falls behind loses that work without a sign.',
+        cost: 'A fix to the store lands in table-core first, then in Lede as a re-sync and a new pin. Lede’s doc comments on the shared types stay its own, so those declarations are compared as code with their comments left out.',
+        heldBy: [
+          <><Path to="tests/table-core-parity.spec.ts" /> hashes <Path to="registry/lede/blocks/server-rows-store.ts" /> without its import lines, and the shared types and selection functions in <Path to="registry/lede/blocks/use-data-table.ts" /> without comments, and fails when either differs from the pinned table-core commit. Its failure message says how to re-sync and re-pin.</>,
+          <>The <code>server-rows-*</code> specs in <Path to="tests/" /> are ports of table-core’s tests for the store, run against Lede’s copy.</>,
         ],
       },
       {
@@ -284,7 +298,18 @@ const GROUPS: Group[] = [
         cost: 'A pull request that adds or changes a check takes one more run, on a mutant it names, and then puts the code back.',
         heldBy: [
           <>The “Before you open a pull request” section of <Path to="CONTRIBUTING.md" />, in review.</>,
-          <><Path to="tests/contrast-gate.spec.ts" /> and <Path to="tests/literal-gate.spec.ts" /> run their gates on altered copies of their inputs, so those two keep their mutants in the suite.</>,
+          <><Path to="tests/contrast-gate.spec.ts" />, <Path to="tests/literal-gate.spec.ts" /> and <Path to="tests/registry-gate.spec.ts" /> run their gates on altered copies of their inputs, so those three keep their mutants in the suite.</>,
+        ],
+      },
+      {
+        title: 'A release is published once, from a green commit',
+        summary: <>A <code>v*</code> tag publishes its registry to <code>r/&lt;tag&gt;</code> once, and only after CI’s <code>check</code> passed on the tagged commit.</>,
+        why: 'A project pins a release’s URL and its files are cached as immutable, so a file published by mistake stays out there. Checking CI first keeps a red commit from becoming a release.',
+        cost: 'A tag pushed right after a merge waits for CI, up to 45 minutes, before it publishes. A fix to a published release is a new version.',
+        heldBy: [
+          <><Path to=".github/workflows/deploy.yml" /> reads the tagged commit’s <code>check</code> run from GitHub Actions and stops before publishing unless it passed.</>,
+          <><Path to="scripts/publish-r2.mjs" /> refuses a release that’s already in R2, with exit code 3, and uploads the release marker last. <Path to="tests/publish-r2.spec.ts" /> runs it against a stand-in for wrangler.</>,
+          <>The Worker, <Path to="worker/index.ts" />, answers 404 for a release item until its marker exists, sends the CORS header on errors and preflights, and serves media typed by extension in a sandbox. <Path to="tests/worker.spec.ts" /> calls it in Node with an in-memory bucket.</>,
         ],
       },
       {

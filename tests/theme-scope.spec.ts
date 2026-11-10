@@ -90,48 +90,63 @@ const asComputed = (page: Page, colour: string) => page.evaluate((c) => {
 }, colour);
 
 test.describe('Portalled overlays', () => {
-  for (const mode of MODES) {
-    for (const scope of SCOPES) {
-      test(`take their provider's theme · ${mode.name} · ${scope.title}${scope.within ? ` in ${scope.within}` : ''}`, async ({ page }) => {
-        const theme = `${scope.dark(mode.dark) ? 'dark' : 'light'}${mode.hc ? '-hc' : ''}`;
-        await visit(page, { ...SITE, highContrast: mode.hc }, mode.dark, scope.route);
-        const { menu, wrapper } = await openMenu(page, scope.title, scope.within);
+  // One page load per surface: the scheme follows the emulated OS, and high contrast follows the stored prefs, which the
+  // site rereads on a storage event as it does for a second tab. A portal's theme doesn't depend on the viewport, and
+  // the card surface is a 380px pane at any width, so these run on desktop.
+  for (const scope of SCOPES) {
+    test(`take their provider's theme in every theme · ${scope.title}${scope.within ? ` in ${scope.within}` : ''}`, async ({ page, isMobile }) => {
+      test.skip(isMobile, 'The menu and its portal are the same on a phone, and desktop shows both data table surfaces.');
+      // Four themes, each with two axe runs, in one test.
+      test.slow();
+      await visit(page, { ...SITE, highContrast: false }, false, scope.route);
+      for (const mode of MODES) {
+        await test.step(mode.name, async () => {
+          const theme = `${scope.dark(mode.dark) ? 'dark' : 'light'}${mode.hc ? '-hc' : ''}`;
+          await page.emulateMedia({ colorScheme: mode.dark ? 'dark' : 'light' });
+          await page.evaluate((p) => {
+            localStorage.setItem('lede:appearance', JSON.stringify(p));
+            window.dispatchEvent(new StorageEvent('storage', { key: 'lede:appearance' }));
+          }, { ...SITE, highContrast: mode.hc });
+          const trigger = page.locator(scope.within ?? 'body').getByRole('button', { name: `More actions for ${scope.title}` });
+          await expect(trigger.locator('xpath=ancestor::*[@data-theme][1]')).toHaveAttribute('data-theme', theme);
+          const { menu, wrapper } = await openMenu(page, scope.title, scope.within);
 
-        const surface = await read(menu);
-        expect(surface).toEqual(await read(wrapper));
-        for (const [name, value] of Object.entries(surface)) expect(value, name).not.toBe('');
+          const surface = await read(menu);
+          expect(surface).toEqual(await read(wrapper));
+          for (const [name, value] of Object.entries(surface)) expect(value, name).not.toBe('');
 
-        const portalRoot = menu.locator('xpath=ancestor::*[@data-theme][1]');
-        for (const property of ['color', 'font-family']) {
-          await expect(portalRoot).toHaveCSS(property, await wrapper.evaluate((el, p) => getComputedStyle(el).getPropertyValue(p), property));
-        }
+          const portalRoot = menu.locator('xpath=ancestor::*[@data-theme][1]');
+          for (const property of ['color', 'font-family']) {
+            await expect(portalRoot).toHaveCSS(property, await wrapper.evaluate((el, p) => getComputedStyle(el).getPropertyValue(p), property));
+          }
 
-        expect(await asComputed(page, surface['--primary'])).toBe(await asComputed(page, tokenValue(`preset-${scope.accent}`, theme)));
-        expect(surface['color-scheme']).toBe(theme.split('-')[0]);
-        expect(await asComputed(page, surface['--primary-foreground'])).toBe(await asComputed(page, tokenValue(scope.accentForeground, theme)));
-        await expect(menu).toHaveCSS('background-color', await asComputed(page, tokenValue(scope.popover, theme)));
-        await expect(menu).toHaveCSS('color', await asComputed(page, tokenValue('popover-foreground', theme)));
-        await expect(menu).toHaveCSS('border-radius', scope.menuRadius);
+          expect(await asComputed(page, surface['--primary'])).toBe(await asComputed(page, tokenValue(`preset-${scope.accent}`, theme)));
+          expect(surface['color-scheme']).toBe(theme.split('-')[0]);
+          expect(await asComputed(page, surface['--primary-foreground'])).toBe(await asComputed(page, tokenValue(scope.accentForeground, theme)));
+          await expect(menu).toHaveCSS('background-color', await asComputed(page, tokenValue(scope.popover, theme)));
+          await expect(menu).toHaveCSS('color', await asComputed(page, tokenValue('popover-foreground', theme)));
+          await expect(menu).toHaveCSS('border-radius', scope.menuRadius);
 
-        const item = page.getByRole('menuitem', { name: scope.plain });
-        await item.hover();
-        await expect(item).toHaveAttribute('data-highlighted');
-        await expect(item).toHaveCSS('background-color', await asComputed(page, tokenValue('accent', theme)));
-        await expect(item).toHaveCSS('color', await asComputed(page, tokenValue('accent-foreground', theme)));
-        await expect(item).toHaveCSS('min-height', '30px');
+          const item = page.getByRole('menuitem', { name: scope.plain });
+          await item.hover();
+          await expect(item).toHaveAttribute('data-highlighted');
+          await expect(item).toHaveCSS('background-color', await asComputed(page, tokenValue('accent', theme)));
+          await expect(item).toHaveCSS('color', await asComputed(page, tokenValue('accent-foreground', theme)));
+          await expect(item).toHaveCSS('min-height', '30px');
 
-        expect(await axeViolations(page)).toEqual([]);
-        const critical = page.getByRole('menuitem', { name: scope.critical });
-        await expect(critical).toHaveCSS('color', await asComputed(page, tokenValue('destructive', theme)));
-        await critical.hover();
-        await expect(critical).toHaveAttribute('data-highlighted');
-        await expect(critical).toHaveCSS('color', await asComputed(page, surface['--ld-destructive-on-tint']));
-        expect(await axeViolations(page)).toEqual([]);
+          expect(await axeViolations(page)).toEqual([]);
+          const critical = page.getByRole('menuitem', { name: scope.critical });
+          await expect(critical).toHaveCSS('color', await asComputed(page, tokenValue('destructive', theme)));
+          await critical.hover();
+          await expect(critical).toHaveAttribute('data-highlighted');
+          await expect(critical).toHaveCSS('color', await asComputed(page, surface['--ld-destructive-on-tint']));
+          expect(await axeViolations(page)).toEqual([]);
 
-        await page.keyboard.press('Escape');
-        await expect(menu).toBeHidden();
-      });
-    }
+          await page.keyboard.press('Escape');
+          await expect(menu).toBeHidden();
+        });
+      }
+    });
   }
 
   for (const solidGlass of [false, true]) {
@@ -225,8 +240,8 @@ const optionsOf = (prop: string) => [...new RegExp(`\\b${prop}\\?: ([^;]+);`).ex
 // What each option should come to. Literal, so a wrong value in tokens/tokens.json fails here. The first is the default.
 const SCALES: Record<string, Record<string, Record<string, string>>> = {
   shape: {
-    soft: { '--radius': '22px', '--radius-capsule': '999px', '--radius-xl': '30px', '--radius-lg': '22px', '--radius-md': '14px', '--radius-sm': '10px', '--radius-xs': '6px', capsuleRadius: '999px', roundedRadius: '14px' },
-    crisp: { '--radius': '12px', '--radius-capsule': '999px', '--radius-xl': '20px', '--radius-lg': '12px', '--radius-md': '4px', '--radius-sm': '2px', '--radius-xs': '2px', capsuleRadius: '999px', roundedRadius: '4px' },
+    soft: { '--radius': '22px', '--radius-capsule': '999px', '--radius-xl': '30px', '--radius-lg': '22px', '--radius-md': '14px', '--radius-sm': '10px', '--radius-xs': '6px', capsuleRadius: '30px', roundedRadius: '14px' },
+    crisp: { '--radius': '12px', '--radius-capsule': '999px', '--radius-xl': '20px', '--radius-lg': '12px', '--radius-md': '4px', '--radius-sm': '2px', '--radius-xs': '2px', capsuleRadius: '20px', roundedRadius: '4px' },
     square: { '--radius': '4px', '--radius-capsule': '6px', '--radius-xl': '12px', '--radius-lg': '4px', '--radius-md': '2px', '--radius-sm': '2px', '--radius-xs': '2px', capsuleRadius: '6px', roundedRadius: '2px' },
   },
   density: {
@@ -254,10 +269,12 @@ test('A capsule survives a shadow root that loads the same CSS', async ({ page }
     root.innerHTML = '<button class="ld-btn">Capsule</button>';
     return getComputedStyle(root.firstElementChild!).borderRadius;
   });
-  expect(radius).toBe('999px');
+  // A capsule's radius stops at the larger of --radius-xl and half a one-line Button's height. Here that's 30px, over
+  // half of the 36px Button, so it still reads as fully round.
+  expect(radius).toBe('30px');
 });
 
-// A capsule button shows --radius-capsule and the md height; a rounded large one shows the derived --radius-md and the lg
+// A capsule button shows --radius-capsule, capped at the larger of --radius-xl and half its one-line height, and the md height; a rounded large one shows the derived --radius-md and the lg
 // height; a checkbox shows --ld-table-hit, which derives from the md height.
 const controls = (name: string) => h('span', { 'data-case': name },
   h(Button, null, 'Capsule'), h(Button, { shape: 'rounded', size: 'lg' }, 'Rounded'), h(Checkbox, { 'aria-label': 'Hit target' }));

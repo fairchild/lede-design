@@ -57,14 +57,22 @@ function Narrowed() {
   );
 }
 
+/** Group headers whose summary is too long to sit beside the title on a phone, so it moves under it. */
+const HEADERS = [
+  { title: 'Saturday', summary: 'The castle and old town, with fado at night.' },
+  { title: 'Sunday', summary: 'Monuments and pastries by the river, then the sunset.' },
+  { title: 'Notifications for every shared calendar', summary: '2 on' },
+];
+
 /**
  * ListRows with their swipe actions revealed in narrow boxes, for tests/row-menu.spec.ts, which also doubles the text
- * size and lengthens a label. Not linked from the navigation.
+ * size and lengthens a label, and ListGroup headers with long summaries, for tests/reflow.spec.ts. Not linked from the
+ * navigation.
  */
 export function ListRowFixtures() {
   return (
     <div className="ld-flow">
-      <PageHeader title="List row fixtures" summary="Revealed swipe actions in narrow boxes, for the automated tests." />
+      <PageHeader title="List row fixtures" summary="Revealed swipe actions in narrow boxes and group headers with long summaries, for the automated tests." />
       {CASES.map((c) => (
         <section key={c.title} aria-label={c.title} className="docs-section">
           <div style={{ width: c.width }}>
@@ -76,6 +84,13 @@ export function ListRowFixtures() {
       ))}
       <Lengthened />
       <Narrowed />
+      <section aria-label="Group headers with long summaries" className="docs-section">
+        {HEADERS.map((h) => (
+          <ListGroup key={h.title} title={h.title} summary={h.summary}>
+            <ListRow title="Castelo de São Jorge" value="9:30 AM" />
+          </ListGroup>
+        ))}
+      </section>
     </div>
   );
 }

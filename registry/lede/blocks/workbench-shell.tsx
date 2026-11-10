@@ -67,7 +67,7 @@ function restore(key: string, sides: Sides): Sides {
 /** The widths to draw: those asked for, each giving up its share when main needs the room back. */
 function fit(want: Widths, room: number): Widths {
   const total = want.start + want.end;
-  if (total <= room) return want;
+  if (total === 0 || total <= room) return want;
   const floor = { start: want.start && MIN_WIDTH, end: want.end && MIN_WIDTH };
   const start = Math.max(floor.start, Math.min(Math.round((want.start * room) / total), room - floor.end));
   return { start, end: want.end && Math.max(floor.end, room - start) };
