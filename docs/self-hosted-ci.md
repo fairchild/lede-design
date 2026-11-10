@@ -9,6 +9,11 @@ You need `gh`, authenticated as someone with admin access to the repo, because r
 also need an isolated machine that runs the job and is thrown away afterward: a VM or a container. The pull request's
 code runs there with the runner's access.
 
+While a runner is registered, any workflow that asks for `runs-on: self-hosted` can claim it, including one edited in
+a pull request from a fork. The repo requires approval before a workflow runs for any outside contributor (Settings →
+Actions → General → "Require approval for all external contributors"), so a fork's edited workflow waits for a
+maintainer and never reaches the runner unseen. Approve a fork's run only after reading its workflow changes.
+
 ## Steps
 
 1. Read the pull request at its head and note the 40-character SHA. The run tests that commit only.
