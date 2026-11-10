@@ -54,11 +54,7 @@ test('a row opens its item in place: the detail’s title takes focus, and Back 
   await expect(screen.getByRole('heading', { level: 3, name: 'Katherine Johnson' })).toBeFocused();
   await expect(screen.getByRole('heading', { level: 3, name: 'Inbox' })).toHaveCount(0);
   await page.keyboard.press('Shift+Tab');
-  const back = screen.getByRole('button', { name: 'Inbox' });
-  await expect(back).toBeFocused();
-  // Drawn as Lede's back link: no button fill or border.
-  await expect(back).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
-  await expect(back).toHaveCSS('border-top-width', '0px');
+  await expect(screen.getByRole('button', { name: 'Inbox' })).toBeFocused();
   await page.keyboard.press('Enter');
   await expect(row).toBeFocused();
   await expect(screen.getByRole('heading', { level: 3, name: 'Inbox' })).toBeVisible();

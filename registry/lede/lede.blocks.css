@@ -70,8 +70,6 @@
   padding: 0 var(--space-1);
   color: var(--primary); text-decoration: none; font-size: var(--text-body-size); line-height: var(--text-body-line-height); border-radius: var(--radius-xs);
 }
-/* A back that shows the screen before it in place, with no URL to go to, is a <button>, drawn as the link is. */
-button.ld-back { background: none; border: 0; font-family: inherit; cursor: pointer; }
 .ld-back:focus-visible { outline: var(--stroke-ring) solid var(--ring); outline-offset: var(--stroke-ring-offset); }
 
 /* SummaryCard */
