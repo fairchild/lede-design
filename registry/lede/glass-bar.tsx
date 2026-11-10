@@ -4,34 +4,45 @@ import { cn } from './cn';
 import { useLinkComponent } from './link';
 
 export interface GlassBarItem { value: string; label: React.ReactNode; icon?: React.ReactNode; href?: string; }
-export interface GlassBarProps {
+export interface GlassBarProps extends Omit<React.ComponentProps<'nav'>, 'children' | 'defaultValue'> {
   /** Accessible name of the navigation landmark. */
   'aria-label': string;
   items: GlassBarItem[];
-  /** The current place, marked with `aria-current="page"`. */
+  /**
+   * The current place, marked with `aria-current="page"`. With a router, pass the item for its location, so Back and
+   * Forward move the mark too. Without `value` or `defaultValue`, link items mark the one whose `href` is the page's
+   * path as it mounts, or none, and button items mark the first.
+   */
   value?: string;
   defaultValue?: string;
   onValueChange?: (value: string) => void;
   /** `'inline'`, or fixed at the top or bottom center of the viewport. Default `'inline'`. */
   placement?: 'inline' | 'top' | 'bottom';
-  className?: string;
-  style?: React.CSSProperties;
 }
 
-/** Navigation between places: a `<nav>` and a `<ul>` of real links, or of buttons for client routing, with `aria-current`. */
-export function GlassBar(props: GlassBarProps) {
+/** For link items, the one at the page's path or none, since the page may have loaded at any of them. Button items start on the first. */
+function initial(items: GlassBarItem[]) {
+  if (!items.some((it) => it.href)) return items[0]?.value;
+  if (typeof location === 'undefined') return undefined;
+  return items.find((it) => it.href && new URL(it.href, location.href).pathname === location.pathname)?.value;
+}
+
+/** A click that opens the link in a new tab or window, or downloads it, which leaves this page where it is. */
+const opensElsewhere = (e: React.MouseEvent) => e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0;
+
+/**
+ * Navigation between places: a `<nav>` and a `<ul>` of real links, or of buttons for client routing, with
+ * `aria-current`. HTML attributes and `ref` go on the `<nav>`.
+ */
+export function GlassBar({ items, value, defaultValue, onValueChange, placement, className, ...rest }: GlassBarProps) {
   const Link = useLinkComponent();
-  const [inner, setInner] = React.useState(props.defaultValue ?? props.items[0]?.value);
-  const current = props.value !== undefined ? props.value : inner;
-  const pick = (v: string) => { if (props.value === undefined) setInner(v); props.onValueChange?.(v); };
+  const [inner, setInner] = React.useState(() => defaultValue ?? initial(items));
+  const current = value !== undefined ? value : inner;
+  const pick = (v: string) => { if (value === undefined) setInner(v); onValueChange?.(v); };
   return (
-    <nav
-      aria-label={props['aria-label']}
-      className={cn('ld-bar', 'ld-glass', props.placement && props.placement !== 'inline' && `ld-bar-${props.placement}`, props.className)}
-      style={props.style}
-    >
+    <nav {...rest} className={cn('ld-bar', 'ld-glass', placement && placement !== 'inline' && `ld-bar-${placement}`, className)}>
       <ul className="ld-bar-list">
-        {props.items.map((it) => {
+        {items.map((it) => {
           const sel = it.value === current;
           const inner = (
             <>
@@ -42,7 +53,7 @@ export function GlassBar(props: GlassBarProps) {
           return (
             <li key={it.value}>
               {it.href ? (
-                <Link className="ld-bar-item" href={it.href} aria-current={sel ? 'page' : undefined} onClick={() => pick(it.value)}>{inner}</Link>
+                <Link className="ld-bar-item" href={it.href} aria-current={sel ? 'page' : undefined} onClick={(e) => { if (!opensElsewhere(e)) pick(it.value); }}>{inner}</Link>
               ) : (
                 <button type="button" className="ld-bar-item" aria-current={sel ? 'page' : undefined} onClick={() => pick(it.value)}>{inner}</button>
               )}

@@ -33,8 +33,10 @@ export type TableFilter = { readonly [key: string]: FilterValue | undefined };
 export type ViewChange = { type: 'sort'; sort: SortItem[] };
 
 /**
- * Clearing a row's checkbox after "Select all N" adds it to `except`. When rows are deleted on the server, update the
- * selection with `removeFromSelection`: a deleted row leaves `ids` and `except` alike.
+ * Clearing a row's checkbox after "Select all N" adds it to `except`. When rows are deleted on the server, update a
+ * controlled selection with `removeFromSelection`: a deleted row leaves `ids` and `except` alike. An uncontrolled
+ * selection does this itself: a row that leaves `rows` while the view, the page and `state.rows` stay the same was
+ * deleted, and it leaves the selection. A row that leaves with a new page or view stays selected.
  */
 export type Selection =
   | { kind: 'ids'; ids: ReadonlySet<string> }
@@ -44,9 +46,10 @@ export type Selection =
  * What the table is showing and doing, as independent parts: whose rows, whether more are coming, what failed and
  * when the rows were fetched. Every field is optional: `{}` is a table showing its own, settled rows.
  * - `rows`: whose rows are on screen. `'current'`, the default, are this view's. `'previous'` are the last view's, kept
- *   while this one loads so the layout doesn't jump. `'none'` means nothing is on screen yet.
+ *   while this one loads so the layout doesn't jump. `'none'` means nothing is on screen yet: until rows or a failure
+ *   arrive, the table shows its loading skeleton, never its empty state.
  * - `fetching`: rows are on the way. With current rows the table shows "Updating…" and stays usable. Otherwise it is
- *   `aria-busy`.
+ *   `aria-busy`. useServerRows reports it from the first render, before its first fetch starts.
  * - `since`: when the rows on screen were fetched. Shown when refreshing them failed.
  * - `failure`: the last request failed. `scope` says what failed: `'load'` (this view's or page's rows: an alert, and
  *   previous rows are hidden so they never pass as this view's), `'refresh'` (rows on screen could not be refreshed:
@@ -94,6 +97,10 @@ export type Column<Row> = {
   value?: (row: Row) => string | number | Date | null;
   /** Client sort override, ascending order. */
   compare?: (a: Row, b: Row) => number;
+  /**
+   * Offers a sort on this column. In client mode the table sorts by `compare`, else by `value`, so the column needs one
+   * of them. In server mode the server sorts: the table reports the new view through `onViewChange` and needs neither.
+   */
   sortable?: boolean;
   /** `'end'` also turns on tabular figures. */
   align?: 'start' | 'end' | 'center';
@@ -168,6 +175,11 @@ export interface DataTableOptions<Row> {
   selection?: Selection;
   onSelectionChange?: (selection: Selection) => void;
   total?: Total;
+  /**
+   * Paging, rendered by DataTable. The hook reads its page, so rows that leave with a page change stay selected: pass it
+   * to `useDataTable` too when you render your own pager.
+   */
+  paging?: Paging;
   /**
    * What the table is showing and doing (see `TableState`). While `rows` is `'previous'`, the rows on screen are the
    * last view's, so selection is inert: checking them, the page or "Select all" does nothing until this view's rows
@@ -268,14 +280,19 @@ export function useDataTable<Row>(options: DataTableOptions<Row>): DataTableMode
   const [innerView, setInnerView] = React.useState<TableView>(options.defaultView ?? EMPTY_VIEW);
   const view = options.view ?? innerView;
 
-  // TanStack column definitions, rebuilt only when the columns or the locale change.
+  // TanStack column definitions, rebuilt only when the columns, the locale or the processing change. The server sorts
+  // in server mode, so a column needs no accessor there to be sortable.
   const { collator } = intl(locale);
+  const canSort = React.useCallback(
+    (c: Column<Row>) => !!c.sortable && (processing === 'server' || !!(c.value || c.compare)),
+    [processing],
+  );
   const defs = React.useMemo(
     () =>
       columns.map((c) => ({
         id: c.id,
         accessorFn: (r: Row) => sortKey(c.value?.(r)),
-        enableSorting: !!c.sortable && !!(c.value || c.compare),
+        enableSorting: canSort(c),
         // Missing values sort last, except for compare-only columns: their accessor is always `undefined`, and TanStack
         // would then skip the comparator entirely.
         sortUndefined: c.compare ? (false as const) : ('last' as const),
@@ -287,7 +304,7 @@ export function useDataTable<Row>(options: DataTableOptions<Row>): DataTableMode
               return typeof x === 'number' && typeof y === 'number' ? x - y : collator.compare(String(x), String(y));
             },
       })),
-    [columns, collator],
+    [columns, collator, canSort],
   );
   // TanStack sorts again when the sorting state or the rows change, but not the comparator. A new collator gives the
   // sorting state a new identity, so a locale change re-sorts the rows on screen.
@@ -358,11 +375,11 @@ export function useDataTable<Row>(options: DataTableOptions<Row>): DataTableMode
     () =>
       columns.map((c) => ({
         column: c,
-        sortable: !!c.sortable && !!(c.value || c.compare),
+        sortable: canSort(c),
         sort: view.sort.find((s) => s.columnId === c.id)?.direction ?? null,
         isRowHeader: c.id === rowHeader,
       })),
-    [columns, view.sort, rowHeader],
+    [columns, view.sort, rowHeader, canSort],
   );
 
   // Selection: Lede's own model (`ids`, or `all-matching` with `except`). TanStack's `Record<id, true>` can't express
@@ -399,6 +416,23 @@ export function useDataTable<Row>(options: DataTableOptions<Row>): DataTableMode
     if (sel.kind === 'ids' && sel.ids.size === 0) return;
     commit(NO_IDS);
   });
+  // A row that leaves `rows` while the view, the page and `state.rows` stay the same was deleted: it leaves an
+  // uncontrolled selection, so the bar's count and the next action skip it. A row that leaves with a new page or view
+  // is elsewhere and stays selected, as do rows that change while the last view's are on screen. A controlled
+  // selection is the caller's: `removeFromSelection` does the same there.
+  const shows = options.state?.rows ?? 'current';
+  const place = JSON.stringify([view.sort, view.filter ?? null, options.paging?.kind === 'pages' ? options.paging.page : null]);
+  const lastRows = React.useRef<{ ids: ReadonlySet<string>; place: string; current: boolean } | null>(null);
+  React.useLayoutEffect(() => {
+    const ids = new Set(visible.map((r) => r.id));
+    const was = lastRows.current;
+    lastRows.current = { ids, place, current: shows === 'current' };
+    if (!was || !was.current || shows !== 'current' || was.place !== place || latest.current.controlled) return;
+    const gone = [...was.ids].filter((id) => !ids.has(id));
+    if (gone.length === 0) return;
+    const next = removeFromSelection(latest.current.selection, gone);
+    if (next !== latest.current.selection) commit(next);
+  }, [visible, place, shows, commit]);
   const setMany = React.useCallback(
     (ids: readonly string[], on: boolean) => {
       if (latest.current.inert) return;

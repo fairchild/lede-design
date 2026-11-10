@@ -12,6 +12,27 @@ First public release. Lede is a design system for React, installed from its shad
 
 ### Fixed before release
 
+- useServerRows: a page whose `nextCursor` is `null` ends the list and settles the count at the rows through it,
+  whatever the page's length. A `fetchCount` answer below the rows held from the first row on reads as a lower bound
+  of those rows, so Load more and Next stay offered.
+- useServerRows: the first render, and a server render, show the table loading until the first rows arrive. They
+  showed the empty state.
+- The registry's error responses (404, 412, 503 and 405) carry `access-control-allow-origin: *` like its JSON does, so a
+  page fetching an item can read why it failed. An `OPTIONS` request under `/r/` answers the CORS preflight.
+- Files under `/media/` are typed by their extension alone and sent with `content-security-policy: sandbox` and
+  `nosniff`, so a file can't run as a page on the site's origin.
+- ListRow: a row with `href` runs its `onClick` too. A row action that removes its row keeps the reader's place: focus
+  moves to the next row, else the one before, else the group's heading, else the next visible control in reading
+  order. A parent that moves focus itself in a layout effect, as InboxFlow does, keeps its choice, and an action that
+  takes the whole group away, such as a navigation, leaves focus to the parent. A swipe action that leaves its row in place
+  moves focus to the row as the actions close.
+- MasterDetail: a `detail` of `false`, `true`, `''` or `0` counts as nothing selected, so `selected && <Message />`
+  works. When the panes swap on a narrow screen, focus moves to the detail's first heading as it opens and back to the
+  row that opened it as it closes.
+- WorkbenchShell: a shell too narrow for its main pane, with both panels collapsed, draws them at 0 wide where it
+  drew `NaN`.
+- ThemeProvider: its doc comment and the README's Limits say that stock shadcn `dark:` utilities, high contrast and
+  `glass="solid"` reach a light provider nested in a dark one, as shadcn's own `.dark` class does.
 - DataTable's Try again moves focus to the summary line after the retry's state is in, so the summary has its text
   when focus arrives. The narrow-layout sample on the docs page now compiles: it passes `noun`, and its columns fill
   the card slots its comment describes.
@@ -25,3 +46,76 @@ First public release. Lede is a design system for React, installed from its shad
 - A Button whose label wraps is a rounded rectangle, with corners of `--radius-xl` or more. A one-line Button is
   still a capsule and an icon-only one a circle, at every size, shape, density and text size.
 - A GlassToolbarButton whose label wraps keeps the curve of one line, so it stays concentric with the toolbar.
+- A card Disclosure's focus ring and pressed fill follow the card's corners: all four while it's closed and the top two
+  while it's open. A plain Disclosure stays square.
+- A SegmentedControl whose value matches no option shows no thumb, since no radio is checked. This covers a controlled
+  `''`, a misspelled `defaultValue` and options that arrive after the first render. Choosing an option shows the thumb
+  on it.
+- OnboardingFlow's `onComplete` may return a promise. While it's pending, Finish shows “Finishing…” and can't fire
+  again. It resolves to the done step, and a rejection stays on Review with an inline error. A `void` return still
+  moves on at once, and Finish fires once until the step changes.
+- OnboardingFlow: a controlled `step` past Account with no valid account waits for Continue, so the keystroke that
+  makes the account valid no longer switches steps under the cursor.
+- ProfileFlow and OnboardingFlow: a field with an error checks itself again on each change, so the error leaves once
+  the value is fixed. A failed submit makes the field invalid before focus reaches it, so the move reads the error.
+  When focus was already on that field the errors are announced instead, so a screen reader says them once.
+- OnboardingFlow: an `onComplete` that throws as Finish is pressed shows its error on Review, and Finish works again.
+  A save that settles after the step changed, such as by the browser's Back, no longer moves to the done step.
+- DataTable: the `rowActions` doc says it's called during render for every row, so it should be cheap.
+- TextField takes a `ref` to its `<input>` or `<textarea>`.
+- An invalid TextField shows the focus ring outside its red edge when focused, as errors send focus there.
+- DataTable: an uncontrolled selection drops rows that were deleted, so after a bulk Archive the bar leaves with its
+  rows and the next action sends only what's selected. A row counts as deleted when it leaves `rows` while the view,
+  the page and `state.rows` stay the same, so a row on another page stays selected. `useDataTable` takes `paging` to
+  tell the two apart.
+- DataTable: "Select all N" becomes "Clear selection" in place and keeps focus, and Clear selection moves focus to the
+  summary line.
+- DataTable: when a sort or a page change fails to load, focus moves to Try again as the alert arrives.
+- DataTable shows its loading skeleton while `state.rows` is `'none'` and nothing failed, so a `useServerRows` table
+  never shows "No {noun}" or a count of 0 before its first request goes out.
+- DataTable: `sortable: true` works in server mode without `value` or `compare`, since the server sorts.
+- SelectionBar centers in the viewport when no AppShell holds it. AppShell now adds the bar's offsets itself, beside
+  the sidebar on a desktop and above the tab bar on a phone.
+- Table: every control in a linked row sits above the row link and takes its own press, in any cell and before or
+  after the row header, so a Button in a DataTable column no longer navigates. The rest of the row still does.
+  The undocumented `ld-table-control` class is gone.
+- Table: a row that holds a Table.RowLink is positioned on its own, so its link covers that row and not the whole
+  table. `Table.Row`'s `linked` is deprecated and changes nothing; it's removed in 0.5.0. A `sticky` row-header cell
+  confines the link to that cell, as RowLink's doc comment says.
+- Table: `ColumnWidth.max` is removed. It was undocumented and had no effect, or made the columns overflow when it
+  was below another column's `min`.
+- `Table.Root`'s doc comment shows on hover again.
+- DataTable: a row whose `rowActions` returns no actions has no ••• in the table layout, as in the card layout.
+- DataTable cards: the sort and select-all bar stays mounted while the skeleton shows, as the table's header does, so
+  a sort answered with a skeleton keeps focus on the Sort menu.
+- DataTable cards: a card with no link, checkbox or actions takes focus on its title, so Load more lands on the first
+  new card, as it lands on the row header in the table layout.
+- A glass Card is opaque under `prefers-reduced-transparency`, as every other glass surface is.
+- Enter on a Switch inside a form clicks the form's default button, as Enter on a native checkbox does: that button's
+  `onClick` runs, and a disabled default button means no submit. An image button counts as the default button, and a
+  form with no submit button doesn't submit, as from a native checkbox.
+- A Switch answers a press over `size-hit-min` in every density, though its track is drawn 30px tall.
+- An uncontrolled GlassBar of links marks the item whose `href` is the page's path, so a page loaded at its second
+  item no longer marks the first. A Cmd, Ctrl, Shift or Alt click leaves the mark where it is.
+- Checkbox runs the cleanup a React 19 callback ref returns.
+- StepIndicator's one-line summary is read on narrow screens, where it's all that shows. It's a group named "Progress",
+  since its steps aren't links.
+- An inner layer using `useBackOnEscape` takes Escape before the screen's PageHeader, even when both opened in the
+  same commit or the screen turned `backOnEscape` back on while the layer was open. Of several inner layers, the most
+  recently activated one takes it.
+- The docs for PageHeader's `focusOnMount` and `backOnEscape` describe what they do: the heading takes focus each time
+  `focusOnMount` turns `true`, and `backOnEscape` yields to the focused field when its text changed.
+- Switch, SegmentedControl, Disclosure, Avatar and GlassBar take HTML attributes such as `id`, `data-*` and
+  `aria-describedby`, and a `ref`. Each lands on the element the person sees and acts on: Switch's `role="switch"`
+  element (its `id` and form props go on the native checkbox Base UI keeps, so `<label htmlFor>` names it), the
+  `<fieldset>`, the `<section>`, the `<img>` or initials `<span>` and the `<nav>`. Switch and SegmentedControl also
+  take `required` and `form`, and Switch takes `value`, `uncheckedValue`, `readOnly` and `inputRef`. Switch's type
+  names each prop it supports and holds no Base UI type.
+- A Switch's `onKeyDown` that prevents Enter's default stops the implicit submit.
+- Avatar passes `loading`, `decoding`, `referrerPolicy` and `crossOrigin` to its `<img>`.
+- Table.Root passes HTML attributes to its `<table>`, while `className`, `style` and `ref` stay on the scroll box.
+- SegmentedControl and Table.Root run the cleanup a React 19 callback ref returns, as Checkbox does.
+- Checkbox puts `style` and `hidden` on its wrapper with `className`, so `<Checkbox hidden />` hides the drawn box too.
+  Every other attribute and the `ref` go on the input.
+- Button takes `ref` as a plain prop, as React 19 allows, and no longer wraps itself in `forwardRef`. A ref typed for
+  either element still fits.

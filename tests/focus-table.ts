@@ -9,6 +9,7 @@
 // Every change that adds a screen or an action adds its rows here.
 import { devices as browsers, test, expect, type Locator, type Page } from '@playwright/test';
 import { expectLandsWithRows, expectNoBody, focusMoves, focusTrail, trailText, watchRows } from './focus-trail';
+import { heard } from './spoken';
 
 export type Device = 'desktop' | 'phone';
 type Role = Parameters<Page['getByRole']>[0];
@@ -72,6 +73,21 @@ export const ringShows = (page: Page, where: Where) => locate(page, where).evalu
   probe.remove();
   return outlineStyle !== 'none' && parseFloat(outlineWidth) > 0 && outlineColor === ring;
 });
+
+/** Records, on the field's next focus, whether it was already invalid and described by its error then. */
+const watchInvalidAtFocus = (page: Page, name: string) => page.getByRole('textbox', { name, exact: true }).evaluate((el) => {
+  el.addEventListener('focus', () => {
+    const described = (el.getAttribute('aria-describedby') ?? '').split(' ').map((id) => document.getElementById(id)?.textContent).join(' ');
+    el.setAttribute('data-at-focus', `${el.getAttribute('aria-invalid')} ${described.trim()}`);
+  }, { once: true });
+});
+/** Focus moved to the field reads its error, so a second reading through a live region would repeat it. */
+const expectUnsaid = async (page: Page, text: string) => {
+  await page.waitForTimeout(300);
+  expect((await heard(page)).map((s) => s.text), `“${text}” is read with the field, and not announced again`).not.toContain(text);
+};
+const expectInvalidAtFocus = async (page: Page, name: string, error: string) =>
+  expect(page.getByRole('textbox', { name, exact: true }), `${name} is invalid and described by its error as focus arrives`).toHaveAttribute('data-at-focus', `true ${error}`);
 
 /** The titles a screen lands on: PageHeader's, InboxFlow's message title and WorkbenchShell's. */
 const TITLES = ['ld-page-title', 'ld-message-title', 'ld-wb-title'];
@@ -412,6 +428,21 @@ const footBelowBar = async (page: Page) => {
   const row = (await locate(page, link(/Your receipt for October/)).boundingBox())!;
   const bar = (await page.locator('.ld-shell-tabbar > *').boundingBox())!;
   return row.y + row.height - bar.y;
+};
+/** ListFocusFixtures and MasterDetailFixtures: a list whose row actions remove rows, and a MasterDetail with no focus code. */
+const listFocus = async ({ page }: Driver) => { await page.goto('/fixtures/list-focus'); };
+const masterDetail = async ({ page }: Driver) => { await page.goto('/fixtures/master-detail'); };
+const stackedView = { desktop: { width: 800, height: 800 }, phone: { width: 412, height: 800 } };
+const uncontrolledRegion = { role: 'region', name: 'Uncontrolled selection' } as const;
+const uncontrolled = (page: Page) => page.getByRole('region', { name: 'Uncontrolled selection' });
+const serverRegion = { role: 'region', name: 'Server mode' } as const;
+/** The guide's server example with its first page selected, once the exact count offers "Select all 310". */
+const selectServerPage = async ({ page }: Driver) => {
+  await page.goto('/blocks/data-table#dt-server');
+  const server = page.getByRole('region', { name: 'Server mode' });
+  await server.getByText('50 of 310 work items', { exact: true }).waitFor();
+  await server.getByRole('checkbox', { name: 'Select all work items shown' }).click();
+  await server.getByRole('button', { name: 'Select all 310 work items' }).waitFor();
 };
 const removalFixture = async ({ page }: Driver) => {
   await page.goto('/fixtures/data-table');
@@ -778,6 +809,37 @@ export const ACTIONS: Action[] = [
     },
   },
   {
+    // A card with no link, checkbox or actions: its title takes focus, as the table's row header does.
+    screen: 'Data table', action: 'Load more in cards with nothing to focus in a card',
+    setup: async ({ page }) => {
+      await page.goto('/fixtures/data-table');
+      await page.locator('[aria-labelledby="fx-cards-more"] [data-row-id="i0"]').waitFor();
+      await watchRows(page, '[aria-labelledby="fx-cards-more"]', '[data-row-id="i3"]');
+    },
+    act: (d) => d.press(button('Load more', { role: 'region', name: 'Cards load more' })),
+    target: { css: '[data-row-id="i3"] .ld-dt-card-title', in: { role: 'region', name: 'Cards load more' }, label: 'the first new card’s title' },
+    check: async (d) => {
+      await expectLandsWithRows(d.page);
+      if (d.device === 'desktop') expect(await ringOf(locate(d.page, { css: '[data-row-id="i3"] .ld-dt-card-title', in: { role: 'region', name: 'Cards load more' }, label: '' })), 'the focused card title shows Lede’s ring').toEqual({ visible: true, style: 'solid' });
+    },
+  },
+  {
+    // The cards' sort and select-all bar stays mounted through the skeleton, as the table's header does, so the sort
+    // keeps focus while its rows load.
+    screen: 'Data table', action: 'Sort in cards, answered with a skeleton',
+    setup: async ({ page }) => {
+      await page.goto('/fixtures/data-table');
+      await page.locator('[aria-labelledby="fx-cards-sort"] [data-row-id="i0"]').waitFor();
+    },
+    act: async (d) => {
+      const sort = locate(d.page, { role: 'combobox', name: 'Sort', in: { role: 'region', name: 'Cards sort' } });
+      await sort.focus();
+      await sort.selectOption('rank:descending');
+    },
+    done: ({ page }) => page.locator('[aria-labelledby="fx-cards-sort"] .ld-dt-card-skeleton').first().waitFor(),
+    target: { role: 'combobox', name: 'Sort', in: { role: 'region', name: 'Cards sort' } },
+  },
+  {
     // Load more adds no rows and leaves: the summary line takes focus in the same commit, so none falls to <body>.
     screen: 'Data table', action: 'Load more that adds no rows',
     setup: async ({ page }) => {
@@ -817,6 +879,39 @@ export const ACTIONS: Action[] = [
     act: (d) => d.press(button('Delete', { role: 'toolbar', name: /selected/ })),
     done: ({ page }) => page.getByRole('region', { name: 'Removal' }).locator('[data-row-id="n1"]').waitFor({ state: 'detached' }),
     target: removalRow('n2', 'the row that took the first one’s place'),
+  },
+  {
+    // An uncontrolled selection drops the archived rows itself, so the bar leaves with them and focus goes to the row that
+    // took the first one's place.
+    screen: 'Data table', action: 'Bulk Archive with an uncontrolled selection',
+    setup: async (d) => {
+      await d.page.goto('/fixtures/data-table');
+      await uncontrolled(d.page).locator('[data-row-id="n1"]').waitFor();
+      await d.press(locate(d.page, { role: 'checkbox', name: 'Select 1', in: uncontrolledRegion }), 'Space');
+    },
+    act: (d) => d.press(button('Archive', toolbar)),
+    done: ({ page }) => uncontrolled(page).locator('[data-row-id="n1"]').waitFor({ state: 'detached' }),
+    target: { css: '[data-row-id="n2"] [data-row-link]', in: uncontrolledRegion, label: 'the row that took the archived one’s place' },
+  },
+  // "Select all N" becomes "Clear selection" in place, so focus stays on the button. Clearing takes the notice away,
+  // and focus goes to the summary line.
+  {
+    screen: 'Data table', action: 'Select all N',
+    setup: selectServerPage,
+    act: (d) => d.press(button('Select all 310 work items', serverRegion)),
+    done: ({ page }) => page.getByRole('toolbar', { name: '310 work items selected' }).waitFor(),
+    target: button('Clear selection', serverRegion),
+  },
+  {
+    screen: 'Data table', action: 'Clear selection after Select all N',
+    setup: async (d) => {
+      await selectServerPage(d);
+      await locate(d.page, button('Select all 310 work items', serverRegion)).click();
+      await d.page.getByRole('toolbar', { name: '310 work items selected' }).waitFor();
+    },
+    act: (d) => d.press(button('Clear selection', serverRegion)),
+    done: ({ page }) => page.getByRole('toolbar', { name: /selected/ }).waitFor({ state: 'detached' }),
+    target: { css: '.ld-dt-summary', in: serverRegion, label: 'the table summary line' },
   },
   {
     screen: 'Work', action: 'Row ••• → Archive succeeds', setup: work,
@@ -1069,9 +1164,31 @@ export const ACTIONS: Action[] = [
   },
   {
     screen: 'Profile', action: 'Save with errors',
-    setup: async (d) => { await d.page.goto('/app/profile'); await d.press(button('Edit profile')); await d.page.getByRole('textbox', { name: 'Name', exact: true }).fill(''); },
+    setup: async (d) => {
+      await d.page.goto('/app/profile');
+      await d.press(button('Edit profile'));
+      await d.page.getByRole('textbox', { name: 'Name', exact: true }).fill('');
+      await watchInvalidAtFocus(d.page, 'Name');
+    },
     act: (d) => d.press(button('Save changes')),
     target: field('Name'),
+    check: async ({ page }) => {
+      await expectInvalidAtFocus(page, 'Name', 'Enter your name.');
+      await expectUnsaid(page, 'Enter your name.');
+      expect(await ringShows(page, field('Name')), 'the invalid Name field shows the focus ring').toBe(true);
+    },
+  },
+  {
+    // Focus already on the field fires no focus event, so only the announcement tells a screen reader what's wrong.
+    screen: 'Profile', action: 'Enter with errors from the invalid field',
+    setup: async (d) => {
+      await d.page.goto('/app/profile');
+      await d.press(button('Edit profile'));
+      await d.page.getByRole('textbox', { name: 'Name', exact: true }).fill('');
+    },
+    act: ({ page }) => page.keyboard.press('Enter'),
+    target: field('Name'),
+    says: 'Enter your name.',
   },
   {
     screen: 'Profile', action: 'Escape while editing, nothing changed',
@@ -1109,15 +1226,44 @@ export const ACTIONS: Action[] = [
   },
   {
     screen: 'Onboarding', action: 'Continue with errors',
-    setup: async ({ page }) => { await page.goto('/app/welcome'); await page.getByRole('textbox', { name: 'Name', exact: true }).fill(''); },
+    setup: async ({ page }) => {
+      await page.goto('/app/welcome');
+      await page.getByRole('textbox', { name: 'Name', exact: true }).fill('');
+      await watchInvalidAtFocus(page, 'Name');
+    },
     act: (d) => d.press(button('Continue')),
     target: field('Name'),
+    check: async ({ page }) => {
+      await expectInvalidAtFocus(page, 'Name', 'Enter the name you want people to see.');
+      await expectUnsaid(page, 'Enter the name you want people to see.');
+    },
+  },
+  {
+    screen: 'Onboarding', action: 'Enter with errors from the invalid field',
+    setup: async ({ page }) => { await page.goto('/app/welcome'); await page.getByRole('textbox', { name: 'Name', exact: true }).fill(''); },
+    act: ({ page }) => page.keyboard.press('Enter'),
+    target: field('Name'),
+    says: 'Enter the name you want people to see.',
+  },
+  {
+    // A controlled step asked for Review before the account is valid waits for Continue, so the keystroke that makes the
+    // email valid leaves Account where it is.
+    screen: 'Onboarding', action: 'Typing the keystroke that completes the account',
+    setup: async ({ page }) => {
+      await page.goto('/fixtures/onboarding');
+      const held = page.getByRole('region', { name: 'Held step' });
+      await held.getByRole('textbox', { name: 'Name', exact: true }).fill('Ada Lovelace');
+      await held.getByRole('textbox', { name: 'Email', exact: true }).fill('ada@example');
+    },
+    act: ({ page }) => page.keyboard.type('.com'),
+    target: { role: 'textbox', name: 'Email', in: { role: 'region', name: 'Held step' } },
   },
   {
     screen: 'Onboarding', action: 'Continue with a bad email',
     setup: async ({ page }) => { await page.goto('/app/welcome'); await page.getByRole('textbox', { name: 'Email', exact: true }).fill('ada@'); },
     act: (d) => d.press(button('Continue')),
     target: field('Email'),
+    check: ({ page }) => expectUnsaid(page, 'Enter a complete email address, like name@example.com.'),
   },
   {
     screen: 'Onboarding', action: 'Cancel',
@@ -1212,6 +1358,89 @@ export const ACTIONS: Action[] = [
       await expect(summary, 'the summary has its text when focus arrives').toHaveAttribute('data-text-at-focus', /\S/);
     },
   })),
+
+  // ListRow keeps the reader's place when a row action removes its row and the parent moves no focus, as the docs
+  // sample's Delete does. Its fixture removes rows with a plain state update.
+  ...([
+    ['the middle row', 'Work phone', link(/^Tablet/)],
+    ['the last row', 'Tablet', link(/^Work phone/)],
+  ] as const).flatMap(([where, name, target]): Action[] => [
+    { screen: 'List', action: `Row ••• → Delete on ${where}`, setup: listFocus, act: (d) => d.choose(more(name), 'Delete'), target },
+    { screen: 'List', action: `Swipe → Delete on ${where}`, setup: listFocus, only: 'phone', strictTouch: true, act: (d) => swipeTo(d, name, 'Delete'), target },
+  ]),
+  {
+    screen: 'List', action: 'Row ••• → Delete on a group’s only row', setup: listFocus,
+    act: (d) => d.choose(more('Desk computer'), 'Delete'), target: h2('Last device'),
+  },
+  {
+    screen: 'List', action: 'Row ••• → End on an untitled group’s only row', setup: listFocus,
+    act: (d) => d.choose(more('Guest session'), 'End'), target: button('After the list'),
+  },
+  {
+    // The row leaves a moment after its action, as a server's reply removes it. Focus went back to the ••• from the menu,
+    // inside the row, so the place still holds.
+    screen: 'List', action: 'Row ••• → an action whose row leaves later', setup: listFocus,
+    act: (d) => d.choose(more('Server copy'), 'Archive later'),
+    done: ({ page }) => page.getByRole('link', { name: /^Server copy/ }).waitFor({ state: 'detached' }),
+    target: link(/^Counted link/),
+  },
+  {
+    // The swipe actions close and focus moves from their button to the row's link, inside the row, so the place holds
+    // for the removal that follows.
+    screen: 'List', action: 'Swipe → an action whose row leaves later', setup: listFocus, only: 'phone', strictTouch: true,
+    act: (d) => swipeTo(d, 'Server copy', 'Archive later'),
+    done: ({ page }) => page.getByRole('link', { name: /^Server copy/ }).waitFor({ state: 'detached' }),
+    target: link(/^Counted link/),
+  },
+  {
+    // The action navigates, so the whole list leaves and the new screen's h1 takes focus, with no stop on the way.
+    screen: 'List', action: 'Row ••• → an action that navigates', setup: listFocus,
+    act: marked((d) => d.choose(more('Sync'), 'Open settings')),
+    target: h1('Settings'), url: /\/app\/settings$/,
+    check: movesOnce(/More actions for Sync|Open settings|role=menu\]/, /^h1 “Settings”/),
+  },
+  {
+    // The row stays, so the swipe actions close and their button goes inert: focus moves to the row's link first.
+    screen: 'List', action: 'Swipe → Mark read, the row stays', setup: listFocus, only: 'phone', strictTouch: true,
+    act: (d) => swipeTo(d, 'Weekly summary', 'Mark read'), target: link(/^Weekly summary/),
+    check: async ({ page }) => { await expect(locate(page, link(/^Weekly summary/))).toContainText('Read'); },
+  },
+
+  // MasterDetail moves focus when its panes swap, for a caller with no focus code. Stacked under 1100px.
+  {
+    screen: 'Master detail', action: 'Open an item from its row', setup: masterDetail, viewport: stackedView,
+    act: (d) => d.press(button(/^Team offsite/)), target: h2('Team offsite'),
+  },
+  {
+    screen: 'Master detail', action: 'Close an item', viewport: stackedView,
+    setup: async (d) => { await masterDetail(d); await d.press(button(/^Team offsite/)); await locate(d.page, h2('Team offsite')).waitFor(); },
+    act: (d) => d.press(button('Close')), target: button(/^Team offsite/),
+  },
+  // A sort or a page whose rows fail to load hides the table and the pager with the control pressed: focus goes to
+  // Try again as the alert arrives.
+  {
+    screen: 'Data table', action: 'Sort that fails to load',
+    setup: async ({ page }) => {
+      await page.goto('/blocks/data-table#dt-server');
+      const server = page.getByRole('region', { name: 'Server mode' });
+      await server.getByText(/^50 of/).waitFor();
+      await server.getByRole('button', { name: 'Fail the next request' }).click();
+    },
+    act: (d) => d.press(button('Assignee', serverRegion)),
+    done: ({ page }) => page.getByRole('region', { name: 'Server mode' }).getByRole('alert').waitFor(),
+    target: button('Try again', serverRegion),
+  },
+  {
+    screen: 'Work', action: 'Next page that fails to load',
+    setup: async ({ page }) => {
+      await page.goto('/fixtures/work-archive');
+      await page.locator('[data-row-id]').first().waitFor();
+      await page.getByRole('button', { name: 'Fail the next request' }).click();
+    },
+    act: (d) => d.press(button('Next')),
+    done: ({ page }) => page.getByRole('alert').waitFor(),
+    target: button('Try again'),
+  },
 ];
 
 // ——— How a row becomes tests ———

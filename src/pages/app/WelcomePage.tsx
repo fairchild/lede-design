@@ -46,23 +46,17 @@ export function WelcomePage() {
   }, [shown, asked, navigate]);
   const go = (n: number) => navigate(href(n), { replace: true });
 
-  // Counted, so each refusal mounts a new alert and is announced again. It belongs to Review, so any step change clears it.
-  const [refusals, setRefusals] = React.useState(0);
-  React.useEffect(() => setRefusals(0), [shown]);
   // Only Cancel drops the draft: any other way out, the browser's Back included, keeps it for Forward or a replay. Cancel
   // marks the exit, and the draft goes as the page unmounts, so the flow never shows a step without it on the way out.
   // It goes on `pagehide` too, for a Back that loads the earlier entry as a new document and never unmounts the page.
   // A page the browser restores from its back-forward cache starts unmarked, so its next draft stays.
   const cancelled = React.useRef(false);
-  const here = React.useRef(true);
   React.useEffect(() => {
-    here.current = true;
     const drop = () => { if (cancelled.current) dispatch({ type: 'onboarding/leave' }); };
     const restore = (event: PageTransitionEvent) => { if (event.persisted) cancelled.current = false; };
     window.addEventListener('pagehide', drop);
     window.addEventListener('pageshow', restore);
     return () => {
-      here.current = false;
       window.removeEventListener('pagehide', drop);
       window.removeEventListener('pageshow', restore);
       drop();
@@ -79,20 +73,18 @@ export function WelcomePage() {
   const cancelLink = React.useRef<HTMLAnchorElement>(null);
   useBackOnEscape(shown < DONE && unchanged ? () => cancelLink.current?.click() : undefined);
 
-  // Finish moves on only once the profile saves, and the accent, the brief and the end of the draft save after it, so
-  // an offline Finish stays on Review and saves nothing. A Finish whose save succeeds commits all of it, even for a
-  // reader who has left by then; only a reader still here moves on to Done.
-  const finish = (answers: OnboardingData) => {
+  // The profile saves first, and the accent, the brief and the end of the draft save after it, so an offline Finish
+  // stays on Review and saves nothing. A Finish whose save succeeds commits all of it, even for a reader who has left
+  // by then. The flow moves a reader still here on to Done.
+  const finish = (answers: OnboardingData) =>
     saveProfile({ ...profile, name: answers.name.trim(), email: answers.email.trim() }).then(
       () => {
         setPrefs({ ...prefs, accent: answers.accent });
         dispatch({ type: 'brief', on: answers.dailyBrief, delivery: answers.delivery });
         dispatch({ type: 'onboarding/finish' });
-        if (here.current) go(DONE);
       },
-      () => setRefusals((n) => n + 1),
+      () => { throw new Error('You’re offline. Your answers are still here, so finish again once you’re back online.'); },
     );
-  };
   return (
     // The accent being picked shows on this page only, until Finish saves it.
     <ThemeProvider accent={data.accent} glass={prefs.solidGlass ? 'solid' : 'regular'}>
@@ -118,10 +110,8 @@ export function WelcomePage() {
         <OnboardingFlow
           productName="Daybook"
           step={shown}
-          // The flow asks for the last step as Finish is pressed; `finish` moves there once the save succeeds.
           onStepChange={(n) => {
-            if (n === DONE) return;
-            if (n > shown) dispatch({ type: 'onboarding/next', answers: data, step: n as OnboardingStep });
+            if (n < DONE && n > shown) dispatch({ type: 'onboarding/next', answers: data, step: n as OnboardingStep });
             go(n);
           }}
           onValueChange={(answers) => dispatch({ type: 'onboarding/edit', answers, step: shown as OnboardingStep })}
@@ -131,11 +121,6 @@ export function WelcomePage() {
           // On touch, a step that asks for typing starts at its h1, with the on-screen keyboard down until a tap asks for it.
           focusFields={!lastInputWasTouch()}
         />
-        {refusals ? (
-          <p key={refusals} className="text-subheadline docs-onboarding-error" role="alert">
-            You’re offline. Your answers are still here, so finish again once you’re back online.
-          </p>
-        ) : null}
       </main>
     </ThemeProvider>
   );

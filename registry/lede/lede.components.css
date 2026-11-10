@@ -171,6 +171,8 @@
   width: var(--size-switch-width); height: var(--size-switch-height); border-radius: var(--radius-capsule); background: var(--fill-control-strong); cursor: inherit;
   box-shadow: inset 0 0 0 1px var(--input); transition: background-color var(--ld-dur) var(--ld-ease);
 }
+/* The track is drawn shorter than a finger, so a press reaches it over `size-hit-min`, as on a small Button. */
+.ld-switch-track::after { content: ""; position: absolute; inset: min(0px, calc((var(--size-switch-height) - var(--size-hit-min)) / 2)) 0; }
 .ld-switch-track[data-checked] { background: var(--primary); box-shadow: none; }
 .ld-switch-track[data-disabled] { background: var(--fill-control); }
 .ld-switch-knob {
@@ -202,6 +204,8 @@
 .ld-field-input::placeholder { color: var(--muted-foreground); }
 .ld-field-input:focus { box-shadow: inset 0 0 0 var(--stroke-ring) var(--ring); }
 .ld-field-input[data-invalid] { box-shadow: inset 0 0 0 var(--stroke-ring) var(--destructive); }
+/* Errors send focus to the invalid field, so it keeps its red edge and draws the ring outside it. */
+.ld-field-input[data-invalid]:focus { outline: var(--stroke-ring) solid var(--ring); outline-offset: var(--stroke-ring-offset); }
 .ld-field-input:disabled { color: var(--foreground-disabled); }
 .ld-field-hint { margin: 0; font-size: var(--text-footnote-size); line-height: var(--text-footnote-line-height); color: var(--muted-foreground); }
 .ld-field[data-invalid] .ld-field-hint { color: var(--destructive); }
@@ -230,6 +234,10 @@
 .ld-card-pad-lg { --ld-pad: var(--space-6); }
 .ld-card-muted { background: var(--muted); }
 .ld-card-glass { background: var(--glass-tint); }
+/* `.ld-card-glass` comes after `.ld-glass`, so it repeats the glass's opaque fallback. */
+@media (prefers-reduced-transparency: reduce) {
+  .ld-card.ld-card-glass { background: var(--card); }
+}
 [data-theme$="-hc"] .ld-card { box-shadow: 0 0 0 1px var(--input); }
 .ld-concentric { border-radius: max(var(--radius-xs), calc(var(--ld-outer, var(--radius-lg)) - var(--ld-pad, var(--space-2)))); overflow: hidden; }
 
@@ -276,6 +284,8 @@
 .ld-row-primary.ld-row-target { margin-inline: calc(-1 * var(--space-2)); padding-inline: var(--space-2); }
 .ld-row-target:focus-visible { outline-offset: calc(-1 * var(--stroke-ring)); border-radius: var(--radius-xs); }
 .ld-row-trailing, .ld-row-more { position: relative; z-index: 2; }
+/* Off the baseline, so a Switch is centered in its row and its press area stays inside a 44px row. */
+.ld-row-trailing .ld-switch { vertical-align: top; }
 .ld-row-leading { flex: none; display: flex; width: var(--size-leading); height: var(--size-leading); margin-block: calc(-1 * var(--ld-row-pad)); align-items: center; justify-content: center; }
 /* Beside a leading slot, a value on a line of its own starts under the title: the slot hangs into an inset as wide as
    itself and its gap. */
@@ -366,13 +376,15 @@
 .ld-disc { background: var(--card); color: var(--card-foreground); border-radius: var(--radius-lg); font-family: var(--font-sans); }
 [data-theme$="-hc"] .ld-disc { box-shadow: 0 0 0 1px var(--input); }
 .ld-disc-plain, [data-theme$="-hc"] .ld-disc-plain { background: transparent; border-radius: 0; box-shadow: none; }
-.ld-disc-heading { margin: 0; font: inherit; }
+.ld-disc-heading { margin: 0; font: inherit; border-radius: inherit; }
 .ld-disc-head {
   appearance: none; border: 0; margin: 0; background: transparent; font: inherit; color: inherit; text-align: left;
   display: flex; align-items: center; gap: var(--space-3); width: 100%; min-height: var(--size-hit-min);
   padding: var(--space-3) var(--space-4); border-radius: inherit; cursor: pointer; box-sizing: border-box;
   -webkit-tap-highlight-color: transparent;
 }
+/* The trigger's ring and pressed fill follow the card's corners. An open panel continues below, so its bottom stays square. */
+.ld-disc-head[data-panel-open] { border-end-start-radius: 0; border-end-end-radius: 0; }
 .ld-disc-head:focus-visible { outline: var(--stroke-ring) solid var(--ring); outline-offset: calc(-1 * var(--stroke-ring)); }
 .ld-disc-head:active { background: var(--fill-control); }
 /* The text has what's left of the heading beside its chevron, and only a word too long for that breaks. */
@@ -567,12 +579,13 @@
 .ld-table-row[data-selected] > * { background-color: color-mix(in srgb, var(--primary) 10%, var(--card)); }
 [data-theme$="-hc"] .ld-table-row[data-selected] > :first-child { box-shadow: inset var(--stroke-marker) 0 0 var(--primary); }
 .ld-table-row[data-selected] .ld-btn-plain:not(.ld-btn-critical) { color: var(--ld-primary-on-tint); }
-.ld-table-row-linked:hover > * { background-image: linear-gradient(var(--fill-control), var(--fill-control)); }
+.ld-table-row:has(.ld-table-link):hover > * { background-image: linear-gradient(var(--fill-control), var(--fill-control)); }
 
 /* Row link: a real `<a>` in the row header, stretched over the `<tr>`. Controls in the row sit above it.
    Stacking, lowest first: the link's `::after` (`auto`) < row controls (1) < sticky body cells (2) < header (3) < the
-   header's sticky corner (4). So controls take their own clicks, and scroll under the sticky header and column. */
-.ld-table-row-linked { position: relative; }
+   header's sticky corner (4). So controls take their own clicks, and scroll under the sticky header and column.
+   A row that holds the link is its containing block, so the link covers its own row and no other. */
+.ld-table-row:has(.ld-table-link) { position: relative; }
 .ld-table-link {
   display: flex; align-items: center; min-height: var(--ld-table-hit); color: inherit; text-decoration: none;
   border-radius: var(--radius-xs); -webkit-tap-highlight-color: transparent;
@@ -582,7 +595,10 @@
 .ld-table-link:focus-visible { outline: var(--stroke-ring) solid var(--ring); outline-offset: calc(-1 * var(--stroke-ring)); }
 .ld-table-rowheader:focus-visible { outline: var(--stroke-ring) solid var(--ring); outline-offset: calc(-1 * var(--stroke-ring)); }
 .ld-table-twin { position: absolute; inset: 0; }
-.ld-table-check .ld-checkbox, .ld-table-more, .ld-table-control { position: relative; z-index: 1; }
+/* Every control in a linked row, the caller's own cells' too, sits above the link. `:where` keeps this at zero
+   specificity, so a control that positions itself (a checkbox's input) keeps its own `position` and takes the z-index. */
+:where(.ld-table-row:has(.ld-table-link) :is(a, button, input, select, textarea, [tabindex]):not(.ld-table-link, .ld-table-twin)),
+.ld-table-check .ld-checkbox { position: relative; z-index: 1; }
 .ld-table-link .ld-table-trunc { flex: 1; }
 
 /* Control columns */
@@ -675,7 +691,7 @@
   .ld-switch-knob[data-checked][data-disabled] { background: Canvas; }
 
   .ld-field-input { border: 1px solid CanvasText; }
-  .ld-field-input:focus { outline: var(--stroke-ring) solid Highlight; outline-offset: var(--stroke-ring-offset); }
+  .ld-field-input:focus, .ld-field-input[data-invalid]:focus { outline: var(--stroke-ring) solid Highlight; outline-offset: var(--stroke-ring-offset); }
   .ld-field-input[data-invalid] { border-width: var(--stroke-ring); }
   .ld-field-input:disabled { border-color: GrayText; color: GrayText; }
 
