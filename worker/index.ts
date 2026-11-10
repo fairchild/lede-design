@@ -1,4 +1,4 @@
-import contentTypes from './content-types.json';
+import contentTypes from './content-types.json' with { type: 'json' };
 
 // A key is the path without its leading slash. R2 keys are at most 1024 bytes, and these patterns admit only ASCII, so a
 // lookahead on the path's length keeps every key valid. A release item's marker, <dir>/registry.json, is at most 7 bytes
@@ -19,12 +19,17 @@ const CACHE: Record<Kind, string> = {
 
 const JSON_TYPE = contentTypes.json;
 
+// Media is served under the site's origin, so a file can't run as a page there: an SVG's scripts stay off, and its
+// inline styles and images still render.
+const MEDIA_POLICY = "sandbox; default-src 'none'; img-src 'self' data:; media-src 'self'; style-src 'unsafe-inline'";
+
 export default {
   async fetch(request, env): Promise<Response> {
+    const { pathname } = new URL(request.url);
+    if (request.method === 'OPTIONS' && pathname.startsWith('/r/')) return preflight();
     if (request.method !== 'GET' && request.method !== 'HEAD') {
       return plain(405, 'Method not allowed', { allow: 'GET, HEAD' });
     }
-    const { pathname } = new URL(request.url);
     const release = RELEASE.exec(pathname);
     if (release) return fromBucket(request, env, pathname.slice(1), release[1] === 'next' ? 'next' : 'release');
     if (pathname.startsWith('/r/')) return LATEST.test(pathname) ? fromAssets(request, env) : notFound();
@@ -52,12 +57,13 @@ async function fromBucket(request: Request, env: Env, key: string, kind: Kind): 
   if (!object) return notFound();
   const headers = new Headers({
     'cache-control': CACHE[kind],
-    'content-type': kind === 'media' ? (object.httpMetadata?.contentType ?? typeOf(key)) : JSON_TYPE,
+    'content-type': kind === 'media' ? typeOf(key) : JSON_TYPE,
     etag: object.httpEtag,
     'last-modified': object.uploaded.toUTCString(),
     'x-content-type-options': 'nosniff',
   });
-  if (kind !== 'media') headers.set('access-control-allow-origin', '*');
+  if (kind === 'media') headers.set('content-security-policy', MEDIA_POLICY);
+  else headers.set('access-control-allow-origin', '*');
   return respond(request, object.body, headers, httpDate(headers.get('last-modified')));
 }
 
@@ -120,17 +126,33 @@ const httpDate = (value: string | null): number | null => {
   return Number.isNaN(time) ? null : Math.floor(time / 1000);
 };
 
-const typeOf = (key: string): string =>
-  (contentTypes as Record<string, string>)[key.slice(key.lastIndexOf('.') + 1).toLowerCase()] ??
-  'application/octet-stream';
+// Own keys only, so a name ending .constructor or .__proto__ reads no prototype property.
+const typeOf = (key: string): string => {
+  const extension = key.slice(key.lastIndexOf('.') + 1).toLowerCase();
+  return Object.hasOwn(contentTypes, extension) ? (contentTypes as Record<string, string>)[extension] : 'application/octet-stream';
+};
+
+// The registry is public and sends no credentials, so any origin may read it with any request headers.
+const preflight = (): Response =>
+  new Response(null, {
+    status: 204,
+    headers: {
+      'access-control-allow-origin': '*',
+      'access-control-allow-methods': 'GET, HEAD, OPTIONS',
+      'access-control-allow-headers': '*',
+      'access-control-max-age': '86400',
+    },
+  });
 
 // no-store: a release that isn't published yet must not stay missing in a cache once it is.
 const notFound = (): Response => plain(404, 'Not found');
 
+// An error carries the CORS header too, so a page fetching the registry can read why its request failed.
 const plain = (status: number, body: string, extra: Record<string, string> = {}): Response =>
   new Response(`${body}\n`, {
     status,
     headers: {
+      'access-control-allow-origin': '*',
       'cache-control': 'no-store',
       'content-type': 'text/plain; charset=utf-8',
       'x-content-type-options': 'nosniff',

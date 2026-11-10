@@ -34,7 +34,6 @@ export type DataTableProps<Row> = TableLabel &
     /** Shown when there are no rows. Default: "No {noun.other}". */
     emptyState?: React.ReactNode;
     total?: Total;
-    paging?: Paging;
     /** Below `narrowBelow`: `'cards'` renders a list of cards, and `'scroll'` keeps the table with a sticky first column. Default `'scroll'`. */
     narrow?: 'cards' | 'scroll';
     /** Container width in px below which `narrow` applies. Default 560: about where five columns stop fitting. */
@@ -120,7 +119,7 @@ export function DataTable<Row>(props: DataTableProps<Row>) {
   const retry = (fn: () => void) => () => { flushSync(fn); summaryRef.current?.focus(); };
   const pager = useLanding(root, summaryRef, paging, state.rows ?? 'current');
   const place = JSON.stringify([model.view, paging?.kind === 'pages' ? paging.page : null]);
-  const { onFocus, note, forget } = useKeptPlace(root, summaryRef, rows, place, state.rows === 'previous');
+  const { onFocus: keptFocus, note, forget } = useKeptPlace(root, summaryRef, rows, place, state.rows === 'previous');
   // Each row action notes its row, so the place is kept when the row leaves while focus is still in the menu.
   const getRowId = React.useRef(props.getRowId);
   React.useLayoutEffect(() => { getRowId.current = props.getRowId; });
@@ -135,10 +134,12 @@ export function DataTable<Row>(props: DataTableProps<Row>) {
   const shows = state.rows ?? 'current';
   const failure = state.failure;
   const refreshFailed = failure?.scope === 'refresh';
-  const busy = !!state.fetching && shows !== 'current';
   const updating = !!state.fetching;
   const hidden = !!failure && shows !== 'current';
-  const showSkeleton = shows === 'none' && !!state.fetching && !failure;
+  // Nothing on screen yet and nothing failed: rows are coming, even before the first request has gone out (a server
+  // table's first render, or one rendered on the server). "No {noun}" and "0 {noun}" wait for rows that say so.
+  const showSkeleton = shows === 'none' && !failure;
+  const busy = shows !== 'current' && (!!state.fetching || showSkeleton);
   // A failed load shows the alert alone. A failed refresh of an empty page still shows the empty state.
   const errorOnly = hidden || (!!failure && failure.scope !== 'refresh' && rows.length === 0);
   const empty = rows.length === 0 && !showSkeleton && !errorOnly;
@@ -156,6 +157,32 @@ export function DataTable<Row>(props: DataTableProps<Row>) {
   const summary = errorOnly ? (updating ? `Loading ${noun.other}…` : '')
     : showSkeleton ? `Loading ${noun.other}…` : updating ? `${countText} · Updating…` : countText;
   const allMatching = typeof total === 'number' ? formatCount(total, noun, locale) : `matching ${noun.other}`;
+  const offerAll = selectable && !hidden && sel.canSelectAllMatching;
+  const allSelected = selectable && sel.value.kind === 'all-matching';
+  // Clearing takes the notice away with its button: focus goes to the summary line in the same task, as Done's does.
+  const clearAll = () => {
+    forget();
+    flushSync(sel.clear);
+    if (document.activeElement === document.body) summaryRef.current?.focus();
+  };
+
+  // A failed load hides the table and the pager. When the control that had focus went with them, as a sort button or
+  // Next does, focus goes to Try again in the same commit: it is what the person can do next.
+  const tryAgain = React.useRef<HTMLButtonElement | HTMLAnchorElement>(null);
+  const held = React.useRef<Element | null>(null);
+  const wasErrorOnly = React.useRef(errorOnly);
+  React.useLayoutEffect(() => {
+    const was = wasErrorOnly.current;
+    wasErrorOnly.current = errorOnly;
+    const lost = held.current && !held.current.isConnected && document.activeElement === document.body;
+    const active = document.activeElement;
+    held.current = active && root.current?.contains(active) ? active : null;
+    if (errorOnly && !was && lost) tryAgain.current?.focus();
+  });
+  const onFocus = (e: React.FocusEvent) => {
+    held.current = e.target;
+    keptFocus(e);
+  };
 
   return (
     <div ref={root} className={cn('ld-dt', props.className)} data-layout={layout} onFocus={onFocus}>
@@ -174,16 +201,17 @@ export function DataTable<Row>(props: DataTableProps<Row>) {
           </span>
           {refreshFailed ? <Button variant="plain" className="ld-dt-btn" onClick={retry(failure.retry)}>Refresh</Button> : null}
         </p>
-        {selectable && !hidden && sel.canSelectAllMatching ? (
+        {/* One notice whose button changes, so "Select all N" keeps focus as it becomes "Clear selection". */}
+        {offerAll || allSelected ? (
           <p className="ld-dt-notice">
-            <span>{`All ${formatCount(shown, noun, locale)} ${scope} are selected.`}</span>
-            <Button variant="plain" className="ld-dt-btn" onClick={sel.selectAllMatching}>{`Select all ${allMatching}`}</Button>
-          </p>
-        ) : null}
-        {selectable && sel.value.kind === 'all-matching' ? (
-          <p className="ld-dt-notice">
-            <span>{sel.value.except.size === 0 ? `All ${allMatching} are selected.` : `${formatCount(sel.count, noun, locale)} selected.`}</span>
-            <Button variant="plain" className="ld-dt-btn" onClick={sel.clear}>Clear selection</Button>
+            <span>
+              {offerAll ? `All ${formatCount(shown, noun, locale)} ${scope} are selected.`
+                : sel.value.kind === 'all-matching' && sel.value.except.size === 0 ? `All ${allMatching} are selected.`
+                : `${formatCount(sel.count, noun, locale)} selected.`}
+            </span>
+            <Button variant="plain" className="ld-dt-btn" onClick={offerAll ? sel.selectAllMatching : clearAll}>
+              {offerAll ? `Select all ${allMatching}` : 'Clear selection'}
+            </Button>
           </p>
         ) : null}
       </div>
@@ -194,7 +222,7 @@ export function DataTable<Row>(props: DataTableProps<Row>) {
             <strong>{failure.scope === 'more' ? `Couldn’t load more ${noun.other}.` : `Couldn’t load ${noun.other}.`}</strong>
             {failure.message ? ` ${failure.message}` : ''}
           </p>
-          <Button variant="tinted" className="ld-dt-btn" onClick={retry(failure.retry)}>Try again</Button>
+          <Button ref={tryAgain} variant="tinted" className="ld-dt-btn" onClick={retry(failure.retry)}>Try again</Button>
         </div>
       ) : null}
 
@@ -278,6 +306,7 @@ export function DataTable<Row>(props: DataTableProps<Row>) {
                     toggle={sel.toggle}
                     href={rowHref?.(r.original)}
                     menu={rowActions ? menu : undefined}
+                    hasActions={!!rowActions && rowActions(r.original).length > 0}
                     sticky={sticky}
                     locale={locale}
                   />
@@ -328,10 +357,10 @@ export function DataTable<Row>(props: DataTableProps<Row>) {
   );
 }
 
-/** Where focus goes in a row: its link, else its first control, else its row header. */
+/** Where focus goes in a row: its link, else its first control, else its row header or card title. */
 function rowTarget(row: Element | null | undefined): HTMLElement | null {
   if (!row) return null;
-  return row.querySelector<HTMLElement>('[data-row-link], .ld-row-target') ?? row.querySelector<HTMLElement>('input, button, a[href], th[tabindex="-1"]');
+  return row.querySelector<HTMLElement>('[data-row-link], .ld-row-target') ?? row.querySelector<HTMLElement>('input, button, a[href], th[tabindex="-1"], .ld-dt-card-title[tabindex="-1"]');
 }
 
 /**

@@ -1,7 +1,19 @@
 # Contributing to Lede
 
-Issues and pull requests are welcome. For a new component or a change to a token, open an issue first: Lede adds a
-pattern only when no existing one fits.
+Issues are the best way to help: bug reports and feature requests both. Pull requests are welcome too; for anything
+beyond a small fix, open an issue first so we agree on the change before you build it.
+
+**A bug report** says how to make it happen: the steps, what you expected and what happened. Include the Lede version,
+the browser and the theme, and attach a screenshot, a recording or a console log when you have one. A bug that
+reproduces gets fixed first.
+
+**A feature request** describes what you're building and where Lede falls short. For a new component or a change to a
+token, name the existing pattern you tried: Lede adds a pattern only when no existing one fits.
+
+Report a security issue privately, as [SECURITY.md](SECURITY.md) describes.
+
+The rest of this file is how Lede is built and checked, for a pull request, a fork or a failing test that
+shows what you found. A test that fails makes the clearest bug report.
 
 ## Set up
 
@@ -62,7 +74,8 @@ installs is listed in `registry.json`. The `index.ts` barrels are for this repo 
 
 Edit tokens in `tokens/tokens.json` (the CSS is generated from it), and list every new registry file in `registry.json`.
 `npm run registry` fails if a registry file imports something its item doesn't install. Add the item that provides it
-to `registryDependencies`.
+to `registryDependencies`, or the package to `dependencies`. It also fails a dynamic import with a computed path, two
+files with one target and a file under `registry/` that no item lists.
 
 `npm run registry` also fails if a color has no pair or falls below its contrast floor. A new color token or
 `color-mix()` goes in `tokens/contrast.json`, with what it can sit on, and every pair meets its floor. In the
@@ -70,7 +83,8 @@ high-contrast themes (`light-hc` and `dark-hc`), every rule that paints a contro
 `tokens/contrast.json` lists it as no control, with a reason.
 `npm run contrast -- --report` prints every pair.
 
-The same command fails on a number or color in registry CSS that comes from no token. A choice is a token in
+The same command fails on a number or color in registry CSS that comes from no token. A named color such as `white`
+and a Tailwind palette utility in `@apply`, such as `bg-red-500`, are colors too. A choice is a token in
 `tokens/tokens.json`, and a value that follows from tokens is a `calc()` of them. The few numbers that are neither, such
 as zero, hairlines and the `2` that doubles a token in a `calc()`, are listed in `tokens/literal-exceptions.json` with
 their reasons, and an entry nothing matches fails the build. A number in a media or container query equals a
@@ -148,6 +162,47 @@ not that", "isn't just … it's", "rather than" or "more than just"), goes too. 
 | Skip link → top bar → `<nav>`, `<main>` and `<aside>` side by side. Side panels collapse and resize; each panel scrolls alone; narrow screens show one at a time. | A top bar over three panels that fill the window. Pick it when people keep several things in view while they work. |
 
 In the second pair, the panel details move into the page body, for the reader who wants them.
+
+### Order
+
+A reader decides in the first screen whether to keep going, so a README or a docs page gives the fastest content
+first and opens detail one level at a time, as Lede's own screens do.
+
+1. What it is, in one or two sentences.
+2. Who it's for and who it isn't, when that isn't obvious.
+3. How to install it.
+4. One example that runs.
+5. Links to the rest.
+
+Everything else goes a level down: a later section, the docs site or the API reference. A README links to the guide
+and doesn't repeat it.
+
+- **State the rule first.** Its exceptions go in the reference. "`--radius` sets every corner" belongs in the README.
+  "Capsules and circles aside, and a Button whose label wraps is a rounded rectangle" belongs on the Foundations page.
+- **Name three, link the list.** Prose carries at most three examples of a kind. The full list is a table or the page
+  that owns it, and a count is computed from the file that owns it.
+- **Use a plain word, or define the coined one where it first appears.** "View", "visit", "flow" and "takeaway" mean
+  something specific here. A reader meeting one for the first time gets its meaning in the same sentence.
+- **Keep process out of the product's pages.** Test file names, how the site is published and how CI picks what to
+  run live in CONTRIBUTING.md.
+- **Show what a sentence would describe.** A screenshot for something visible, a short recording for something that
+  changes, and a diagram for a relationship among three or more parts. Each has alt text that says what it shows.
+
+| Before | After |
+| --- | --- |
+| Blocks: AppShell and WorkbenchShell for page layouts, PageHeader, SummaryCard, MasterDetail, FormSection, StepIndicator, EmptyState, SelectionBar, AccentPicker and DataTable. DataTable is a `<table>` with sorting, selection, row links, row actions and optional cards for narrow containers. (the README's old Blocks bullet) | Blocks: the larger parts of a screen. AppShell, PageHeader and DataTable are three. (a table row, with a link to the Blocks page) |
+| Components: ThemeProvider, Button, SegmentedControl, Switch, TextField, Checkbox, Avatar, Card, ListGroup with ListRow, Disclosure, Table and GlassBar with GlassToolbar. | Components: primitives, each a native element where HTML has one. Button, Switch and ListGroup are three. (with a link to the Components page) |
+| Lede renders on the client only, so use it in a Vite app or another client-only React app. It doesn't support server rendering yet: registry files have no `'use client'`, so Next's App Router fails at build. (a paragraph before the install steps) | "a client-rendered React 19 project, such as a Vite app" in the requirements sentence, with the Next detail under Limits. |
+
+### Reviewing copy
+
+Before a release, and in any pull request that changes a README or a docs page, read the page as a newcomer and check:
+
+- The first screen says what it is and how to install it.
+- No sentence persuades. Each one says what a thing is, what it's for or how to use it.
+- Each paragraph has one job, and a detail only some readers need is linked.
+- Every coined term is defined where it first appears.
+- A visual stands wherever prose describes something a reader could see.
 
 ### Conventions
 

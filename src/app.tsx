@@ -122,6 +122,7 @@ const routes = () => createBrowserRouter(
               { path: 'fixtures/data-table-perf', lazy: load(() => import('@/pages/fixtures/DataTablePerf'), 'DataTablePerf'), handle: { title: 'Data table performance' } },
               { path: 'fixtures/work-archive', lazy: load(() => import('@/pages/fixtures/WorkArchiveFixture'), 'WorkArchiveFixture'), handle: { title: 'Work archive fixture' } },
               { path: 'fixtures/profile', lazy: load(() => import('@/pages/fixtures/ProfileFixtures'), 'ProfileFixtures'), handle: { title: 'Profile fixtures' } },
+              { path: 'fixtures/onboarding', lazy: load(() => import('@/pages/fixtures/OnboardingFixtures'), 'OnboardingFixtures'), handle: { title: 'Onboarding fixtures' } },
               { path: 'fixtures/segmented-control', lazy: load(() => import('@/pages/fixtures/SegmentedFixtures'), 'SegmentedFixtures'), handle: { title: 'Segmented control fixtures' } },
               { path: 'fixtures/page-header', lazy: load(() => import('@/pages/fixtures/PageHeaderFixtures'), 'PageHeaderFixtures'), handle: { title: 'Page header fixtures' } },
               { path: 'fixtures/list-row', lazy: load(() => import('@/pages/fixtures/ListRowFixtures'), 'ListRowFixtures'), handle: { title: 'List row fixtures' } },
@@ -132,7 +133,10 @@ const routes = () => createBrowserRouter(
         },
         { path: 'layouts/sidebar', element: <SidebarExample />, handle: { title: 'Full page with left bar' } },
         { path: 'layouts/workbench', element: <WorkbenchExample />, handle: { title: 'Three panels with top bar' } },
-        ...(FIXTURES ? [{ path: 'fixtures/workbench-hydrate', lazy: load(() => import('@/pages/fixtures/WorkbenchHydrate'), 'WorkbenchHydrate'), handle: { title: 'Workbench hydration' } }] : []),
+        ...(FIXTURES ? [
+          { path: 'fixtures/workbench-hydrate', lazy: load(() => import('@/pages/fixtures/WorkbenchHydrate'), 'WorkbenchHydrate'), handle: { title: 'Workbench hydration' } },
+          { path: 'fixtures/bare-table', lazy: load(() => import('@/pages/fixtures/BareTableFixture'), 'BareTableFixture'), handle: { title: 'A table without a shell' } },
+        ] : []),
         {
           path: 'app',
           element: <AppLayout />,

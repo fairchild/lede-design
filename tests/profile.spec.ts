@@ -439,6 +439,50 @@ test.describe('A slow save', () => {
   }
 });
 
+test('A field’s error clears as it’s fixed, and keeps up while it’s still wrong', async ({ page }) => {
+  await openEditor(page);
+  const name = page.getByLabel('Name');
+  const bio = page.getByLabel('Short bio');
+  await name.fill('');
+  await bio.fill('x'.repeat(162));
+  await saveButton(page).click();
+  await expect(name).toHaveAttribute('aria-invalid', 'true');
+  await name.pressSequentially('H');
+  await expect(name).not.toHaveAttribute('aria-invalid', 'true');
+  await expect(name).toHaveAccessibleDescription('');
+  await bio.press('Backspace');
+  await expect(bio).toHaveAccessibleDescription('Shorten your bio to 160 characters. It’s 161 now.');
+  await bio.press('Backspace');
+  await expect(bio).not.toHaveAttribute('aria-invalid', 'true');
+  await expect(bio).toHaveAccessibleDescription('Up to 160 characters.');
+});
+
+/** The focused field's outline, and the color `--ring` resolves to beside it. */
+const outline = (page: Page) => page.getByLabel('Name').evaluate((e) => {
+  const probe = e.parentElement!.appendChild(document.createElement('i'));
+  probe.style.color = 'var(--ring)';
+  const ring = getComputedStyle(probe).color;
+  probe.remove();
+  const s = getComputedStyle(e);
+  return { style: s.outlineStyle, width: parseFloat(s.outlineWidth), color: s.outlineColor, ring };
+});
+
+test('An invalid field that errors send focus to shows the focus ring, in forced colors too', async ({ page }) => {
+  await openEditor(page);
+  await page.getByLabel('Name').fill('');
+  await saveButton(page).click();
+  await expect(page.getByLabel('Name')).toBeFocused();
+  await expect(page.getByLabel('Name')).toHaveAttribute('aria-invalid', 'true');
+  const shown = await outline(page);
+  expect(shown.style).not.toBe('none');
+  expect(shown.width).toBeGreaterThan(0);
+  expect(shown.color).toBe(shown.ring);
+  await page.emulateMedia({ forcedColors: 'active' });
+  const forced = await outline(page);
+  expect(forced.style).not.toBe('none');
+  expect(forced.width).toBeGreaterThan(0);
+});
+
 test('Two flows on a page keep their fields apart', async ({ page }) => {
   await page.goto('/fixtures/profile');
   const [first, second] = [page.getByRole('region', { name: 'Slow save' }), page.getByRole('region', { name: 'Second flow' })];

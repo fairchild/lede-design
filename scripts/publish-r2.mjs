@@ -73,7 +73,10 @@ if (immutable) {
   if (!output.includes(MISSING)) fail(`couldn't tell whether ${marker} exists:\n${output.trim()}`);
 }
 
-const typeOf = (path) => contentTypes[path.slice(path.lastIndexOf('.') + 1).toLowerCase()] ?? 'application/octet-stream';
+const typeOf = (path) => {
+  const extension = path.slice(path.lastIndexOf('.') + 1).toLowerCase();
+  return Object.hasOwn(contentTypes, extension) ? contentTypes[extension] : 'application/octet-stream';
+};
 
 const put = async (path) => {
   const key = `${BUCKET}/${prefix}/${path}`;
