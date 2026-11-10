@@ -1,7 +1,7 @@
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "lede-design",
-  "account_id": "9d1a8fe235b13dcab0fa3bcb6181ab0c",
+  // The account comes from CLOUDFLARE_ACCOUNT_ID in the environment, or from the account `wrangler login` picked.
   "main": "worker/index.ts",
   "compatibility_date": "2026-11-01",
   "workers_dev": true,
