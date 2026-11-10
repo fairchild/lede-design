@@ -24,7 +24,15 @@ test('Under reduced transparency, a glass Card is as opaque as a plain one, with
   expect(glass.blur).toBe('none');
 });
 
-for (const [section, submits, clicks] of [['Switch with a Submit button', 1, 1], ['Switch with a disabled Submit button', 0, 0]] as const) {
+const SWITCH_FORMS = [
+  ['Switch with a Submit button', 1, 1],
+  ['Switch with a disabled Submit button', 0, 0],
+  ['Switch with an image Submit button', 1, 1],
+  ['Switch alone, no Submit button', 0, 0],
+  ['Switch and one text field, no Submit button', 0, 0],
+  ['Switch and two text fields, no Submit button', 0, 0],
+] as const;
+for (const [section, submits, clicks] of SWITCH_FORMS) {
   test(`Enter on a Switch in “${section}” gives ${submits} submit and ${clicks} click, as a checkbox’s does`, async ({ page }) => {
     await open(page);
     const region = page.getByRole('region', { name: section });
@@ -33,6 +41,9 @@ for (const [section, submits, clicks] of [['Switch with a Submit button', 1, 1],
     await page.keyboard.press('Enter');
     await expect(region.getByText(`Submits: ${submits} · Clicks: ${clicks}`)).toBeVisible();
     await expect(control).toHaveAttribute('aria-checked', 'false');
+    // The browser's own answer: Enter on the native checkbox in the same form adds as much again.
+    await region.getByRole('checkbox', { name: 'Native checkbox' }).press('Enter');
+    await expect(region.getByText(`Submits: ${submits * 2} · Clicks: ${clicks * 2}`)).toBeVisible();
   });
 }
 

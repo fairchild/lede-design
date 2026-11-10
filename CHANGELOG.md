@@ -77,7 +77,8 @@ First public release. Lede is a design system for React, installed from its shad
   new card, as it lands on the row header in the table layout.
 - A glass Card is opaque under `prefers-reduced-transparency`, as every other glass surface is.
 - Enter on a Switch inside a form clicks the form's default button, as Enter on a native checkbox does: that button's
-  `onClick` runs, and a disabled default button means no submit. A form with no submit button still submits.
+  `onClick` runs, and a disabled default button means no submit. An image button counts as the default button, and a
+  form with no submit button doesn't submit, as from a native checkbox.
 - A Switch answers a press over `size-hit-min` in every density, though its track is drawn 30px tall.
 - An uncontrolled GlassBar of links marks the item whose `href` is the page's path, so a page loaded at its second
   item no longer marks the first. A Cmd, Ctrl, Shift or Alt click leaves the mark where it is.

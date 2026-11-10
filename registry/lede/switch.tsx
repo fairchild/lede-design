@@ -19,14 +19,18 @@ export interface SwitchProps
 
 /**
  * Implicit submission, as Enter in a native checkbox does it: a click on the form's default button, which runs its
- * `onClick`, or nothing when that button is disabled. A form with no submit button is submitted directly.
+ * `onClick`, or nothing when that button is disabled or the form has none. Without a default button, browsers submit
+ * only from the form's one text-like field, never from a checkbox.
  */
 function submitImplicitly(form: HTMLFormElement) {
   const isSubmit = (el: Element): el is HTMLButtonElement | HTMLInputElement =>
     (el instanceof HTMLButtonElement && el.type === 'submit') || (el instanceof HTMLInputElement && (el.type === 'submit' || el.type === 'image'));
-  const button = [...form.elements].find(isSubmit);
-  if (!button) form.requestSubmit();
-  else if (!button.matches(':disabled')) button.click();
+  // `form.elements` leaves out image buttons, so they're found by their form owner and put back in tree order.
+  const images = [...document.querySelectorAll<HTMLInputElement>('input[type=image]')].filter((el) => el.form === form);
+  const button = [...form.elements, ...images]
+    .filter(isSubmit)
+    .sort((a, b) => (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1))[0];
+  if (button && !button.matches(':disabled')) button.click();
 }
 
 /**
