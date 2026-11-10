@@ -331,7 +331,7 @@ const asks = ['How’s my week?', 'Show my notification settings', 'What’s in 
 test('How it works shows README.md’s section, block for block, with its links pointing at the repo', async ({ page }) => {
   await page.goto('/#/how-it-works');
   await shows(page, prose('How it works'));
-  await expect(page.getByRole('main')).toContainText('such as open with an item’s id. SpecView’s onStateChange gives the chat each screen’s state');
+  await expect(page.getByRole('main')).toContainText('such as archive with an item’s id. SpecView’s onStateChange gives the chat each screen’s state');
   await expect(page.getByRole('heading', { level: 2, name: 'The loop' })).toBeVisible();
   await expect(page.locator('ol.jrc-md-list > li > p:first-child > strong')).toHaveText(loop.map((t) => `${t}.`));
   await expect(page.getByRole('link', { name: '../json-render-chat-plain' })).toHaveAttribute('href', 'https://github.com/fairchild/lede-design/blob/main/integrations/json-render-chat/../json-render-chat-plain/README.md#side-by-side');

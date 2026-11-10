@@ -136,6 +136,12 @@ json-render's own prompt teaches the model each of these, and `rules` adds what'
 
 - **Show or hide an element:** `visible` sits on the element, beside `type`, not in its props.
   `"visible": { "$state": "/saved" }` shows a confirmation once a press sets `/saved`.
+- **Open an item in place:** Screen's children are Views, a list View with `"visible": { "$state": "/open", "not": true }`
+  and a detail View per item with `"visible": { "$state": "/open", "eq": "m1" }`. The row's press sets `/open` with
+  `setState`, and the detail's PageHeader takes `"back": { "label": "Inbox" }` and binds `back` to set `/open` to `""`.
+  `"not": true` keeps the list showing while the state is still on its way. For rows from a state array, one detail
+  View with `repeat` on the array and `"visible": [{ "$state": "/open" }, { "$item": "id", "eq": { "$state": "/open" } }]`
+  draws the open item, as `src/chat/replies/week.json` does. A row with nothing to open has no press, so no chevron.
 - **Text that depends on state:** `$cond` picks between two values. Inside a repeat it reads the item:
   `"value": { "$cond": { "$item": "paid" }, "$then": "Paid", "$else": "Due" }`.
 - **State in text:** `$template` reads a path anywhere, `"${/booked/start}"`, and an item's field in a repeat,

@@ -97,7 +97,7 @@ passed. Commands run in your app's folder, and `LEDE` is the path to a clone of 
    | `src/chat/app-message.ts` | `AppMessage`, a `UIMessage` whose data parts are json-render's spec patches |
    | `src/chat/assistant.ts` | Who the assistant is: its name, what it helps with and the suggested prompts |
    | `src/chat/system.ts` | The system prompt the server sends, written by the catalog's `prompt()` |
-   | `src/chat/describe.ts` | Demo only: the note an action leaves, such as “You opened Venue review.” In your app, a handler acts on its params instead, such as ``open: ({ id }) => navigate(`/items/${id}`)`` |
+   | `src/chat/describe.ts` | Demo only: the note an action leaves, such as “You archived Grace Hopper.” In your app, a handler acts on its params instead, such as ``archive: ({ id }) => api.archive(id)`` |
    | `server/chat.ts` | The backend: `handleChat`, a fetch-style handler for any framework's route |
    | `tsconfig.server.json` | Typechecks the server, which `tsconfig.app.json` leaves out |
 
@@ -170,16 +170,16 @@ message.
 
    In the code: `json-render/spec-view.tsx` draws the spec so far, and `json-render/registry.tsx` maps each catalog
    type to its Lede component.
-5. **What the person does goes back.** A press runs an action, and what they type or switch goes with their next
-   message, so the model's next reply starts from it.
+5. **What the person does goes back.** A press opens an item in place or runs an action, and what they type or switch
+   goes with their next message, so the model's next reply starts from it.
 
-   In the code: an action calls its handler in `Chat.tsx`, such as `open` with an item's id. `SpecView`'s
+   In the code: an action calls its handler in `Chat.tsx`, such as `archive` with an item's id. `SpecView`'s
    `onStateChange` gives the chat each screen's state, which the next message sends as `screens`.
 
 ### What Lede adds
 
 json-render turns a model's spec into a React screen and keeps that screen's state. Lede draws each part with its own
-components and adds four behaviors for a screen that streams:
+components and adds five behaviors for a screen that streams:
 
 - A person's changes survive streaming. A value they typed or switched keeps their change while the rest of the reply
   streams in, and a list keeps gaining rows around it.
@@ -187,6 +187,8 @@ components and adds four behaviors for a screen that streams:
   why and takes focus.
 - Focus stays on the page. When the stream or an action removes the focused control, focus moves to its neighbor or the
   screen's title.
+- An item opens in place. Its title takes focus, and Back or Escape returns focus to the row that opened it. A row
+  shows a chevron only when it opens something.
 - Follow-ups see what was typed. Each screen's state goes with the next message, so the model reads the form as the
   person left it.
 
@@ -215,7 +217,7 @@ shows an error with Try again.
 | `tests/describe.test.ts` | Checks each action's note, for literal params, params bound to state and rows drawn by repeat. |
 | `tests/model-replies.test.tsx` | Streams 16 replies a model wrote for 8 requests through the server's transform: each parses, passes the catalog and draws, with each list's rows once. |
 | `tests/server.test.ts` | Checks that the model sees earlier screens with the state the person left in them, then starts the server: what it refuses, the length cap and parts it passes the model, and one log line per failed model call. |
-| `tests/chat.e2e.ts` | The chat alone (`chat.html`) in a browser: the order of a reply, an action's note, Stop, Escape, Try again, focus, the composer's scroll padding, checked fields and their errors, a list that fills in as it streams, typing and presses while a reply streams, a checkbox label at 200% text, following a reply as it streams and axe. |
+| `tests/chat.e2e.ts` | The chat alone (`chat.html`) in a browser: the order of a reply, an action's note, an item opened in place and Back, Escape in a detail and in the composer, Stop, Try again, focus, the composer's scroll padding, checked fields and their errors, a list that fills in as it streams, typing and presses while a reply streams, a checkbox label at 200% text, following a reply as it streams and axe. |
 | `tests/guide.e2e.ts` | The guide: each screen's link and h1, Back to where the person was, a Try link pressed mid-reply, each step's example, each reply's account of how it was made, this README's sections shown block for block, Copy and axe on each screen in each theme at 390 and 1280 pixels and 200% text. |
 | `tests/markdown.test.tsx` and `tests/install.test.ts` | The guide's renderer refuses Markdown it can't draw, and the documented install brings every Lede file the copied chat imports. |
 | `tests/real.e2e.ts`, `fake-anthropic.ts` and `fake-replies/` | The chat on the AI SDK's own transport, against `server/chat.ts` and a fake Anthropic: a reply that draws, a connection that drops partway, a malformed body, a follow-up that carries a screen's state, a reply that only patches an earlier screen, focus when a control or row hides itself, a row switched on while its list streams in and a form with a pattern and a decimal. |
@@ -240,6 +242,10 @@ The page is a sketch on Lede primitives until Lede's Chat block lands, and that 
   reply's first sentence. New content isn't focused.
 - The window follows a reply until your question reaches the top, so the question and the start of the answer stay in
   view together. Scrolling by hand stops the following.
-- A screen's actions add a note under it, such as “You opened Venue review.” They stay in the browser: nothing tells
+- A row or a Button opens its item in place. The model writes each item's detail in the same reply, as a View the row's
+  press shows, and the detail's back, or Escape while focus is in that screen, shows the list again. The detail's
+  title takes focus as it opens, and Back returns focus to the row that opened it. A row shows a chevron only when its
+  press opens a View, and `check` flags one that opens nothing.
+- A screen's actions add a note under it, such as “You archived Grace Hopper.” They stay in the browser: nothing tells
   the model. A real app would run the action, and could also send it as a message. `setState` changes stay in the
   screen, so typing in a field adds no notes.

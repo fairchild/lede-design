@@ -51,8 +51,14 @@ test('an item opens in place, as in the Lede chat, and its Back button shows the
   await screen.getByRole('button', { name: 'Katherine Johnson' }).click();
   await expect(screen.getByRole('heading', { level: 3, name: 'Katherine Johnson' })).toBeVisible();
   await expect(screen.getByRole('heading', { level: 3, name: 'Inbox' })).toHaveCount(0);
+  // Without the Lede item's focus handling, the pressed button leaves and focus falls to <body>, both ways.
+  expect(await page.evaluate(() => document.activeElement === document.body)).toBe(true);
+  await screen.getByRole('button', { name: 'Back to Inbox' }).focus();
+  await page.keyboard.press('Escape');
+  await expect(screen.getByRole('heading', { level: 3, name: 'Katherine Johnson' })).toBeVisible();
   await screen.getByRole('button', { name: 'Back to Inbox' }).click();
   await expect(screen.getByRole('heading', { level: 3, name: 'Inbox' })).toBeVisible();
+  expect(await page.evaluate(() => document.activeElement === document.body)).toBe(true);
 });
 
 for (const how of ['Stop', 'Escape'] as const) {

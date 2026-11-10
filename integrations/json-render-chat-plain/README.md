@@ -31,7 +31,7 @@ the Lede chat; the plain column is this entry.
 | axe violations, each of six replies and all six in one conversation, light and dark | 0 | 0 |
 | Checked by hand, all six replies in one conversation | no duplicate `id`s, 7 of 7 groups named, 7 section headings, 4 lists, an error tied to its field | `id="email"` twice, 0 of 4 groups named, no section headings, no lists, errors tied to nothing |
 | Dark mode | light and dark, each with a high-contrast theme under `prefers-contrast: more` | light and dark |
-| Lede item fixes the plain variant rebuilds by hand | | 1 of 10, below |
+| Lede item fixes the plain variant rebuilds by hand | | 1 of 11, below |
 
 Tokens are counted with `o200k_base` from `gpt-tokenizer`, OpenAI's tokenizer, as a stand-in: Claude's own count needs
 an API key. Most of each prompt is json-render's own instructions. The Lede prompt is the longer one because it adds
@@ -42,14 +42,15 @@ with Radix, Vaul, Embla and Lucide behind them.
 
 ## What the Lede item fixes, and what this entry does instead
 
-The `@lede/json-render` item holds ten fixes between json-render and a chat's screens. This entry rebuilds the one it
-can't work without and goes without the other nine, each checked in the browser here.
+The `@lede/json-render` item holds eleven fixes between json-render and a chat's screens. This entry rebuilds the one it
+can't work without and goes without the other ten, each checked in the browser here.
 
 | Fix in the Lede item | Here |
 | --- | --- |
 | A list streamed an item at a time draws each item once. `buildSpecFromParts` writes each patch into the value an earlier patch carried, so a second build from the same parts adds the items again. | Rebuilt in `src/screens/patches.ts`: `specFromParts` builds from copies. With json-render's own function the tasks list doubles on screen, and `tests/mock-transport.test.ts` and `tests/chat.e2e.ts` both fail. |
 | What the person changes in a screen survives the rest of the stream. | Text typed in the task field while the reply streams is gone when the draft's state arrives. |
 | Focus moves to a neighbor when the control that held it leaves, such as a row an action hides. | Archive hides its row, and focus falls to `<body>`. |
+| An item opens in place: its title takes focus, Back or Escape returns focus to the row that opened it, and a row shows a chevron only when it opens something. | The specs open items in place the same way, with a Back button in each detail. Opening one and going back each leave focus on `<body>`, Escape does nothing, and a row that opens an item looks like any other button. |
 | An action doesn't run while a field it reads fails its check, and focus moves to that field. | json-render's `validateForm` sets the errors and lets the next action run: Create account adds its note with both fields empty, and Add task adds an empty task. A spec can hold one button back by hand, with `$cond` on its `disabled` reading a field's value, but not on a field's check; the Lede item holds back every action that reads a failing field. |
 | A field's error is tied to it with `aria-describedby` and `aria-invalid`, and goes when the field passes. | The error shows under the field with nothing tying the two, so a screen reader moving through the form doesn't hear it. |
 | The host sets the spec's heading level, and sections sit one below. | The model picks each Heading's level. A Card's title is a `<div>`, so the 7 section headings Lede draws across the six replies, such as Delivery, To do and No projects yet, are absent from the outline. |
