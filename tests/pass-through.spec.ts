@@ -45,3 +45,16 @@ test('an Avatar\'s attributes and ref land on its initials <span>, or its <img>'
   await expect(await landsOn(page, 'pass-avatar', 'span')).toHaveAttribute('title', 'Hana Sato');
   await expect(await landsOn(page, 'pass-avatar-picture', 'img')).toHaveAttribute('title', 'Ren Ito');
 });
+
+test('a Table.Root\'s attributes land on its <table>, and className, style and ref on the scroll box', async ({ page }) => {
+  const table = page.locator('#pass-table');
+  expect(await table.evaluate((e) => e.tagName.toLowerCase())).toBe('table');
+  await expect(table).toHaveAttribute('data-case', 'pass-table');
+  await expect(table).toHaveAccessibleDescription(/names this paragraph/);
+  await expect(table).toHaveAccessibleName('Two days');
+  const box = page.locator('.pass-table-box');
+  await expect(box).toHaveClass(/(?<![\w-])ld-table-scroll(?![\w-])/);
+  await expect(box).toHaveAttribute('data-ref', 'attached');
+  expect(await box.getAttribute('style')).toContain('max-inline-size: 40rem');
+  await expect(box.locator('> table')).toHaveAttribute('id', 'pass-table');
+});

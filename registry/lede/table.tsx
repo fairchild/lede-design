@@ -34,13 +34,23 @@ type CollapsibleLabel =
   | { caption: React.ReactNode; collapsible: TableCollapsible | true; 'aria-label'?: never; 'aria-labelledby'?: never }
   | (TableLabel & { collapsible?: false });
 
-export type TableRootProps = CollapsibleLabel & {
+/** HTML attributes Root passes to its `<table>`: all but the name, `aria-busy` and the box's own. */
+type TableAttributes = Omit<
+  React.TableHTMLAttributes<HTMLTableElement>,
+  'children' | 'className' | 'style' | 'aria-label' | 'aria-labelledby' | 'aria-busy'
+>;
+
+export type TableRootProps = CollapsibleLabel & TableAttributes & {
   children: React.ReactNode;
   /** Keep the leading column(s) marked `sticky` in view while the table scrolls sideways. */
   stickyFirstColumn?: boolean;
   /** Content is loading or refreshing (`aria-busy`). */
   busy?: boolean;
+  /** On the scroll box. */
   className?: string;
+  /** On the scroll box. */
+  style?: React.CSSProperties;
+  /** The scroll box. */
   ref?: React.Ref<HTMLDivElement>;
 };
 
@@ -76,9 +86,15 @@ function notInAButton(button: Element): Element | undefined {
  * The box takes the width its container gives it: it is an inline-size container, so column widths can be CSS. Put
  * it where a block fills the width. A shrink-to-fit parent (`inline-block`, `float`, `fit-content`, `flex: none`)
  * gives it no width of its own. A sticky first column takes its width from Table.Columns, or is measured after layout.
+ *
+ * `className`, `style` and `ref` go on the box, which is what sizes and scrolls. Other HTML attributes, such as `id`,
+ * `data-*` and `aria-describedby`, go on the `<table>`, where the name is.
  */
 function Root(props: TableRootProps) {
-  const { children, stickyFirstColumn, busy, className, ref } = props;
+  const {
+    children, stickyFirstColumn, busy, className, style, ref,
+    caption: _caption, collapsible: _collapsible, 'aria-label': _label, 'aria-labelledby': _labelledBy, ...rest
+  } = props;
   const captionId = React.useId();
   const collapsible = 'caption' in props && props.caption != null && props.collapsible
     ? (props.collapsible === true ? {} : props.collapsible)
@@ -155,12 +171,14 @@ function Root(props: TableRootProps) {
     <div
       ref={setRef}
       className={cn('ld-table-scroll', stickyFirstColumn && 'ld-table-sticky-first', className)}
+      style={style}
       data-overflow={overflowing || undefined}
       {...(overflowing ? { role: 'region', tabIndex: 0, ...name } : {})}
       onMouseMove={showFullText}
       onMouseLeave={clearFullText}
     >
       <table
+        {...rest}
         className="ld-table"
         aria-busy={busy || undefined}
         data-collapsed={open ? undefined : ''}
