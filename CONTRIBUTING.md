@@ -176,9 +176,9 @@ and doesn't repeat it.
 
 | Before | After |
 | --- | --- |
-| It uses `AbortController` and `DOMException`, which both provide; type-check against either the DOM library or `@types/node`. (second line of the README) | The same sentence under Install, where the reader is setting up. |
+| Blocks: AppShell and WorkbenchShell for page layouts, PageHeader, SummaryCard, MasterDetail, FormSection, StepIndicator, EmptyState, SelectionBar, AccentPicker and DataTable. DataTable is a `<table>` with sorting, selection, row links, row actions and optional cards for narrow containers. (the README's old Blocks bullet) | Blocks: the larger parts of a screen. AppShell, PageHeader and DataTable are three. (a table row, with a link to the Blocks page) |
 | Components: ThemeProvider, Button, SegmentedControl, Switch, TextField, Checkbox, Avatar, Card, ListGroup with ListRow, Disclosure, Table and GlassBar with GlassToolbar. | Components: primitives, each a native element where HTML has one. Button, Switch and ListGroup are three. (with a link to the Components page) |
-| Load-more pages chain their cursors, and a revalidated chain is rebuilt aside and swapped in whole. | It refetches stale pages in the background and swaps them in together, so old and new rows never mix. |
+| Lede renders on the client only, so use it in a Vite app or another client-only React app. It doesn't support server rendering yet: registry files have no `'use client'`, so Next's App Router fails at build. (a paragraph before the install steps) | "a client-rendered React 19 project, such as a Vite app" in the requirements sentence, with the Next detail under Limits. |
 
 ### Reviewing copy
 
