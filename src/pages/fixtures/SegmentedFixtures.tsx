@@ -41,6 +41,17 @@ function Replaced() {
   );
 }
 
+/** Values that match no option: a misspelled `defaultValue` and a controlled `''`, which a choice then sets. */
+function Unmatched() {
+  const [value, setValue] = React.useState('');
+  return (
+    <section aria-label="No option matches" className="docs-section">
+      <SegmentedControl label="Misspelled" options={['Day', 'Week', 'Month']} defaultValue="Weekly" />
+      <SegmentedControl label="Controlled" options={['Day', 'Week', 'Month']} value={value} onValueChange={setValue} />
+    </section>
+  );
+}
+
 /**
  * SegmentedControls with labels of unequal length in narrow boxes, for tests/segmented-control.spec.ts, which also
  * doubles the text size, widens a box and replaces options. Not linked from the navigation.
@@ -59,6 +70,7 @@ export function SegmentedFixtures() {
         </section>
       ))}
       <Replaced />
+      <Unmatched />
     </div>
   );
 }

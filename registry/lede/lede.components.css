@@ -366,13 +366,15 @@
 .ld-disc { background: var(--card); color: var(--card-foreground); border-radius: var(--radius-lg); font-family: var(--font-sans); }
 [data-theme$="-hc"] .ld-disc { box-shadow: 0 0 0 1px var(--input); }
 .ld-disc-plain, [data-theme$="-hc"] .ld-disc-plain { background: transparent; border-radius: 0; box-shadow: none; }
-.ld-disc-heading { margin: 0; font: inherit; }
+.ld-disc-heading { margin: 0; font: inherit; border-radius: inherit; }
 .ld-disc-head {
   appearance: none; border: 0; margin: 0; background: transparent; font: inherit; color: inherit; text-align: left;
   display: flex; align-items: center; gap: var(--space-3); width: 100%; min-height: var(--size-hit-min);
   padding: var(--space-3) var(--space-4); border-radius: inherit; cursor: pointer; box-sizing: border-box;
   -webkit-tap-highlight-color: transparent;
 }
+/* The trigger's ring and pressed fill follow the card's corners. An open panel continues below, so its bottom stays square. */
+.ld-disc-head[data-panel-open] { border-end-start-radius: 0; border-end-end-radius: 0; }
 .ld-disc-head:focus-visible { outline: var(--stroke-ring) solid var(--ring); outline-offset: calc(-1 * var(--stroke-ring)); }
 .ld-disc-head:active { background: var(--fill-control); }
 /* The text has what's left of the heading beside its chevron, and only a word too long for that breaks. */

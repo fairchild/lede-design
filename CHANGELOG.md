@@ -25,3 +25,8 @@ First public release. Lede is a design system for React, installed from its shad
 - A Button whose label wraps is a rounded rectangle, with corners of `--radius-xl` or more. A one-line Button is
   still a capsule and an icon-only one a circle, at every size, shape, density and text size.
 - A GlassToolbarButton whose label wraps keeps the curve of one line, so it stays concentric with the toolbar.
+- A card Disclosure's focus ring and pressed fill follow the card's corners: all four while it's closed and the top two
+  while it's open. A plain Disclosure stays square.
+- A SegmentedControl whose value matches no option shows no thumb, since no radio is checked. This covers a controlled
+  `''`, a misspelled `defaultValue` and options that arrive after the first render. Choosing an option shows the thumb
+  on it.
