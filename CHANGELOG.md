@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- DataTable's Try again moves focus to the summary line after the retry's state is in, so the summary has its text
+  when focus arrives. The narrow-layout sample on the docs page now compiles: it passes `noun`, and its columns fill
+  the card slots its comment describes.
+- Table: a development build warns when a collapsible table's caption or summary renders an element that isn't
+  phrasing content, or an interactive one such as a link, a label, a control or an iframe, since both sit inside the
+  toggle button. Phrasing content such as `<abbr>`, `<em>` and `<span lang>` doesn't warn. The types are unchanged, so this isn't a breaking change.
+- Table: a development build warns when `collapsible.open` switches between controlled and uncontrolled.
+- Table: the collapsible caption's corners match the table's box, and in the high-contrast themes the box's edge runs
+  unbroken past the sticky header.
 - A Button whose label wraps is a rounded rectangle, with corners of `--radius-xl` or more. A one-line Button is
   still a capsule and an icon-only one a circle, at every size, shape, density and text size.
 - A GlassToolbarButton whose label wraps keeps the curve of one line, so it stays concentric with the toolbar.

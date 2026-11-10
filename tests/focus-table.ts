@@ -1201,10 +1201,16 @@ export const ACTIONS: Action[] = [
       await server.getByRole('button', { name: 'Fail the next request' }).click();
       await server.getByRole('button', { name: trigger }).click();
       await server.getByRole('button', { name: retry }).waitFor();
+      // The summary isn't a live region, so what it says as focus arrives is what a screen reader reads.
+      await server.locator('.ld-dt-summary').evaluate((el) => el.addEventListener('focus', () => { el.setAttribute('data-text-at-focus', el.textContent ?? ''); }, { once: true }));
     },
     act: (d) => d.press(button(retry, { role: 'region', name: 'Server mode' })),
     done: ({ page }) => page.getByRole('region', { name: 'Server mode' }).getByRole('button', { name: retry }).waitFor({ state: 'detached' }),
     target: { css: '.ld-dt-summary', in: { role: 'region', name: 'Server mode' }, label: 'the table summary line' },
+    check: async ({ page }) => {
+      const summary = page.getByRole('region', { name: 'Server mode' }).locator('.ld-dt-summary');
+      await expect(summary, 'the summary has its text when focus arrives').toHaveAttribute('data-text-at-focus', /\S/);
+    },
   })),
 ];
 

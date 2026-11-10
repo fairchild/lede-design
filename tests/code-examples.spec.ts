@@ -33,7 +33,7 @@ function sourceExamples(route: keyof typeof PAGES) {
       text.replaceAll('${REGISTRY}', `https://lede.cloudcompute.com/r/v${version}/{name}.json`).replace(/\\([`$\\])/g, '$1').trim(),
     ]),
   );
-  for (const [, name, file] of source.matchAll(/^import (\w+_CODE) from '\.\/(samples\/[\w-]+\.tsx)\?raw';$/gm)) {
+  for (const [, name, file] of source.matchAll(/^import (\w+_CODE) from '\.\/((?:samples|examples)\/[\w-]+\.tsx)\?raw';$/gm)) {
     constants.set(name, readFileSync(`src/pages/docs/${file}`, 'utf8').trim());
   }
   const fromSource = [...source.matchAll(/label="([^"]+)"[^\n]*?\b(\w+_CODE)\b/g)].map(([, label, name]) => [label, constants.get(name)!] as const);

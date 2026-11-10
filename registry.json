@@ -273,7 +273,7 @@
       "name": "table",
       "type": "registry:component",
       "title": "Table",
-      "description": "The stateless Table parts for a real `<table>`, with a sticky header and an optional sticky first column. A table wider than its box becomes a named scroll region, and a captioned one can collapse to its caption.",
+      "description": "The Table parts for a real `<table>`, with a sticky header and an optional sticky first column. A table wider than its box becomes a named scroll region, and a captioned one can collapse to its caption, with Root holding the open state unless you control it.",
       "registryDependencies": [
         "@lede/lede-theme",
         "@lede/lede-utils"

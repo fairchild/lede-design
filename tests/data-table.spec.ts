@@ -237,10 +237,15 @@ test.describe('DataTable', () => {
     await pick('Error');
     const alert = section.getByRole('alert');
     await expect(alert).toContainText('Couldn’t load work items.');
-    // Nothing loaded, so the table can't say how many there are: no "0 work items" beside the alert.
-    await expect(section.getByText(/^0 work items/)).toHaveCount(0);
+    // Nothing loaded, so the table can't say how many there are: the summary beside the alert says nothing.
+    const summary = section.locator('.ld-dt-summary');
+    await expect(summary).toBeEmpty();
     await expect(alert).toContainText('The server didn’t answer in time.');
+    // Focus lands on the summary once the retry's state is in, so it has its text as focus arrives.
+    await summary.evaluate((el) => el.addEventListener('focus', () => { el.setAttribute('data-text-at-focus', el.textContent ?? ''); }, { once: true }));
     await alert.getByRole('button', { name: 'Try again' }).click();
+    await expect(summary).toBeFocused();
+    await expect(summary).toHaveAttribute('data-text-at-focus', /\S/);
     await expect(table.locator('tbody tr')).toHaveCount(5);
     await expect(section.getByRole('alert')).toHaveCount(0);
 
@@ -466,8 +471,11 @@ test.describe('DataTable', () => {
     await expect(section.getByRole('alert')).toContainText('Couldn’t load work items.');
     await expect(section.getByRole('table')).toHaveCount(0);
     await expect(section.getByRole('button', { name: 'Load more' })).toHaveCount(0); // no pager under the alert
-    await expect(section.getByText(/^0 work items/)).toHaveCount(0); // nor a count of rows it never loaded
+    const summary = section.locator('.ld-dt-summary');
+    await expect(summary).toBeEmpty(); // nor a count of rows it never loaded
     await section.getByRole('button', { name: 'Try again' }).click();
+    // The rows and sort below would already hold on the previous rows, so this waits for the retry to finish first.
+    await expect(summary).toHaveText(/^50 of [^·]+$/);
     await expect(serverTable(page).locator('tbody tr')).toHaveCount(50);
     await expect(serverTable(page).getByRole('columnheader', { name: 'Assignee' })).toHaveAttribute('aria-sort', 'ascending');
   });
