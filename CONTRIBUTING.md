@@ -1,7 +1,18 @@
 # Contributing to Lede
 
-Issues and pull requests are welcome. For a new component or a change to a token, open an issue first: Lede adds a
-pattern only when no existing one fits.
+Issues are welcome, both bug reports and feature requests. For now, an issue is the way to contribute: pull requests
+aren't open.
+
+**A bug report** says how to make it happen: the steps, what you expected and what happened. Include the Lede version,
+the browser and the theme, and attach a screenshot, a recording or a console log when you have one. A bug that
+reproduces gets fixed first.
+
+**A feature request** describes what you're building and where Lede falls short. For a new component or a change to a
+token, name the existing pattern you tried: Lede adds a pattern only when no existing one fits.
+
+Report a security issue privately, as [SECURITY.md](SECURITY.md) describes.
+
+The rest of this file is how Lede is built and checked.
 
 ## Set up
 
