@@ -37,5 +37,7 @@ test('a row action that takes its whole group away leaves focus to the parent', 
   await page.getByRole('menuitem', { name: 'Clear the archive' }).click();
   await expect(page.getByRole('heading', { name: 'Archive', exact: true })).toHaveCount(0);
   await page.evaluate(() => new Promise(requestAnimationFrame));
-  await expect(page.getByRole('button', { name: 'After the list', exact: true })).not.toBeFocused();
+  // The fixture's parent moves no focus, so focus stays where the browser left it, and the next list's row doesn't take it.
+  await expect(page.getByRole('link', { name: /^Weekly summary/ })).not.toBeFocused();
+  expect(await page.evaluate(() => document.activeElement === document.body)).toBe(true);
 });

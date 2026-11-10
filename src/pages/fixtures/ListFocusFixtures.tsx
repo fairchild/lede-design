@@ -35,14 +35,14 @@ export function ListFocusFixtures() {
       <ListGroup>
         {untitled ? <ListRow title="Guest session" href="#guest" actions={[{ label: 'End', tone: 'critical', onSelect: () => setUntitled(false) }]} /> : null}
       </ListGroup>
+      {/* Hidden here, as AppShell's tab bar is on a wide screen: the place skips it. */}
+      <div style={{ display: 'none' }}><Button variant="gray">Hidden after the list</Button></div>
+      <Button variant="gray">After the list</Button>
       {archive ? (
         <ListGroup title="Archive">
           <ListRow title="Old notes" href="#old" actions={[{ label: 'Clear the archive', tone: 'critical', onSelect: () => setArchive(false) }]} />
         </ListGroup>
       ) : null}
-      {/* Hidden here, as AppShell's tab bar is on a wide screen: the place skips it. */}
-      <div style={{ display: 'none' }}><Button variant="gray">Hidden after the list</Button></div>
-      <Button variant="gray">After the list</Button>
       <ListGroup title="Mail">
         <ListRow title="Weekly summary" subtitle={read ? 'Read' : 'Unread'} href="#summary" actions={[{ label: read ? 'Mark unread' : 'Mark read', onSelect: () => setRead((r) => !r) }]} />
         <ListRow title="Sync" href="#sync" actions={[{ label: 'Open settings', onSelect: () => navigate('/app/settings') }]} />

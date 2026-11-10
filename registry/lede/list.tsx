@@ -78,7 +78,7 @@ function keepPlace(li: HTMLLIElement) {
       focusLanding(heading);
       heading.scrollIntoView({ block: 'nearest' });
     } else {
-      const next = following.find((el) => el.isConnected && el.checkVisibility());
+      const next = following.find((el) => el.isConnected && el.checkVisibility() && !el.closest('[inert]'));
       if (next) moveTo(next);
     }
   };
