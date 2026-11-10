@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { flushSync } from 'react-dom';
+import { announce } from '@react-aria/live-announcer';
 import { PageHeader } from '../blocks/page-header';
 import { FormSection } from '../blocks/form-section';
 import { TextField } from '../text-field';
@@ -32,6 +33,8 @@ export interface ProfileFlowProps {
 }
 
 const TEXT = ['name', 'email', 'role', 'location', 'bio'] as const;
+const CHECKED = ['name', 'email', 'bio'] as const;
+type Checked = (typeof CHECKED)[number];
 type Draft = Profile & Record<(typeof TEXT)[number], string>;
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const BIO_MAX = 160;
@@ -54,7 +57,7 @@ function clean(p: Profile) {
 }
 
 function validate(p: Draft) {
-  const errors: { name?: string; email?: string; bio?: string } = {};
+  const errors: Partial<Record<Checked, string>> = {};
   if (!p.name) errors.name = 'Enter your name.';
   if (!EMAIL.test(p.email)) errors.email = 'Enter a complete email address, like name@example.com.';
   if (p.bio.length > BIO_MAX) errors.bio = `Shorten your bio to ${BIO_MAX} characters. It’s ${p.bio.length} now.`;
@@ -72,14 +75,21 @@ export function ProfileFlow({ value, onSave, back }: ProfileFlowProps) {
   const [save, setSave] = React.useState<'idle' | 'saving' | 'saved' | 'failed'>('idle');
   const [failure, setFailure] = React.useState(RETRY);
   const saving = save === 'saving';
-  const id = React.useId();
+  const inputs = React.useRef<Partial<Record<Checked, HTMLElement | null>>>({});
+  // A field that has an error checks itself again on each change, so a fix clears it and the message keeps up.
   const field = (k: (typeof TEXT)[number]) => ({
     value: draft?.[k] ?? '',
     readOnly: saving,
     onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-      const v = e.currentTarget.value;
-      setDraft((d) => d && { ...d, [k]: v });
+      if (!draft) return;
+      const next = { ...draft, [k]: e.currentTarget.value };
+      setDraft(next);
+      if (k in errors) setErrors((now) => ({ ...now, [k]: validate(clean(next))[k as Checked] }));
     },
+    ...((CHECKED as readonly string[]).includes(k) && {
+      ref: (el: HTMLElement | null) => { inputs.current[k as Checked] = el; },
+      error: errors[k as Checked],
+    }),
   });
   const formRef = React.useRef<HTMLFormElement>(null);
   const editRef = React.useRef<HTMLButtonElement>(null);
@@ -106,9 +116,15 @@ export function ProfileFlow({ value, onSave, back }: ProfileFlowProps) {
     if (!draft || saving) return;
     const next = clean(draft);
     const found = validate(next);
-    setErrors(found);
-    const first = (['name', 'email', 'bio'] as const).find((k) => found[k]);
-    if (first) { setSave('idle'); document.getElementById(`${id}-${first}`)?.focus(); return; }
+    const first = CHECKED.find((k) => found[k]);
+    // The field is invalid and described by its error before focus reaches it. Focus already there fires no event, so
+    // the errors are also announced, after the move.
+    flushSync(() => { setErrors(found); setSave('idle'); });
+    if (first) {
+      inputs.current[first]?.focus();
+      announce(CHECKED.flatMap((k) => found[k] ?? []).join(' '), 'polite', 1000);
+      return;
+    }
     setSave('saving');
     try {
       await onSave(next);
@@ -138,11 +154,11 @@ export function ProfileFlow({ value, onSave, back }: ProfileFlowProps) {
       {draft ? (
         <form ref={formRef} aria-label="Edit profile" aria-busy={saving || undefined} noValidate onSubmit={submit} onKeyDown={escape}>
           <FormSection legend="About you" description="Name and email are required.">
-            <TextField id={`${id}-name`} label="Name" autoComplete="name" autoFocus enterKeyHint="done" {...field('name')} error={errors.name} required />
+            <TextField label="Name" autoComplete="name" autoFocus enterKeyHint="done" {...field('name')} required />
             <TextField label="Role" autoComplete="organization-title" enterKeyHint="done" {...field('role')} />
-            <TextField id={`${id}-email`} label="Email" type="email" autoComplete="email" enterKeyHint="done" {...field('email')} error={errors.email} required />
+            <TextField label="Email" type="email" autoComplete="email" enterKeyHint="done" {...field('email')} required />
             <TextField label="Location" autoComplete="address-level2" enterKeyHint="done" {...field('location')} />
-            <TextField id={`${id}-bio`} label="Short bio" rows={3} {...field('bio')} error={errors.bio} hint={`Up to ${BIO_MAX} characters.`} />
+            <TextField label="Short bio" rows={3} {...field('bio')} hint={`Up to ${BIO_MAX} characters.`} />
           </FormSection>
           {save === 'failed' ? <p className="ld-profile-error" role="alert">{failure}</p> : null}
           <div className="ld-flow-actions">

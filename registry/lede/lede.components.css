@@ -202,6 +202,8 @@
 .ld-field-input::placeholder { color: var(--muted-foreground); }
 .ld-field-input:focus { box-shadow: inset 0 0 0 var(--stroke-ring) var(--ring); }
 .ld-field-input[data-invalid] { box-shadow: inset 0 0 0 var(--stroke-ring) var(--destructive); }
+/* Errors send focus to the invalid field, so it keeps its red edge and draws the ring outside it. */
+.ld-field-input[data-invalid]:focus { outline: var(--stroke-ring) solid var(--ring); outline-offset: var(--stroke-ring-offset); }
 .ld-field-input:disabled { color: var(--foreground-disabled); }
 .ld-field-hint { margin: 0; font-size: var(--text-footnote-size); line-height: var(--text-footnote-line-height); color: var(--muted-foreground); }
 .ld-field[data-invalid] .ld-field-hint { color: var(--destructive); }
@@ -677,7 +679,7 @@
   .ld-switch-knob[data-checked][data-disabled] { background: Canvas; }
 
   .ld-field-input { border: 1px solid CanvasText; }
-  .ld-field-input:focus { outline: var(--stroke-ring) solid Highlight; outline-offset: var(--stroke-ring-offset); }
+  .ld-field-input:focus, .ld-field-input[data-invalid]:focus { outline: var(--stroke-ring) solid Highlight; outline-offset: var(--stroke-ring-offset); }
   .ld-field-input[data-invalid] { border-width: var(--stroke-ring); }
   .ld-field-input:disabled { border-color: GrayText; color: GrayText; }
 

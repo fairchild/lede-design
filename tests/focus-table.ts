@@ -73,6 +73,16 @@ export const ringShows = (page: Page, where: Where) => locate(page, where).evalu
   return outlineStyle !== 'none' && parseFloat(outlineWidth) > 0 && outlineColor === ring;
 });
 
+/** Records, on the field's next focus, whether it was already invalid and described by its error then. */
+const watchInvalidAtFocus = (page: Page, name: string) => page.getByRole('textbox', { name, exact: true }).evaluate((el) => {
+  el.addEventListener('focus', () => {
+    const described = (el.getAttribute('aria-describedby') ?? '').split(' ').map((id) => document.getElementById(id)?.textContent).join(' ');
+    el.setAttribute('data-at-focus', `${el.getAttribute('aria-invalid')} ${described.trim()}`);
+  }, { once: true });
+});
+const expectInvalidAtFocus = async (page: Page, name: string, error: string) =>
+  expect(page.getByRole('textbox', { name, exact: true }), `${name} is invalid and described by its error as focus arrives`).toHaveAttribute('data-at-focus', `true ${error}`);
+
 /** The titles a screen lands on: PageHeader's, InboxFlow's message title and WorkbenchShell's. */
 const TITLES = ['ld-page-title', 'ld-message-title', 'ld-wb-title'];
 
@@ -1069,9 +1079,31 @@ export const ACTIONS: Action[] = [
   },
   {
     screen: 'Profile', action: 'Save with errors',
-    setup: async (d) => { await d.page.goto('/app/profile'); await d.press(button('Edit profile')); await d.page.getByRole('textbox', { name: 'Name', exact: true }).fill(''); },
+    setup: async (d) => {
+      await d.page.goto('/app/profile');
+      await d.press(button('Edit profile'));
+      await d.page.getByRole('textbox', { name: 'Name', exact: true }).fill('');
+      await watchInvalidAtFocus(d.page, 'Name');
+    },
     act: (d) => d.press(button('Save changes')),
     target: field('Name'),
+    says: 'Enter your name.',
+    check: async ({ page }) => {
+      await expectInvalidAtFocus(page, 'Name', 'Enter your name.');
+      expect(await ringShows(page, field('Name')), 'the invalid Name field shows the focus ring').toBe(true);
+    },
+  },
+  {
+    // Focus already on the field fires no focus event, so only the announcement tells a screen reader what's wrong.
+    screen: 'Profile', action: 'Enter with errors from the invalid field',
+    setup: async (d) => {
+      await d.page.goto('/app/profile');
+      await d.press(button('Edit profile'));
+      await d.page.getByRole('textbox', { name: 'Name', exact: true }).fill('');
+    },
+    act: ({ page }) => page.keyboard.press('Enter'),
+    target: field('Name'),
+    says: 'Enter your name.',
   },
   {
     screen: 'Profile', action: 'Escape while editing, nothing changed',
@@ -1109,15 +1141,42 @@ export const ACTIONS: Action[] = [
   },
   {
     screen: 'Onboarding', action: 'Continue with errors',
-    setup: async ({ page }) => { await page.goto('/app/welcome'); await page.getByRole('textbox', { name: 'Name', exact: true }).fill(''); },
+    setup: async ({ page }) => {
+      await page.goto('/app/welcome');
+      await page.getByRole('textbox', { name: 'Name', exact: true }).fill('');
+      await watchInvalidAtFocus(page, 'Name');
+    },
     act: (d) => d.press(button('Continue')),
     target: field('Name'),
+    says: 'Enter the name you want people to see.',
+    check: ({ page }) => expectInvalidAtFocus(page, 'Name', 'Enter the name you want people to see.'),
+  },
+  {
+    screen: 'Onboarding', action: 'Enter with errors from the invalid field',
+    setup: async ({ page }) => { await page.goto('/app/welcome'); await page.getByRole('textbox', { name: 'Name', exact: true }).fill(''); },
+    act: ({ page }) => page.keyboard.press('Enter'),
+    target: field('Name'),
+    says: 'Enter the name you want people to see.',
+  },
+  {
+    // A controlled step asked for Review before the account is valid waits for Continue, so the keystroke that makes the
+    // email valid leaves Account where it is.
+    screen: 'Onboarding', action: 'Typing the keystroke that completes the account',
+    setup: async ({ page }) => {
+      await page.goto('/fixtures/onboarding');
+      const held = page.getByRole('region', { name: 'Held step' });
+      await held.getByRole('textbox', { name: 'Name', exact: true }).fill('Ada Lovelace');
+      await held.getByRole('textbox', { name: 'Email', exact: true }).fill('ada@example');
+    },
+    act: ({ page }) => page.keyboard.type('.com'),
+    target: { role: 'textbox', name: 'Email', in: { role: 'region', name: 'Held step' } },
   },
   {
     screen: 'Onboarding', action: 'Continue with a bad email',
     setup: async ({ page }) => { await page.goto('/app/welcome'); await page.getByRole('textbox', { name: 'Email', exact: true }).fill('ada@'); },
     act: (d) => d.press(button('Continue')),
     target: field('Email'),
+    says: 'Enter a complete email address, like name@example.com.',
   },
   {
     screen: 'Onboarding', action: 'Cancel',

@@ -324,7 +324,7 @@
 .ld-profile-role { display: block; color: var(--foreground); }
 .ld-profile-status:has(.ld-status) { margin-bottom: var(--space-4); padding: 0 var(--space-4); }
 .ld-profile-status .ld-status { margin: 0; font-size: var(--text-subheadline-size); line-height: var(--text-subheadline-line-height); }
-.ld-profile-error { margin: 0 0 var(--space-4); padding: 0 var(--space-4); font-size: var(--text-subheadline-size); line-height: var(--text-subheadline-line-height); color: var(--destructive); overflow-wrap: anywhere; }
+.ld-profile-error, .ld-flow-error { margin: 0 0 var(--space-4); padding: 0 var(--space-4); font-size: var(--text-subheadline-size); line-height: var(--text-subheadline-line-height); color: var(--destructive); overflow-wrap: anywhere; }
 .ld-profile-details .ld-row-subtitle { white-space: normal; }
 
 /* DataTable */
