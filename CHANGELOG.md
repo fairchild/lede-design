@@ -80,7 +80,8 @@ First public release. Lede is a design system for React, installed from its shad
   new card, as it lands on the row header in the table layout.
 - A glass Card is opaque under `prefers-reduced-transparency`, as every other glass surface is.
 - Enter on a Switch inside a form clicks the form's default button, as Enter on a native checkbox does: that button's
-  `onClick` runs, and a disabled default button means no submit. A form with no submit button still submits.
+  `onClick` runs, and a disabled default button means no submit. An image button counts as the default button, and a
+  form with no submit button doesn't submit, as from a native checkbox.
 - A Switch answers a press over `size-hit-min` in every density, though its track is drawn 30px tall.
 - An uncontrolled GlassBar of links marks the item whose `href` is the page's path, so a page loaded at its second
   item no longer marks the first. A Cmd, Ctrl, Shift or Alt click leaves the mark where it is.
@@ -92,3 +93,17 @@ First public release. Lede is a design system for React, installed from its shad
   recently activated one takes it.
 - The docs for PageHeader's `focusOnMount` and `backOnEscape` describe what they do: the heading takes focus each time
   `focusOnMount` turns `true`, and `backOnEscape` yields to the focused field when its text changed.
+- Switch, SegmentedControl, Disclosure, Avatar and GlassBar take HTML attributes such as `id`, `data-*` and
+  `aria-describedby`, and a `ref`. Each lands on the element the person sees and acts on: Switch's `role="switch"`
+  element (its `id` and form props go on the native checkbox Base UI keeps, so `<label htmlFor>` names it), the
+  `<fieldset>`, the `<section>`, the `<img>` or initials `<span>` and the `<nav>`. Switch and SegmentedControl also
+  take `required` and `form`, and Switch takes `value`, `uncheckedValue`, `readOnly` and `inputRef`. Switch's type
+  names each prop it supports and holds no Base UI type.
+- A Switch's `onKeyDown` that prevents Enter's default stops the implicit submit.
+- Avatar passes `loading`, `decoding`, `referrerPolicy` and `crossOrigin` to its `<img>`.
+- Table.Root passes HTML attributes to its `<table>`, while `className`, `style` and `ref` stay on the scroll box.
+- SegmentedControl and Table.Root run the cleanup a React 19 callback ref returns, as Checkbox does.
+- Checkbox puts `style` and `hidden` on its wrapper with `className`, so `<Checkbox hidden />` hides the drawn box too.
+  Every other attribute and the `ref` go on the input.
+- Button takes `ref` as a plain prop, as React 19 allows, and no longer wraps itself in `forwardRef`. A ref typed for
+  either element still fits.

@@ -12,8 +12,12 @@ export interface CheckboxProps extends Omit<React.InputHTMLAttributes<HTMLInputE
  * event keeps its modifier keys (Shift for ranges). The input itself is the hit target, sized by `--ld-check-hit`
  * (default `--ld-table-hit`, from the density tokens), and the visible box is drawn beside it. Name it with a visible
  * `<label>` or `aria-label`.
+ *
+ * `className`, `style` and `hidden` go on the wrapper `<span>` that holds the drawn box, so `hidden` hides the whole
+ * checkbox. Every other attribute and `ref` go on the input: `id` for a `<label htmlFor>`, the form and ARIA
+ * attributes and `data-*`.
  */
-export function Checkbox({ indeterminate = false, className, ref, ...rest }: CheckboxProps) {
+export function Checkbox({ indeterminate = false, className, style, hidden, ref, ...rest }: CheckboxProps) {
   const inner = React.useRef<HTMLInputElement>(null);
   // On every render, since a native click clears the DOM state even while the prop stays true.
   React.useLayoutEffect(() => {
@@ -37,7 +41,7 @@ export function Checkbox({ indeterminate = false, className, ref, ...rest }: Che
     [ref],
   );
   return (
-    <span className={cn('ld-checkbox', className)}>
+    <span className={cn('ld-checkbox', className)} style={style} hidden={hidden}>
       <input ref={setRef} type="checkbox" className="ld-checkbox-input" {...rest} />
       {/* The check mark and dash are drawn in CSS: no extra nodes in a 500-row table. */}
       <span className="ld-checkbox-box" aria-hidden="true" />
