@@ -887,7 +887,7 @@ test.describe('DataTable', () => {
     // A page change isn't a removal: the row is elsewhere, still selected.
     await region.getByRole('button', { name: 'Next' }).click();
     await expect(table.getByRole('checkbox', { name: 'Select 3' })).toBeVisible();
-    await expect(bar).toHaveAccessibleName('1 item selected');
+    await expect(bar).toHaveAccessibleName('1 entry selected');
     await region.getByRole('button', { name: 'Previous' }).click();
     await expect(table.getByRole('checkbox', { name: 'Select 0' })).toBeChecked();
     await table.getByRole('checkbox', { name: 'Select 1' }).check();
@@ -895,10 +895,10 @@ test.describe('DataTable', () => {
     await expect(presses).toHaveText(['n0,n1']);
     // The archived rows left the selection with the table, so the bar left too.
     await expect(bar).toHaveCount(0);
-    await expect(table.getByRole('checkbox', { name: 'Select all items on this page' })).not.toBeChecked();
+    await expect(table.getByRole('checkbox', { name: 'Select all entries on this page' })).not.toBeChecked();
     // The next Archive sends only what's selected now.
     await table.getByRole('checkbox', { name: 'Select 2' }).check();
-    await expect(bar).toHaveAccessibleName('1 item selected');
+    await expect(bar).toHaveAccessibleName('1 entry selected');
     await bar.getByRole('button', { name: 'Archive' }).click();
     await expect(presses).toHaveText(['n0,n1', 'n2']);
   });

@@ -340,6 +340,8 @@ function RemovalFixture() {
  * An uncontrolled selection with a bulk Archive that removes its rows, in client pages of 3. Each Archive press is
  * listed with the ids it received, so a test can see a second press send nothing already archived.
  */
+/** Its own noun, so its pager's landmark name differs from the client pages fixture's. */
+const entryNoun = { one: 'entry', other: 'entries' };
 function UncontrolledFixture() {
   const [rows, setRows] = React.useState(() => NUMS.slice(0, 7));
   const [page, setPage] = React.useState(0);
@@ -356,7 +358,7 @@ function UncontrolledFixture() {
       <ol aria-label="Archive presses">{sent.map((ids, i) => <li key={i}>{ids || 'nothing'}</li>)}</ol>
       <DataTable
         aria-label="Uncontrolled fixture"
-        noun={noun}
+        noun={entryNoun}
         columns={numColumns}
         rows={rows.slice(at * 3, at * 3 + 3)}
         getRowId={(r) => r.id}
