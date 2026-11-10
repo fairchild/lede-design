@@ -569,12 +569,13 @@
 .ld-table-row[data-selected] > * { background-color: color-mix(in srgb, var(--primary) 10%, var(--card)); }
 [data-theme$="-hc"] .ld-table-row[data-selected] > :first-child { box-shadow: inset var(--stroke-marker) 0 0 var(--primary); }
 .ld-table-row[data-selected] .ld-btn-plain:not(.ld-btn-critical) { color: var(--ld-primary-on-tint); }
-.ld-table-row-linked:hover > * { background-image: linear-gradient(var(--fill-control), var(--fill-control)); }
+.ld-table-row:has(.ld-table-link):hover > * { background-image: linear-gradient(var(--fill-control), var(--fill-control)); }
 
 /* Row link: a real `<a>` in the row header, stretched over the `<tr>`. Controls in the row sit above it.
    Stacking, lowest first: the link's `::after` (`auto`) < row controls (1) < sticky body cells (2) < header (3) < the
-   header's sticky corner (4). So controls take their own clicks, and scroll under the sticky header and column. */
-.ld-table-row-linked { position: relative; }
+   header's sticky corner (4). So controls take their own clicks, and scroll under the sticky header and column.
+   A row that holds the link is its containing block, so the link covers its own row and no other. */
+.ld-table-row:has(.ld-table-link) { position: relative; }
 .ld-table-link {
   display: flex; align-items: center; min-height: var(--ld-table-hit); color: inherit; text-decoration: none;
   border-radius: var(--radius-xs); -webkit-tap-highlight-color: transparent;
@@ -584,7 +585,10 @@
 .ld-table-link:focus-visible { outline: var(--stroke-ring) solid var(--ring); outline-offset: calc(-1 * var(--stroke-ring)); }
 .ld-table-rowheader:focus-visible { outline: var(--stroke-ring) solid var(--ring); outline-offset: calc(-1 * var(--stroke-ring)); }
 .ld-table-twin { position: absolute; inset: 0; }
-.ld-table-check .ld-checkbox, .ld-table-more, .ld-table-control { position: relative; z-index: 1; }
+/* Every control in a linked row, the caller's own cells' too, sits above the link. `:where` keeps this at zero
+   specificity, so a control that positions itself (a checkbox's input) keeps its own `position` and takes the z-index. */
+:where(.ld-table-row:has(.ld-table-link) :is(a, button, input, select, textarea, [tabindex]):not(.ld-table-link, .ld-table-twin)),
+.ld-table-check .ld-checkbox { position: relative; z-index: 1; }
 .ld-table-link .ld-table-trunc { flex: 1; }
 
 /* Control columns */

@@ -42,3 +42,17 @@ First public release. Lede is a design system for React, installed from its shad
 - DataTable: `sortable: true` works in server mode without `value` or `compare`, since the server sorts.
 - SelectionBar centers in the viewport when no AppShell holds it. AppShell now adds the bar's offsets itself, beside
   the sidebar on a desktop and above the tab bar on a phone.
+- Table: every control in a linked row sits above the row link and takes its own press, in any cell and before or
+  after the row header, so a Button in a DataTable column no longer navigates. The rest of the row still does.
+  The undocumented `ld-table-control` class is gone.
+- Table: a row that holds a Table.RowLink is positioned on its own, so its link covers that row and not the whole
+  table. `Table.Row`'s `linked` is deprecated and changes nothing; it's removed in 0.5.0. A `sticky` row-header cell
+  confines the link to that cell, as RowLink's doc comment says.
+- Table: `ColumnWidth.max` is removed. It was undocumented and had no effect, or made the columns overflow when it
+  was below another column's `min`.
+- `Table.Root`'s doc comment shows on hover again.
+- DataTable: a row whose `rowActions` returns no actions has no ••• in the table layout, as in the card layout.
+- DataTable cards: the sort and select-all bar stays mounted while the skeleton shows, as the table's header does, so
+  a sort answered with a skeleton keeps focus on the Sort menu.
+- DataTable cards: a card with no link, checkbox or actions takes focus on its title, so Load more lands on the first
+  new card, as it lands on the row header in the table layout.

@@ -5,12 +5,14 @@ import { useServerRows, type ServerRowsRequest, type ServerRowsResponse } from '
 import { isSelected, useDataTable, type Column, type DataTableModel, type Selection, type TableState, type TableView } from '@lede/blocks/use-data-table';
 import { SegmentedControl } from '@lede/segmented-control';
 import { Button } from '@lede/button';
+import { Table } from '@lede/table';
 import type { RowAction } from '@lede/list';
 
 /**
  * Test fixtures for edge cases the docs and demo don't exercise: a cursor-only server, a page size that changes at
  * runtime, a column sorted only by `compare`, card fields wider than their line, tables in other locales, an
- * uncontrolled selection whose rows are archived and a server table's first frames. Not linked from the navigation;
+ * uncontrolled selection whose rows are archived, a server table's first frames, controls in linked rows and cards
+ * that load more or sort into a skeleton. Not linked from the navigation;
  * tests/data-table.spec.ts drives it.
  */
 type Item = { id: string; n: number; rank: number };
@@ -374,6 +376,98 @@ function UncontrolledFixture() {
 }
 
 /**
+ * Controls in linked rows: a Button in each row's cell takes its own press while the rest of the row navigates. Its
+ * column comes before the row header's, so the link's `::after` would paint over it without the lift. The first row's
+ * `rowActions` returns none, so it has no •••. Below it, a plain Table whose rows hold a Table.RowLink and
+ * don't pass `linked`: each link still covers only its own row.
+ */
+function RowControlsFixture() {
+  const [presses, setPresses] = React.useState<string[]>([]);
+  const pressColumns = React.useMemo<Column<Num>[]>(() => [
+    { id: 'press', label: 'Press', cell: (r) => <Button variant="gray" size="sm" onClick={() => setPresses((all) => [...all, r.id])}>{`Count ${r.n}`}</Button> },
+    { id: 'n', label: 'Number', value: (r) => r.n },
+  ], []);
+  const actions = React.useCallback((r: Num): RowAction[] => (r.n === 0 ? [] : [{ label: 'Refresh', onSelect: () => undefined }]), []);
+  return (
+    <section aria-labelledby="fx-row-controls" className="docs-section">
+      <h2 id="fx-row-controls" className="text-title-3">Row controls</h2>
+      <p data-testid="row-presses">{presses.length ? `Pressed ${presses.join(', ')}` : 'Nothing pressed'}</p>
+      <DataTable
+        aria-label="Row controls fixture"
+        noun={noun}
+        columns={pressColumns}
+        rows={NUMS.slice(0, 3)}
+        getRowId={(r) => r.id}
+        rowHeader="n"
+        rowHref={(r) => `#rc-${r.id}`}
+        rowActions={actions}
+      />
+      <Table.Root aria-label="Rows without linked">
+        <Table.Body>
+          {['Q1', 'Q2'].map((q) => (
+            <Table.Row key={q}>
+              <Table.RowHeader><Table.RowLink href={`#bare-${q}`}>{q}</Table.RowLink></Table.RowHeader>
+              <Table.Cell align="end">$12,400.00</Table.Cell>
+            </Table.Row>
+          ))}
+        </Table.Body>
+      </Table.Root>
+    </section>
+  );
+}
+
+/** Cards with no link, checkbox or actions, so Load more lands on the first new card's title. */
+function CardsMoreFixture() {
+  const [shown, setShown] = React.useState(3);
+  return (
+    <section aria-labelledby="fx-cards-more" className="docs-section">
+      <h2 id="fx-cards-more" className="text-title-3">Cards load more</h2>
+      <div className="docs-narrow">
+        <DataTable
+          aria-label="Cards load more fixture"
+          noun={noun}
+          columns={columns}
+          rows={ITEMS.slice(0, shown)}
+          getRowId={(r) => r.id}
+          rowHeader="n"
+          narrow="cards"
+          total={ITEMS.length}
+          paging={{ kind: 'load-more', hasMore: shown < ITEMS.length, onLoadMore: () => setShown((n) => n + 3) }}
+        />
+      </div>
+    </section>
+  );
+}
+
+/** Cards whose sort is answered with a skeleton, as a server table's is, until "Finish loading" is pressed. */
+function CardsSortFixture() {
+  const [view, setView] = React.useState<TableView>({ sort: [] });
+  const [loading, setLoading] = React.useState(false);
+  const state = React.useMemo<TableState>(() => (loading ? { rows: 'none', fetching: true } : {}), [loading]);
+  return (
+    <section aria-labelledby="fx-cards-sort" className="docs-section">
+      <h2 id="fx-cards-sort" className="text-title-3">Cards sort</h2>
+      <Button variant="gray" onClick={() => setLoading(false)}>Finish loading</Button>
+      <div className="docs-narrow">
+        <DataTable
+          aria-label="Cards sort fixture"
+          noun={noun}
+          columns={columns}
+          rows={loading ? [] : ITEMS.slice(0, 3)}
+          getRowId={(r) => r.id}
+          rowHeader="n"
+          narrow="cards"
+          selectionMode="multiple"
+          view={view}
+          onViewChange={(v) => { setView(v); setLoading(true); }}
+          state={state}
+        />
+      </div>
+    </section>
+  );
+}
+
+/**
  * A server table mounted on demand, so a test watches its first frames. Its Label column is sortable with neither
  * `value` nor `compare`: the server sorts.
  */
@@ -434,6 +528,9 @@ export function DataTableFixtures() {
       <RemovalFixture />
       <UncontrolledFixture />
       <MountedServerFixture />
+      <RowControlsFixture />
+      <CardsMoreFixture />
+      <CardsSortFixture />
       <HookProbe />
     </div>
   );
