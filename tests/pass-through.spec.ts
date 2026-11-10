@@ -59,3 +59,41 @@ test('a Table.Root\'s attributes land on its <table>, and className, style and r
   expect(await box.getAttribute('style')).toContain('max-inline-size: 40rem');
   await expect(box.locator('> table')).toHaveAttribute('id', 'pass-table');
 });
+
+test('a Switch\'s attributes and ref land on its role="switch" element, id and the form props on its native checkbox, and className and style on the <label>', async ({ page }) => {
+  const sw = page.getByRole('switch', { name: 'Reminders' });
+  await expect(sw).toHaveAttribute('data-case', 'pass-switch');
+  await expect(sw).toHaveAttribute('aria-describedby', 'pass-note');
+  await expect(sw).toHaveAttribute('data-ref', 'attached');
+  // Base UI gives the id to the hidden native checkbox, so a <label htmlFor> names the switch.
+  expect(await page.locator('#pass-switch').evaluate((e) => (e as HTMLInputElement).type)).toBe('checkbox');
+  await expect(sw).toHaveAccessibleName('Reminders');
+  await expect(sw).toHaveAccessibleDescription(/names this paragraph/);
+  const wrapper = page.locator('.pass-switch-wrapper');
+  expect(await wrapper.evaluate((e) => e.tagName.toLowerCase())).toBe('label');
+  expect(await wrapper.getAttribute('style')).toContain('max-inline-size: 40rem');
+  const form = page.locator('#pass-switch-form');
+  // The hidden input Base UI keeps takes the form props: it belongs to the form by id, and an unchecked required switch leaves the form invalid.
+  expect(await form.evaluate((f: HTMLFormElement) => f.checkValidity())).toBe(false);
+  await sw.click();
+  expect(await form.evaluate((f: HTMLFormElement) => [...new FormData(f)])).toEqual([['reminders', 'on']]);
+  expect(await form.evaluate((f: HTMLFormElement) => f.checkValidity())).toBe(true);
+});
+
+test('a Checkbox\'s attributes and ref land on its input, and className, style and hidden on the wrapper', async ({ page }) => {
+  const input = await landsOn(page, 'pass-checkbox', 'input');
+  await expect(input).toHaveAccessibleName('Starred');
+  const wrapper = page.locator('.pass-checkbox-wrapper');
+  expect(await wrapper.getAttribute('style')).toContain('max-inline-size: 40rem');
+  await expect(wrapper.locator('> input')).toHaveAttribute('id', 'pass-checkbox');
+  const hidden = page.locator('.pass-checkbox-hidden');
+  await expect(hidden).toHaveAttribute('hidden', '');
+  await expect(hidden).toBeHidden();
+  await expect(page.locator('#pass-checkbox-hidden')).not.toHaveAttribute('hidden');
+});
+
+test('a GlassBar\'s attributes, style and ref land on its <nav>', async ({ page }) => {
+  const nav = await landsOn(page, 'pass-glass-bar', 'nav');
+  await expect(nav).toHaveAccessibleName('Places');
+  expect(await nav.getAttribute('style')).toContain('max-inline-size: 40rem');
+});

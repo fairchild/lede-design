@@ -88,3 +88,12 @@ First public release. Lede is a design system for React, installed from its shad
   before the screen's PageHeader.
 - The docs for PageHeader's `focusOnMount` and `backOnEscape` describe what they do: the heading takes focus each time
   `focusOnMount` turns `true`, and `backOnEscape` yields to the focused field when its text changed.
+- Switch, SegmentedControl, Disclosure, Avatar and GlassBar take HTML attributes such as `id`, `data-*` and
+  `aria-describedby`, and a `ref`. Each lands on the element the person sees and acts on: Switch's `role="switch"`
+  element (its `id` and form props go on the native checkbox Base UI keeps, so `<label htmlFor>` names it), the
+  `<fieldset>`, the `<section>`, the `<img>` or initials `<span>` and the `<nav>`. Switch and SegmentedControl also
+  take `required` and `form`, and Switch takes `value`, `uncheckedValue` and `readOnly`.
+- Table.Root passes HTML attributes to its `<table>`, while `className`, `style` and `ref` stay on the scroll box.
+- Checkbox puts `style` and `hidden` on its wrapper with `className`, so `<Checkbox hidden />` hides the drawn box too.
+  Every other attribute and the `ref` go on the input.
+- Button takes `ref` as a prop instead of through `forwardRef`. A ref typed for either element still fits.

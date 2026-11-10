@@ -1,8 +1,11 @@
 import { Avatar } from '@lede/avatar';
 import { Button } from '@lede/button';
+import { Checkbox } from '@lede/checkbox';
 import { Disclosure } from '@lede/disclosure';
+import { GlassBar } from '@lede/glass-bar';
 import { PageHeader } from '@lede/blocks/page-header';
 import { SegmentedControl } from '@lede/segmented-control';
+import { Switch } from '@lede/switch';
 import { Table } from '@lede/table';
 
 const PICTURE = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1 1"%3E%3Crect width="1" height="1" fill="gray"/%3E%3C/svg%3E';
@@ -38,6 +41,33 @@ export function PassThroughFixtures() {
       <section aria-label="Avatar" className="docs-section">
         <Avatar {...pass('pass-avatar')} name="Hana Sato" title="Hana Sato" />
         <Avatar {...pass('pass-avatar-picture')} name="Ren Ito" src={PICTURE} title="Ren Ito" />
+      </section>
+      <section aria-label="Switch" className="docs-section">
+        <form id="pass-switch-form" />
+        <Switch
+          {...pass('pass-switch')}
+          label="Reminders"
+          name="reminders"
+          value="on"
+          uncheckedValue="off"
+          form="pass-switch-form"
+          required
+          className="pass-switch-wrapper"
+          style={{ maxInlineSize: '40rem' }}
+        />
+      </section>
+      <section aria-label="Checkbox" className="docs-section">
+        <label htmlFor="pass-checkbox">Starred</label>
+        <Checkbox {...pass('pass-checkbox')} className="pass-checkbox-wrapper" style={{ maxInlineSize: '40rem' }} />
+        <Checkbox id="pass-checkbox-hidden" aria-label="Hidden" className="pass-checkbox-hidden" hidden />
+      </section>
+      <section aria-label="Glass bar" className="docs-section">
+        <GlassBar
+          {...pass('pass-glass-bar')}
+          aria-label="Places"
+          items={[{ value: 'a', label: 'Today' }, { value: 'b', label: 'Later' }]}
+          style={{ maxInlineSize: '40rem' }}
+        />
       </section>
       <section aria-label="Table" className="docs-section">
         <Table.Root
