@@ -1093,6 +1093,47 @@ test.describe('DataTable at 320px and in forced colours', () => {
   });
 });
 
+test.describe('SelectionBar placement', () => {
+  test.skip(({ isMobile }) => isMobile, 'Viewport set explicitly.');
+  const centerOf = (b: { x: number; width: number }) => b.x + b.width / 2;
+  const select = async (page: Page, checkbox: Locator) => {
+    await checkbox.check();
+    const bar = page.getByRole('toolbar', { name: /selected/ });
+    await expect(bar).toBeVisible();
+    return (await bar.boundingBox())!;
+  };
+
+  for (const width of [390, 900, 1400]) {
+    test(`with no AppShell it centers in the viewport and sits clear of its foot · ${width}px`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 800 });
+      await page.goto('/fixtures/bare-table');
+      const bar = await select(page, page.getByRole('checkbox', { name: 'Select 0' }));
+      expect(Math.abs(centerOf(bar) - width / 2), 'the bar’s center is the viewport’s').toBeLessThanOrEqual(1);
+      expect(bar.y + bar.height).toBeLessThan(800);
+      // No tab bar to clear: the bar sits near the foot, not a tab bar's height above it.
+      expect(800 - (bar.y + bar.height)).toBeLessThan(48);
+    });
+  }
+
+  test('in AppShell it centers beside the sidebar on a desktop', async ({ page }) => {
+    await page.setViewportSize({ width: 1400, height: 800 });
+    await page.goto('/app/work');
+    const sidebar = (await page.locator('.ld-shell-sidebar').boundingBox())!;
+    const bar = await select(page, page.getByRole('checkbox', { name: 'Select WI-1018' }));
+    const main = sidebar.x + sidebar.width;
+    expect(Math.abs(centerOf(bar) - (main + (1400 - main) / 2)), 'the bar’s center is the main column’s').toBeLessThanOrEqual(1);
+  });
+
+  test('in AppShell on a phone it floats above the tab bar', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 800 });
+    await page.goto('/app/work');
+    const bar = await select(page, page.getByRole('checkbox', { name: 'Select WI-1018' }));
+    const tabbar = (await page.locator('.ld-shell-tabbar > *').boundingBox())!;
+    expect(bar.y + bar.height, 'the bar ends above the tab bar').toBeLessThanOrEqual(tabbar.y);
+    expect(Math.abs(centerOf(bar) - 390 / 2)).toBeLessThanOrEqual(1);
+  });
+});
+
 test('sticky first column: focus stays clear of it, with widths from Table.Columns or measured for auto columns', async ({ page, isMobile }) => {
   test.skip(isMobile, 'Viewport set explicitly.');
   await page.setViewportSize({ width: 420, height: 800 });

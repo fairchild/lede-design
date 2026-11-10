@@ -40,3 +40,5 @@ First public release. Lede is a design system for React, installed from its shad
 - DataTable shows its loading skeleton while `state.rows` is `'none'` and nothing failed, so a `useServerRows` table
   never shows "No {noun}" or a count of 0 before its first request goes out.
 - DataTable: `sortable: true` works in server mode without `value` or `compare`, since the server sorts.
+- SelectionBar centers in the viewport when no AppShell holds it. AppShell now adds the bar's offsets itself, beside
+  the sidebar on a desktop and above the tab bar on a phone.
