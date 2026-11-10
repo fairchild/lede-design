@@ -1,0 +1,290 @@
+{
+  "root": "screen",
+  "state": {
+    "archived": {}
+  },
+  "elements": {
+    "screen": {
+      "type": "Stack",
+      "props": {
+        "direction": "vertical",
+        "gap": "lg"
+      },
+      "children": [
+        "title",
+        "summary",
+        "compose",
+        "reply",
+        "messages"
+      ]
+    },
+    "title": {
+      "type": "Heading",
+      "props": {
+        "text": "Inbox",
+        "level": "h3"
+      },
+      "children": []
+    },
+    "summary": {
+      "type": "Text",
+      "props": {
+        "text": "3 unread messages, and one needs a reply today.",
+        "variant": "muted"
+      },
+      "children": []
+    },
+    "compose": {
+      "type": "Button",
+      "props": {
+        "label": "New message",
+        "variant": "primary"
+      },
+      "children": [],
+      "on": {
+        "press": {
+          "action": "open",
+          "params": {
+            "id": "new"
+          }
+        }
+      }
+    },
+    "reply": {
+      "type": "Card",
+      "props": {
+        "title": "Needs a reply: 1",
+        "description": "Grace asked for the venue by 5:00 PM."
+      },
+      "children": [
+        "reply-due"
+      ]
+    },
+    "reply-due": {
+      "type": "Badge",
+      "props": {
+        "text": "Due today",
+        "variant": "destructive"
+      },
+      "children": []
+    },
+    "messages": {
+      "type": "Card",
+      "props": {
+        "title": "Today"
+      },
+      "children": [
+        "m1",
+        "sep1",
+        "m2",
+        "sep2",
+        "m3"
+      ]
+    },
+    "sep1": {
+      "type": "Separator",
+      "props": {},
+      "children": []
+    },
+    "sep2": {
+      "type": "Separator",
+      "props": {},
+      "children": []
+    },
+    "m1": {
+      "type": "Stack",
+      "props": {
+        "direction": "vertical",
+        "gap": "sm"
+      },
+      "children": [
+        "m1-open",
+        "m1-text",
+        "m1-archive"
+      ],
+      "visible": {
+        "$state": "/archived/m1",
+        "not": true
+      }
+    },
+    "m1-open": {
+      "type": "Button",
+      "props": {
+        "label": "Grace Hopper",
+        "variant": "secondary"
+      },
+      "children": [],
+      "on": {
+        "press": {
+          "action": "open",
+          "params": {
+            "id": "m1"
+          }
+        }
+      }
+    },
+    "m1-text": {
+      "type": "Text",
+      "props": {
+        "text": "Venue for Thursday: can you confirm by 5? 9:41 AM",
+        "variant": "muted"
+      },
+      "children": []
+    },
+    "m1-archive": {
+      "type": "Button",
+      "props": {
+        "label": "Archive",
+        "variant": "secondary"
+      },
+      "children": [],
+      "on": {
+        "press": [
+          {
+            "action": "setState",
+            "params": {
+              "statePath": "/archived/m1",
+              "value": true
+            }
+          },
+          {
+            "action": "archive",
+            "params": {
+              "id": "m1"
+            }
+          }
+        ]
+      }
+    },
+    "m2": {
+      "type": "Stack",
+      "props": {
+        "direction": "vertical",
+        "gap": "sm"
+      },
+      "children": [
+        "m2-open",
+        "m2-text",
+        "m2-archive"
+      ],
+      "visible": {
+        "$state": "/archived/m2",
+        "not": true
+      }
+    },
+    "m2-open": {
+      "type": "Button",
+      "props": {
+        "label": "Alan Turing",
+        "variant": "secondary"
+      },
+      "children": [],
+      "on": {
+        "press": {
+          "action": "open",
+          "params": {
+            "id": "m2"
+          }
+        }
+      }
+    },
+    "m2-text": {
+      "type": "Text",
+      "props": {
+        "text": "Notes from the review are in the shared folder. 8:15 AM",
+        "variant": "muted"
+      },
+      "children": []
+    },
+    "m2-archive": {
+      "type": "Button",
+      "props": {
+        "label": "Archive",
+        "variant": "secondary"
+      },
+      "children": [],
+      "on": {
+        "press": [
+          {
+            "action": "setState",
+            "params": {
+              "statePath": "/archived/m2",
+              "value": true
+            }
+          },
+          {
+            "action": "archive",
+            "params": {
+              "id": "m2"
+            }
+          }
+        ]
+      }
+    },
+    "m3": {
+      "type": "Stack",
+      "props": {
+        "direction": "vertical",
+        "gap": "sm"
+      },
+      "children": [
+        "m3-open",
+        "m3-text",
+        "m3-archive"
+      ],
+      "visible": {
+        "$state": "/archived/m3",
+        "not": true
+      }
+    },
+    "m3-open": {
+      "type": "Button",
+      "props": {
+        "label": "Katherine Johnson",
+        "variant": "secondary"
+      },
+      "children": [],
+      "on": {
+        "press": {
+          "action": "open",
+          "params": {
+            "id": "m3"
+          }
+        }
+      }
+    },
+    "m3-text": {
+      "type": "Text",
+      "props": {
+        "text": "Updated figures for the launch window. 7:02 AM",
+        "variant": "muted"
+      },
+      "children": []
+    },
+    "m3-archive": {
+      "type": "Button",
+      "props": {
+        "label": "Archive",
+        "variant": "secondary"
+      },
+      "children": [],
+      "on": {
+        "press": [
+          {
+            "action": "setState",
+            "params": {
+              "statePath": "/archived/m3",
+              "value": true
+            }
+          },
+          {
+            "action": "archive",
+            "params": {
+              "id": "m3"
+            }
+          }
+        ]
+      }
+    }
+  }
+}

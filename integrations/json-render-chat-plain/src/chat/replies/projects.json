@@ -1,0 +1,84 @@
+{
+  "root": "screen",
+  "state": {
+    "view": "Active"
+  },
+  "elements": {
+    "screen": {
+      "type": "Stack",
+      "props": {
+        "direction": "vertical",
+        "gap": "lg"
+      },
+      "children": [
+        "title",
+        "summary",
+        "view",
+        "empty"
+      ]
+    },
+    "title": {
+      "type": "Heading",
+      "props": {
+        "text": "Projects",
+        "level": "h3"
+      },
+      "children": []
+    },
+    "summary": {
+      "type": "Text",
+      "props": {
+        "text": "You have no projects yet.",
+        "variant": "muted"
+      },
+      "children": []
+    },
+    "view": {
+      "type": "ToggleGroup",
+      "props": {
+        "type": "single",
+        "items": [
+          {
+            "label": "Active",
+            "value": "Active"
+          },
+          {
+            "label": "Archived",
+            "value": "Archived"
+          }
+        ],
+        "value": {
+          "$bindState": "/view"
+        }
+      },
+      "children": []
+    },
+    "empty": {
+      "type": "Card",
+      "props": {
+        "title": "No projects yet",
+        "description": "A project gathers the tasks, files and people for one piece of work.",
+        "centered": true
+      },
+      "children": [
+        "new"
+      ]
+    },
+    "new": {
+      "type": "Button",
+      "props": {
+        "label": "New project",
+        "variant": "primary"
+      },
+      "children": [],
+      "on": {
+        "press": {
+          "action": "open",
+          "params": {
+            "id": "new-project"
+          }
+        }
+      }
+    }
+  }
+}
