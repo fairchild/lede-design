@@ -1,4 +1,6 @@
 import * as React from 'react';
+import { flushSync } from 'react-dom';
+import { announce } from '@react-aria/live-announcer';
 import { PageHeader } from '../blocks/page-header';
 import { FormSection } from '../blocks/form-section';
 import { StepIndicator } from '../blocks/step-indicator';
@@ -25,7 +27,13 @@ export interface OnboardingFlowProps {
   onStepChange?: (step: number) => void;
   /** Called with each accent as it's chosen, so the page can preview it. */
   onAccentPreview?: (accent: Preset) => void;
-  onComplete: (data: OnboardingData) => void;
+  /**
+   * Saves the answers when the person presses Finish. A returned promise keeps Review up, with Finish pending, until it
+   * settles: it resolves to the done step, and a rejection stays on Review with an inline error that shows the
+   * rejection's message when it's an `Error` with one, or asks the person to try again. Finish fires once per press
+   * until then. Without a promise the flow moves on at once.
+   */
+  onComplete: (data: OnboardingData) => void | Promise<void>;
   /** Where "Get started" goes after finishing. */
   doneHref: string;
   /** The answers the flow starts from, read once on mount. */
@@ -48,6 +56,15 @@ type Ask = 'name' | 'email' | 'accent' | 'brief';
 
 const STEPS = ['Account', 'Preferences', 'Review'];
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const RETRY = 'Your answers weren’t saved. They’re still here, so try again.';
+type Errors = { name?: string; email?: string };
+
+function validate(data: OnboardingData): Errors {
+  const errors: Errors = {};
+  if (!data.name.trim()) errors.name = 'Enter the name you want people to see.';
+  if (!EMAIL.test(data.email.trim())) errors.email = 'Enter a complete email address, like name@example.com.';
+  return errors;
+}
 
 /**
  * Hero flow: sign-up in three steps. A native `<form>` per step, named by its `<h1>`, so Enter moves on from every step:
@@ -65,15 +82,47 @@ export function OnboardingFlow(props: OnboardingFlowProps) {
   const [data, setData] = React.useState<OnboardingData>({
     name: '', email: '', accent: 'blue', dailyBrief: true, delivery: 'morning', ...props.defaultValue,
   });
-  const [errors, setErrors] = React.useState<{ name?: string; email?: string }>({});
+  const [errors, setErrors] = React.useState<Errors>({});
+  // A controlled step can arrive from a URL with no account details yet. Later steps wait for a valid account and a
+  // Continue, so the step never changes under the person's typing.
+  const [held, setHeld] = React.useState(() => Object.keys(validate(data)).length > 0);
   const set = <K extends keyof OnboardingData>(k: K, v: OnboardingData[K]) => {
     const next = { ...data, [k]: v };
     setData(next);
     props.onValueChange?.(next);
+    if (k !== 'name' && k !== 'email') return;
+    const f = k as keyof Errors;
+    const found = validate(next);
+    if (found[f]) setHeld(true);
+    // A field that has an error checks itself again on each change, so a fix clears it and the message keeps up.
+    if (f in errors) setErrors((now) => ({ ...now, [f]: found[f] }));
   };
-  // A controlled step can arrive from a URL with no account details yet; later steps wait for a valid account.
-  const accountDone = !!data.name.trim() && EMAIL.test(data.email.trim());
-  const step = accountDone ? (props.step ?? inner) : 0;
+  const step = held ? 0 : (props.step ?? inner);
+  const inputs = React.useRef<Partial<Record<keyof Errors, HTMLInputElement | null>>>({});
+
+  // Finish fires once until its save settles. A save without a promise counts as pending until the step changes.
+  const [finish, setFinish] = React.useState<{ state: 'idle' | 'saving' } | { state: 'failed'; message: string; n: number }>({ state: 'idle' });
+  const finishing = React.useRef(false);
+  const mounted = React.useRef(true);
+  React.useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
+  React.useEffect(() => { finishing.current = false; setFinish({ state: 'idle' }); }, [step]);
+  const saving = finish.state === 'saving';
+  const complete = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (finishing.current) return;
+    finishing.current = true;
+    const saved = props.onComplete(data);
+    if (!saved) { go(3); return; }
+    setFinish({ state: 'saving' });
+    try {
+      await saved;
+      if (mounted.current) go(3);
+    } catch (error) {
+      if (!mounted.current) return;
+      finishing.current = false;
+      setFinish((now) => ({ state: 'failed', message: (error instanceof Error && error.message.trim()) || RETRY, n: (now.state === 'failed' ? now.n : 0) + 1 }));
+    }
+  };
   const typeIn: Ask | undefined = step !== 0 ? undefined
     : ask === 'name' || ask === 'email' ? ask
     : props.focusFields === false ? undefined
@@ -108,14 +157,16 @@ export function OnboardingFlow(props: OnboardingFlowProps) {
     );
   }
 
+  // The field is invalid and described by its error before focus reaches it. Focus already there fires no event, so the
+  // errors are also announced, after the move.
   const submitAccount = (e: React.FormEvent) => {
     e.preventDefault();
-    const next: typeof errors = {};
-    if (!data.name.trim()) next.name = 'Enter the name you want people to see.';
-    if (!EMAIL.test(data.email.trim())) next.email = 'Enter a complete email address, like name@example.com.';
-    setErrors(next);
-    if (Object.keys(next).length === 0) go(1);
-    else (document.getElementById(next.name ? 'onb-name' : 'onb-email') as HTMLInputElement | null)?.focus();
+    const found = validate(data);
+    const first = (['name', 'email'] as const).find((k) => found[k]);
+    if (!first) { setErrors({}); setHeld(false); go(1); return; }
+    flushSync(() => setErrors(found));
+    inputs.current[first]?.focus();
+    announce([found.name, found.email].filter(Boolean).join(' '), 'polite', 1000);
   };
 
   return (
@@ -125,8 +176,8 @@ export function OnboardingFlow(props: OnboardingFlowProps) {
         <form key="s0" aria-labelledby={titleId} noValidate onSubmit={submitAccount}>
           <PageHeader title={<span id={titleId}>Create your account</span>} summary="Two details, then you’re in." />
           <FormSection legend="About you">
-            <TextField id="onb-name" label="Name" autoComplete="name" enterKeyHint="next" value={data.name} onChange={(e) => set('name', e.currentTarget.value)} error={errors.name} required />
-            <TextField id="onb-email" label="Email" type="email" autoComplete="email" inputMode="email" enterKeyHint="next" value={data.email} onChange={(e) => set('email', e.currentTarget.value)} error={errors.email} hint="We’ll send your brief here." required />
+            <TextField ref={(el) => { inputs.current.name = el; }} label="Name" autoComplete="name" enterKeyHint="next" value={data.name} onChange={(e) => set('name', e.currentTarget.value)} error={errors.name} required />
+            <TextField ref={(el) => { inputs.current.email = el; }} label="Email" type="email" autoComplete="email" inputMode="email" enterKeyHint="next" value={data.email} onChange={(e) => set('email', e.currentTarget.value)} error={errors.email} hint="We’ll send your brief here." required />
           </FormSection>
           <div className="ld-flow-actions">
             <Button variant="filled" size="lg" type="submit">Continue</Button>
@@ -156,20 +207,21 @@ export function OnboardingFlow(props: OnboardingFlowProps) {
           </div>
         </form>
       ) : (
-        <form key="s2" aria-labelledby={titleId} onSubmit={(e) => { e.preventDefault(); props.onComplete(data); go(3); }}>
+        <form key="s2" aria-labelledby={titleId} aria-busy={saving || undefined} onSubmit={complete}>
           <PageHeader title={<span id={titleId}>Review</span>} summary="Check everything, then finish." />
           <ListGroup title="Account" headingLevel={2}>
-            <ListRow title="Name" value={data.name} onClick={() => go(0, 'name')} />
-            <ListRow title="Email" value={data.email} onClick={() => go(0, 'email')} />
+            <ListRow title="Name" value={data.name} onClick={() => { if (!saving) go(0, 'name'); }} />
+            <ListRow title="Email" value={data.email} onClick={() => { if (!saving) go(0, 'email'); }} />
           </ListGroup>
           <div style={{ height: 'var(--space-6)' }} />
           <ListGroup title="Preferences" headingLevel={2}>
-            <ListRow title="Accent" value={data.accent[0].toUpperCase() + data.accent.slice(1)} onClick={() => go(1, 'accent')} />
-            <ListRow title="Daily brief" value={data.dailyBrief ? `On, ${data.delivery}` : 'Off'} onClick={() => go(1, 'brief')} />
+            <ListRow title="Accent" value={data.accent[0].toUpperCase() + data.accent.slice(1)} onClick={() => { if (!saving) go(1, 'accent'); }} />
+            <ListRow title="Daily brief" value={data.dailyBrief ? `On, ${data.delivery}` : 'Off'} onClick={() => { if (!saving) go(1, 'brief'); }} />
           </ListGroup>
+          {finish.state === 'failed' ? <p key={finish.n} className="ld-flow-error" role="alert">{finish.message}</p> : null}
           <div className="ld-flow-actions" style={{ marginTop: 'var(--space-6)' }}>
-            <Button variant="plain" onClick={() => go(1)}>Back</Button>
-            <Button variant="filled" size="lg" type="submit">Finish</Button>
+            <Button variant="plain" disabled={saving} onClick={() => go(1)}>Back</Button>
+            <Button variant="filled" size="lg" type="submit">{saving ? 'Finishing…' : 'Finish'}</Button>
           </div>
         </form>
       )}

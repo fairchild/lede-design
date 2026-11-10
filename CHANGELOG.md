@@ -34,6 +34,16 @@ First public release. Lede is a design system for React, installed from its shad
 - A SegmentedControl whose value matches no option shows no thumb, since no radio is checked. This covers a controlled
   `''`, a misspelled `defaultValue` and options that arrive after the first render. Choosing an option shows the thumb
   on it.
+- OnboardingFlow's `onComplete` may return a promise. While it's pending, Finish shows “Finishing…” and can't fire
+  again. It resolves to the done step, and a rejection stays on Review with an inline error. A `void` return still
+  moves on at once, and Finish fires once until the step changes.
+- OnboardingFlow: a controlled `step` past Account with no valid account waits for Continue, so the keystroke that
+  makes the account valid no longer switches steps under the cursor.
+- ProfileFlow and OnboardingFlow: a field with an error checks itself again on each change, so the error leaves once
+  the value is fixed. A failed submit makes the field invalid before focus reaches it and announces the errors, so a
+  field that already had focus is heard too.
+- TextField takes a `ref` to its `<input>` or `<textarea>`.
+- An invalid TextField shows the focus ring outside its red edge when focused, as errors send focus there.
 - DataTable: an uncontrolled selection drops rows that were deleted, so after a bulk Archive the bar leaves with its
   rows and the next action sends only what's selected. A row counts as deleted when it leaves `rows` while the view,
   the page and `state.rows` stay the same, so a row on another page stays selected. `useDataTable` takes `paging` to

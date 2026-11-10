@@ -107,7 +107,6 @@ html, body { margin: 0; background: var(--background-grouped); color: var(--fore
 .docs-concentric > div > div > div { height: 64px; border-radius: var(--radius-xs); background: var(--card); }
 .onboarding-main { min-height: 100dvh; padding: var(--space-8) var(--space-4); box-sizing: border-box; display: grid; justify-content: center; align-content: start; outline: none; }
 .onboarding-main > * { width: min(560px, calc(100vw - 2 * var(--space-4))); }
-.docs-onboarding-error { margin: var(--space-4) 0 0; padding: 0 var(--space-4); color: var(--destructive); overflow-wrap: anywhere; }
 /* Room below Cancel for its focus ring (stroke-ring outside a stroke-ring-offset gap), clear of the progress list. */
 .docs-onboarding-cancel { margin: 0 0 var(--space-2); }
 
