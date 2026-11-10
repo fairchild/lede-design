@@ -96,4 +96,5 @@ First public release. Lede is a design system for React, installed from its shad
 - Table.Root passes HTML attributes to its `<table>`, while `className`, `style` and `ref` stay on the scroll box.
 - Checkbox puts `style` and `hidden` on its wrapper with `className`, so `<Checkbox hidden />` hides the drawn box too.
   Every other attribute and the `ref` go on the input.
-- Button takes `ref` as a prop instead of through `forwardRef`. A ref typed for either element still fits.
+- Button takes `ref` as a plain prop, as React 19 allows, and no longer wraps itself in `forwardRef`. A ref typed for
+  either element still fits.
