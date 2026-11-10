@@ -254,6 +254,16 @@ const GROUPS: Group[] = [
           <><Path to="tests/usage.spec.ts" />: every component and block in <Path to="registry.json" /> has an install command on its page, each command names real items, and each sample shows its file character for character.</>,
         ],
       },
+      {
+        title: 'The table store follows table-core',
+        summary: <>The server-rows store behind useServerRows is a copy of the one in <code>@fairchild/table-core</code>, kept identical to a pinned release.</>,
+        why: 'The store installs with the block as source, so a project needs no package for it. The store is maintained and tested in table-core, and a copy that falls behind loses that work without a sign.',
+        cost: 'A fix to the store lands in table-core first, then in Lede as a re-sync and a new pin. Lede’s doc comments on the shared types stay its own, so those declarations are compared as code with their comments left out.',
+        heldBy: [
+          <><Path to="tests/table-core-parity.spec.ts" /> hashes <Path to="registry/lede/blocks/server-rows-store.ts" /> without its import lines, and the shared types and selection functions in <Path to="registry/lede/blocks/use-data-table.ts" /> without comments, and fails when either differs from the pinned table-core commit. Its failure message says how to re-sync and re-pin.</>,
+          <>The <code>server-rows-*</code> specs in <Path to="tests/" /> are ports of table-core’s tests for the store, run against Lede’s copy.</>,
+        ],
+      },
     ],
   },
   {

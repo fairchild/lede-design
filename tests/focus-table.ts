@@ -799,6 +799,37 @@ export const ACTIONS: Action[] = [
     },
   },
   {
+    // A card with no link, checkbox or actions: its title takes focus, as the table's row header does.
+    screen: 'Data table', action: 'Load more in cards with nothing to focus in a card',
+    setup: async ({ page }) => {
+      await page.goto('/fixtures/data-table');
+      await page.locator('[aria-labelledby="fx-cards-more"] [data-row-id="i0"]').waitFor();
+      await watchRows(page, '[aria-labelledby="fx-cards-more"]', '[data-row-id="i3"]');
+    },
+    act: (d) => d.press(button('Load more', { role: 'region', name: 'Cards load more' })),
+    target: { css: '[data-row-id="i3"] .ld-dt-card-title', in: { role: 'region', name: 'Cards load more' }, label: 'the first new card’s title' },
+    check: async (d) => {
+      await expectLandsWithRows(d.page);
+      if (d.device === 'desktop') expect(await ringOf(locate(d.page, { css: '[data-row-id="i3"] .ld-dt-card-title', in: { role: 'region', name: 'Cards load more' }, label: '' })), 'the focused card title shows Lede’s ring').toEqual({ visible: true, style: 'solid' });
+    },
+  },
+  {
+    // The cards' sort and select-all bar stays mounted through the skeleton, as the table's header does, so the sort
+    // keeps focus while its rows load.
+    screen: 'Data table', action: 'Sort in cards, answered with a skeleton',
+    setup: async ({ page }) => {
+      await page.goto('/fixtures/data-table');
+      await page.locator('[aria-labelledby="fx-cards-sort"] [data-row-id="i0"]').waitFor();
+    },
+    act: async (d) => {
+      const sort = locate(d.page, { role: 'combobox', name: 'Sort', in: { role: 'region', name: 'Cards sort' } });
+      await sort.focus();
+      await sort.selectOption('rank:descending');
+    },
+    done: ({ page }) => page.locator('[aria-labelledby="fx-cards-sort"] .ld-dt-card-skeleton').first().waitFor(),
+    target: { role: 'combobox', name: 'Sort', in: { role: 'region', name: 'Cards sort' } },
+  },
+  {
     // Load more adds no rows and leaves: the summary line takes focus in the same commit, so none falls to <body>.
     screen: 'Data table', action: 'Load more that adds no rows',
     setup: async ({ page }) => {

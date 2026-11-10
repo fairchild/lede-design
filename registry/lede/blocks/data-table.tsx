@@ -306,6 +306,7 @@ export function DataTable<Row>(props: DataTableProps<Row>) {
                     toggle={sel.toggle}
                     href={rowHref?.(r.original)}
                     menu={rowActions ? menu : undefined}
+                    hasActions={!!rowActions && rowActions(r.original).length > 0}
                     sticky={sticky}
                     locale={locale}
                   />
@@ -356,10 +357,10 @@ export function DataTable<Row>(props: DataTableProps<Row>) {
   );
 }
 
-/** Where focus goes in a row: its link, else its first control, else its row header. */
+/** Where focus goes in a row: its link, else its first control, else its row header or card title. */
 function rowTarget(row: Element | null | undefined): HTMLElement | null {
   if (!row) return null;
-  return row.querySelector<HTMLElement>('[data-row-link], .ld-row-target') ?? row.querySelector<HTMLElement>('input, button, a[href], th[tabindex="-1"]');
+  return row.querySelector<HTMLElement>('[data-row-link], .ld-row-target') ?? row.querySelector<HTMLElement>('input, button, a[href], th[tabindex="-1"], .ld-dt-card-title[tabindex="-1"]');
 }
 
 /**
