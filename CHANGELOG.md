@@ -12,6 +12,10 @@ First public release. Lede is a design system for React, installed from its shad
 
 ### Fixed before release
 
+- The registry's error responses (404, 412, 503 and 405) carry `access-control-allow-origin: *` like its JSON does, so a
+  page fetching an item can read why it failed. An `OPTIONS` request under `/r/` answers the CORS preflight.
+- Files under `/media/` are typed by their extension alone and sent with `content-security-policy: sandbox` and
+  `nosniff`, so a file can't run as a page on the site's origin.
 - DataTable's Try again moves focus to the summary line after the retry's state is in, so the summary has its text
   when focus arrives. The narrow-layout sample on the docs page now compiles: it passes `noun`, and its columns fill
   the card slots its comment describes.
@@ -40,3 +44,15 @@ First public release. Lede is a design system for React, installed from its shad
   field that already had focus is heard too.
 - TextField takes a `ref` to its `<input>` or `<textarea>`.
 - An invalid TextField shows the focus ring outside its red edge when focused, as errors send focus there.
+- DataTable: an uncontrolled selection drops rows that were deleted, so after a bulk Archive the bar leaves with its
+  rows and the next action sends only what's selected. A row counts as deleted when it leaves `rows` while the view,
+  the page and `state.rows` stay the same, so a row on another page stays selected. `useDataTable` takes `paging` to
+  tell the two apart.
+- DataTable: "Select all N" becomes "Clear selection" in place and keeps focus, and Clear selection moves focus to the
+  summary line.
+- DataTable: when a sort or a page change fails to load, focus moves to Try again as the alert arrives.
+- DataTable shows its loading skeleton while `state.rows` is `'none'` and nothing failed, so a `useServerRows` table
+  never shows "No {noun}" or a count of 0 before its first request goes out.
+- DataTable: `sortable: true` works in server mode without `value` or `compare`, since the server sorts.
+- SelectionBar centers in the viewport when no AppShell holds it. AppShell now adds the bar's offsets itself, beside
+  the sidebar on a desktop and above the tab bar on a phone.
