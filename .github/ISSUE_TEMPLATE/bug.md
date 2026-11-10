@@ -20,6 +20,8 @@ labels: bug
 - Lede version (the registry URL's release, such as v0.4.0):
 - Browser and OS:
 - Theme (light, dark, light-hc or dark-hc) and text size, if they matter:
+- Screen reader or other assistive technology, and how you drove the page (keyboard, touch or pointer), if they
+  matter:
 
 **Evidence**
 
