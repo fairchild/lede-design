@@ -275,9 +275,12 @@ test.describe('DataTable', () => {
     await expect(bar).toBeInViewport(); // while its table is on screen, the bar floats in view
     await page.locator('#dt-states').scrollIntoViewIfNeeded();
     await page.evaluate(() => document.getElementById('dt-states')!.scrollIntoView({ block: 'center' }));
-    const barBox = (await bar.boundingBox())!;
-    const clientBox = (await client.boundingBox())!;
-    expect(barBox.y + barBox.height).toBeLessThanOrEqual(clientBox.y + clientBox.height + 1);
+    // Both edges in one read: rows that load in the examples between two reads move the page under the second one.
+    const [barBottom, clientBottom] = await bar.evaluate((el) => [
+      el.getBoundingClientRect().bottom,
+      el.closest('section[aria-labelledby="dt-client"]')!.getBoundingClientRect().bottom,
+    ]);
+    expect(barBottom).toBeLessThanOrEqual(clientBottom + 1);
     await expect(bar).not.toBeInViewport();
   });
 
