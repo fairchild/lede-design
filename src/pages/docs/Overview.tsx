@@ -28,7 +28,7 @@ const PRINCIPLES: Array<{ title: string; summary: string; rules: ReactNode[] }> 
     title: 'Harmony', summary: 'Nested corners are concentric with the ones around them.',
     rules: [
       <>A child’s radius is its parent’s radius less the padding between them. Capsules and circles aside, every radius derives from <code>--radius</code> and <code>--radius-step</code>.</>,
-      <>Anything a finger presses is a capsule, fully round except under ThemeProvider’s <code>shape="square"</code>.</>,
+      <>Anything a finger presses is a capsule, fully round except under ThemeProvider’s <code>shape="square"</code>. A Button whose label wraps is a rounded rectangle.</>,
       'Motion is physical and brief: about 240ms, with springs for movement.',
     ],
   },

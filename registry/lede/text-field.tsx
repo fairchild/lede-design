@@ -11,8 +11,9 @@ type Common = {
   size?: 'md' | 'lg';
 };
 export type TextFieldProps =
-  | (Common & Omit<React.InputHTMLAttributes<HTMLInputElement>, 'size'> & { rows?: undefined })
+  | (Common & Omit<React.InputHTMLAttributes<HTMLInputElement>, 'size'> & { rows?: undefined; ref?: React.Ref<HTMLInputElement> })
   | (Common & React.TextareaHTMLAttributes<HTMLTextAreaElement> & {
+      ref?: React.Ref<HTMLTextAreaElement>;
       /** Renders a `<textarea>` of this many rows, for text that runs past one line. */
       rows: number;
     });

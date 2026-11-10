@@ -9,13 +9,13 @@ export interface StepIndicatorProps {
 }
 
 /**
- * An ordered list with `aria-current="step"`. Summary first: narrow screens show only "Step 2 of 3 · Preferences",
- * and the full list appears when there is room.
+ * A group named "Progress" holding an ordered list with `aria-current="step"`. Summary first: narrow screens show and
+ * read only "Step 2 of 3 · Preferences", and the full list replaces it when there is room.
  */
 export function StepIndicator(props: StepIndicatorProps) {
   return (
-    <nav className={cn('ld-steps', props.className)} aria-label="Progress">
-      <p className="ld-steps-summary" aria-hidden="true">
+    <div role="group" className={cn('ld-steps', props.className)} aria-label="Progress">
+      <p className="ld-steps-summary">
         Step {props.current + 1} of {props.steps.length} · {props.steps[props.current]}
       </p>
       <ol className="ld-steps-list">
@@ -30,6 +30,6 @@ export function StepIndicator(props: StepIndicatorProps) {
           );
         })}
       </ol>
-    </nav>
+    </div>
   );
 }

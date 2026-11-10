@@ -13,17 +13,19 @@ interface Findings { overflow: number; overlaps: string[]; squeezed: string[]; c
 
 // Sideways scroll is measured against `clientWidth`, the screen's width: a phone widens `innerWidth` to fit a page wider
 // than its screen.
-function inspect(): Findings {
+function inspect(wordTakesLine: boolean): Findings {
   const found: Findings = { overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth, overlaps: [], squeezed: [], clipped: [], truncated: [] };
   const crosses = (a: DOMRect, b: DOMRect) => a.left < b.right - 0.5 && b.left < a.right - 0.5 && a.top < b.bottom - 0.5 && b.top < a.bottom - 0.5;
   const text = (el: Element | null) => (el?.textContent ?? '').trim().slice(0, 40);
 
-  // A ListRow's value and a Disclosure's meta sit beside the title while both fit, and move under it otherwise. A
-  // Disclosure's meta takes a column of its own beside the title and summary, so it narrows the title anywhere but under.
+  // A ListRow's value, a Disclosure's meta and a ListGroup's summary sit beside the title while both fit, and move under
+  // it otherwise. A Disclosure's meta takes a column of its own beside the title and summary, so it narrows the title
+  // anywhere but under.
   const beside = (t: DOMRect, v: DOMRect) => v.top < t.bottom && t.top < v.bottom;
   const pairs = [
     { box: '.ld-row', title: '.ld-row-title', parts: '.ld-row-title, .ld-row-subtitle', value: '.ld-row-value', line: '.ld-row-primary', beside },
     { box: '.ld-disc-head', title: '.ld-disc-title', parts: '.ld-disc-title, .ld-disc-summary', value: '.ld-disc-meta', line: '.ld-disc-head', beside: (t: DOMRect, v: DOMRect) => v.left >= t.right - 0.5 },
+    { box: '.ld-list-header', title: '.ld-list-title', parts: '.ld-list-title', value: '.ld-list-summary', line: '.ld-list-header', beside },
   ];
   for (const pair of pairs) for (const row of document.querySelectorAll(pair.box)) {
     const value = row.querySelector(pair.value);
@@ -33,7 +35,8 @@ function inspect(): Findings {
     for (const part of row.querySelectorAll(pair.parts)) {
       if (crosses(part.getBoundingClientRect(), v)) found.overlaps.push(`“${text(part)}” under “${text(value)}”`);
     }
-    // Beside its value, the title is at least as wide as its longest word, or as the whole line when the word is longer.
+    // Beside its value, the title is at least as wide as its longest word. A word longer than the line takes the whole
+    // line at enlarged text, and at the default size, where the value stays beside the title, it breaks.
     const t = title.getBoundingClientRect();
     if (pair.beside(t, v)) {
       const probe = title.cloneNode(true) as HTMLElement;
@@ -44,7 +47,7 @@ function inspect(): Findings {
       const line = row.matches(pair.line) ? row : row.querySelector(pair.line)!;
       const style = getComputedStyle(line);
       const room = line.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
-      if (t.width + 1 < Math.min(word, room)) found.squeezed.push(`“${text(title)}” is ${Math.round(t.width)}px beside “${text(value)}”, its longest word ${Math.round(word)}px`);
+      if (wordTakesLine ? t.width + 1 < Math.min(word, room) : word <= room && t.width + 1 < word) found.squeezed.push(`“${text(title)}” is ${Math.round(t.width)}px beside “${text(value)}”, its longest word ${Math.round(word)}px`);
     }
   }
 
@@ -127,11 +130,11 @@ for (const route of ROUTES) {
     for (const width of [320, 390, 412]) {
       await page.setViewportSize({ width, height: 800 });
       await settle(page, route, 2);
-      expect(await page.evaluate(inspect), `${width}px`).toEqual({ overflow: 0, overlaps: [], squeezed: [], clipped: [], truncated: [] });
+      expect(await page.evaluate(inspect, true), `${width}px`).toEqual({ overflow: 0, overlaps: [], squeezed: [], clipped: [], truncated: [] });
       // A closed panel's body takes no space, so the page is read again with every Disclosure and collapsible table open.
       if (!(await openPanels(page))) continue;
       await steady(page);
-      expect(await page.evaluate(inspect), `${width}px with every panel open`).toEqual({ overflow: 0, overlaps: [], squeezed: [], clipped: [], truncated: [] });
+      expect(await page.evaluate(inspect, true), `${width}px with every panel open`).toEqual({ overflow: 0, overlaps: [], squeezed: [], clipped: [], truncated: [] });
     }
   });
 }
@@ -141,7 +144,7 @@ for (const route of ROUTES) {
 // select draws its chosen option on one line, and the work list's sort option “Due, ascending” is wider than the screen
 // at this size, so that one cut on `/app/work` is the one allowed.
 async function inspectAt300(page: Page, route: string) {
-  const found = await page.evaluate(inspect);
+  const found = await page.evaluate(inspect, true);
   const spilled = await page.evaluate(() => [...document.querySelectorAll<HTMLElement>('.ld-btn, .ld-bar-tool, .ld-bar-item, .ld-accent, .ld-switch')].flatMap((control) => {
     if (!control.checkVisibility()) return [];
     const box = control.getBoundingClientRect();
@@ -170,13 +173,30 @@ for (const route of ROUTES) {
   });
 }
 
+// At the default text size on a phone, a title keeps its longest word beside a row's value, a Disclosure's meta or a
+// list's summary: a ListGroup summary longer than the room beside its title moves under it. Only a word longer than the
+// whole line breaks.
+for (const route of ROUTES) {
+  test(`${route} · at the default text size on a phone, every title beside a value keeps its words whole`, async ({ page, isMobile }) => {
+    test.skip(!isMobile, 'A phone is the narrow case.');
+    for (const width of [320, 390]) {
+      await page.setViewportSize({ width, height: 800 });
+      await settle(page, route, 1);
+      expect((await page.evaluate(inspect, false)).squeezed, `${width}px`).toEqual([]);
+      if (!(await openPanels(page))) continue;
+      await steady(page);
+      expect((await page.evaluate(inspect, false)).squeezed, `${width}px with every panel open`).toEqual([]);
+    }
+  });
+}
+
 test('At 300% text on a phone, the workbench’s top bar wraps, shows its whole title and keeps every control on screen', async ({ page, isMobile }) => {
   test.skip(!isMobile, 'A phone is the narrow case.');
   await atTextSize(page, 3);
   for (const width of [320, 390, 412]) {
     await page.setViewportSize({ width, height: 800 });
     await settle(page, '/layouts/workbench', 3);
-    expect(await page.evaluate(inspect), `${width}px`).toEqual({ overflow: 0, overlaps: [], squeezed: [], clipped: [], truncated: [] });
+    expect(await page.evaluate(inspect, true), `${width}px`).toEqual({ overflow: 0, overlaps: [], squeezed: [], clipped: [], truncated: [] });
     for (const control of await page.locator('.ld-wb-bar').getByRole('button').or(page.locator('.ld-wb-bar').getByRole('link')).filter({ visible: true }).all()) {
       const box = (await control.boundingBox())!;
       expect(box.x, `${width}px`).toBeGreaterThanOrEqual(0);
@@ -208,7 +228,7 @@ for (const { label, scale, viewport } of [
     expect(await page.evaluate(() => window.scrollY), 'the list is scrolled, so the notice is stuck').toBeGreaterThan(0);
     await expect(notice).toBeInViewport({ ratio: 1 });
     await expect(page.getByRole('button', { name: 'Undo' })).toBeInViewport({ ratio: 1 });
-    expect(await page.evaluate(inspect)).toEqual({ overflow: 0, overlaps: [], squeezed: [], clipped: [], truncated: [] });
+    expect(await page.evaluate(inspect, true)).toEqual({ overflow: 0, overlaps: [], squeezed: [], clipped: [], truncated: [] });
     const below = async (what: string, top: () => Promise<{ y: number } | null>) => {
       const [n, other] = [(await notice.boundingBox())!, (await top())!];
       expect(n.y + n.height, `the notice ends above ${what}`).toBeLessThanOrEqual(other.y);
@@ -319,6 +339,43 @@ test('At 200% text on a 1280px window, the shell and the workbench lay out as on
   }
 });
 
+// A ListGroup's summary moves under its title wherever the two don't fit, at any window width, so a desktop window at
+// large text keeps the title's words whole too.
+test('At 200% and 300% text on a 1280px window, every title beside a value keeps its words whole', async ({ page, isMobile }) => {
+  test.skip(isMobile, 'A desktop window is the wide case.');
+  await page.setViewportSize({ width: 1280, height: 800 });
+  for (const scale of [2, 3]) {
+    await atTextSize(page, scale);
+    for (const route of ['/app/settings', '/fixtures/list-row']) {
+      await settle(page, route, scale);
+      expect((await page.evaluate(inspect, true)).squeezed, `${route} at ${scale}x`).toEqual([]);
+    }
+  }
+});
+
+// A summary under its title starts where the title does, so it reads from the start like the title above it.
+test('A ListGroup summary that moves under its title starts at the title’s edge', async ({ page, isMobile }) => {
+  test.skip(!isMobile, 'A phone is the narrow case.');
+  for (const width of [320, 390]) {
+    await page.setViewportSize({ width, height: 800 });
+    await settle(page, '/fixtures/list-row', 1);
+    const under = await page.locator('.ld-list-header').evaluateAll((headers) => headers.flatMap((header) => {
+      const title = header.querySelector('.ld-list-title');
+      const summary = header.querySelector<HTMLElement>('.ld-list-summary');
+      if (!title || !summary) return [];
+      const t = title.getBoundingClientRect(), s = summary.getBoundingClientRect();
+      if (s.top < t.bottom) return [];
+      const range = document.createRange();
+      range.selectNodeContents(summary);
+      const lines = [...range.getClientRects()].filter((r) => r.width > 0);
+      const ragged = lines.filter((r) => Math.abs(r.left - t.left) > 1);
+      return [ragged.length ? `“${summary.textContent?.trim()}” has lines starting ${ragged.map((r) => Math.round(r.left - t.left)).join(', ')}px from the title` : 'aligned'];
+    }));
+    expect(under.length, `${width}px: summaries under their titles`).toBeGreaterThan(0);
+    expect(under.filter((u) => u !== 'aligned'), `${width}px`).toEqual([]);
+  }
+});
+
 // SelectionBar's count and actions wrap onto lines of their own when they don't fit on one, so at large text on a phone
 // each label shows in full inside its control, no two parts cross and the whole bar stays on screen.
 test('At 200% and 300% text on a phone, SelectionBar wraps its parts and shows every label in full', async ({ page, isMobile }) => {
@@ -387,3 +444,67 @@ test('At 200% text on a 1280px window, the layout previews open at Narrow', asyn
     await expect(page.getByRole('radio', { name: scale === 2 ? 'Narrow' : 'Wide' }).first(), `${scale}x`).toBeChecked();
   }
 });
+
+// A Button whose label wraps grows taller, and a capsule's radius would make it an oval. A one-line Button and an
+// icon-only one keep a capsule's or a circle's ends at every size, shape, density and text size, so their used radius
+// is what `--radius-capsule` alone gives. A wrapped Button is a rounded rectangle: its radius is under half its height,
+// and outside `square` it is at least `--radius-xl`. GlassToolbarButton follows the same shapes, with one line's curve
+// when it wraps. Every case is built in a box of its own shape and density on the page and read there.
+// Long enough to take four lines or more at every size, so even the smallest is taller than twice `--radius-xl`.
+const WRAPS = 'Approve the quarterly budget, send the signed copy to finance before Friday, ask the team to move the planning review to the week after the offsite and book a room for it with space for everyone who joins from the other office';
+for (const scale of [1, 2, 3]) {
+  test(`A wrapped Button is a rounded rectangle and a one-line or icon-only Button keeps its capsule, at ${scale * 100}% text`, async ({ page, isMobile }) => {
+    test.skip(!isMobile, 'A phone is the narrow case.');
+    await atTextSize(page, scale);
+    await page.setViewportSize({ width: 390, height: 800 });
+    await settle(page, '/components', scale);
+    const wrong = await page.evaluate((long) => {
+      const found: string[] = [];
+      const icon = '<span class="ld-btn-icon"><svg viewBox="0 0 24 24"></svg></span>';
+      const kinds = (size: string) => {
+        const btn = `ld-btn ld-btn-filled${size === 'md' ? '' : ` ld-btn-${size}`}`;
+        return [
+          { name: `${size} Button, one line`, cls: btn, html: 'Save', wraps: false },
+          { name: `${size} Button, icon only`, cls: `${btn} ld-btn-icononly`, html: icon, wraps: false },
+          { name: `${size} Button, wrapped`, cls: btn, html: long, wraps: true },
+        ];
+      };
+      const tools = [
+        { name: 'GlassToolbarButton, one line', cls: 'ld-bar-tool', html: 'Share', wraps: false },
+        { name: 'GlassToolbarButton, icon only', cls: 'ld-bar-tool ld-bar-tool-icon', html: icon, wraps: false },
+        { name: 'GlassToolbarButton, wrapped', cls: 'ld-bar-tool', html: long, wraps: true },
+      ];
+      for (const shape of ['soft', 'crisp', 'square']) for (const density of ['regular', 'compact', 'touch']) {
+        const box = document.createElement('div');
+        Object.assign(box.dataset, { theme: 'light', shape, density });
+        box.style.cssText = 'display: grid; justify-items: start; gap: 8px;';
+        document.querySelector('main')!.append(box);
+        const px = (name: string) => { box.style.paddingLeft = `var(${name})`; const v = parseFloat(getComputedStyle(box).paddingLeft); box.style.paddingLeft = ''; return v; };
+        const capsule = px('--radius-capsule');
+        const xl = px('--radius-xl');
+        for (const kind of [...['sm', 'md', 'lg'].flatMap(kinds), ...tools]) {
+          const el = document.createElement('button');
+          el.className = kind.cls;
+          el.innerHTML = kind.html;
+          box.append(el);
+          const { width, height } = el.getBoundingClientRect();
+          const style = getComputedStyle(el);
+          const oneLine = Math.max(parseFloat(style.minHeight) || 0, parseFloat(style.lineHeight));
+          const radius = parseFloat(style.borderTopLeftRadius);
+          const used = Math.min(radius, width / 2, height / 2);
+          const where = `${kind.name} in ${shape}, ${density} (${Math.round(width)}×${Math.round(height)}, radius ${Math.round(radius)})`;
+          if (!kind.wraps) {
+            if (Math.abs(used - Math.min(capsule, width / 2, height / 2)) > 0.5) found.push(`${where} isn't a capsule`);
+            continue;
+          }
+          if (height <= oneLine + 0.5) found.push(`${where} doesn't wrap`);
+          else if (radius >= height / 2 - 0.5) found.push(`${where} is an oval`);
+          else if (kind.cls.startsWith('ld-btn') && radius < Math.min(capsule, xl) - 0.5) found.push(`${where} has corners under --radius-xl`);
+        }
+        box.remove();
+      }
+      return found;
+    }, WRAPS);
+    expect(wrong).toEqual([]);
+  });
+}

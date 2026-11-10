@@ -83,7 +83,7 @@ test('a control that hides itself, or a row an action hides, hands focus on and 
   await page.keyboard.press('Enter');
   await expect(screen.getByRole('button', { name: 'Check answers' })).toBeFocused();
 
-  for (const [word, after] of [['la manzana', screen.getByRole('button', { name: 'More actions for el perro' })], ['el perro', screen.getByRole('heading', { level: 3, name: 'Practice words' })]] as const) {
+  for (const [word, after] of [['la manzana', screen.getByRole('button', { name: 'More actions for el perro' })], ['el perro', screen.getByRole('heading', { level: 4, name: 'To learn' })]] as const) {
     await screen.getByRole('button', { name: `More actions for ${word}` }).focus();
     await page.keyboard.press('Enter');
     await page.getByRole('menuitem', { name: 'Learned' }).press('Enter');

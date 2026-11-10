@@ -11,12 +11,16 @@ export type TableLabel =
 /** Matches `aria-sort`. */
 export type SortDirection = 'ascending' | 'descending';
 /** Column width in px. `preferred` sets the `<col>`, and `min` is the narrowest it gets: past that, the table scrolls. */
-export interface ColumnWidth { min?: number; preferred?: number; max?: number; }
+export interface ColumnWidth { min?: number; preferred?: number; }
 type Align = 'start' | 'end' | 'center';
 
 /**
  * A table that collapses to its caption (progressive disclosure). The caption becomes a button; `summary` is the
  * takeaway shown below the title, so a collapsed table still says what it holds. Open by default.
+ *
+ * The caption and the summary go inside that button, so both hold phrasing content with nothing interactive: text,
+ * `<abbr>`, `<em>` or `<span lang>`, but no link, label, control, iframe, `[tabindex]` or block element. Development
+ * builds warn when the rendered button holds one. Pass `open` from the first render or never, as with any controlled prop.
  */
 export interface TableCollapsible {
   summary?: React.ReactNode;
@@ -27,18 +31,52 @@ export interface TableCollapsible {
 
 /** Only a captioned table can collapse: the caption is what stays, and what you press. */
 type CollapsibleLabel =
-  | ({ caption: React.ReactNode } & Exclude<TableLabel, { 'aria-label': string } | { 'aria-labelledby': string }> & { collapsible?: TableCollapsible | boolean })
-  | (Exclude<TableLabel, { caption: React.ReactNode }> & { collapsible?: never });
+  | { caption: React.ReactNode; collapsible: TableCollapsible | true; 'aria-label'?: never; 'aria-labelledby'?: never }
+  | (TableLabel & { collapsible?: false });
 
-export type TableRootProps = CollapsibleLabel & {
+/** HTML attributes Root passes to its `<table>`: all but the name, `aria-busy` and the box's own. */
+type TableAttributes = Omit<
+  React.TableHTMLAttributes<HTMLTableElement>,
+  'children' | 'className' | 'style' | 'aria-label' | 'aria-labelledby' | 'aria-busy'
+>;
+
+export type TableRootProps = CollapsibleLabel & TableAttributes & {
   children: React.ReactNode;
   /** Keep the leading column(s) marked `sticky` in view while the table scrolls sideways. */
   stickyFirstColumn?: boolean;
   /** Content is loading or refreshing (`aria-busy`). */
   busy?: boolean;
+  /** On the scroll box. */
   className?: string;
+  /** On the scroll box. */
+  style?: React.CSSProperties;
+  /** The scroll box. */
   ref?: React.Ref<HTMLDivElement>;
 };
+
+// Bundlers replace `process.env.NODE_ENV` at build time. It's declared here so apps without Node's types type-check.
+declare const process: { env: { NODE_ENV?: string } };
+
+/**
+ * A button holds phrasing content with nothing interactive in it. PHRASING is the HTML spec's phrasing content
+ * (https://html.spec.whatwg.org/multipage/dom.html#phrasing-content), with ruby's rt and rp. A custom element counts as
+ * phrasing, and SVG and MathML inside an <svg> or <math> are skipped, since those two are phrasing themselves.
+ */
+const PHRASING = new Set([
+  'a', 'abbr', 'area', 'audio', 'b', 'bdi', 'bdo', 'br', 'button', 'canvas', 'cite', 'code', 'data', 'datalist', 'del',
+  'dfn', 'em', 'embed', 'i', 'iframe', 'img', 'input', 'ins', 'kbd', 'label', 'link', 'map', 'mark', 'meta', 'meter',
+  'noscript', 'object', 'output', 'picture', 'progress', 'q', 'rp', 'rt', 'ruby', 's', 'samp', 'script', 'select',
+  'slot', 'small', 'source', 'span', 'strong', 'sub', 'sup', 'template', 'textarea', 'time', 'track', 'u', 'var',
+  'video', 'wbr',
+]);
+const INTERACTIVE = 'a[href], button, input, select, textarea, label, iframe, embed, audio[controls], video[controls], [tabindex], [contenteditable]:not([contenteditable="false"]), details';
+const HTML_NS = 'http://www.w3.org/1999/xhtml';
+
+/** The first element a button can't hold: one that isn't phrasing content, or one that's interactive. */
+function notInAButton(button: Element): Element | undefined {
+  return [...button.querySelectorAll('*')].find((el) => el.namespaceURI === HTML_NS
+    && ((!PHRASING.has(el.localName) && !el.localName.includes('-')) || el.matches(INTERACTIVE)));
+}
 
 /**
  * A real `<table>` in a box. When the table is wider than its box, the box scrolls and becomes a named, focusable
@@ -48,13 +86,40 @@ export type TableRootProps = CollapsibleLabel & {
  * The box takes the width its container gives it: it is an inline-size container, so column widths can be CSS. Put
  * it where a block fills the width. A shrink-to-fit parent (`inline-block`, `float`, `fit-content`, `flex: none`)
  * gives it no width of its own. A sticky first column takes its width from Table.Columns, or is measured after layout.
+ *
+ * `className`, `style` and `ref` go on the box, which is what sizes and scrolls. Other HTML attributes, such as `id`,
+ * `data-*` and `aria-describedby`, go on the `<table>`, where the name is.
  */
 function Root(props: TableRootProps) {
-  const { children, stickyFirstColumn, busy, className, ref } = props;
+  const {
+    children, stickyFirstColumn, busy, className, style, ref,
+    caption: _caption, collapsible: _collapsible, 'aria-label': _label, 'aria-labelledby': _labelledBy, ...rest
+  } = props;
   const captionId = React.useId();
   const collapsible = 'caption' in props && props.caption != null && props.collapsible
     ? (props.collapsible === true ? {} : props.collapsible)
     : undefined;
+  const toggleRef = React.useRef<HTMLButtonElement>(null);
+  // Development only: a table that switches between controlled and uncontrolled keeps whichever state it had, so a
+  // controlled close that stops passing `open` reopens the table. Warn once, as Disclosure does.
+  const controlled = React.useRef(collapsible?.open !== undefined);
+  const warned = React.useRef(false);
+  React.useEffect(() => {
+    if (process.env.NODE_ENV === 'production' || warned.current) return;
+    if (controlled.current === (collapsible?.open !== undefined)) return;
+    warned.current = true;
+    console.error(`Table: \`collapsible.open\` switched from ${controlled.current ? 'controlled to uncontrolled' : 'uncontrolled to controlled'}. Pass \`open\` from the first render or never.`);
+  });
+  // Development only: the caption and summary render inside the toggle button, where interactive or block content is
+  // invalid and fails axe's nested-interactive. The type can't tell `<abbr>` from `<a>`, so the rendered DOM is read.
+  const nestedWarned = React.useRef(false);
+  React.useEffect(() => {
+    if (process.env.NODE_ENV === 'production' || nestedWarned.current) return;
+    const found = toggleRef.current && notInAButton(toggleRef.current);
+    if (!found) return;
+    nestedWarned.current = true;
+    console.error(`Table: the collapsible caption “${toggleRef.current!.textContent}” holds <${found.localName}>, which can't sit inside its toggle button. Use text and phrasing elements such as <abbr>, <em> or <span lang>.`);
+  });
   const [innerOpen, setInnerOpen] = React.useState(collapsible?.defaultOpen ?? true);
   const open = collapsible ? collapsible.open ?? innerOpen : true;
   const toggle = () => {
@@ -91,8 +156,17 @@ function Root(props: TableRootProps) {
   const setRef = React.useCallback(
     (el: HTMLDivElement | null) => {
       scrollRef.current = el;
-      if (typeof ref === 'function') ref(el);
-      else if (ref) (ref as React.RefObject<HTMLDivElement | null>).current = el;
+      if (typeof ref === 'function') {
+        const cleanup = ref(el);
+        // React 19 calls a returned cleanup instead of calling the ref with `null`, so the consumer's runs too.
+        return () => {
+          scrollRef.current = null;
+          if (typeof cleanup === 'function') cleanup();
+          else ref(null);
+        };
+      }
+      if (ref) (ref as React.RefObject<HTMLDivElement | null>).current = el;
+      return undefined;
     },
     [ref],
   );
@@ -106,12 +180,14 @@ function Root(props: TableRootProps) {
     <div
       ref={setRef}
       className={cn('ld-table-scroll', stickyFirstColumn && 'ld-table-sticky-first', className)}
+      style={style}
       data-overflow={overflowing || undefined}
       {...(overflowing ? { role: 'region', tabIndex: 0, ...name } : {})}
       onMouseMove={showFullText}
       onMouseLeave={clearFullText}
     >
       <table
+        {...rest}
         className="ld-table"
         aria-busy={busy || undefined}
         data-collapsed={open ? undefined : ''}
@@ -122,7 +198,7 @@ function Root(props: TableRootProps) {
             {collapsible ? (
               // A real button in the caption: the whole caption is its hit target, and its name (title and summary)
               // is also the table's name, so a collapsed table still says what it holds.
-              <button type="button" className="ld-table-toggle" aria-expanded={open} onClick={toggle}>
+              <button ref={toggleRef} type="button" className="ld-table-toggle" aria-expanded={open} onClick={toggle}>
                 <span className="ld-table-toggle-text">
                   <span className="ld-table-toggle-title">{props.caption}</span>
                   {collapsible.summary != null ? <span className="ld-table-toggle-summary">{collapsible.summary}</span> : null}
@@ -191,7 +267,7 @@ function columnWidths(widths: ReadonlyArray<ColumnWidth | number | string | unde
   const specs = widths.map((w): Spec =>
     typeof w === 'string' ? { css: w }
     : typeof w === 'number' ? { css: `${w}px` }
-    : w ? { min: w.min ?? w.preferred ?? AUTO_MIN, preferred: Math.max(w.min ?? 0, Math.min(w.preferred ?? w.min ?? AUTO_MIN, w.max ?? Infinity)) }
+    : w ? { min: w.min ?? w.preferred ?? AUTO_MIN, preferred: Math.max(w.min ?? 0, w.preferred ?? w.min ?? AUTO_MIN) }
     : { auto: true },
   );
   const base: string[] = [];
@@ -249,11 +325,14 @@ function Body({ className, ...rest }: React.HTMLAttributes<HTMLTableSectionEleme
 export interface RowProps extends React.HTMLAttributes<HTMLTableRowElement> {
   /** Styling only. The row's checkbox carries the selection for assistive tech, since table rows take no `aria-selected`. */
   selected?: boolean;
-  /** The row holds a stretched Table.RowLink. */
+  /**
+   * @deprecated Since 0.4.0, and removed in 0.5.0: a row that holds a Table.RowLink is linked on its own. Passing it
+   * changes nothing.
+   */
   linked?: boolean;
 }
-function Row({ selected, linked, className, ...rest }: RowProps) {
-  return <tr className={cn('ld-table-row', linked && 'ld-table-row-linked', className)} data-selected={selected || undefined} {...rest} />;
+function Row({ selected, linked: _linked, className, ...rest }: RowProps) {
+  return <tr className={cn('ld-table-row', className)} data-selected={selected || undefined} {...rest} />;
 }
 
 interface CellBase {
@@ -331,9 +410,12 @@ export interface RowLinkProps extends Omit<React.AnchorHTMLAttributes<HTMLAnchor
   href: string;
 }
 /**
- * A real link in the row-header cell, stretched over its `<tr>` (`position: relative`) with `::after`. Other controls
- * in the row sit above it. There is no click handler on the row: middle-click, the context menu and links lists all
- * work.
+ * A real link in the row-header cell, stretched over its `<tr>` with `::after`. Every other control in the row (a link,
+ * button, field or `[tabindex]` element, in any cell) sits above it and takes its own clicks. There is no click handler
+ * on the row: middle-click, the context menu and links lists all work.
+ *
+ * A `sticky` row-header cell is positioned, so it confines the stretched link to that cell. To keep the whole row one
+ * target there, put a twin link in another cell, out of the tab order and hidden from assistive tech, as DataTable does.
  */
 function RowLink({ className, ...rest }: RowLinkProps) {
   const Link = useLinkComponent();

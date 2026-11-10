@@ -51,7 +51,8 @@ export function Cards<Row>(p: CardsProps<Row>) {
   return (
     <div className="ld-dt-cards">
       {'caption' in p.label && p.label.caption != null ? <p id={id} className="ld-table-caption">{p.label.caption}</p> : null}
-      {(sel.enabled || sortable.length > 0) && !p.skeleton ? (
+      {/* Mounted through the skeleton, as the table's header is, so a sort answered with a skeleton keeps its focus. */}
+      {sel.enabled || sortable.length > 0 ? (
         <div className="ld-dt-cardbar">
           {sel.enabled ? (
             <label className="ld-dt-cardbar-check">
@@ -137,11 +138,16 @@ interface CardProps<Row> {
 const Card = React.memo(function Card<Row>(p: CardProps<Row>) {
   const row = p.original;
   const rowName = p.text(row);
+  const actions = p.rowActions?.(row);
+  const title = p.lead.cell ? p.lead.cell(row) : p.text(row, p.lead.id);
+  // Nothing in the card takes focus: the title is where focus lands on it, as after Load more, as the table's row
+  // header is.
+  const bare = !p.href && p.selected === undefined && !actions?.length;
   return (
     <ListRow
       rowKey={p.id}
       className={p.selected ? 'ld-dt-card-selected' : undefined}
-      title={p.lead.cell ? p.lead.cell(row) : p.text(row, p.lead.id)}
+      title={bare ? <span className="ld-dt-card-title" tabIndex={-1}>{title}</span> : title}
       subtitle={
         p.fields.length ? (
           <>
@@ -177,7 +183,7 @@ const Card = React.memo(function Card<Row>(p: CardProps<Row>) {
           />
         ) : undefined
       }
-      actions={p.rowActions?.(row)}
+      actions={actions}
       actionsVisible
       actionsLabel={rowName}
       swipe={p.swipe}

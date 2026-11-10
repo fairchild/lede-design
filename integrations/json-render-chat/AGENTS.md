@@ -296,8 +296,9 @@ Each one below broke this example while it was built, or was checked in the pack
   reply until the question's turn reaches the top, and stop following when the person scrolls (`src/chat/Chat.tsx`).
 - A control that unmounts while focused drops focus to `<body>`. Inside a screen, `SpecView` moves it on: to the
   control that took its place, such as Start over when Check answers hides, then to the control beside it, such as
-  the next row when an action hides one, then to the screen's title. Outside it, such as Stop when the reply ends or
-  Try again when the retry starts, move focus to the composer before the call that removes it.
+  the next row when an action hides one, then to the screen's title. When an action hides a ListGroup's last row,
+  ListRow moves focus to the group's heading itself. Outside a screen, such as Stop when the reply ends or Try again
+  when the retry starts, move focus to the composer before the call that removes it.
 - Every grid track that holds a screen needs `minmax(0, 1fr)`. An implicit `auto` track grows to the screen's
   min-content, and at 200% text on a phone the page then scrolls sideways.
 - A `position: sticky` composer with large text on a short screen can leave the conversation a few pixels tall. Make

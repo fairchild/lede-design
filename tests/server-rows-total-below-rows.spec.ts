@@ -124,6 +124,44 @@ test('load-more: the empty page past a full last page with total 0 ends the list
   t.store.stop();
 });
 
+// A cursor chain that ends with `nextCursor: null` has shown every row, so it settles the count at them, whatever
+// the pages' totals said below that. A total above them still stands against it.
+const CHAINS = [
+  ['a full last page, total 0', [[2, 0, 'c1'], [2, 0, null]], 4],
+  ['a short last page, total 0', [[2, 0, 'c1'], [1, 0, null]], 3],
+  ['an empty last page, total 0', [[2, 0, 'c1'], [2, 0, 'c2'], [0, 0, null]], 4],
+  ['a full last page, lower bounds', [[2, { atLeast: 2 }, 'c1'], [2, { atLeast: 4 }, null]], 4],
+  ['a short last page, lower bounds', [[2, { atLeast: 3 }, 'c1'], [1, { atLeast: 3 }, null]], 3],
+  ['no totals', [[2, undefined, 'c1'], [2, undefined, null]], 4],
+  ['a lower bound above the rows', [[2, { atLeast: 2 }, 'c1'], [2, { atLeast: 10 }, null]], { atLeast: 10 }],
+] as const;
+for (const [named, pages, settled] of CHAINS) {
+  test(`load-more with cursors: a chain ending in a null cursor, ${named}, counts ${JSON.stringify(settled)}`, async () => {
+    const t = setup({ mode: 'load-more' });
+    let at = 0;
+    for (const [i, [n, total, nextCursor]] of pages.entries()) {
+      if (i > 0) { t.store.loadMore(); assert.equal(t.open()[0].req.cursor, pages[i - 1][2]); }
+      await t.answer({ rows: rows(at, n), total, nextCursor });
+      at += n;
+    }
+    const s = t.snap();
+    assert.equal(s.rows.length, at);
+    assert.deepEqual(s.total, settled);
+    assert.deepEqual(s.paging, { kind: 'load-more', hasMore: false });
+    t.store.stop();
+  });
+}
+
+test('pages: a full page with a null cursor and total 0 is the last page, and counts its rows', async () => {
+  const t = setup({ mode: 'pages' });
+  await t.answer({ rows: rows(0, 2), total: 0, nextCursor: 'c1' });
+  t.store.setPage(1);
+  await t.answer({ rows: rows(2, 2), total: 0, nextCursor: null });
+  assert.equal(t.snap().total, 4);
+  assert.deepEqual(t.snap().paging, { kind: 'pages', page: 1, pageCount: 2 });
+  t.store.stop();
+});
+
 // Pages are asked for by offset, so a cursor beside the empty page changes nothing.
 for (const [first, cursor] of [[0, undefined], [9, undefined], [0, null]] as const) {
   const named = `first total ${first}${cursor === null ? ', with cursors' : ''}`;
@@ -265,3 +303,150 @@ for (const [held, first] of [['nothing held', undefined], ['a lower bound held',
     t.store.stop();
   });
 }
+
+// A count below the rows the store holds and trusts, from the first row on, reads as `{ atLeast }` of those rows, by the
+// same evidence as a page's total. A count at or above them is exact.
+const counted = (extra: Partial<ServerRowsConfig<Row>> = {}) => {
+  const counts: Array<(n: number) => void> = [];
+  const t = setup({ fetchCount: () => new Promise<number>((resolve) => counts.push(resolve)), ...extra });
+  return Object.assign(t, {
+    counts,
+    async count(n: number) {
+      assert.equal(counts.length, 1, 'the count is asked for once');
+      counts[0](n);
+      await flush(); await flush();
+    },
+  });
+};
+
+for (const mode of ['load-more', 'pages'] as const) {
+  for (const [count, total] of [[0, { atLeast: 2 }], [1, { atLeast: 2 }], [2, 2]] as const) {
+    test(`${mode}: a count of ${count} after two rows reads ${JSON.stringify(total)}`, async () => {
+      const t = counted({ mode });
+      await t.answer({ rows: rows(0, 2), total: 0 });
+      await t.count(count);
+      const s = t.snap();
+      assert.deepEqual(s.total, total);
+      const more = count < 2;
+      if (mode === 'load-more') {
+        assert.deepEqual(s.paging, { kind: 'load-more', hasMore: more });
+        t.store.loadMore();
+      } else {
+        assert.deepEqual(s.paging, { kind: 'pages', page: 0, pageCount: more ? 2 : 1 });
+        t.store.setPage(1);
+      }
+      await flush();
+      assert.equal(t.open().length, more ? 1 : 0, more ? 'the next page is asked for' : 'the list has ended');
+      if (more) assert.equal(t.open()[0].req.offset, 2);
+      t.store.stop();
+    });
+  }
+}
+
+test('load-more: a count below rows older than staleAfter is exact', async () => {
+  let clock = 0;
+  const t = counted({ mode: 'load-more', staleAfter: 100, now: () => clock });
+  await t.answer({ rows: rows(0, 2), total: { atLeast: 5 } });
+  clock = 100;
+  await t.count(1);
+  assert.equal(t.snap().total, 1);
+  t.store.stop();
+});
+
+// Rows held past a gap don't prove the rows before them, so only the first run of pages can overrule a count. The
+// bound it leaves is still the furthest rows held.
+for (const [count, total, page] of [[3, { atLeast: 8 }, 3], [5, 5, 2]] as const) {
+  test(`pages: with pages 1, 2 and 4 held, a count of ${count} reads ${JSON.stringify(total)} and shows page ${page + 1}`, async () => {
+    const t = counted({ mode: 'pages' });
+    await t.answer({ rows: rows(0, 2), total: { atLeast: 1 } });
+    t.store.setPage(1);
+    await t.answer({ rows: rows(2, 2), total: { atLeast: 1 } });
+    t.store.setPage(3);
+    await t.answer({ rows: rows(6, 2), total: { atLeast: 1 } });
+    await t.count(count);
+    if (t.open().length) await t.answer({ rows: rows(4, 1), total: count });
+    const s = t.snap();
+    assert.deepEqual(s.total, total);
+    assert.equal((s.paging as { page: number }).page, page);
+    t.store.stop();
+  });
+}
+
+test('load-more: a count asked by a reload, below rows from before it, is exact', async () => {
+  const t = counted({ mode: 'load-more' });
+  await t.answer({ rows: rows(0, 2), total: { atLeast: 2 } });
+  await t.count(5);
+  t.store.reload();
+  await flush();
+  assert.equal(t.counts.length, 2, 'the reload asks for the count again');
+  t.counts[1](1);
+  await flush(); await flush();
+  assert.equal(t.snap().total, 1);
+  t.store.stop();
+});
+
+test('load-more: a count below the rows held keeps a page\'s higher lower bound', async () => {
+  const t = counted({ mode: 'load-more' });
+  await t.answer({ rows: rows(0, 2), total: { atLeast: 5 } });
+  await t.count(1);
+  assert.deepEqual(t.snap().total, { atLeast: 5 });
+  t.store.stop();
+});
+
+// An empty page past the pages held is evidence of where the list ends, gap or not: it ends after the furthest rows.
+for (const first of [9, { atLeast: 5 }] as const) {
+  test(`pages: with pages 1, 2 and 4 held (total ${JSON.stringify(first)}), an empty page 5 with total 0 ends the list at 8`, async () => {
+    const t = setup({ mode: 'pages' });
+    await t.answer({ rows: rows(0, 2), total: first });
+    t.store.setPage(1);
+    await t.answer({ rows: rows(2, 2), total: first });
+    t.store.setPage(3);
+    await t.answer({ rows: rows(6, 2), total: first });
+    t.store.setPage(4);
+    await t.answer({ rows: [], total: 0 });
+    const s = t.snap();
+    assert.equal(s.total, 8);
+    assert.deepEqual(s.paging, { kind: 'pages', page: 3, pageCount: 4 });
+    assert.deepEqual(ids(s), [6, 7]);
+    t.store.stop();
+  });
+}
+
+test('load-more: a count of 1 after a reload, below the 4 rows fetched again, drops the old count for { atLeast: 4 }', async () => {
+  const t = counted({ mode: 'load-more' });
+  await t.answer({ rows: rows(0, 2), total: { atLeast: 2 } });
+  await t.count(5);
+  t.store.reload();
+  await flush();
+  await t.answer({ rows: rows(0, 2), total: { atLeast: 2 } });
+  t.store.loadMore();
+  await flush();
+  await t.answer({ rows: rows(2, 2), total: { atLeast: 2 } });
+  assert.equal(t.counts.length, 2, 'the reload asks for the count again');
+  t.counts[1](1);
+  await flush(); await flush();
+  assert.deepEqual(t.snap().total, { atLeast: 4 });
+  t.store.stop();
+});
+
+// A page fetched before the count was redone, though still fresh, may hold rows the count has since lost.
+test('pages: a count redone on a later visit is judged without a fresh page fetched before the redo', async () => {
+  let clock = 0;
+  const t = counted({ mode: 'pages', staleAfter: 100, now: () => clock });
+  await t.answer({ rows: rows(0, 2), total: { atLeast: 2 } });
+  await t.count(5);
+  clock = 60;
+  t.store.setPage(1);
+  await t.answer({ rows: rows(2, 2), total: 5 });
+  clock = 110;
+  t.store.stop();
+  t.store.start();
+  t.store.setPage(0);
+  await flush();
+  await t.answer({ rows: rows(0, 2), total: { atLeast: 2 } });
+  assert.equal(t.counts.length, 2, 'the redone count is asked for');
+  t.counts[1](3);
+  await flush(); await flush();
+  assert.equal(t.snap().total, 3);
+  t.store.stop();
+});

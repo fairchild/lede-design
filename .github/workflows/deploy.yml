@@ -8,6 +8,7 @@ on:
     tags: ['v*']
 permissions:
   contents: read
+  checks: read
 # One queue per ref type, never cancelled: a tag run waits behind another tag run, and a main push can't replace a
 # pending tag run. A newer tag can still replace a pending older one; re-running that one publishes its release.
 concurrency:
@@ -24,7 +25,7 @@ jobs:
     # The token is an environment secret; the environment admits only main and v* tags.
     environment: cloudflare
     steps:
-      # The account is wrangler.jsonc's account_id; the token is the only secret.
+      # The token and the account ID are the environment's two secrets; wrangler reads both from its environment.
       - name: Check for a Cloudflare token
         id: credentials
         env:
@@ -46,6 +47,28 @@ jobs:
             echo "::error::Tag $GITHUB_REF_NAME doesn't match package.json version $version."
             exit 1
           fi
+      # A release is immutable once published, so a tag publishes only a commit whose CI `check` passed. The tag usually
+      # follows a merge, and `check` appears only once the jobs it needs finish, so a missing or running one is waited
+      # for, up to 45 minutes. Only GitHub Actions' own `check` counts, and only its latest run.
+      - name: Check CI passed on the tagged commit
+        if: github.ref_type == 'tag'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          commit=$(git rev-parse HEAD)
+          for _ in $(seq 90); do
+            run=$(gh api "repos/$GITHUB_REPOSITORY/commits/$commit/check-runs?check_name=check&filter=latest" \
+              --jq '[.check_runs[] | select(.app.slug == "github-actions")] | max_by(.started_at) // {} | "\(.status // "missing") \(.conclusion // "")"')
+            read -r status conclusion <<< "$run"
+            if [ "$status" = completed ]; then
+              [ "$conclusion" = success ] && exit 0
+              echo "::error::CI's check on ${commit::7} finished as $conclusion, so $GITHUB_REF_NAME isn't published. Fix main and tag a new commit."
+              exit 1
+            fi
+            sleep 30
+          done
+          echo "::error::CI's check on ${commit::7} is ${status/missing/not there}, so $GITHUB_REF_NAME isn't published. Tag a commit on main once CI has passed on it."
+          exit 1
       # A tag always publishes its release, and deploys only as the highest final (no "-") v* tag. A main run publishes
       # only while its commit is still main's head.
       - name: Decide what this run publishes
@@ -90,6 +113,7 @@ jobs:
         if: steps.plan.outputs.publish == 'true' && github.ref_type == 'tag'
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
           node scripts/publish-r2.mjs public/r "r/$GITHUB_REF_NAME" --remote --immutable || {
             status=$?
@@ -100,17 +124,20 @@ jobs:
         if: steps.plan.outputs.deploy == 'true'
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: npx wrangler deploy --message "$GITHUB_REF_NAME"
 
       - name: Publish the next registry to R2
         if: steps.plan.outputs.publish == 'true' && github.ref_type == 'branch'
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: node scripts/publish-r2.mjs public/r r/next --remote
       - name: Upload a preview version
         if: steps.plan.outputs.publish == 'true' && github.ref_type == 'branch'
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           WRANGLER_OUTPUT_FILE_PATH: ${{ runner.temp }}/wrangler-output.json
         run: |
           npx wrangler versions upload --message "$GITHUB_SHA"
