@@ -48,6 +48,7 @@ test('an Avatar\'s attributes and ref land on its initials <span>, or its <img>'
 
 test('a Table.Root\'s attributes land on its <table>, and className, style and ref on the scroll box', async ({ page }) => {
   const table = page.locator('#pass-table');
+  await expect(table).toHaveCount(1);
   expect(await table.evaluate((e) => e.tagName.toLowerCase())).toBe('table');
   await expect(table).toHaveAttribute('data-case', 'pass-table');
   await expect(table).toHaveAccessibleDescription(/names this paragraph/);
