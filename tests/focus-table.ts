@@ -413,6 +413,17 @@ const footBelowBar = async (page: Page) => {
   const bar = (await page.locator('.ld-shell-tabbar > *').boundingBox())!;
   return row.y + row.height - bar.y;
 };
+const uncontrolledRegion = { role: 'region', name: 'Uncontrolled selection' } as const;
+const uncontrolled = (page: Page) => page.getByRole('region', { name: 'Uncontrolled selection' });
+const serverRegion = { role: 'region', name: 'Server mode' } as const;
+/** The guide's server example with its first page selected, once the exact count offers "Select all 310". */
+const selectServerPage = async ({ page }: Driver) => {
+  await page.goto('/blocks/data-table#dt-server');
+  const server = page.getByRole('region', { name: 'Server mode' });
+  await server.getByText('50 of 310 work items', { exact: true }).waitFor();
+  await server.getByRole('checkbox', { name: 'Select all work items shown' }).click();
+  await server.getByRole('button', { name: 'Select all 310 work items' }).waitFor();
+};
 const removalFixture = async ({ page }: Driver) => {
   await page.goto('/fixtures/data-table');
   await page.getByRole('region', { name: 'Removal' }).locator('[data-row-id="n0"]').waitFor();
@@ -819,6 +830,39 @@ export const ACTIONS: Action[] = [
     target: removalRow('n2', 'the row that took the first one’s place'),
   },
   {
+    // An uncontrolled selection drops the archived rows itself, so the bar leaves with them and focus goes to the row that
+    // took the first one's place.
+    screen: 'Data table', action: 'Bulk Archive with an uncontrolled selection',
+    setup: async (d) => {
+      await d.page.goto('/fixtures/data-table');
+      await uncontrolled(d.page).locator('[data-row-id="n1"]').waitFor();
+      await d.press(locate(d.page, { role: 'checkbox', name: 'Select 1', in: uncontrolledRegion }), 'Space');
+    },
+    act: (d) => d.press(button('Archive', toolbar)),
+    done: ({ page }) => uncontrolled(page).locator('[data-row-id="n1"]').waitFor({ state: 'detached' }),
+    target: { css: '[data-row-id="n2"] [data-row-link]', in: uncontrolledRegion, label: 'the row that took the archived one’s place' },
+  },
+  // "Select all N" becomes "Clear selection" in place, so focus stays on the button. Clearing takes the notice away,
+  // and focus goes to the summary line.
+  {
+    screen: 'Data table', action: 'Select all N',
+    setup: selectServerPage,
+    act: (d) => d.press(button('Select all 310 work items', serverRegion)),
+    done: ({ page }) => page.getByRole('toolbar', { name: '310 work items selected' }).waitFor(),
+    target: button('Clear selection', serverRegion),
+  },
+  {
+    screen: 'Data table', action: 'Clear selection after Select all N',
+    setup: async (d) => {
+      await selectServerPage(d);
+      await locate(d.page, button('Select all 310 work items', serverRegion)).click();
+      await d.page.getByRole('toolbar', { name: '310 work items selected' }).waitFor();
+    },
+    act: (d) => d.press(button('Clear selection', serverRegion)),
+    done: ({ page }) => page.getByRole('toolbar', { name: /selected/ }).waitFor({ state: 'detached' }),
+    target: { css: '.ld-dt-summary', in: serverRegion, label: 'the table summary line' },
+  },
+  {
     screen: 'Work', action: 'Row ••• → Archive succeeds', setup: work,
     act: (d) => d.choose(more('WI-1042'), 'Archive'),
     done: ({ page }) => locate(page, row('WI-1042')).waitFor({ state: 'detached' }),
@@ -1212,6 +1256,31 @@ export const ACTIONS: Action[] = [
       await expect(summary, 'the summary has its text when focus arrives').toHaveAttribute('data-text-at-focus', /\S/);
     },
   })),
+  // A sort or a page whose rows fail to load hides the table and the pager with the control pressed: focus goes to
+  // Try again as the alert arrives.
+  {
+    screen: 'Data table', action: 'Sort that fails to load',
+    setup: async ({ page }) => {
+      await page.goto('/blocks/data-table#dt-server');
+      const server = page.getByRole('region', { name: 'Server mode' });
+      await server.getByText(/^50 of/).waitFor();
+      await server.getByRole('button', { name: 'Fail the next request' }).click();
+    },
+    act: (d) => d.press(button('Assignee', serverRegion)),
+    done: ({ page }) => page.getByRole('region', { name: 'Server mode' }).getByRole('alert').waitFor(),
+    target: button('Try again', serverRegion),
+  },
+  {
+    screen: 'Work', action: 'Next page that fails to load',
+    setup: async ({ page }) => {
+      await page.goto('/fixtures/work-archive');
+      await page.locator('[data-row-id]').first().waitFor();
+      await page.getByRole('button', { name: 'Fail the next request' }).click();
+    },
+    act: (d) => d.press(button('Next')),
+    done: ({ page }) => page.getByRole('alert').waitFor(),
+    target: button('Try again'),
+  },
 ];
 
 // ——— How a row becomes tests ———

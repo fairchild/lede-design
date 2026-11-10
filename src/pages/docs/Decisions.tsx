@@ -173,7 +173,8 @@ const GROUPS: Group[] = [
         why: <>One source makes a theme, a density or a corner shape a single change that every component follows. The file holds all {tokenFamilies.count} token families, and <code>npm run tokens</code> generates the CSS from it, so the two can’t drift apart.</>,
         cost: 'A new value needs a token, or an exception with its reason. A media query can’t read a custom property, so breakpoints are written out as numbers, and the gate matches each one to its token.',
         heldBy: [
-          <><code>npm run literals</code> (<Path to="scripts/check-literals.mjs" />), part of every build, fails on a number or color in registry CSS that comes from no token.</>,
+          <><code>npm run literals</code> (<Path to="scripts/check-literals.mjs" />), part of every build, fails on a number or color in registry CSS that comes from no token. A color is a hex value, a color function, a named color such as <code>white</code> or a Tailwind palette utility in <code>@apply</code>, such as <code>bg-red-500</code>.</>,
+          <>Before 0.4.0 was released, the gate read only hex values and color functions, so a named color or a palette utility would have passed. The registry CSS had none.</>,
           <><Path to="tokens/literal-exceptions.json" /> holds {exceptions.length} exceptions, each with its reason, and the gate fails one that matches nothing.</>,
           <><Path to="tests/literal-gate.spec.ts" /> runs the gate on altered copies of the CSS.</>,
         ],
@@ -210,7 +211,8 @@ const GROUPS: Group[] = [
         cost: <>The app does the wiring: fetching, routing and saving. Daybook’s pages in <Path to="src/pages/app/" /> show it for each flow.</>,
         heldBy: [
           <>The layers section of <Path to="CONTRIBUTING.md" />, in review.</>,
-          <><Path to="scripts/check-registry.mjs" />, part of every build, fails a registry file whose relative import isn’t installed with it. The site’s <code>@/</code> and <code>@lede/</code> aliases fail there too, so a flow can’t import the docs site’s code.</>,
+          <><Path to="scripts/check-registry.mjs" />, part of every build, fails a registry file whose relative import isn’t installed with it. The site’s <code>@/</code> and <code>@lede/</code> aliases fail there too, so a flow can’t import the docs site’s code. It also fails a dynamic import with a computed path, two files with one target and a file under <Path to="registry/" /> that no item lists.</>,
+          <><Path to="tests/registry-gate.spec.ts" /> runs the gate on altered copies of the registry.</>,
         ],
       },
     ],
@@ -224,7 +226,8 @@ const GROUPS: Group[] = [
         why: 'Source in your project can be read and changed like your own code. Each package is one more to keep up to date.',
         cost: <>Moving to a later tag runs the same <code>add</code> with <code>-o</code>, which overwrites your copies, edits included.</>,
         heldBy: [
-          <>Review. Each item lists its packages under <code>dependencies</code> in <Path to="registry.json" />, which this page reads: {codeList(PACKAGES)}.</>,
+          <>Each item lists its packages under <code>dependencies</code> in <Path to="registry.json" />, which this page reads: {codeList(PACKAGES)}. Review keeps the list short.</>,
+          <><Path to="scripts/check-registry.mjs" />, part of every build, fails a registry file that imports a package its item and their registryDependencies don’t list. React and React DOM are the packages no item lists. Before 0.4.0 was released, the gate read only relative imports, so an unlisted package would have passed.</>,
         ],
       },
       {
@@ -285,7 +288,7 @@ const GROUPS: Group[] = [
         cost: 'A pull request that adds or changes a check takes one more run, on a mutant it names, and then puts the code back.',
         heldBy: [
           <>The “Before you open a pull request” section of <Path to="CONTRIBUTING.md" />, in review.</>,
-          <><Path to="tests/contrast-gate.spec.ts" /> and <Path to="tests/literal-gate.spec.ts" /> run their gates on altered copies of their inputs, so those two keep their mutants in the suite.</>,
+          <><Path to="tests/contrast-gate.spec.ts" />, <Path to="tests/literal-gate.spec.ts" /> and <Path to="tests/registry-gate.spec.ts" /> run their gates on altered copies of their inputs, so those three keep their mutants in the suite.</>,
         ],
       },
       {
@@ -294,6 +297,17 @@ const GROUPS: Group[] = [
         why: 'A self-hosted machine serves one runner at a time, so shards run one after another and each repeats the checkout, npm ci and the web servers’ builds. One job does that setup once.',
         cost: <>The suite runs on one machine’s workers, so a run takes longer than hosted CI’s parallel shards. The per-suite jobs stay for rerunning one part, and each sets up from scratch. The Playwright web servers still build their own copies, because those have the <code>/fixtures/*</code> pages and the strict one has React’s development build.</>,
         heldBy: [<><Path to=".github/workflows/self-hosted-ci.yml" />, whose <code>full</code> job is the default, and <Path to="docs/self-hosted-ci.md" />, which a person or an agent follows to serve it.</>],
+      },
+      {
+        title: 'A release is published once, from a green commit',
+        summary: <>A <code>v*</code> tag publishes its registry to <code>r/&lt;tag&gt;</code> once, and only after CI’s <code>check</code> passed on the tagged commit.</>,
+        why: 'A project pins a release’s URL and its files are cached as immutable, so a file published by mistake stays out there. Checking CI first keeps a red commit from becoming a release.',
+        cost: 'A tag pushed right after a merge waits for CI, up to 45 minutes, before it publishes. A fix to a published release is a new version.',
+        heldBy: [
+          <><Path to=".github/workflows/deploy.yml" /> reads the tagged commit’s <code>check</code> run from GitHub Actions and stops before publishing unless it passed.</>,
+          <><Path to="scripts/publish-r2.mjs" /> refuses a release that’s already in R2, with exit code 3, and uploads the release marker last. <Path to="tests/publish-r2.spec.ts" /> runs it against a stand-in for wrangler.</>,
+          <>The Worker, <Path to="worker/index.ts" />, answers 404 for a release item until its marker exists, sends the CORS header on errors and preflights, and serves media typed by extension in a sandbox. <Path to="tests/worker.spec.ts" /> calls it in Node with an in-memory bucket.</>,
+        ],
       },
       {
         title: 'Released notes stay as shipped',

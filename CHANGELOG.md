@@ -17,6 +17,10 @@ First public release. Lede is a design system for React, installed from its shad
   of those rows, so Load more and Next stay offered.
 - useServerRows: the first render, and a server render, show the table loading until the first rows arrive. They
   showed the empty state.
+- The registry's error responses (404, 412, 503 and 405) carry `access-control-allow-origin: *` like its JSON does, so a
+  page fetching an item can read why it failed. An `OPTIONS` request under `/r/` answers the CORS preflight.
+- Files under `/media/` are typed by their extension alone and sent with `content-security-policy: sandbox` and
+  `nosniff`, so a file can't run as a page on the site's origin.
 - DataTable's Try again moves focus to the summary line after the retry's state is in, so the summary has its text
   when focus arrives. The narrow-layout sample on the docs page now compiles: it passes `noun`, and its columns fill
   the card slots its comment describes.
@@ -30,3 +34,20 @@ First public release. Lede is a design system for React, installed from its shad
 - A Button whose label wraps is a rounded rectangle, with corners of `--radius-xl` or more. A one-line Button is
   still a capsule and an icon-only one a circle, at every size, shape, density and text size.
 - A GlassToolbarButton whose label wraps keeps the curve of one line, so it stays concentric with the toolbar.
+- A card Disclosure's focus ring and pressed fill follow the card's corners: all four while it's closed and the top two
+  while it's open. A plain Disclosure stays square.
+- A SegmentedControl whose value matches no option shows no thumb, since no radio is checked. This covers a controlled
+  `''`, a misspelled `defaultValue` and options that arrive after the first render. Choosing an option shows the thumb
+  on it.
+- DataTable: an uncontrolled selection drops rows that were deleted, so after a bulk Archive the bar leaves with its
+  rows and the next action sends only what's selected. A row counts as deleted when it leaves `rows` while the view,
+  the page and `state.rows` stay the same, so a row on another page stays selected. `useDataTable` takes `paging` to
+  tell the two apart.
+- DataTable: "Select all N" becomes "Clear selection" in place and keeps focus, and Clear selection moves focus to the
+  summary line.
+- DataTable: when a sort or a page change fails to load, focus moves to Try again as the alert arrives.
+- DataTable shows its loading skeleton while `state.rows` is `'none'` and nothing failed, so a `useServerRows` table
+  never shows "No {noun}" or a count of 0 before its first request goes out.
+- DataTable: `sortable: true` works in server mode without `value` or `compare`, since the server sorts.
+- SelectionBar centers in the viewport when no AppShell holds it. AppShell now adds the bar's offsets itself, beside
+  the sidebar on a desktop and above the tab bar on a phone.

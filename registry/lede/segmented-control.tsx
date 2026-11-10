@@ -27,7 +27,7 @@ export function SegmentedControl(props: SegmentedControlProps) {
   const autoName = React.useId();
   const [inner, setInner] = React.useState(props.defaultValue ?? opts[0]?.value);
   const value = props.value !== undefined ? props.value : inner;
-  const idx = Math.max(0, opts.findIndex((o) => o.value === value));
+  const idx = opts.findIndex((o) => o.value === value);
   // The segments' nodes are keyed by value, so new values mean new nodes to observe.
   const values = opts.map((o) => o.value).join('\n');
   const setRef = React.useRef<HTMLFieldSetElement>(null);
@@ -46,6 +46,11 @@ export function SegmentedControl(props: SegmentedControlProps) {
       for (const fit of ['tight', 'stacked']) {
         if (set.scrollWidth <= set.clientWidth + 1) break;
         set.dataset.fit = fit;
+      }
+      // With no option checked the thumb is hidden, and it appears in place when one is.
+      if (idx < 0) {
+        placed.current = null;
+        return;
       }
       const items = [...set.querySelectorAll<HTMLElement>('.ld-seg-item')];
       const item = items[idx];
@@ -89,7 +94,7 @@ export function SegmentedControl(props: SegmentedControlProps) {
       disabled={props.disabled}
     >
       <legend className="ld-sr-only">{props.label}</legend>
-      <span className="ld-seg-thumb" aria-hidden="true" style={{ '--ld-seg-n': opts.length, '--ld-seg-i': idx } as React.CSSProperties} />
+      <span className="ld-seg-thumb" aria-hidden="true" hidden={idx < 0} style={{ '--ld-seg-n': opts.length, '--ld-seg-i': idx } as React.CSSProperties} />
       {opts.map((o) => (
         <label key={o.value} className="ld-seg-item">
           <input
