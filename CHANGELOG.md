@@ -22,8 +22,9 @@ First public release. Lede is a design system for React, installed from its shad
 - Files under `/media/` are typed by their extension alone and sent with `content-security-policy: sandbox` and
   `nosniff`, so a file can't run as a page on the site's origin.
 - ListRow: a row with `href` runs its `onClick` too. A row action that removes its row keeps the reader's place: focus
-  moves to the next row, else the one before, else the group's heading, else the next control in reading order. A
-  parent that moves focus itself, as InboxFlow does, keeps its choice. A swipe action that leaves its row in place
+  moves to the next row, else the one before, else the group's heading, else the next visible control in reading
+  order. A parent that moves focus itself in a layout effect, as InboxFlow does, keeps its choice, and an action that
+  takes the whole group away, such as a navigation, leaves focus to the parent. A swipe action that leaves its row in place
   moves focus to the row as the actions close.
 - MasterDetail: a `detail` of `false`, `true`, `''` or `0` counts as nothing selected, so `selected && <Message />`
   works. When the panes swap on a narrow screen, focus moves to the detail's first heading as it opens and back to the

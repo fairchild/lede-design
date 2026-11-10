@@ -30,3 +30,12 @@ test('a WorkbenchShell narrower than its main pane, with both panels collapsed, 
   const widths = await page.locator('.ld-wb-panel').evaluateAll((els) => els.map((el) => (el as HTMLElement).style.getPropertyValue('--ld-wb-width')));
   expect(widths).toEqual(['0px', '0px']);
 });
+
+test('a row action that takes its whole group away leaves focus to the parent', async ({ page }) => {
+  await page.goto('/fixtures/list-focus');
+  await page.getByRole('button', { name: 'More actions for Old notes' }).click();
+  await page.getByRole('menuitem', { name: 'Clear the archive' }).click();
+  await expect(page.getByRole('heading', { name: 'Archive', exact: true })).toHaveCount(0);
+  await page.evaluate(() => new Promise(requestAnimationFrame));
+  await expect(page.getByRole('button', { name: 'After the list', exact: true })).not.toBeFocused();
+});

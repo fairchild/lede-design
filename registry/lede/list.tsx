@@ -57,8 +57,9 @@ const moveTo = (el: HTMLElement) => {
 
 /**
  * Notes the reader's place before a row action runs, and returns what keeps it when the action takes the row away:
- * the next row, else the one before, else the group's heading, else the next control in reading order. A parent that
- * moved focus itself, as InboxFlow does, keeps its choice.
+ * the next row, else the one before, else the group's heading, else the next visible control in reading order. A
+ * parent that moved focus itself, as InboxFlow does, keeps its choice, and so does one that took the whole group away,
+ * as a navigation does.
  */
 function keepPlace(li: HTMLLIElement) {
   const rows = [...(li.parentElement?.children ?? [])];
@@ -67,18 +68,24 @@ function keepPlace(li: HTMLLIElement) {
   const group = li.closest('.ld-list') ?? li.parentElement!;
   const heading = group.querySelector<HTMLElement>('.ld-list-title');
   const following = [...document.querySelectorAll<HTMLElement>(TABBABLE)]
-    .find((el) => !group.contains(el) && !!(group.compareDocumentPosition(el) & Node.DOCUMENT_POSITION_FOLLOWING));
+    .filter((el) => !group.contains(el) && !!(group.compareDocumentPosition(el) & Node.DOCUMENT_POSITION_FOLLOWING));
   return () => {
-    if (li.isConnected || hasFocus()) return;
+    if (li.isConnected || !group.isConnected || hasFocus()) return;
     const row = near.filter((r) => r.isConnected).map(rowTarget).find(Boolean);
     if (row) return moveTo(row);
     if (heading?.isConnected) {
       heading.tabIndex = -1;
       focusLanding(heading);
       heading.scrollIntoView({ block: 'nearest' });
-    } else if (following?.isConnected) moveTo(following);
+    } else {
+      const next = following.find((el) => el.isConnected && el.checkVisibility());
+      if (next) moveTo(next);
+    }
   };
 }
+
+/** The place the latest row action noted. An action on another row replaces it. */
+let latestPlace: (() => void) | null = null;
 
 export interface RowAction {
   label: string;
@@ -163,7 +170,8 @@ const Dots = () => (
 /**
  * An `<li>` whose primary target is a real `<a>` (`href`) or `<button>` (`onClick`). The swipe is a touch and pen
  * shortcut, through React Aria's `useMove`. An action that removes its row moves focus to the next row, else the one
- * before, else the group's heading, unless the parent moved focus itself.
+ * before, else the group's heading. A parent that moves focus itself after removing a row does it in a layout effect
+ * or inside `flushSync`, so its move comes first and the row leaves it there.
  */
 export function ListRow(props: ListRowProps) {
   const Link = useLinkComponent();
@@ -197,16 +205,18 @@ export function ListRow(props: ListRowProps) {
   // An action that takes its row away keeps the reader's place, once the row has left and the parent has had its turn.
   const liRef = React.useRef<HTMLLIElement>(null);
   const place = React.useRef<(() => void) | null>(null);
-  // The place holds until the row leaves or the person's next input, so a row a server removes later keeps it too.
+  // The place holds until the row leaves, so a row a server removes later keeps it too. The next action on any row
+  // replaces it.
   const act = (run: () => void) => {
     const keep = liRef.current && keepPlace(liRef.current);
-    place.current = keep;
-    const drop = () => { if (place.current === keep) place.current = null; };
-    for (const type of ['pointerdown', 'keydown']) document.addEventListener(type, drop, { capture: true, once: true });
+    place.current = latestPlace = keep;
     run();
     keep?.();
   };
-  React.useLayoutEffect(() => () => { const keep = place.current; if (keep) queueMicrotask(keep); }, []);
+  React.useLayoutEffect(() => () => {
+    const keep = place.current;
+    if (keep && keep === latestPlace) { latestPlace = null; queueMicrotask(keep); }
+  }, []);
   // Fit the actions to the row: labels grow with the text, then `tight` holds them at the default size, then `menu`
   // closes the row and leaves them to the ••• menu. Re-fit when a label, the text size or the row's width changes.
   React.useLayoutEffect(() => {

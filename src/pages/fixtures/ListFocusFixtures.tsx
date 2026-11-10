@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { useNavigate } from 'react-router';
 import { Button } from '@lede/button';
 import { PageHeader } from '@lede/blocks/page-header';
 import { MasterDetail } from '@lede/blocks/master-detail';
@@ -8,15 +9,17 @@ const DEVICES = ['Old laptop', 'Work phone', 'Tablet'];
 
 /**
  * Row actions that remove their row with nothing in the parent to move focus, as the docs sample's Delete does, a row
- * whose action leaves it in place, and a row with both `href` and `onClick`. Not linked from the navigation;
+ * whose action leaves it in place, one whose action navigates to Settings, and a row with both `href` and `onClick`. Not linked from the navigation;
  * `tests/focus-table.ts` and `tests/list-focus.spec.ts` drive it.
  */
 export function ListFocusFixtures() {
   const [devices, setDevices] = React.useState(DEVICES);
   const [alone, setAlone] = React.useState(true);
   const [untitled, setUntitled] = React.useState(true);
+  const [archive, setArchive] = React.useState(true);
   const [read, setRead] = React.useState(false);
   const [clicks, setClicks] = React.useState(0);
+  const navigate = useNavigate();
   const remove = (name: string) => setDevices((d) => d.filter((x) => x !== name));
   return (
     <div className="ld-flow">
@@ -29,14 +32,20 @@ export function ListFocusFixtures() {
       <ListGroup title="Last device">
         {alone ? <ListRow title="Desk computer" href="#desk" actions={[{ label: 'Delete', tone: 'critical', onSelect: () => setAlone(false) }]} /> : null}
       </ListGroup>
-      {untitled ? (
-        <ListGroup>
-          <ListRow title="Guest session" href="#guest" actions={[{ label: 'End', tone: 'critical', onSelect: () => setUntitled(false) }]} />
+      <ListGroup>
+        {untitled ? <ListRow title="Guest session" href="#guest" actions={[{ label: 'End', tone: 'critical', onSelect: () => setUntitled(false) }]} /> : null}
+      </ListGroup>
+      {archive ? (
+        <ListGroup title="Archive">
+          <ListRow title="Old notes" href="#old" actions={[{ label: 'Clear the archive', tone: 'critical', onSelect: () => setArchive(false) }]} />
         </ListGroup>
       ) : null}
+      {/* Hidden here, as AppShell's tab bar is on a wide screen: the place skips it. */}
+      <div style={{ display: 'none' }}><Button variant="gray">Hidden after the list</Button></div>
       <Button variant="gray">After the list</Button>
       <ListGroup title="Mail">
         <ListRow title="Weekly summary" subtitle={read ? 'Read' : 'Unread'} href="#summary" actions={[{ label: read ? 'Mark unread' : 'Mark read', onSelect: () => setRead((r) => !r) }]} />
+        <ListRow title="Sync" href="#sync" actions={[{ label: 'Open settings', onSelect: () => navigate('/app/settings') }]} />
         <ListRow title="Counted link" subtitle={`Clicks: ${clicks}`} href="#counted" onClick={() => setClicks((c) => c + 1)} />
       </ListGroup>
     </div>

@@ -1377,6 +1377,13 @@ export const ACTIONS: Action[] = [
     act: (d) => d.choose(more('Guest session'), 'End'), target: button('After the list'),
   },
   {
+    // The action navigates, so the whole list leaves and the new screen's h1 takes focus, with no stop on the way.
+    screen: 'List', action: 'Row ••• → an action that navigates', setup: listFocus,
+    act: marked((d) => d.choose(more('Sync'), 'Open settings')),
+    target: h1('Settings'), url: /\/app\/settings$/,
+    check: movesOnce(/More actions for Sync|Open settings|role=menu\]/, /^h1 “Settings”/),
+  },
+  {
     // The row stays, so the swipe actions close and their button goes inert: focus moves to the row's link first.
     screen: 'List', action: 'Swipe → Mark read, the row stays', setup: listFocus, only: 'phone', strictTouch: true,
     act: (d) => swipeTo(d, 'Weekly summary', 'Mark read'), target: link(/^Weekly summary/),
