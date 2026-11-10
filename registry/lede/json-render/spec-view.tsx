@@ -3,7 +3,7 @@ import { createStateStore, type Spec, type StateStore } from '@json-render/core'
 import { JSONUIProvider, Renderer } from '@json-render/react';
 import { focusLanding } from '../input-modality';
 import { functions, type CatalogAction } from './catalog';
-import { ActionHeld, FieldChecks, registry, SpecHeadingLevel, SpecRoot, type HeldAction } from './registry';
+import { ActionHeld, DrillScope, FieldChecks, registry, SpecHeadingLevel, SpecKeys, specKeys, SpecRoot, type HeldAction } from './registry';
 
 export type { HeldAction } from './registry';
 
@@ -55,6 +55,7 @@ function Screen({ spec, streaming = false, headingLevel = 2, handlers, onStateCh
   const [report] = React.useState(() => (h: HeldAction) => held.current?.(h));
   useKeptFocus(root);
   useTokensCheck(root);
+  const keys = React.useMemo(() => specKeys(spec), [spec]);
   return (
     <SpecHeadingLevel.Provider value={headingLevel}>
       <SpecRoot.Provider value={root}>
@@ -62,7 +63,11 @@ function Screen({ spec, streaming = false, headingLevel = 2, handlers, onStateCh
           <JSONUIProvider registry={registry} functions={functions} store={store} handlers={handlers as Record<string, (params: Record<string, unknown>) => void>}>
             <FieldChecks>
               <ActionHeld.Provider value={report}>
-                <Renderer spec={spec} registry={registry} loading={streaming} />
+                <SpecKeys.Provider value={keys}>
+                  <DrillScope>
+                    <Renderer spec={spec} registry={registry} loading={streaming} />
+                  </DrillScope>
+                </SpecKeys.Provider>
               </ActionHeld.Provider>
             </FieldChecks>
           </JSONUIProvider>

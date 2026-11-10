@@ -50,9 +50,10 @@ export const catalog = defineCatalog(schema, {
       description: 'The root of every spec. It stacks its children down the page with even spacing. Use it once, as the root.',
     },
     PageHeader: {
-      props: z.object({ title: text, summary: text.optional() }),
+      props: z.object({ title: text, summary: text.optional(), back: z.object({ label: text }).optional() }),
       slots: ['actions'],
-      description: 'The screen’s title and its takeaway in one sentence. Use one per screen, as the first child of Screen. Put at most two Buttons in its actions slot.',
+      events: ['back'],
+      description: 'The screen’s title and its takeaway in one sentence. Use one per screen, as the first child of Screen, or of each View. Put at most two Buttons in its actions slot. In a detail View, set back to the list View’s title, such as { "label": "Inbox" }, and bind “back” to the setState that shows the list again: { "action": "setState", "params": { "statePath": "/open", "value": "" } }.',
     },
     ListGroup: {
       props: z.object({ title: text.optional(), summary: text.optional(), footer: text.optional() }),
@@ -69,7 +70,7 @@ export const catalog = defineCatalog(schema, {
         actions: z.array(z.object({ label: text, tone: z.enum(['primary', 'neutral', 'critical']).optional(), event: rowEvent })).optional(),
       }),
       events: ['press', 'change', ...rowEvent.options],
-      description: 'One item in a ListGroup: a title, an optional subtitle and a value on the right. The subtitle is one line that cuts off on a phone, so a reason, a problem or a difference between items goes in the title, the value, the ListGroup’s summary or a SummaryCard, never only in the subtitle. Bind “press” to open the item. For a setting, set checked and bind it with $bindState: the row shows a Switch named by its title and emits “change”. Each row action emits its event, such as “archive”, and shows in a menu and under a swipe.',
+      description: 'One item in a ListGroup: a title, an optional subtitle and a value on the right. The subtitle is one line that cuts off on a phone, so a reason, a problem or a difference between items goes in the title, the value, the ListGroup’s summary or a SummaryCard, never only in the subtitle. Bind “press” only to open the item’s detail View in place, with a setState of the path the Views read, such as { "action": "setState", "params": { "statePath": "/open", "value": "m1" } }: the row then shows a chevron. A row with no detail View has no press. For a setting, set checked and bind it with $bindState: the row shows a Switch named by its title and emits “change”. Each row action emits its event, such as “archive”, and shows in a menu and under a swipe.',
     },
     Button: {
       props: z.object({
@@ -137,9 +138,13 @@ export const catalog = defineCatalog(schema, {
       }),
       description: 'One figure and the sentence that explains it, such as “3” and “invoices are overdue”. Spell the status out in its label.',
     },
+    View: {
+      props: z.object({}),
+      slots: ['default'],
+      description: 'One view of a screen that opens items in place: the list, or one item’s detail. Each View is a child of Screen and starts with its own PageHeader. One state path, such as /open, says which View shows: give the list View visible { "$state": "/open", "not": true }, so it shows while the state is still on its way, and each detail View visible { "$state": "/open", "eq": "<the item’s id>" }. Start /open at "".',
+    },
   },
   actions: {
-    open: { params: z.object({ id: text }), description: `Open an item by its id. ${inRepeat}` },
     archive: { params: z.object({ id: text }), description: `Archive an item by its id. ${inRepeat}` },
     submit: {
       params: z.object({ form: text, values: z.record(z.string(), z.unknown()).optional() }),
@@ -158,7 +163,8 @@ export type CatalogAction = keyof typeof catalog.data.actions;
  */
 export const rules = [
   'Only the components under AVAILABLE COMPONENTS and the actions under AVAILABLE ACTIONS exist. Use no other type or action name.',
-  'Screen is the root of every spec, and there is one. PageHeader is its first child, and there is one.',
+  'Screen is the root of every spec, and there is one. PageHeader is its first child, and there is one, unless the screen opens items in place: then each child of Screen is a View with a PageHeader of its own.',
+  'To let a person open an item, write its detail in the same spec: a Screen whose children are Views, the list View and one detail View per item, each with its own PageHeader. A row’s or a Button’s press sets the path the Views read, and the detail’s PageHeader takes back with the list View’s title and binds “back” to set the path to "" again. For a list from a state array, write one detail View with repeat on the same array, visible [{ "$state": "/open" }, { "$item": "id", "eq": { "$state": "/open" } }], and set the path with { "$template": "${id}" }. A row or a Button that opens nothing in the spec has no press.',
   'To list items from a state array, put repeat on a ListGroup, with one ListRow child that reads each item with $item.',
   'Stream a list’s rows by appending them in their final order, one item at a time. Never reorder rows or insert one above another mid-stream: a person can use a row while later rows arrive, and their change stays with its position in the list.',
   'Inside a repeat, a condition in $cond or visible reads the item too, such as { "$cond": { "$item": "paid" }, "$then": "Paid", "$else": "Due" }.',

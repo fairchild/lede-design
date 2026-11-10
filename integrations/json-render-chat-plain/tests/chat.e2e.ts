@@ -35,9 +35,24 @@ test('a reply reads in order: the question, then the answer’s text, then its s
 });
 
 test('an action on the screen says what it did', async ({ page }) => {
-  await ask(page, 'How’s my week?');
-  await page.getByRole('button', { name: /Venue review/ }).click();
-  await expect(turns(page).nth(1).getByRole('list', { name: 'What you did here' })).toHaveText('You opened Venue review.');
+  await ask(page, 'What’s in my inbox?');
+  await expect(page.getByRole('button', { name: 'Stop' })).toBeHidden({ timeout: 15_000 });
+  const screen = turns(page).nth(1).locator('.jrc-screen');
+  await screen.getByRole('button', { name: 'Grace Hopper' }).click();
+  await screen.getByRole('textbox', { name: 'Reply to Grace' }).fill('The venue is confirmed.');
+  await screen.getByRole('button', { name: 'Send reply' }).click();
+  await expect(turns(page).nth(1).getByRole('list', { name: 'What you did here' })).toHaveText('You pressed Send reply.');
+});
+
+test('an item opens in place, as in the Lede chat, and its Back button shows the list again', async ({ page }) => {
+  await ask(page, 'What’s in my inbox?');
+  await expect(page.getByRole('button', { name: 'Stop' })).toBeHidden({ timeout: 15_000 });
+  const screen = turns(page).nth(1).locator('.jrc-screen');
+  await screen.getByRole('button', { name: 'Katherine Johnson' }).click();
+  await expect(screen.getByRole('heading', { level: 3, name: 'Katherine Johnson' })).toBeVisible();
+  await expect(screen.getByRole('heading', { level: 3, name: 'Inbox' })).toHaveCount(0);
+  await screen.getByRole('button', { name: 'Back to Inbox' }).click();
+  await expect(screen.getByRole('heading', { level: 3, name: 'Inbox' })).toBeVisible();
 });
 
 for (const how of ['Stop', 'Escape'] as const) {

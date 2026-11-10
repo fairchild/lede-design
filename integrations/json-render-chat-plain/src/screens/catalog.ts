@@ -26,7 +26,6 @@ export const catalog = defineCatalog(schema, {
     Radio: shadcn.Radio,
   },
   actions: {
-    open: { params: id, description: 'Open an item by its id.' },
     archive: { params: id, description: 'Archive an item by its id.' },
     submit: {
       params: z.object({ form: z.string(), values: z.record(z.string(), z.unknown()).optional() }),

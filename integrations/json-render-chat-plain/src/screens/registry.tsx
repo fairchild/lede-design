@@ -19,5 +19,5 @@ export const { registry } = defineRegistry(catalog, {
     ToggleGroup: shadcn.ToggleGroup,
     Radio: shadcn.Radio,
   },
-  actions: { open: async () => {}, archive: async () => {}, submit: async () => {} },
+  actions: { archive: async () => {}, submit: async () => {} },
 });

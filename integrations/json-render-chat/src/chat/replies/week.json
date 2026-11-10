@@ -1,6 +1,7 @@
 {
   "root": "screen",
   "state": {
+    "open": "",
     "view": "This week",
     "focus": false,
     "meetings": [
@@ -29,11 +30,46 @@
       "type": "Screen",
       "props": {},
       "children": [
+        "list",
+        "detail"
+      ]
+    },
+    "list": {
+      "type": "View",
+      "props": {},
+      "visible": {
+        "$state": "/open",
+        "not": true
+      },
+      "children": [
         "header",
         "period",
         "meetings",
         "agenda",
         "focus"
+      ]
+    },
+    "detail": {
+      "type": "View",
+      "props": {},
+      "repeat": {
+        "statePath": "/meetings",
+        "key": "id"
+      },
+      "visible": [
+        {
+          "$state": "/open"
+        },
+        {
+          "$item": "id",
+          "eq": {
+            "$state": "/open"
+          }
+        }
+      ],
+      "children": [
+        "detail-header",
+        "detail-facts"
       ]
     },
     "header": {
@@ -107,17 +143,71 @@
         },
         "value": {
           "$item": "when"
-        },
-        "chevron": true
+        }
       },
       "on": {
         "press": {
-          "action": "open",
+          "action": "setState",
           "params": {
-            "id": {
+            "statePath": "/open",
+            "value": {
               "$template": "${id}"
             }
           }
+        }
+      },
+      "children": []
+    },
+    "detail-header": {
+      "type": "PageHeader",
+      "props": {
+        "title": {
+          "$item": "title"
+        },
+        "summary": {
+          "$item": "when"
+        },
+        "back": {
+          "label": "Your week"
+        }
+      },
+      "on": {
+        "back": {
+          "action": "setState",
+          "params": {
+            "statePath": "/open",
+            "value": ""
+          }
+        }
+      },
+      "children": []
+    },
+    "detail-facts": {
+      "type": "ListGroup",
+      "props": {
+        "title": "Details"
+      },
+      "children": [
+        "detail-when",
+        "detail-who"
+      ]
+    },
+    "detail-when": {
+      "type": "ListRow",
+      "props": {
+        "title": "When",
+        "value": {
+          "$item": "when"
+        }
+      },
+      "children": []
+    },
+    "detail-who": {
+      "type": "ListRow",
+      "props": {
+        "title": "With",
+        "value": {
+          "$item": "subtitle"
         }
       },
       "children": []

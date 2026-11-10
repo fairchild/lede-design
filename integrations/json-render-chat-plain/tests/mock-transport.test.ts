@@ -35,7 +35,9 @@ describe.each([
     expect(text).not.toContain('{');
     expect(spec).not.toBeNull();
     expect(check(spec!)).toEqual([]);
-    expect(spec!.elements[spec!.elements[spec!.root].children![0]].props).toMatchObject({ text: title });
+    // The first Heading under the root, or under its list Stack when the screen opens items in place.
+    const first = (key: string): string => (spec!.elements[key].type === 'Stack' ? first(spec!.elements[key].children![0]) : key);
+    expect(spec!.elements[first(spec!.elements[spec!.root].children![0])].props).toMatchObject({ text: title });
   });
 });
 

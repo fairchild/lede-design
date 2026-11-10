@@ -15,7 +15,8 @@ const h1 = (page: Page) => page.locator('h1:visible');
 async function ask(page: Page, text: string) {
   await composer(page).fill(text);
   await composer(page).press('Enter');
-  await expect(page.getByRole('button', { name: 'Stop' })).toBeHidden();
+  // The inbox reply holds a detail for each message, so it streams for longer than the default wait.
+  await expect(page.getByRole('button', { name: 'Stop' })).toBeHidden({ timeout: 15_000 });
 }
 async function open(page: Page, n = 1) {
   await turns(page).nth(n).getByRole('button', { name: /How this reply was made/ }).click();
@@ -111,9 +112,10 @@ test('a reply’s account is closed at first and shows what was sent, what strea
 
 test('the account lists each action with its params, and one held back with the field that held it', async ({ page }) => {
   await page.goto('/');
-  await ask(page, 'How’s my week?');
-  await page.getByRole('button', { name: /Venue review/ }).click();
-  await expect((await open(page)).getByRole('list', { name: 'Actions' })).toContainText(/open ran with \{"id":"[^"]+"\}/);
+  await ask(page, 'What’s in my inbox?');
+  await page.getByRole('button', { name: 'More actions for Grace Hopper' }).click();
+  await page.getByRole('menuitem', { name: 'Archive' }).click();
+  await expect((await open(page)).getByRole('list', { name: 'Actions' })).toContainText('archive ran with {"id":"m1"}');
   await ask(page, 'Help me sign up');
   await turns(page).nth(3).getByRole('textbox', { name: 'Name' }).fill('Ada');
   await turns(page).nth(3).getByRole('button', { name: 'Create account' }).click();
@@ -350,7 +352,7 @@ test('the loop at a glance links each step, and each step’s Try link asks that
     await page.locator(`#step-${n + 1}`).getByRole('link', { name: `Try “${question}”` }).click();
     await expect(composer(page)).toBeFocused();
     await expect(turns(page).nth(0)).toContainText(question);
-    await expect(page.getByRole('button', { name: 'Stop' })).toBeHidden();
+    await expect(page.getByRole('button', { name: 'Stop' })).toBeHidden({ timeout: 15_000 });
     await expect(turns(page).nth(1).locator('.jrc-screen').getByRole('heading', { level: 3 }), `step ${n + 1}’s question draws a screen`).toBeVisible();
   }
 });

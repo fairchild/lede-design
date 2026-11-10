@@ -1,6 +1,6 @@
 import * as React from 'react';
-import { defineRegistry, useActions, useBoundProp, type ComponentRegistry } from '@json-render/react';
-import type { ActionBinding } from '@json-render/core';
+import { defineRegistry, useActions, useBoundProp, useRepeatScope, type ComponentRegistry } from '@json-render/react';
+import type { ActionBinding, Spec } from '@json-render/core';
 import { Button } from '../button';
 import { Checkbox } from '../checkbox';
 import { ListGroup, ListRow } from '../list';
@@ -9,7 +9,8 @@ import { Switch } from '../switch';
 import { TextField } from '../text-field';
 import { EmptyState } from '../blocks/empty-state';
 import { FormSection } from '../blocks/form-section';
-import { PageHeader } from '../blocks/page-header';
+import { PageHeader, useBackOnEscape } from '../blocks/page-header';
+import { focusLanding } from '../input-modality';
 import { SummaryCard } from '../blocks/summary-card';
 import { catalog } from './catalog';
 
@@ -27,6 +28,126 @@ const useLevels = () => {
 export const SpecRoot = React.createContext<React.RefObject<HTMLElement | null> | null>(null);
 /** The `on` bindings of the element being drawn, which defineRegistry's render props leave out. */
 const ElementOn = React.createContext<Record<string, ActionBinding | ActionBinding[]> | undefined>(undefined);
+/** The drawn element's key in the spec, with its item's index inside a repeat: a name that outlives a remount. */
+const ElementId = React.createContext('');
+
+interface Drill {
+  /** The element whose press came last, by `ElementId`. A detail View's PageHeader takes it as the control that opened it. */
+  pressed: React.RefObject<string | null>;
+  /** The control that opened a detail on its way out, which takes focus as it draws again. */
+  returnTo: React.RefObject<string | null>;
+  /** Focus is inside this screen, so its Escape belongs to the open detail. */
+  within: boolean;
+}
+const DrillContext = React.createContext<Drill | null>(null);
+/**
+ * Each element's key in the spec a SpecView draws. json-render hands a component a copy of its element with the props
+ * resolved, and the copy keeps the element's own `children` and `on`, so those find the key.
+ */
+export const SpecKeys = React.createContext<ReadonlyMap<unknown, string>>(new Map());
+export const specKeys = (spec: Spec | null): ReadonlyMap<unknown, string> =>
+  new Map(Object.entries(spec?.elements ?? {}).flatMap(([key, el]) => [el.children, el.on].filter(Boolean).map((part) => [part, key] as const)));
+
+/**
+ * Opening an item in place: a press notes the control that made it, the detail's title takes focus when it shows, and
+ * Back returns focus to that control. SpecView puts it around each screen. Escape backs out of a detail only while
+ * focus is inside its screen, so it never reaches the page around it or another screen.
+ */
+export function DrillScope({ children }: { children: React.ReactNode }) {
+  const root = React.useContext(SpecRoot);
+  const pressed = React.useRef<string | null>(null);
+  const returnTo = React.useRef<string | null>(null);
+  const [within, setWithin] = React.useState(false);
+  React.useEffect(() => {
+    const el = root?.current;
+    if (!el) return;
+    const update = () => setWithin(el.contains(document.activeElement));
+    el.addEventListener('focusin', update);
+    el.addEventListener('focusout', update);
+    document.addEventListener('focusin', update);
+    return () => {
+      el.removeEventListener('focusin', update);
+      el.removeEventListener('focusout', update);
+      document.removeEventListener('focusin', update);
+    };
+  }, [root]);
+  const drill = React.useMemo(() => ({ pressed, returnTo, within }), [within]);
+  return <DrillContext.Provider value={drill}>{children}</DrillContext.Provider>;
+}
+
+/**
+ * The control a press came from, for the detail it opens to hand focus back to. When Back takes the detail away, the
+ * control takes focus in the commit that draws it again, before a frame can show focus on `<body>`.
+ */
+function usePress() {
+  const drill = React.useContext(DrillContext);
+  const root = React.useContext(SpecRoot);
+  const id = React.useContext(ElementId);
+  React.useLayoutEffect(() => {
+    if (!drill || drill.returnTo.current !== id) return;
+    drill.returnTo.current = null;
+    focusLanding(root?.current && controlFor(root.current, id));
+  }, []);
+  return { id, note: () => { if (drill) drill.pressed.current = id; } };
+}
+const controlFor = (scope: ParentNode, id: string) =>
+  scope.querySelector<HTMLElement>(`[data-row-id="${CSS.escape(id)}"] .ld-row-target, [data-jr-id="${CSS.escape(id)}"]`);
+
+/**
+ * A detail View's header. When it shows because a press took the list away, its title takes focus. Its back button,
+ * or Escape while focus is in the screen, emits “back”, and once the list is back focus returns to the control that
+ * opened the detail, or to the screen's title when that control is gone.
+ */
+function DetailHeader({ title, summary, back, actions, level, onBack }: {
+  title: string; summary?: string; back: { label: string }; actions?: React.ReactNode; level: 2 | 3; onBack: () => void;
+}) {
+  const drill = React.useContext(DrillContext);
+  const root = React.useContext(SpecRoot);
+  const heading = React.useRef<HTMLHeadingElement>(null);
+  const [openedBy] = React.useState(() => drill?.pressed.current ?? null);
+  const leaving = React.useRef(false);
+  const goBack = () => {
+    leaving.current = true;
+    if (drill) drill.returnTo.current = openedBy;
+    onBack();
+  };
+  useBackOnEscape(drill?.within ? goBack : undefined);
+  React.useLayoutEffect(() => {
+    const scope = root?.current;
+    const active = document.activeElement;
+    if (!openedBy || !scope || (active && active !== document.body) || controlFor(scope, openedBy)) return;
+    focusLanding(heading.current);
+  }, []);
+  // When the control that opened the detail is gone, such as a row archived from it, the list's title takes focus.
+  React.useLayoutEffect(() => () => {
+    if (!leaving.current) return;
+    queueMicrotask(() => {
+      const scope = root?.current;
+      if (drill) drill.returnTo.current = null;
+      const active = document.activeElement;
+      if (!scope || (active && active !== document.body && active.isConnected)) return;
+      focusLanding(scope.querySelector<HTMLElement>('.ld-page-title'));
+    });
+  }, []);
+  const H = `h${level}` as 'h2';
+  return (
+    <header className="ld-page-header">
+      <button type="button" className="ld-back" onClick={goBack}>
+        <svg viewBox="0 0 8 14" width="8" height="14" fill="none" aria-hidden="true">
+          <path d="M6.5 1.5 1.5 7l5 5.5" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+        {back.label}
+      </button>
+      <div className="ld-page-header-row">
+        <div className="ld-page-header-text">
+          <H ref={heading} tabIndex={-1} className={`${level === 2 ? 'text-large-title' : 'text-title-2'} ld-page-title`}>{title}</H>
+          {summary ? <p className="ld-page-summary">{summary}</p> : null}
+        </div>
+        {actions ? <div className="ld-page-actions">{actions}</div> : null}
+      </div>
+    </header>
+  );
+}
 
 /** Every `$state` path a binding's params read, such as `/form` in `{ "values": { "$state": "/form" } }`. */
 function statePaths(value: unknown): string[] {
@@ -132,8 +253,10 @@ function useCheckedEmit(emit: (event: string) => void) {
 const drawn = defineRegistry(catalog, {
   components: {
     Screen: ({ children }) => <div className="ld-flow ld-flow-stack">{children}</div>,
-    PageHeader: ({ props, slots }) => {
+    View: ({ children }) => <div className="ld-flow-stack">{children}</div>,
+    PageHeader: ({ props, slots, emit }) => {
       const { title } = useLevels();
+      if (props.back) return <DetailHeader title={props.title} summary={props.summary} back={props.back} actions={slots?.actions} level={title} onBack={() => emit('back')} />;
       if (title === 2) return <PageHeader title={props.title} summary={props.summary} actions={slots?.actions} headingLevel={2} focusOnMount={false} />;
       const H = `h${title}` as 'h3';
       return (
@@ -154,13 +277,16 @@ const drawn = defineRegistry(catalog, {
     ListRow: ({ props, bindings, emit, on }) => {
       const [checked, setChecked] = useBoundProp(props.checked, bindings?.checked);
       const press = on('press');
+      const { id, note } = usePress();
       return (
         <ListRow
+          rowKey={id}
           title={props.title}
           subtitle={props.subtitle}
           value={props.value}
-          chevron={props.chevron}
-          onClick={press.bound ? () => press.emit() : undefined}
+          // A chevron says the row leads somewhere, so it shows only on a row whose press is bound.
+          chevron={press.bound && props.chevron !== false}
+          onClick={press.bound ? () => { note(); press.emit(); } : undefined}
           trailing={checked === undefined ? undefined : (
             <Switch aria-label={props.title} checked={checked} onCheckedChange={(next) => { setChecked(next); emit('change'); }} />
           )}
@@ -170,8 +296,9 @@ const drawn = defineRegistry(catalog, {
     },
     Button: ({ props, emit }) => {
       const checked = useCheckedEmit(emit);
+      const { id, note } = usePress();
       return (
-        <Button variant={props.variant} tone={props.tone} size={props.size} block={props.block} disabled={props.disabled} onClick={() => checked('press')}>
+        <Button data-jr-id={id} variant={props.variant} tone={props.tone} size={props.size} block={props.block} disabled={props.disabled} onClick={() => { note(); void checked('press'); }}>
           {props.label}
         </Button>
       );
@@ -270,17 +397,25 @@ const drawn = defineRegistry(catalog, {
     ),
   },
   actions: {
-    open: async (params) => report('open', params),
     archive: async (params) => report('archive', params),
     submit: async (params) => report('submit', params),
   },
 });
 
-/** The registry, each entry given its element's `on` bindings, which `useCheckedEmit` reads. */
+/** The registry, each entry given its element's `on` bindings, which `useCheckedEmit` reads, and its `ElementId`. */
 export const registry: ComponentRegistry = Object.fromEntries(
   Object.entries(drawn.registry).map(([type, Draw]) => [
     type,
-    (ctx: React.ComponentProps<typeof Draw>) => <ElementOn.Provider value={ctx.element.on}><Draw {...ctx} /></ElementOn.Provider>,
+    function Drawn(ctx: React.ComponentProps<typeof Draw>) {
+      const keys = React.useContext(SpecKeys);
+      const key = keys.get(ctx.element.children) ?? keys.get(ctx.element.on) ?? type;
+      const index = useRepeatScope()?.index;
+      return (
+        <ElementId.Provider value={index === undefined ? key : `${key}/${index}`}>
+          <ElementOn.Provider value={ctx.element.on}><Draw {...ctx} /></ElementOn.Provider>
+        </ElementId.Provider>
+      );
+    },
   ]),
 );
 export const { handlers } = drawn;

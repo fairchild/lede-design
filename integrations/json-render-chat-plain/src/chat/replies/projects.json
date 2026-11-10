@@ -1,7 +1,11 @@
 {
   "root": "screen",
   "state": {
-    "view": "Active"
+    "open": "",
+    "view": "Active",
+    "project": {
+      "name": ""
+    }
   },
   "elements": {
     "screen": {
@@ -9,6 +13,21 @@
       "props": {
         "direction": "vertical",
         "gap": "lg"
+      },
+      "children": [
+        "list",
+        "new-view"
+      ]
+    },
+    "list": {
+      "type": "Stack",
+      "props": {
+        "direction": "vertical",
+        "gap": "lg"
+      },
+      "visible": {
+        "$state": "/open",
+        "not": true
       },
       "children": [
         "title",
@@ -73,12 +92,127 @@
       "children": [],
       "on": {
         "press": {
-          "action": "open",
+          "action": "setState",
           "params": {
-            "id": "new-project"
+            "statePath": "/open",
+            "value": "new-project"
           }
         }
       }
+    },
+    "new-view": {
+      "type": "Stack",
+      "props": {
+        "direction": "vertical",
+        "gap": "lg"
+      },
+      "visible": {
+        "$state": "/open",
+        "eq": "new-project"
+      },
+      "children": [
+        "new-back",
+        "new-title",
+        "new-summary",
+        "new-name",
+        "new-create"
+      ]
+    },
+    "new-back": {
+      "type": "Button",
+      "props": {
+        "label": "Back to Projects",
+        "variant": "secondary"
+      },
+      "on": {
+        "press": {
+          "action": "setState",
+          "params": {
+            "statePath": "/open",
+            "value": ""
+          }
+        }
+      },
+      "children": []
+    },
+    "new-title": {
+      "type": "Heading",
+      "props": {
+        "text": "New project",
+        "level": "h3"
+      },
+      "children": []
+    },
+    "new-summary": {
+      "type": "Text",
+      "props": {
+        "text": "Name it now, and add tasks and people after.",
+        "variant": "muted"
+      },
+      "children": []
+    },
+    "new-name": {
+      "type": "Input",
+      "props": {
+        "label": "Project name",
+        "name": "name",
+        "value": {
+          "$bindState": "/project/name"
+        },
+        "checks": [
+          {
+            "type": "required",
+            "message": "Enter a name for the project."
+          }
+        ]
+      },
+      "on": {
+        "submit": [
+          {
+            "action": "validateForm",
+            "params": {
+              "statePath": "/projectCheck"
+            }
+          },
+          {
+            "action": "submit",
+            "params": {
+              "form": "project",
+              "values": {
+                "$state": "/project"
+              }
+            }
+          }
+        ]
+      },
+      "children": []
+    },
+    "new-create": {
+      "type": "Button",
+      "props": {
+        "label": "Create project",
+        "variant": "primary"
+      },
+      "on": {
+        "press": [
+          {
+            "action": "validateForm",
+            "params": {
+              "statePath": "/projectCheck"
+            }
+          },
+          {
+            "action": "submit",
+            "params": {
+              "form": "project",
+              "values": {
+                "$state": "/project"
+              }
+            }
+          }
+        ]
+      },
+      "children": []
     }
   }
 }

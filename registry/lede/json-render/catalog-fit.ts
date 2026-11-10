@@ -19,9 +19,10 @@ type Entries = typeof catalog.data.components;
 type Name = keyof Entries;
 type Props<K extends Name> = z.infer<Entries[K]['props']>;
 
-/** The Lede component behind each entry. Screen is this page's own stacking `<div>`, so it has none. */
+/** The Lede component behind each entry. Screen and View are this page's own stacking `<div>`s, so they have none. */
 interface Lede {
   Screen: null;
+  View: null;
   PageHeader: typeof PageHeader;
   ListGroup: typeof ListGroup;
   ListRow: typeof ListRow;
@@ -37,9 +38,11 @@ interface Lede {
 
 /**
  * Props the registry reads and turns into something else, such as a Button's `label`, which becomes its children, or a
- * SegmentedControl's `error`, which it draws under the control.
+ * SegmentedControl's `error`, which it draws under the control, or a PageHeader's `back`, a label with no `href`, which
+ * it draws as a button that shows the list View again.
  */
 interface Adapted {
+  PageHeader: 'back';
   ListRow: 'checked';
   Button: 'label';
   Checkbox: 'label' | 'error';
@@ -61,6 +64,7 @@ type Fit<K extends Name> = Lede[K] extends null ? true : [Unknown<K>, Mistyped<K
 
 export const fit: { [K in Name]: Fit<K> } = {
   Screen: true,
+  View: true,
   PageHeader: true,
   ListGroup: true,
   ListRow: true,

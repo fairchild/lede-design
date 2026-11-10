@@ -1,12 +1,28 @@
 {
   "root": "screen",
   "state": {
-    "view": "Active"
+    "open": "",
+    "view": "Active",
+    "project": {
+      "name": ""
+    }
   },
   "elements": {
     "screen": {
       "type": "Screen",
       "props": {},
+      "children": [
+        "list",
+        "new-view"
+      ]
+    },
+    "list": {
+      "type": "View",
+      "props": {},
+      "visible": {
+        "$state": "/open",
+        "not": true
+      },
       "children": [
         "header",
         "view",
@@ -56,11 +72,92 @@
       },
       "on": {
         "press": {
-          "action": "open",
+          "action": "setState",
           "params": {
-            "id": "new-project"
+            "statePath": "/open",
+            "value": "new-project"
           }
         }
+      },
+      "children": []
+    },
+    "new-view": {
+      "type": "View",
+      "props": {},
+      "visible": {
+        "$state": "/open",
+        "eq": "new-project"
+      },
+      "children": [
+        "new-header",
+        "new-name",
+        "new-create"
+      ]
+    },
+    "new-header": {
+      "type": "PageHeader",
+      "props": {
+        "title": "New project",
+        "summary": "Name it now, and add tasks and people after.",
+        "back": {
+          "label": "Projects"
+        }
+      },
+      "on": {
+        "back": {
+          "action": "setState",
+          "params": {
+            "statePath": "/open",
+            "value": ""
+          }
+        }
+      },
+      "children": []
+    },
+    "new-name": {
+      "type": "TextField",
+      "props": {
+        "label": "Project name",
+        "required": true,
+        "value": {
+          "$bindState": "/project/name"
+        },
+        "hint": "Such as “Thursday offsite”.",
+        "error": "Enter a name for the project."
+      },
+      "on": {
+        "submit": [
+          {
+            "action": "submit",
+            "params": {
+              "form": "project",
+              "values": {
+                "$state": "/project"
+              }
+            }
+          }
+        ]
+      },
+      "children": []
+    },
+    "new-create": {
+      "type": "Button",
+      "props": {
+        "label": "Create project",
+        "variant": "filled"
+      },
+      "on": {
+        "press": [
+          {
+            "action": "submit",
+            "params": {
+              "form": "project",
+              "values": {
+                "$state": "/project"
+              }
+            }
+          }
+        ]
       },
       "children": []
     }

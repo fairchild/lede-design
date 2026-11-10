@@ -2,12 +2,12 @@ import type { Spec } from '@json-render/core';
 import type { CatalogAction } from '@/components/lede/json-render/catalog';
 
 /** How a note says each action, past tense. An action missing here reads “You chose <name> on …”. */
-const DID: Partial<Record<CatalogAction, string>> = { open: 'opened', archive: 'archived', submit: 'pressed' };
+const DID: Partial<Record<CatalogAction, string>> = { archive: 'archived', submit: 'pressed' };
 
 const isExpression = (value: unknown) => !!value && typeof value === 'object' && Object.keys(value).some((k) => k.startsWith('$'));
 
 /**
- * What a screen's action did, in words: “You opened Venue review.” The element whose binding ran it names it, and when
+ * What a screen's action did, in words: “You archived Grace Hopper.” The element whose binding ran it names it, and when
  * a field's Enter and a button both send a form, the button does. Params bound to state, such as `{ "$state": "/form" }`,
  * arrive resolved, so only literal params pick the element. When none does, or its title comes from state, as in a
  * repeat, `fallback` names it: the control the person just used.

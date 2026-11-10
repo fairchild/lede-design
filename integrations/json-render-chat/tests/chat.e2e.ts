@@ -34,10 +34,77 @@ test('a reply reads in order: the question, then the answer’s text, then its s
 });
 
 test('an action on the screen says what it did', async ({ page }) => {
-  await ask(page, 'How’s my week?');
-  await page.getByRole('button', { name: /Venue review/ }).click();
-  await expect(turns(page).nth(1).getByRole('list', { name: 'What you did here' })).toHaveText('You opened Venue review.');
+  await ask(page, 'What’s in my inbox?');
+  await page.getByRole('button', { name: 'More actions for Grace Hopper' }).click();
+  await page.getByRole('menuitem', { name: 'Archive' }).click();
+  await expect(turns(page).nth(1).getByRole('list', { name: 'What you did here' })).toHaveText('You archived Grace Hopper.');
 });
+
+/** The reply's screen, once its stream has ended. */
+async function screenOf(page: Page, prompt: string, turn = 1) {
+  await ask(page, prompt);
+  await expect(page.getByRole('button', { name: 'Stop' })).toBeHidden({ timeout: 15_000 });
+  return turns(page).nth(turn).locator('.jrc-screen');
+}
+
+test('a row opens its item in place: the detail’s title takes focus, and Back returns to the row', async ({ page }) => {
+  const screen = await screenOf(page, 'What’s in my inbox?');
+  const row = screen.locator('.ld-row-target', { hasText: 'Katherine Johnson' });
+  await row.press('Enter');
+  await expect(screen.getByRole('heading', { level: 3, name: 'Katherine Johnson' })).toBeFocused();
+  await expect(screen.getByRole('heading', { level: 3, name: 'Inbox' })).toHaveCount(0);
+  await page.keyboard.press('Shift+Tab');
+  await expect(screen.getByRole('button', { name: 'Inbox' })).toBeFocused();
+  await page.keyboard.press('Enter');
+  await expect(row).toBeFocused();
+  await expect(screen.getByRole('heading', { level: 3, name: 'Inbox' })).toBeVisible();
+});
+
+test('a Button opens its form in place, and Back by click returns to the Button', async ({ page }) => {
+  const screen = await screenOf(page, 'What’s in my inbox?');
+  await screen.getByRole('button', { name: 'New message' }).click();
+  await expect(screen.getByRole('heading', { level: 3, name: 'New message' })).toBeFocused();
+  await screen.getByRole('button', { name: 'Inbox' }).click();
+  await expect(screen.getByRole('button', { name: 'New message' })).toBeFocused();
+});
+
+test('Escape backs out of the open detail one layer per press, and only in the screen that holds focus', async ({ page }) => {
+  const first = await screenOf(page, 'How’s my week?');
+  const second = await screenOf(page, 'How’s my week?', 3);
+  for (const screen of [second, first]) await screen.getByRole('button', { name: /Venue review/ }).click();
+  await expect(first.getByRole('heading', { level: 3, name: 'Venue review' })).toBeFocused();
+  await page.keyboard.press('Escape');
+  await expect(first.getByRole('button', { name: /Venue review/ })).toBeFocused();
+  await expect(second.getByRole('heading', { level: 3, name: 'Venue review' })).toBeVisible();
+  // Back in the list, a second Escape has nothing in the screen to back out of, and the other reply keeps its detail.
+  await page.keyboard.press('Escape');
+  await expect(first.getByRole('button', { name: /Venue review/ })).toBeFocused();
+  await expect(second.getByRole('heading', { level: 3, name: 'Venue review' })).toBeVisible();
+  await composer(page).focus();
+  await page.keyboard.press('Escape');
+  await expect(second.getByRole('heading', { level: 3, name: 'Venue review' })).toBeVisible();
+});
+
+for (const prompt of ['What’s in my inbox?', 'How’s my week?', 'Any projects?']) {
+  test(`${prompt}: each row with a chevron, and each Button that opens a View, leads to a detail with Back`, async ({ page }) => {
+    const screen = await screenOf(page, prompt);
+    const title = await screen.locator('.ld-page-title').innerText();
+    const rows = await screen.locator('.ld-row:has(.ld-row-chevron) .ld-row-target').count();
+    const opens = [...Array(rows).keys()].map((i) => screen.locator('.ld-row:has(.ld-row-chevron) .ld-row-target').nth(i));
+    if (prompt !== 'How’s my week?') opens.push(screen.getByRole('button', { name: /New/ }));
+    expect(opens.length).toBeGreaterThan(0);
+    for (const open of opens) {
+      const name = (await open.innerText()).split('\n')[0]!;
+      await open.click();
+      await expect(screen.locator('.ld-page-title')).toBeFocused();
+      await expect(screen.locator('.ld-page-title')).not.toHaveText(title);
+      await screen.getByRole('button', { name: title }).click();
+      await expect(page.locator(':focus')).toContainText(name);
+    }
+    // A row with no View to open draws no chevron and no button.
+    await expect(screen.locator('.ld-row:not(:has(.ld-row-chevron)) button.ld-row-target')).toHaveCount(0);
+  });
+}
 
 for (const how of ['Stop', 'Escape'] as const) {
   test(`${how} ends a streaming reply and leaves focus in the composer`, async ({ page }) => {

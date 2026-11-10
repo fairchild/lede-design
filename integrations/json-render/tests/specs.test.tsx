@@ -64,13 +64,39 @@ test('a ListGroup that repeats over state draws one ListRow per item and passes 
       screen: { type: 'Screen', props: {}, children: ['header', 'list'] },
       header: { type: 'PageHeader', props: { title: 'Your week' }, children: [] },
       list: { type: 'ListGroup', props: { title: 'Coming up' }, repeat: { statePath: '/meetings', key: 'id' }, children: ['row'] },
-      row: { type: 'ListRow', props: { title: { $item: 'title' }, chevron: true }, on: { press: { action: 'open', params: { id: { $template: '${id}' } } } }, children: [] },
+      row: { type: 'ListRow', props: { title: { $item: 'title' } }, children: [] },
     },
   } as unknown as (typeof specs)['Inbox'];
   expect(check(spec)).toEqual([]);
   const html = renderToString(<SpecView spec={spec} />);
   expect([...html.matchAll(/class="ld-row-title"[^>]*>([^<]*)</g)].map(([, t]) => t)).toEqual(['Venue review', 'Design critique']);
   expect(html.match(/<li\b/g)?.length).toBe(2);
+});
+
+test('a row’s chevron promises a View the spec holds, and a detail’s back is bound', () => {
+  const spec = (press: unknown, back: unknown = { action: 'setState', params: { statePath: '/open', value: '' } }) => ({
+    root: 'screen',
+    state: { open: '' },
+    elements: {
+      screen: { type: 'Screen', props: {}, children: ['list', 'detail'] },
+      list: { type: 'View', props: {}, visible: { $state: '/open', not: true }, children: ['header', 'rows'] },
+      header: { type: 'PageHeader', props: { title: 'Inbox' }, children: [] },
+      rows: { type: 'ListGroup', props: { title: 'Today' }, children: ['row', 'plain'] },
+      row: { type: 'ListRow', props: { title: 'Grace Hopper' }, ...(press ? { on: { press } } : {}), children: [] },
+      plain: { type: 'ListRow', props: { title: 'Alan Turing', chevron: true }, children: [] },
+      detail: { type: 'View', props: {}, visible: { $state: '/open', eq: 'm1' }, children: ['detail-header'] },
+      'detail-header': { type: 'PageHeader', props: { title: 'Grace Hopper', back: { label: 'Inbox' } }, ...(back ? { on: { back } } : {}), children: [] },
+    },
+  }) as unknown as (typeof specs)['Inbox'];
+  const opens = { action: 'setState', params: { statePath: '/open', value: 'm1' } };
+  expect(check(spec(opens))).toEqual([]);
+  expect(check(spec({ action: 'archive', params: { id: 'm1' } }))).toEqual([expect.stringMatching(/^elements\.row\.on\.press: a row's press shows a chevron/)]);
+  expect(check(spec({ action: 'setState', params: { statePath: '/picked', value: 'm1' } }))).toHaveLength(1);
+  expect(check(spec(opens, null))).toEqual([expect.stringMatching(/^elements\.detail-header\.on\.back:/)]);
+  // A chevron shows on the row whose press is bound, and on no other, whatever the spec asks.
+  const html = renderToString(<SpecView spec={spec(opens)} />);
+  expect(html.match(/ld-row-chevron/g)).toHaveLength(1);
+  expect(renderToString(<SpecView spec={spec(null)} />)).not.toMatch(/ld-row-chevron/);
 });
 
 test('a SegmentedControl shows its label, which Lede’s own control keeps for screen readers', () => {

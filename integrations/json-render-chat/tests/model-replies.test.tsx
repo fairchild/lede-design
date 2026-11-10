@@ -3,7 +3,7 @@ import { renderToString } from 'react-dom/server';
 import { describe, expect, test } from 'vitest';
 import { pipeJsonRender, type Spec } from '@json-render/core';
 import type { UIMessageChunk } from 'ai';
-import { check } from '@/components/lede/json-render/check';
+import { check, promises } from '@/components/lede/json-render/check';
 import { specFromParts } from '@/components/lede/json-render/patches';
 import { SpecView } from '@/components/lede/json-render/spec-view';
 
@@ -48,7 +48,10 @@ describe.each(replies)('%s', (_, text) => {
     const parts = chunks as Array<{ type: string; data?: unknown }>;
     const spec = specFromParts(parts)!;
     expect(spec?.elements[spec.root]).toBeDefined();
-    expect(check(spec)).toEqual([]);
+    // These replies were recorded before the catalog could open an item in place, so a row's press runs a host action
+    // the catalog no longer has. Everything else about them still has to pass.
+    const promised = new Set(promises(spec));
+    expect(check(spec).filter((issue) => !promised.has(issue))).toEqual([]);
     expect(JSON.stringify(specFromParts(parts))).toBe(JSON.stringify(spec));
     for (const keys of repeatedKeys(spec)) expect(new Set(keys).size).toBe(keys.length);
     expect(() => renderToString(<SpecView spec={spec} headingLevel={3} />)).not.toThrow();
