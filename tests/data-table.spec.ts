@@ -842,6 +842,67 @@ test.describe('DataTable', () => {
     await expect.poll(ranks).toEqual(['3', '2', '1'].map((n) => `#${n}`));
   });
 
+  test('server mode: a sortable column needs neither value nor compare, since the server sorts', async ({ page }) => {
+    await open(page, FIXTURES);
+    const region = page.getByRole('region', { name: 'A server table mounted later' });
+    await region.getByRole('button', { name: 'Show the server table' }).click();
+    const table = region.getByRole('table', { name: 'Mounted server fixture' });
+    await expect(table.locator('tbody tr[data-row-id]')).toHaveCount(3);
+    const sort = table.getByRole('button', { name: 'Label' });
+    await expect(sort, 'the Label header is a sort button').toBeVisible({ timeout: 2000 });
+    await sort.click();
+    await expect(table.getByRole('columnheader', { name: 'Label' })).toHaveAttribute('aria-sort', 'ascending');
+  });
+
+  test('a server table never shows its empty state or a zero count before its first rows', async ({ page }) => {
+    await open(page, FIXTURES);
+    const region = page.getByRole('region', { name: 'A server table mounted later' });
+    // What every commit rendered, even one a later commit in the same task replaced, so a frame that never paints
+    // still counts: the text nodes added and removed, and the text a node had before it changed.
+    await region.evaluate((el) => {
+      const said: string[] = [];
+      (window as unknown as { said: string[] }).said = said;
+      new MutationObserver((records) => {
+        for (const r of records) {
+          for (const n of [...r.addedNodes, ...r.removedNodes]) said.push(n.textContent ?? '');
+          if (r.oldValue != null) said.push(r.oldValue);
+        }
+      }).observe(el, { childList: true, subtree: true, characterData: true, characterDataOldValue: true });
+    });
+    await region.getByRole('button', { name: 'Show the server table' }).click();
+    const table = region.getByRole('table', { name: 'Mounted server fixture' });
+    await expect(table.locator('tbody tr[data-row-id]')).toHaveCount(3);
+    const said = await page.evaluate(() => (window as unknown as { said: string[] }).said);
+    expect(said.filter((t) => /No items|^0 items/.test(t)), 'nothing said there were no items').toEqual([]);
+    expect(said.some((t) => t.includes('Loading items…')), 'the first commit says the rows are loading').toBe(true);
+  });
+
+  test('uncontrolled selection: archived rows leave it, and rows on another page stay', async ({ page }) => {
+    await open(page, FIXTURES);
+    const region = page.getByRole('region', { name: 'Uncontrolled selection' });
+    const table = region.getByRole('table', { name: 'Uncontrolled fixture' });
+    const bar = page.getByRole('toolbar', { name: /selected/ });
+    const presses = region.getByRole('list', { name: 'Archive presses' }).getByRole('listitem');
+    await table.getByRole('checkbox', { name: 'Select 0' }).check();
+    // A page change isn't a removal: the row is elsewhere, still selected.
+    await region.getByRole('button', { name: 'Next' }).click();
+    await expect(table.getByRole('checkbox', { name: 'Select 3' })).toBeVisible();
+    await expect(bar).toHaveAccessibleName('1 entry selected');
+    await region.getByRole('button', { name: 'Previous' }).click();
+    await expect(table.getByRole('checkbox', { name: 'Select 0' })).toBeChecked();
+    await table.getByRole('checkbox', { name: 'Select 1' }).check();
+    await bar.getByRole('button', { name: 'Archive' }).click();
+    await expect(presses).toHaveText(['n0,n1']);
+    // The archived rows left the selection with the table, so the bar left too.
+    await expect(bar).toHaveCount(0);
+    await expect(table.getByRole('checkbox', { name: 'Select all entries on this page' })).not.toBeChecked();
+    // The next Archive sends only what's selected now.
+    await table.getByRole('checkbox', { name: 'Select 2' }).check();
+    await expect(bar).toHaveAccessibleName('1 entry selected');
+    await bar.getByRole('button', { name: 'Archive' }).click();
+    await expect(presses).toHaveText(['n0,n1', 'n2']);
+  });
+
   test('density: control columns follow a density change at runtime', async ({ page }) => {
     await open(page);
     const check = clientTable(page).locator('thead th.ld-table-check');
@@ -1029,6 +1090,47 @@ test.describe('DataTable at 320px and in forced colours', () => {
     expect(after.up).toBe(1);
     expect(after.down).toBe(0);
     expect(after.stroke).toBe(after.colour);
+  });
+});
+
+test.describe('SelectionBar placement', () => {
+  test.skip(({ isMobile }) => isMobile, 'Viewport set explicitly.');
+  const centerOf = (b: { x: number; width: number }) => b.x + b.width / 2;
+  const select = async (page: Page, checkbox: Locator) => {
+    await checkbox.check();
+    const bar = page.getByRole('toolbar', { name: /selected/ });
+    await expect(bar).toBeVisible();
+    return (await bar.boundingBox())!;
+  };
+
+  for (const width of [390, 900, 1400]) {
+    test(`with no AppShell it centers in the viewport and sits clear of its foot · ${width}px`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 800 });
+      await page.goto('/fixtures/bare-table');
+      const bar = await select(page, page.getByRole('checkbox', { name: 'Select 0' }));
+      expect(Math.abs(centerOf(bar) - width / 2), 'the bar’s center is the viewport’s').toBeLessThanOrEqual(1);
+      expect(bar.y + bar.height).toBeLessThan(800);
+      // No tab bar to clear: the bar sits near the foot, not a tab bar's height above it.
+      expect(800 - (bar.y + bar.height)).toBeLessThan(48);
+    });
+  }
+
+  test('in AppShell it centers beside the sidebar on a desktop', async ({ page }) => {
+    await page.setViewportSize({ width: 1400, height: 800 });
+    await page.goto('/app/work');
+    const sidebar = (await page.locator('.ld-shell-sidebar').boundingBox())!;
+    const bar = await select(page, page.getByRole('checkbox', { name: 'Select WI-1018' }));
+    const main = sidebar.x + sidebar.width;
+    expect(Math.abs(centerOf(bar) - (main + (1400 - main) / 2)), 'the bar’s center is the main column’s').toBeLessThanOrEqual(1);
+  });
+
+  test('in AppShell on a phone it floats above the tab bar', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 800 });
+    await page.goto('/app/work');
+    const bar = await select(page, page.getByRole('checkbox', { name: 'Select WI-1018' }));
+    const tabbar = (await page.locator('.ld-shell-tabbar > *').boundingBox())!;
+    expect(bar.y + bar.height, 'the bar ends above the tab bar').toBeLessThanOrEqual(tabbar.y);
+    expect(Math.abs(centerOf(bar) - 390 / 2)).toBeLessThanOrEqual(1);
   });
 });
 

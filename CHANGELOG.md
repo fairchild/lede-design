@@ -30,3 +30,15 @@ First public release. Lede is a design system for React, installed from its shad
 - A SegmentedControl whose value matches no option shows no thumb, since no radio is checked. This covers a controlled
   `''`, a misspelled `defaultValue` and options that arrive after the first render. Choosing an option shows the thumb
   on it.
+- DataTable: an uncontrolled selection drops rows that were deleted, so after a bulk Archive the bar leaves with its
+  rows and the next action sends only what's selected. A row counts as deleted when it leaves `rows` while the view,
+  the page and `state.rows` stay the same, so a row on another page stays selected. `useDataTable` takes `paging` to
+  tell the two apart.
+- DataTable: "Select all N" becomes "Clear selection" in place and keeps focus, and Clear selection moves focus to the
+  summary line.
+- DataTable: when a sort or a page change fails to load, focus moves to Try again as the alert arrives.
+- DataTable shows its loading skeleton while `state.rows` is `'none'` and nothing failed, so a `useServerRows` table
+  never shows "No {noun}" or a count of 0 before its first request goes out.
+- DataTable: `sortable: true` works in server mode without `value` or `compare`, since the server sorts.
+- SelectionBar centers in the viewport when no AppShell holds it. AppShell now adds the bar's offsets itself, beside
+  the sidebar on a desktop and above the tab bar on a phone.

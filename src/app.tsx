@@ -131,7 +131,10 @@ const routes = () => createBrowserRouter(
         },
         { path: 'layouts/sidebar', element: <SidebarExample />, handle: { title: 'Full page with left bar' } },
         { path: 'layouts/workbench', element: <WorkbenchExample />, handle: { title: 'Three panels with top bar' } },
-        ...(FIXTURES ? [{ path: 'fixtures/workbench-hydrate', lazy: load(() => import('@/pages/fixtures/WorkbenchHydrate'), 'WorkbenchHydrate'), handle: { title: 'Workbench hydration' } }] : []),
+        ...(FIXTURES ? [
+          { path: 'fixtures/workbench-hydrate', lazy: load(() => import('@/pages/fixtures/WorkbenchHydrate'), 'WorkbenchHydrate'), handle: { title: 'Workbench hydration' } },
+          { path: 'fixtures/bare-table', lazy: load(() => import('@/pages/fixtures/BareTableFixture'), 'BareTableFixture'), handle: { title: 'A table without a shell' } },
+        ] : []),
         {
           path: 'app',
           element: <AppLayout />,
