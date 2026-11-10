@@ -12,7 +12,8 @@ token, name the existing pattern you tried: Lede adds a pattern only when no exi
 
 Report a security issue privately, as [SECURITY.md](SECURITY.md) describes.
 
-The rest of this file is how Lede is built and checked.
+The rest of this file is how Lede is built and checked: run it locally, write a failing test for what you found, or
+maintain a fork. A test that fails makes the clearest bug report.
 
 ## Set up
 
