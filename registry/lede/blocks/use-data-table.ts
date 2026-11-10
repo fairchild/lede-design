@@ -46,7 +46,7 @@ export type Selection =
  * - `rows`: whose rows are on screen. `'current'`, the default, are this view's. `'previous'` are the last view's, kept
  *   while this one loads so the layout doesn't jump. `'none'` means nothing is on screen yet.
  * - `fetching`: rows are on the way. With current rows the table shows "Updating…" and stays usable. Otherwise it is
- *   `aria-busy`.
+ *   `aria-busy`. useServerRows reports it from the first render, before its first fetch starts.
  * - `since`: when the rows on screen were fetched. Shown when refreshing them failed.
  * - `failure`: the last request failed. `scope` says what failed: `'load'` (this view's or page's rows: an alert, and
  *   previous rows are hidden so they never pass as this view's), `'refresh'` (rows on screen could not be refreshed:
