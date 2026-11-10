@@ -49,7 +49,7 @@ function PlainTable({ view }: { view: TableView }) {
         </thead>
         <tbody className="ld-table-body">
           {rows.map((r) => (
-            <tr key={r.id} className="ld-table-row ld-table-row-linked" data-row-id={r.id} data-selected={selected.has(r.id) || undefined}>
+            <tr key={r.id} className="ld-table-row" data-row-id={r.id} data-selected={selected.has(r.id) || undefined}>
               <td className="ld-table-td ld-table-check">
                 {check(`Select ${r.id}`, selected.has(r.id), (on) =>
                   setSelected((s) => { const n = new Set(s); if (on) n.add(r.id); else n.delete(r.id); return n; }))}

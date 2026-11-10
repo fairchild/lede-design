@@ -667,6 +667,45 @@ test.describe('DataTable', () => {
     }
   });
 
+  test.describe('controls in linked rows', () => {
+    const table = (page: Page) => page.getByRole('table', { name: 'Row controls fixture' });
+    /** Clicks a cell near its end, away from what it holds, where the row link's `::after` is on top. */
+    const clickEnd = async (cell: Locator) => {
+      await cell.scrollIntoViewIfNeeded();
+      const box = (await cell.boundingBox())!;
+      await cell.page().mouse.click(box.x + box.width - 4, box.y + box.height / 2);
+    };
+
+    test('a Button in a linked row’s cell takes the press, and the rest of the row navigates', async ({ page }) => {
+      await open(page, FIXTURES);
+      const row = table(page).locator('[data-row-id="n1"]');
+      await row.getByRole('button', { name: 'Count 1' }).click();
+      await expect(page.getByTestId('row-presses')).toHaveText('Pressed n1');
+      expect(new URL(page.url()).hash).toBe('');
+      await clickEnd(row.locator('td').first());
+      await expect(page).toHaveURL(/#rc-n1$/);
+      await expect(page.getByTestId('row-presses')).toHaveText('Pressed n1');
+    });
+
+    test('a row whose rowActions returns none has no ••• and keeps its cell', async ({ page }) => {
+      await open(page, FIXTURES);
+      await expect(table(page).getByRole('button', { name: 'More actions for 1', exact: true })).toBeVisible();
+      await expect(table(page).getByRole('button', { name: 'More actions for 0', exact: true })).toHaveCount(0);
+      await expect(table(page).locator('[data-row-id="n0"] td')).toHaveCount(2);
+      await clickEnd(table(page).locator('[data-row-id="n0"] .ld-table-actions'));
+      await expect(page).toHaveURL(/#rc-n0$/);
+    });
+
+    test('Table.RowLink covers its own row without `linked`', async ({ page }) => {
+      await open(page, FIXTURES);
+      const rows = page.getByRole('table', { name: 'Rows without linked' }).getByRole('row');
+      await clickEnd(rows.nth(0).getByRole('cell'));
+      await expect(page).toHaveURL(/#bare-Q1$/);
+      await clickEnd(rows.nth(1).getByRole('cell'));
+      await expect(page).toHaveURL(/#bare-Q2$/);
+    });
+  });
+
   // Edge cases on /fixtures/data-table: selection while a new filter's rows load, cursor paging on reload, a change of
   // page size, sorting by compare alone and density changes at runtime.
   const numbers = (page: Page, name: string) => page.getByRole('table', { name }).locator('tbody th[scope="row"]').allInnerTexts();

@@ -12,6 +12,11 @@ First public release. Lede is a design system for React, installed from its shad
 
 ### Fixed before release
 
+- useServerRows: a page whose `nextCursor` is `null` ends the list and settles the count at the rows through it,
+  whatever the page's length. A `fetchCount` answer below the rows held from the first row on reads as a lower bound
+  of those rows, so Load more and Next stay offered.
+- useServerRows: the first render, and a server render, show the table loading until the first rows arrive. They
+  showed the empty state.
 - The registry's error responses (404, 412, 503 and 405) carry `access-control-allow-origin: *` like its JSON does, so a
   page fetching an item can read why it failed. An `OPTIONS` request under `/r/` answers the CORS preflight.
 - Files under `/media/` are typed by their extension alone and sent with `content-security-policy: sandbox` and
@@ -45,6 +50,16 @@ First public release. Lede is a design system for React, installed from its shad
 - A SegmentedControl whose value matches no option shows no thumb, since no radio is checked. This covers a controlled
   `''`, a misspelled `defaultValue` and options that arrive after the first render. Choosing an option shows the thumb
   on it.
+- OnboardingFlow's `onComplete` may return a promise. While it's pending, Finish shows “Finishing…” and can't fire
+  again. It resolves to the done step, and a rejection stays on Review with an inline error. A `void` return still
+  moves on at once, and Finish fires once until the step changes.
+- OnboardingFlow: a controlled `step` past Account with no valid account waits for Continue, so the keystroke that
+  makes the account valid no longer switches steps under the cursor.
+- ProfileFlow and OnboardingFlow: a field with an error checks itself again on each change, so the error leaves once
+  the value is fixed. A failed submit makes the field invalid before focus reaches it and announces the errors, so a
+  field that already had focus is heard too.
+- TextField takes a `ref` to its `<input>` or `<textarea>`.
+- An invalid TextField shows the focus ring outside its red edge when focused, as errors send focus there.
 - DataTable: an uncontrolled selection drops rows that were deleted, so after a bulk Archive the bar leaves with its
   rows and the next action sends only what's selected. A row counts as deleted when it leaves `rows` while the view,
   the page and `state.rows` stay the same, so a row on another page stays selected. `useDataTable` takes `paging` to
@@ -57,3 +72,17 @@ First public release. Lede is a design system for React, installed from its shad
 - DataTable: `sortable: true` works in server mode without `value` or `compare`, since the server sorts.
 - SelectionBar centers in the viewport when no AppShell holds it. AppShell now adds the bar's offsets itself, beside
   the sidebar on a desktop and above the tab bar on a phone.
+- Table: every control in a linked row sits above the row link and takes its own press, in any cell and before or
+  after the row header, so a Button in a DataTable column no longer navigates. The rest of the row still does.
+  The undocumented `ld-table-control` class is gone.
+- Table: a row that holds a Table.RowLink is positioned on its own, so its link covers that row and not the whole
+  table. `Table.Row`'s `linked` is deprecated and changes nothing; it's removed in 0.5.0. A `sticky` row-header cell
+  confines the link to that cell, as RowLink's doc comment says.
+- Table: `ColumnWidth.max` is removed. It was undocumented and had no effect, or made the columns overflow when it
+  was below another column's `min`.
+- `Table.Root`'s doc comment shows on hover again.
+- DataTable: a row whose `rowActions` returns no actions has no ••• in the table layout, as in the card layout.
+- DataTable cards: the sort and select-all bar stays mounted while the skeleton shows, as the table's header does, so
+  a sort answered with a skeleton keeps focus on the Sort menu.
+- DataTable cards: a card with no link, checkbox or actions takes focus on its title, so Load more lands on the first
+  new card, as it lands on the row header in the table layout.
