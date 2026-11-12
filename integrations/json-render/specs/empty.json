@@ -1,0 +1,165 @@
+{
+  "root": "screen",
+  "state": {
+    "open": "",
+    "view": "Active",
+    "project": {
+      "name": ""
+    }
+  },
+  "elements": {
+    "screen": {
+      "type": "Screen",
+      "props": {},
+      "children": [
+        "list",
+        "new-view"
+      ]
+    },
+    "list": {
+      "type": "View",
+      "props": {},
+      "visible": {
+        "$state": "/open",
+        "not": true
+      },
+      "children": [
+        "header",
+        "view",
+        "empty"
+      ]
+    },
+    "header": {
+      "type": "PageHeader",
+      "props": {
+        "title": "Projects",
+        "summary": "You have no projects yet."
+      },
+      "children": []
+    },
+    "view": {
+      "type": "SegmentedControl",
+      "props": {
+        "label": "Show",
+        "options": [
+          "Active",
+          "Archived"
+        ],
+        "value": {
+          "$bindState": "/view"
+        }
+      },
+      "children": []
+    },
+    "empty": {
+      "type": "EmptyState",
+      "props": {
+        "title": "No projects yet",
+        "description": "A project gathers the tasks, files and people for one piece of work."
+      },
+      "slots": {
+        "action": [
+          "new"
+        ]
+      },
+      "children": []
+    },
+    "new": {
+      "type": "Button",
+      "props": {
+        "label": "New project",
+        "variant": "filled"
+      },
+      "on": {
+        "press": {
+          "action": "setState",
+          "params": {
+            "statePath": "/open",
+            "value": "new-project"
+          }
+        }
+      },
+      "children": []
+    },
+    "new-view": {
+      "type": "View",
+      "props": {},
+      "visible": {
+        "$state": "/open",
+        "eq": "new-project"
+      },
+      "children": [
+        "new-header",
+        "new-name",
+        "new-create"
+      ]
+    },
+    "new-header": {
+      "type": "PageHeader",
+      "props": {
+        "title": "New project",
+        "summary": "Name it now, and add tasks and people after.",
+        "back": {
+          "label": "Projects"
+        }
+      },
+      "on": {
+        "back": {
+          "action": "setState",
+          "params": {
+            "statePath": "/open",
+            "value": ""
+          }
+        }
+      },
+      "children": []
+    },
+    "new-name": {
+      "type": "TextField",
+      "props": {
+        "label": "Project name",
+        "required": true,
+        "value": {
+          "$bindState": "/project/name"
+        },
+        "hint": "Such as “Thursday offsite”.",
+        "error": "Enter a name for the project."
+      },
+      "on": {
+        "submit": [
+          {
+            "action": "submit",
+            "params": {
+              "form": "project",
+              "values": {
+                "$state": "/project"
+              }
+            }
+          }
+        ]
+      },
+      "children": []
+    },
+    "new-create": {
+      "type": "Button",
+      "props": {
+        "label": "Create project",
+        "variant": "filled"
+      },
+      "on": {
+        "press": [
+          {
+            "action": "submit",
+            "params": {
+              "form": "project",
+              "values": {
+                "$state": "/project"
+              }
+            }
+          }
+        ]
+      },
+      "children": []
+    }
+  }
+}

@@ -1,0 +1,17 @@
+You have 5 tasks today, and 1 is done. Tick each one off as you finish it.
+
+```spec
+{"op":"add","path":"/root","value":"screen"}
+{"op":"add","path":"/elements/screen","value":{"type":"Screen","props":{},"children":["header","progress","tasks"]}}
+{"op":"add","path":"/elements/header","value":{"type":"PageHeader","props":{"title":"Today","summary":"4 tasks left, and the budget review is due by noon."},"slots":{"actions":["add"]},"children":[]}}
+{"op":"add","path":"/elements/add","value":{"type":"Button","props":{"label":"Add task","variant":"gray"},"on":{"press":{"action":"open","params":{"id":"new-task"}}},"children":[]}}
+{"op":"add","path":"/elements/progress","value":{"type":"SummaryCard","props":{"title":"Left today","figure":"4","summary":"tasks to go, out of 5.","status":{"tone":"caution","label":"1 due by noon"}},"children":[]}}
+{"op":"add","path":"/elements/tasks","value":{"type":"ListGroup","props":{"title":"Tasks","footer":"Swipe a row to delete it."},"repeat":{"statePath":"/tasks","key":"id"},"children":["task"]}}
+{"op":"add","path":"/elements/task","value":{"type":"ListRow","props":{"title":{"$item":"title"},"subtitle":{"$item":"due"},"checked":{"$bindItem":"done"},"actions":[{"label":"Delete","tone":"critical","event":"delete"}]},"on":{"delete":{"action":"removeState","params":{"statePath":"/tasks","index":{"$index":true}}}},"children":[]}}
+{"op":"add","path":"/state/tasks","value":[]}
+{"op":"add","path":"/state/tasks/0","value":{"id":"t1","title":"Send budget review","due":"By 12:00 PM","done":false}}
+{"op":"add","path":"/state/tasks/1","value":{"id":"t2","title":"Call the venue about Thursday","due":"Afternoon","done":false}}
+{"op":"add","path":"/state/tasks/2","value":{"id":"t3","title":"Review Lena's agenda draft","due":"Afternoon","done":false}}
+{"op":"add","path":"/state/tasks/3","value":{"id":"t4","title":"Pick up dry cleaning","due":"Before 6:00 PM","done":false}}
+{"op":"add","path":"/state/tasks/4","value":{"id":"t5","title":"Book dentist follow-up","due":"Done at 8:15 AM","done":true}}
+```

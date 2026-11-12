@@ -1,0 +1,16 @@
+Here are three good laptops under $1,500. The MacBook Air is the best all-rounder, and the ThinkPad is the pick if you want more ports.
+
+```spec
+{"op":"add","path":"/root","value":"screen"}
+{"op":"add","path":"/elements/screen","value":{"type":"Screen","props":{},"children":["header","pick","options","view"]}}
+{"op":"add","path":"/elements/header","value":{"type":"PageHeader","props":{"title":"Laptops under $1,500","summary":"Three strong options, and the MacBook Air is the best all-rounder."},"children":[]}}
+{"op":"add","path":"/elements/pick","value":{"type":"SummaryCard","props":{"title":"Best all-rounder","figure":"$1,099","summary":"MacBook Air 13″ with M4, 16 GB and 18 hours of battery.","status":{"tone":"positive","label":"Top pick"}},"children":[]}}
+{"op":"add","path":"/elements/options","value":{"type":"ListGroup","props":{"title":"Compare","footer":"Prices are list prices before tax."},"repeat":{"statePath":"/laptops","key":"id"},"children":["laptop"]}}
+{"op":"add","path":"/elements/laptop","value":{"type":"ListRow","props":{"title":{"$item":"name"},"subtitle":{"$template":"${chip} · ${memory} · ${battery}"},"value":{"$item":"price"},"chevron":true},"on":{"press":{"action":"open","params":{"id":{"$template":"${id}"}}}},"children":[]}}
+{"op":"add","path":"/state/laptops","value":[]}
+{"op":"add","path":"/state/laptops/0","value":{"id":"macbook-air","name":"MacBook Air 13″","chip":"Apple M4","memory":"16 GB","battery":"18 hr","price":"$1,099"}}
+{"op":"add","path":"/state/laptops/1","value":{"id":"xps-14","name":"Dell XPS 14","chip":"Intel Core Ultra 7","memory":"16 GB","battery":"13 hr","price":"$1,399"}}
+{"op":"add","path":"/state/laptops/2","value":{"id":"thinkpad-t14s","name":"ThinkPad T14s","chip":"AMD Ryzen 7 Pro","memory":"32 GB","battery":"15 hr","price":"$1,349"}}
+{"op":"add","path":"/elements/view","value":{"type":"SegmentedControl","props":{"label":"Sort by","options":["Price","Battery","Memory"],"value":{"$bindState":"/sort"}},"children":[]}}
+{"op":"add","path":"/state/sort","value":"Price"}
+```

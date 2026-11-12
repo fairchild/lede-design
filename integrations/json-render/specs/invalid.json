@@ -1,0 +1,26 @@
+{
+  "root": "screen",
+  "elements": {
+    "screen": { "type": "Screen", "props": {}, "children": ["header", "gallery", "save", "period", "missing"] },
+    "header": {
+      "type": "PageHeader",
+      "props": { "title": "Trip photos", "summary": "This spec has four mistakes, and the rest of it still renders." },
+      "children": []
+    },
+    "gallery": {
+      "type": "Carousel",
+      "props": { "images": ["beach.jpg", "harbor.jpg"] },
+      "children": []
+    },
+    "save": {
+      "type": "Button",
+      "props": { "label": "Save to album", "variant": "huge" },
+      "children": []
+    },
+    "period": {
+      "type": "SegmentedControl",
+      "props": { "label": "Period", "options": 3 },
+      "children": []
+    }
+  }
+}

@@ -1,0 +1,15 @@
+Here are your notification settings. Push and mentions are on, and the email digest goes out daily.
+
+```spec
+{"op":"add","path":"/root","value":"screen"}
+{"op":"add","path":"/elements/screen","value":{"type":"Screen","props":{},"children":["header","alerts","digest"]}}
+{"op":"add","path":"/elements/header","value":{"type":"PageHeader","props":{"title":"Notifications","summary":"Push and mentions are on, and email arrives once a day."},"children":[]}}
+{"op":"add","path":"/elements/alerts","value":{"type":"ListGroup","props":{"title":"Alerts","footer":"Changes apply right away."},"children":["push","mentions","reminders","email"]}}
+{"op":"add","path":"/elements/push","value":{"type":"ListRow","props":{"title":"Push notifications","subtitle":"On this device","checked":{"$bindState":"/settings/push"}},"children":[]}}
+{"op":"add","path":"/elements/mentions","value":{"type":"ListRow","props":{"title":"Mentions","subtitle":"When someone @mentions you","checked":{"$bindState":"/settings/mentions"}},"children":[]}}
+{"op":"add","path":"/elements/reminders","value":{"type":"ListRow","props":{"title":"Event reminders","subtitle":"10 minutes before each event","checked":{"$bindState":"/settings/reminders"}},"children":[]}}
+{"op":"add","path":"/elements/email","value":{"type":"ListRow","props":{"title":"Email alerts","subtitle":"A message for each new invite","checked":{"$bindState":"/settings/email"}},"children":[]}}
+{"op":"add","path":"/state/settings","value":{"push":true,"mentions":true,"reminders":true,"email":false,"digest":"Daily"}}
+{"op":"add","path":"/elements/digest","value":{"type":"FormSection","props":{"legend":"Email digest","description":"A summary of what you missed."},"children":["digest-frequency"]}}
+{"op":"add","path":"/elements/digest-frequency","value":{"type":"SegmentedControl","props":{"label":"How often","options":["Off","Daily","Weekly"],"value":{"$bindState":"/settings/digest"}},"children":[]}}
+```

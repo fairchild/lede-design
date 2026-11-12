@@ -1,0 +1,582 @@
+{
+  "root": "screen",
+  "state": {
+    "open": "",
+    "archived": {},
+    "replies": {
+      "m1": "",
+      "m2": "",
+      "m3": ""
+    },
+    "draft": {
+      "to": "",
+      "text": ""
+    }
+  },
+  "elements": {
+    "screen": {
+      "type": "Screen",
+      "props": {},
+      "children": [
+        "list",
+        "m1-view",
+        "m2-view",
+        "m3-view",
+        "new-view"
+      ]
+    },
+    "list": {
+      "type": "View",
+      "props": {},
+      "visible": {
+        "$state": "/open",
+        "not": true
+      },
+      "children": [
+        "header",
+        "reply",
+        "messages"
+      ]
+    },
+    "header": {
+      "type": "PageHeader",
+      "props": {
+        "title": "Inbox",
+        "summary": "3 unread messages, and one needs a reply today."
+      },
+      "slots": {
+        "actions": [
+          "compose"
+        ]
+      },
+      "children": []
+    },
+    "compose": {
+      "type": "Button",
+      "props": {
+        "label": "New message",
+        "variant": "filled"
+      },
+      "on": {
+        "press": {
+          "action": "setState",
+          "params": {
+            "statePath": "/open",
+            "value": "new"
+          }
+        }
+      },
+      "children": []
+    },
+    "reply": {
+      "type": "SummaryCard",
+      "props": {
+        "title": "Needs a reply",
+        "figure": "1",
+        "summary": "Grace asked for the venue by 5:00 PM.",
+        "status": {
+          "tone": "caution",
+          "label": "Due today"
+        }
+      },
+      "children": []
+    },
+    "messages": {
+      "type": "ListGroup",
+      "props": {
+        "title": "Today",
+        "footer": "Swipe a row, or open its menu, to archive it."
+      },
+      "children": [
+        "m1",
+        "m2",
+        "m3"
+      ]
+    },
+    "m1": {
+      "type": "ListRow",
+      "props": {
+        "title": "Grace Hopper",
+        "subtitle": "Venue for Thursday: can you confirm by 5?",
+        "value": "9:41 AM",
+        "actions": [
+          {
+            "label": "Archive",
+            "event": "archive"
+          }
+        ]
+      },
+      "visible": {
+        "$state": "/archived/m1",
+        "not": true
+      },
+      "on": {
+        "press": {
+          "action": "setState",
+          "params": {
+            "statePath": "/open",
+            "value": "m1"
+          }
+        },
+        "archive": [
+          {
+            "action": "setState",
+            "params": {
+              "statePath": "/archived/m1",
+              "value": true
+            }
+          },
+          {
+            "action": "archive",
+            "params": {
+              "id": "m1"
+            }
+          }
+        ]
+      },
+      "children": []
+    },
+    "m1-view": {
+      "type": "View",
+      "props": {},
+      "visible": {
+        "$state": "/open",
+        "eq": "m1"
+      },
+      "children": [
+        "m1-header",
+        "m1-body",
+        "m1-reply",
+        "m1-send"
+      ]
+    },
+    "m1-header": {
+      "type": "PageHeader",
+      "props": {
+        "title": "Grace Hopper",
+        "summary": "Sent at 9:41 AM.",
+        "back": {
+          "label": "Inbox"
+        }
+      },
+      "on": {
+        "back": {
+          "action": "setState",
+          "params": {
+            "statePath": "/open",
+            "value": ""
+          }
+        }
+      },
+      "children": []
+    },
+    "m1-body": {
+      "type": "SummaryCard",
+      "props": {
+        "title": "Venue for Thursday: can you confirm by 5?",
+        "summary": "Can you confirm the venue for Thursday by 5:00 PM? The caterer needs the address today."
+      },
+      "children": []
+    },
+    "m1-reply": {
+      "type": "TextField",
+      "props": {
+        "label": "Reply to Grace",
+        "rows": 3,
+        "required": true,
+        "value": {
+          "$bindState": "/replies/m1"
+        },
+        "error": "Write a reply before you send it."
+      },
+      "children": []
+    },
+    "m1-send": {
+      "type": "Button",
+      "props": {
+        "label": "Send reply",
+        "variant": "filled"
+      },
+      "on": {
+        "press": [
+          {
+            "action": "submit",
+            "params": {
+              "form": "reply-m1",
+              "values": {
+                "text": {
+                  "$state": "/replies/m1"
+                }
+              }
+            }
+          },
+          {
+            "action": "setState",
+            "params": {
+              "statePath": "/replies/m1",
+              "value": ""
+            }
+          }
+        ]
+      },
+      "children": []
+    },
+    "m2": {
+      "type": "ListRow",
+      "props": {
+        "title": "Alan Turing",
+        "subtitle": "Notes from the review are in the shared folder.",
+        "value": "8:15 AM",
+        "actions": [
+          {
+            "label": "Archive",
+            "event": "archive"
+          }
+        ]
+      },
+      "visible": {
+        "$state": "/archived/m2",
+        "not": true
+      },
+      "on": {
+        "press": {
+          "action": "setState",
+          "params": {
+            "statePath": "/open",
+            "value": "m2"
+          }
+        },
+        "archive": [
+          {
+            "action": "setState",
+            "params": {
+              "statePath": "/archived/m2",
+              "value": true
+            }
+          },
+          {
+            "action": "archive",
+            "params": {
+              "id": "m2"
+            }
+          }
+        ]
+      },
+      "children": []
+    },
+    "m2-view": {
+      "type": "View",
+      "props": {},
+      "visible": {
+        "$state": "/open",
+        "eq": "m2"
+      },
+      "children": [
+        "m2-header",
+        "m2-body",
+        "m2-reply",
+        "m2-send"
+      ]
+    },
+    "m2-header": {
+      "type": "PageHeader",
+      "props": {
+        "title": "Alan Turing",
+        "summary": "Sent at 8:15 AM.",
+        "back": {
+          "label": "Inbox"
+        }
+      },
+      "on": {
+        "back": {
+          "action": "setState",
+          "params": {
+            "statePath": "/open",
+            "value": ""
+          }
+        }
+      },
+      "children": []
+    },
+    "m2-body": {
+      "type": "SummaryCard",
+      "props": {
+        "title": "Notes from the review are in the shared folder.",
+        "summary": "The review notes are in the shared folder, with the open questions at the top."
+      },
+      "children": []
+    },
+    "m2-reply": {
+      "type": "TextField",
+      "props": {
+        "label": "Reply to Alan",
+        "rows": 3,
+        "required": true,
+        "value": {
+          "$bindState": "/replies/m2"
+        },
+        "error": "Write a reply before you send it."
+      },
+      "children": []
+    },
+    "m2-send": {
+      "type": "Button",
+      "props": {
+        "label": "Send reply",
+        "variant": "filled"
+      },
+      "on": {
+        "press": [
+          {
+            "action": "submit",
+            "params": {
+              "form": "reply-m2",
+              "values": {
+                "text": {
+                  "$state": "/replies/m2"
+                }
+              }
+            }
+          },
+          {
+            "action": "setState",
+            "params": {
+              "statePath": "/replies/m2",
+              "value": ""
+            }
+          }
+        ]
+      },
+      "children": []
+    },
+    "m3": {
+      "type": "ListRow",
+      "props": {
+        "title": "Katherine Johnson",
+        "subtitle": "Updated figures for the launch window.",
+        "value": "7:02 AM",
+        "actions": [
+          {
+            "label": "Archive",
+            "event": "archive"
+          }
+        ]
+      },
+      "visible": {
+        "$state": "/archived/m3",
+        "not": true
+      },
+      "on": {
+        "press": {
+          "action": "setState",
+          "params": {
+            "statePath": "/open",
+            "value": "m3"
+          }
+        },
+        "archive": [
+          {
+            "action": "setState",
+            "params": {
+              "statePath": "/archived/m3",
+              "value": true
+            }
+          },
+          {
+            "action": "archive",
+            "params": {
+              "id": "m3"
+            }
+          }
+        ]
+      },
+      "children": []
+    },
+    "m3-view": {
+      "type": "View",
+      "props": {},
+      "visible": {
+        "$state": "/open",
+        "eq": "m3"
+      },
+      "children": [
+        "m3-header",
+        "m3-body",
+        "m3-reply",
+        "m3-send"
+      ]
+    },
+    "m3-header": {
+      "type": "PageHeader",
+      "props": {
+        "title": "Katherine Johnson",
+        "summary": "Sent at 7:02 AM.",
+        "back": {
+          "label": "Inbox"
+        }
+      },
+      "on": {
+        "back": {
+          "action": "setState",
+          "params": {
+            "statePath": "/open",
+            "value": ""
+          }
+        }
+      },
+      "children": []
+    },
+    "m3-body": {
+      "type": "SummaryCard",
+      "props": {
+        "title": "Updated figures for the launch window.",
+        "summary": "The launch window moved 12 minutes later. The new figures are in the attached sheet."
+      },
+      "children": []
+    },
+    "m3-reply": {
+      "type": "TextField",
+      "props": {
+        "label": "Reply to Katherine",
+        "rows": 3,
+        "required": true,
+        "value": {
+          "$bindState": "/replies/m3"
+        },
+        "error": "Write a reply before you send it."
+      },
+      "children": []
+    },
+    "m3-send": {
+      "type": "Button",
+      "props": {
+        "label": "Send reply",
+        "variant": "filled"
+      },
+      "on": {
+        "press": [
+          {
+            "action": "submit",
+            "params": {
+              "form": "reply-m3",
+              "values": {
+                "text": {
+                  "$state": "/replies/m3"
+                }
+              }
+            }
+          },
+          {
+            "action": "setState",
+            "params": {
+              "statePath": "/replies/m3",
+              "value": ""
+            }
+          }
+        ]
+      },
+      "children": []
+    },
+    "new-view": {
+      "type": "View",
+      "props": {},
+      "visible": {
+        "$state": "/open",
+        "eq": "new"
+      },
+      "children": [
+        "new-header",
+        "new-fields",
+        "new-send"
+      ]
+    },
+    "new-header": {
+      "type": "PageHeader",
+      "props": {
+        "title": "New message",
+        "summary": "It sends from your Daybook address.",
+        "back": {
+          "label": "Inbox"
+        }
+      },
+      "on": {
+        "back": {
+          "action": "setState",
+          "params": {
+            "statePath": "/open",
+            "value": ""
+          }
+        }
+      },
+      "children": []
+    },
+    "new-fields": {
+      "type": "FormSection",
+      "props": {
+        "legend": "Message"
+      },
+      "children": [
+        "new-to",
+        "new-text"
+      ]
+    },
+    "new-to": {
+      "type": "TextField",
+      "props": {
+        "label": "To",
+        "type": "email",
+        "required": true,
+        "value": {
+          "$bindState": "/draft/to"
+        },
+        "hint": "An email address, such as grace@example.com.",
+        "error": "Enter an email address with an @."
+      },
+      "children": []
+    },
+    "new-text": {
+      "type": "TextField",
+      "props": {
+        "label": "Message",
+        "rows": 4,
+        "required": true,
+        "value": {
+          "$bindState": "/draft/text"
+        },
+        "error": "Write a message before you send it."
+      },
+      "children": []
+    },
+    "new-send": {
+      "type": "Button",
+      "props": {
+        "label": "Send",
+        "variant": "filled"
+      },
+      "on": {
+        "press": [
+          {
+            "action": "submit",
+            "params": {
+              "form": "message",
+              "values": {
+                "$state": "/draft"
+              }
+            }
+          },
+          {
+            "action": "setState",
+            "params": {
+              "statePath": "/draft",
+              "value": {
+                "to": "",
+                "text": ""
+              }
+            }
+          }
+        ]
+      },
+      "children": []
+    }
+  }
+}

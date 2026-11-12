@@ -133,7 +133,7 @@ export function Overview() {
       </section>
       <section aria-labelledby="install" className="docs-section">
         <h2 id="install" tabIndex={-1} className="text-title-3 docs-target">Install</h2>
-        <p className="docs-intro">Add Lede’s registry to your project, then add the items you need. The registry URL pins version {version}, and a release’s files never change. Lede renders on the client only, so it suits a Vite app or another client-only React app. The <a href={README}>README</a> lists what your project needs first and how to move to a later release.</p>
+        <p className="docs-intro">Add Lede’s registry to your project, then add the items you need. The registry URL pins version {version}, and a release’s files never change. Lede renders on the client only, so it suits a Vite app or another client-only React app. The <a href={README}>README</a> lists what your project needs first and how to move to a later release. For a chat whose replies hold Lede screens, follow <a href={`${REPO}/blob/main/integrations/json-render-chat/AGENTS.md`}>the json-render chat recipe</a>.</p>
         <ol className="docs-steps">
           {STEPS.map((step) => (
             <li key={step.number}>

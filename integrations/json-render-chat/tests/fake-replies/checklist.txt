@@ -1,0 +1,15 @@
+Here’s your list for the trip. Switch each one on as you finish it.
+
+```spec
+{"op":"add","path":"/root","value":"screen"}
+{"op":"add","path":"/elements/screen","value":{"type":"Screen","props":{},"children":["header","list"]}}
+{"op":"add","path":"/elements/header","value":{"type":"PageHeader","props":{"title":"Before the trip","summary":"Five things to do, none done yet."},"children":[]}}
+{"op":"add","path":"/elements/list","value":{"type":"ListGroup","props":{"title":"To do"},"repeat":{"statePath":"/todo","key":"id"},"children":["item"]}}
+{"op":"add","path":"/elements/item","value":{"type":"ListRow","props":{"title":{"$item":"title"},"checked":{"$bindItem":"done"}},"children":[]}}
+{"op":"add","path":"/state/todo","value":[]}
+{"op":"add","path":"/state/todo/0","value":{"id":"pass","title":"Renew the passport","done":false}}
+{"op":"add","path":"/state/todo/1","value":{"id":"adapter","title":"Pack the plug adapter","done":false}}
+{"op":"add","path":"/state/todo/2","value":{"id":"cash","title":"Get some euros","done":false}}
+{"op":"add","path":"/state/todo/3","value":{"id":"plants","title":"Ask Sam to water the plants","done":false}}
+{"op":"add","path":"/state/todo/4","value":{"id":"mail","title":"Pause the mail","done":false}}
+```

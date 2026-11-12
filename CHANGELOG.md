@@ -2,6 +2,32 @@
 
 ## Unreleased
 
+### Added
+
+- `json-render`, titled SpecView, lets a model's reply be a Lede screen. It installs a json-render catalog of 13 Lede
+  components, `prompt()`, which gives a model json-render's prompt in this catalog's terms with Lede's `rules`, a
+  registry that draws each component, `catalog-fit` for the typecheck, `check` for a spec's props, `specFromParts` and
+  `SpecView`. `functions` holds `scale`, `remaining` and `sum`, for values a spec works out with `$computed`. An
+  action that reads a field failing its browser check doesn't run: each such field shows its `error`, a plain string,
+  until its value passes, and focus moves to the first. Enter in a one-line TextField runs its
+  actions, a number field keeps a number in state and takes decimals unless `step` says otherwise, a TextField takes
+  `type: "date"`, `pattern`, `minLength` and `maxLength` and a SegmentedControl or Checkbox in a spec can be required
+  and show an error. `SpecView` takes input while a spec streams and keeps what the person changed, reports the
+  screen's state through `onStateChange` and an action held back, with the error each field shows, through
+  `onActionHeld`, moves focus on when a press hides the control that made it and warns in development when Lede's CSS
+  isn't loaded. It needs `@json-render/core` and `@json-render/react` at exactly 0.22.0.
+  A row or a Button opens an item in place: Screen's children are Views, a press sets the state path they read, and a
+  detail's PageHeader takes `back`, whose button, or Escape while focus is in that screen, shows the list again. The
+  detail's title takes focus, Back returns it to the row that opened the detail, and a row shows a chevron only when
+  its press is bound; `check` flags a row whose press opens no View.
+  `integrations/json-render-chat` uses it in an AI SDK chat, with a guide around the chat: Try it, where each reply
+  shows how it was made, How it works and Build it, which draw the example's README.
+- `ld-checkbox-field` on a `<label>` that holds a Checkbox keeps a long label in a column beside the box, with the
+  default cursor while the Checkbox is disabled.
+- EmptyState's `headingLevel` takes 4.
+- A PageHeader inside a flow's stack drops its bottom margin, so the space under it stays one step when an
+  inline-level control, such as a SegmentedControl, comes next.
+
 ### Fixed
 
 - ListRow: after an action that keeps its row, a click that focuses nothing lets the row's saved place go, as a click

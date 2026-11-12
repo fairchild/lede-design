@@ -1,0 +1,15 @@
+Here are your notification settings. Push and mentions are on, and the email digest goes out daily.
+
+```spec
+{"op":"add","path":"/root","value":"main"}
+{"op":"add","path":"/elements/main","value":{"type":"Stack","props":{"direction":"vertical","gap":"lg"},"children":["title","alerts","digest"]}}
+{"op":"add","path":"/elements/title","value":{"type":"Heading","props":{"text":"Notifications","level":"h3"},"children":[]}}
+{"op":"add","path":"/elements/alerts","value":{"type":"Card","props":{"title":"Alerts","description":"Changes apply right away."},"children":["push","mentions","reminders","email"]}}
+{"op":"add","path":"/elements/push","value":{"type":"Switch","props":{"label":"Push notifications","name":"push","checked":{"$bindState":"/settings/push"}},"children":[]}}
+{"op":"add","path":"/elements/mentions","value":{"type":"Switch","props":{"label":"Mentions","name":"mentions","checked":{"$bindState":"/settings/mentions"}},"children":[]}}
+{"op":"add","path":"/elements/reminders","value":{"type":"Switch","props":{"label":"Event reminders","name":"reminders","checked":{"$bindState":"/settings/reminders"}},"children":[]}}
+{"op":"add","path":"/elements/email","value":{"type":"Switch","props":{"label":"Email alerts","name":"email","checked":{"$bindState":"/settings/email"}},"children":[]}}
+{"op":"add","path":"/state/settings","value":{"push":true,"mentions":true,"reminders":true,"email":false,"digest":"daily"}}
+{"op":"add","path":"/elements/digest","value":{"type":"Card","props":{"title":"Email digest","description":"A summary of what you missed."},"children":["digest-frequency"]}}
+{"op":"add","path":"/elements/digest-frequency","value":{"type":"Radio","props":{"label":"How often","name":"digest","options":["off","daily","weekly"],"value":{"$bindState":"/settings/digest"}},"children":[]}}
+```

@@ -1,0 +1,10 @@
+@import "tailwindcss";
+/* Lede's source and its generated tokens, straight from the repo: `npm run tokens` writes lede.tokens.css. In your
+   app this is your global CSS with `@import "./styles/lede/index.css";`, as the README's step 2 shows. */
+@source "../../../registry/lede";
+@source "../../json-render/src";
+@import "../../../registry/lede/lede.tokens.css";
+@import "../../../registry/lede/lede.components.css";
+@import "../../../registry/lede/lede.blocks.css";
+
+html, body { margin: 0; font-family: var(--font-sans); -webkit-font-smoothing: antialiased; }

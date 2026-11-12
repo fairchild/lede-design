@@ -1,0 +1,216 @@
+{
+  "root": "screen",
+  "state": {
+    "open": "",
+    "view": "This week",
+    "focus": false,
+    "meetings": [
+      {
+        "id": "venue-review",
+        "title": "Venue review",
+        "subtitle": "With Grace and Alan",
+        "when": "Today, 2:00 PM"
+      },
+      {
+        "id": "launch-sync",
+        "title": "Launch window sync",
+        "subtitle": "With Katherine",
+        "when": "Thu, 1:00 PM"
+      },
+      {
+        "id": "critique",
+        "title": "Design critique",
+        "subtitle": "Studio B",
+        "when": "Thu, 3:30 PM"
+      }
+    ]
+  },
+  "elements": {
+    "screen": {
+      "type": "Screen",
+      "props": {},
+      "children": [
+        "list",
+        "detail"
+      ]
+    },
+    "list": {
+      "type": "View",
+      "props": {},
+      "visible": {
+        "$state": "/open",
+        "not": true
+      },
+      "children": [
+        "header",
+        "period",
+        "meetings",
+        "agenda",
+        "focus"
+      ]
+    },
+    "detail": {
+      "type": "View",
+      "props": {},
+      "repeat": {
+        "statePath": "/meetings",
+        "key": "id"
+      },
+      "visible": [
+        {
+          "$state": "/open"
+        },
+        {
+          "$item": "id",
+          "eq": {
+            "$state": "/open"
+          }
+        }
+      ],
+      "children": [
+        "detail-header",
+        "detail-facts"
+      ]
+    },
+    "header": {
+      "type": "PageHeader",
+      "props": {
+        "title": "Your week",
+        "summary": "4 meetings left, and Thursday is the busiest day."
+      },
+      "children": []
+    },
+    "period": {
+      "type": "SegmentedControl",
+      "props": {
+        "label": "Period",
+        "options": [
+          "Today",
+          "This week",
+          "Next week"
+        ],
+        "value": {
+          "$bindState": "/view"
+        }
+      },
+      "children": []
+    },
+    "meetings": {
+      "type": "SummaryCard",
+      "props": {
+        "title": "Meetings left",
+        "figure": "4",
+        "summary": "2 of them are on Thursday afternoon.",
+        "status": {
+          "tone": "caution",
+          "label": "Busy Thursday"
+        }
+      },
+      "children": []
+    },
+    "agenda": {
+      "type": "ListGroup",
+      "props": {
+        "title": "Coming up",
+        "summary": "Venue review is next, at 2:00 PM."
+      },
+      "repeat": {
+        "statePath": "/meetings",
+        "key": "id"
+      },
+      "children": [
+        "meeting"
+      ]
+    },
+    "focus": {
+      "type": "Switch",
+      "props": {
+        "label": "Block Friday morning for focus time",
+        "checked": {
+          "$bindState": "/focus"
+        }
+      },
+      "children": []
+    },
+    "meeting": {
+      "type": "ListRow",
+      "props": {
+        "title": {
+          "$item": "title"
+        },
+        "subtitle": {
+          "$item": "subtitle"
+        },
+        "value": {
+          "$item": "when"
+        }
+      },
+      "on": {
+        "press": {
+          "action": "setState",
+          "params": {
+            "statePath": "/open",
+            "value": {
+              "$template": "${id}"
+            }
+          }
+        }
+      },
+      "children": []
+    },
+    "detail-header": {
+      "type": "PageHeader",
+      "props": {
+        "title": {
+          "$item": "title"
+        },
+        "summary": {
+          "$item": "when"
+        },
+        "back": {
+          "label": "Your week"
+        }
+      },
+      "on": {
+        "back": {
+          "action": "setState",
+          "params": {
+            "statePath": "/open",
+            "value": ""
+          }
+        }
+      },
+      "children": []
+    },
+    "detail-facts": {
+      "type": "ListGroup",
+      "props": {
+        "title": "Details"
+      },
+      "children": [
+        "detail-when",
+        "detail-who"
+      ]
+    },
+    "detail-when": {
+      "type": "ListRow",
+      "props": {
+        "title": "When",
+        "value": {
+          "$item": "when"
+        }
+      },
+      "children": []
+    },
+    "detail-who": {
+      "type": "ListRow",
+      "props": {
+        "title": "With",
+        "value": {
+          "$item": "subtitle"
+        }
+      },
+      "children": []
+    }
+  }
+}

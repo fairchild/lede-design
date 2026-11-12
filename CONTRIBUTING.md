@@ -64,9 +64,14 @@ Lede has five layers, and dependencies only point down:
    and `registry/lede/lede.tokens.css`, which are generated and git-ignored.
 2. `registry/lede/*.tsx` holds the components, styled by `lede.components.css`.
 3. `registry/lede/blocks/*.tsx` holds the blocks, page layouts among them, styled by `lede.blocks.css`.
+   `registry/lede/json-render/` sits here too: a json-render catalog and registry over the components, with no CSS of
+   its own.
 4. `registry/lede/flows/*.tsx` holds the hero flows. A flow takes data, hrefs and callbacks, and it fetches nothing and
    imports no router.
 5. `src/` is the docs site and Daybook, the demo app, which wire the flows to React Router and sample data.
+
+`integrations/` sits outside the layers. It holds self-contained apps that show Lede beside another project. They read
+`registry/`, and no layer imports them.
 
 Registry files use relative imports (`../list`) that match where they install (`components/lede/…`). Every file that
 installs is listed in `registry.json`. The `index.ts` barrels are for this repo only and don't install.

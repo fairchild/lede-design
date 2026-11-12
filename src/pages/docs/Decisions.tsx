@@ -215,6 +215,17 @@ const GROUPS: Group[] = [
           <><Path to="tests/registry-gate.spec.ts" /> runs the gate on altered copies of the registry.</>,
         ],
       },
+      {
+        title: 'Generated screens draw with Lede',
+        summary: <>The <code>json-render</code> item lets a model’s reply be a Lede screen: a catalog of components for its prompt, a registry that draws each one and <code>SpecView</code>.</>,
+        why: <>A catalog, a registry and the components they draw only work when they agree. Shipped as one item, they change with each release, and an app’s own files import them from <code>@/components/lede/</code> like any other item.</>,
+        cost: <>It adds <code>@json-render/core</code>, <code>@json-render/react</code> and <code>zod</code> for the apps that install it, pinned at one version, since the prompt’s rewrites match that version’s text: an upgrade is a bump and a run of the prompt test. A model can build only from the entries in the catalog. PageHeader takes an h1 or h2, so under a chat message the registry draws its h3 title with PageHeader’s classes. <code>SpecView</code> keeps each screen’s state in a store of its own, so a person can use a screen while it streams, and a value they change stays theirs when the stream later sends it.</>,
+        heldBy: [
+          <><Path to="scripts/check-registry.mjs" /> fails the item when a file it installs imports a component it doesn’t list.</>,
+          <><Path to="registry/lede/json-render/catalog-fit.ts" /> and <Path to="integrations/json-render/tests/specs.test.tsx" />, which also checks each heading level <code>SpecView</code> takes, and the chat’s tests in <Path to="integrations/json-render-chat/tests/" />.</>,
+          <><Path to="integrations/json-render-chat/tests/model-replies.test.tsx" /> streams replies a model wrote from the chat’s prompt and fails on one that doesn’t parse, doesn’t pass the catalog, doesn’t draw or shows a list’s rows twice.</>,
+        ],
+      },
     ],
   },
   {
@@ -262,6 +273,18 @@ const GROUPS: Group[] = [
         heldBy: [
           <><Path to="tests/table-core-parity.spec.ts" /> hashes <Path to="registry/lede/blocks/server-rows-store.ts" /> without its import lines, and the shared types and selection functions in <Path to="registry/lede/blocks/use-data-table.ts" /> without comments, and fails when either differs from the pinned table-core commit. Its failure message says how to re-sync and re-pin.</>,
           <>The <code>server-rows-*</code> specs in <Path to="tests/" /> are ports of table-core’s tests for the store, run against Lede’s copy.</>,
+        ],
+      },
+      {
+        title: 'Integrations build against main',
+        summary: <>Each app in <code>integrations/</code> shows Lede beside another project, such as json-render, and reads Lede’s source from <code>registry/</code>. One draws the same chat without Lede, to compare against.</>,
+        why: <>An example that installs a past release shows how Lede used to work. Reading the source in <Path to="registry/" /> means a change to a component reaches each example in <Path to="integrations/" /> in the same pull request, and a break there shows in CI.</>,
+        cost: <>Every pull request installs, builds and tests each entry, on a runner of its own. An entry keeps its own package manifest and lockfile, so its dependencies never reach the registry or the site.</>,
+        heldBy: [
+          <>The <code>integrations</code> job in <Path to=".github/workflows/ci.yml" />, which runs each entry’s <code>npm run build</code> and <code>npm test</code>.</>,
+          <>For json-render, <Path to="registry/lede/json-render/catalog-fit.ts" /> fails the typecheck on a catalog prop its Lede component doesn’t take, and <Path to="integrations/json-render/tests/specs.test.tsx" /> fails on a recorded spec with a type the registry can’t draw or a prop its schema rejects, and on a row whose chevron opens nothing.</>,
+          <>The chat entry uses the same item. <Path to="integrations/json-render-chat/tests/mock-transport.test.ts" /> fails when the spec a scripted reply builds doesn’t pass the catalog, <Path to="integrations/json-render-chat/tests/server.test.ts" /> starts the server and checks that the model sees its earlier screens, and <Path to="integrations/json-render-chat/tests/chat.e2e.ts" /> drives the chat in a browser: a reply’s order, focus, an item opened in place with Back and Escape, Stop, Escape, Try again, an action held back while a field it reads fails, each error shown only after a press, a list that fills in as it streams, typing and presses kept while a reply streams and axe. <Path to="integrations/json-render-chat/tests/guide.e2e.ts" /> drives the guide around it: each screen’s link and h1, Back to where the person was, each reply’s account of what was sent, streamed, built and done, and axe on each screen in each theme at 390 and 1280 pixels and 200% text. It also holds <code>SpecView</code>’s <code>onActionHeld</code>, which has no test in the registry of its own. <Path to="integrations/json-render-chat/tests/install.test.ts" /> fails when a file the chat copies imports a Lede file that the documented install command doesn’t bring. <Path to="integrations/json-render-chat/tests/real.e2e.ts" /> runs the AI SDK’s own transport against the server and a fake Anthropic: a reply that draws, a connection that drops partway, a malformed body, a follow-up that carries what the person left in a screen, a reply that only patches an earlier screen, focus handed on when a control or a row leaves, kept where the person moved on, a row switched on while its list streams in and a form whose pattern holds back a short ZIP code while its number field takes a decimal.</>,
+          <>The plain chat entry draws the same conversations from json-render’s shadcn components, to compare against. It runs the chat entry’s tests of the mock, the server and the chat in a browser on its own catalog, and <Path to="integrations/json-render-chat-plain/tests/specs.test.tsx" /> fails on a scripted screen its registry can’t draw or its catalog rejects.</>,
         ],
       },
     ],
@@ -314,7 +337,10 @@ const GROUPS: Group[] = [
         summary: 'Overview renders the install steps from the README, so the site and the repository give one set of steps.',
         why: 'A newcomer meets the steps on the site or on GitHub, and two copies of them drift apart.',
         cost: <>A README change can change the site, so it runs the whole suite in CI. Step 1’s commands stay the site’s own, because they pin the version from <Path to="package.json" />.</>,
-        heldBy: [<><Path to="tests/code-examples.spec.ts" /> reads each fenced block from step 2 of the README on and expects Overview to show it, character for character.</>],
+        heldBy: [
+          <><Path to="tests/code-examples.spec.ts" /> reads each fenced block from step 2 of the README on and expects Overview to show it, character for character.</>,
+          <>The chat example’s guide draws How it works and Build it from <Path to="integrations/json-render-chat/README.md" /> the same way. <Path to="integrations/json-render-chat/tests/guide.e2e.ts" /> expects How it works and Build it to show each paragraph, list item and table row of their sections in order, with Markdown’s marks gone, and each fenced block character for character. It checks that its links point at the repo and, with literal text, which way the curly quotes face. <Path to="integrations/json-render-chat/tests/markdown.test.tsx" /> fails when the README uses Markdown the renderer doesn’t draw, and checks the quotes after code and bold.</>,
+        ],
       },
     ],
   },

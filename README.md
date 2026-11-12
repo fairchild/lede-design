@@ -38,6 +38,13 @@ You need Node 22.12 or later and a client-rendered React 19 project, such as a V
 path alias and a `components.json`. `npx shadcn@latest init` creates that file. [Limits](#limits) covers server
 rendering.
 
+In an app made with create-vite, replace `src/index.css` first. Its demo styles center every line in a bordered 1126px
+column and set `:root` to 18px, which rescales Lede, and `shadcn init` merges into whatever `:root` it finds:
+
+```bash
+printf '@import "tailwindcss";\n' > src/index.css
+```
+
 1. Add the registry and the items you want. Keep `@lede/theme-provider` in the list: step 4 needs it, and most items
    don't install it.
 
@@ -104,6 +111,10 @@ To move to a later release, read the [CHANGELOG](CHANGELOG.md), change the versi
   inside a dark one sets Lede's tokens, and stock `dark:` utilities, high contrast and `glass="solid"` still match
   inside it, as under shadcn's own `.dark` class.
 
+For a chat whose replies hold Lede screens, on the AI SDK and json-render, follow
+[`integrations/json-render-chat`](integrations/json-render-chat/README.md). Its
+[`AGENTS.md`](integrations/json-render-chat/AGENTS.md) is the same recipe for a coding agent.
+
 ## Develop
 
 The docs site and Daybook run at http://localhost:5173 with `npm run dev`. Run `npm run build` before `npm test`.
@@ -119,6 +130,8 @@ npm run contrast   # the contrast check alone
 
 [CONTRIBUTING.md](CONTRIBUTING.md) covers how the code is organized, the rules every component follows, pull
 requests and writing.
+
+[`integrations/`](integrations/) holds small apps that show Lede beside other projects, starting with json-render.
 
 ## License
 

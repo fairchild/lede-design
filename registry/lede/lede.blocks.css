@@ -246,6 +246,9 @@
 .ld-flow-actions { display: flex; justify-content: space-between; align-items: center; gap: var(--space-3); margin-top: var(--space-2); }
 .ld-flow-actions > :only-child { margin-left: auto; }
 .ld-flow-stack > * + * { margin-top: var(--space-6); }
+/* The stack spaces its children, so a PageHeader in it drops its own margin: beside an inline-level control, such as
+   a SegmentedControl, the two margins would add up instead of collapsing. */
+.ld-flow-stack > .ld-page-header { margin-bottom: 0; }
 .ld-unread-dot { width: var(--size-unread-dot); height: var(--size-unread-dot); border-radius: 999px; background: var(--primary); }
 .ld-inbox-row .ld-row-title { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; overflow-wrap: break-word; }
 /* An inbox row's subtitle previews the message, which holds the full text, so it keeps to one line at any text size. */

@@ -570,6 +570,64 @@
       ]
     },
     {
+      "name": "json-render",
+      "type": "registry:lib",
+      "title": "SpecView",
+      "description": "SpecView draws a json-render spec with Lede, so a model\u2019s reply can be a screen. `catalog` lists the components a model may use and goes into its prompt, `registry` draws each one and `check` finds the props a spec gets wrong.",
+      "registryDependencies": [
+        "@lede/lede-theme",
+        "@lede/lede-utils",
+        "@lede/theme-provider",
+        "@lede/button",
+        "@lede/checkbox",
+        "@lede/list",
+        "@lede/segmented-control",
+        "@lede/switch",
+        "@lede/text-field",
+        "@lede/empty-state",
+        "@lede/form-section",
+        "@lede/page-header",
+        "@lede/summary-card"
+      ],
+      "files": [
+        {
+          "path": "registry/lede/json-render/catalog.ts",
+          "type": "registry:lib",
+          "target": "components/lede/json-render/catalog.ts"
+        },
+        {
+          "path": "registry/lede/json-render/catalog-fit.ts",
+          "type": "registry:lib",
+          "target": "components/lede/json-render/catalog-fit.ts"
+        },
+        {
+          "path": "registry/lede/json-render/registry.tsx",
+          "type": "registry:component",
+          "target": "components/lede/json-render/registry.tsx"
+        },
+        {
+          "path": "registry/lede/json-render/spec-view.tsx",
+          "type": "registry:component",
+          "target": "components/lede/json-render/spec-view.tsx"
+        },
+        {
+          "path": "registry/lede/json-render/check.ts",
+          "type": "registry:lib",
+          "target": "components/lede/json-render/check.ts"
+        },
+        {
+          "path": "registry/lede/json-render/patches.ts",
+          "type": "registry:lib",
+          "target": "components/lede/json-render/patches.ts"
+        }
+      ],
+      "dependencies": [
+        "@json-render/core@0.22.0",
+        "@json-render/react@0.22.0",
+        "zod@^4.6.7"
+      ]
+    },
+    {
       "name": "daily-brief",
       "type": "registry:block",
       "title": "DailyBriefFlow",

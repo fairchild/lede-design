@@ -1,0 +1,54 @@
+/* The chat page's own layout, on shadcn's theme variables. */
+.jrc-page { box-sizing: border-box; max-width: 48rem; margin: 0 auto; padding: 1rem 1rem 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 1.5rem; }
+.jrc-header { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 0.75rem; }
+
+.jrc-segmented { display: inline-flex; margin: 0; padding: 2px; border: 0; border-radius: var(--radius-md); background: var(--muted); }
+.jrc-segmented input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.jrc-segmented span { display: block; padding: 0.25rem 0.75rem; border-radius: calc(var(--radius-md) - 2px); font-size: 0.875rem; cursor: pointer; }
+.jrc-segmented input:checked + span { background: var(--background); box-shadow: 0 1px 2px rgb(0 0 0 / 0.1); font-weight: 500; }
+.jrc-segmented input:focus-visible + span { outline: 3px solid color-mix(in oklab, var(--ring) 50%, transparent); }
+
+.jrc-button { display: inline-flex; height: 2.25rem; align-items: center; justify-content: center; padding: 0 1rem; border: 0; border-radius: var(--radius-md); font: inherit; font-size: 0.875rem; font-weight: 500; cursor: pointer; }
+.jrc-button:focus-visible, .jrc-input:focus-visible { outline: 3px solid color-mix(in oklab, var(--ring) 50%, transparent); }
+.jrc-primary { background: var(--primary); color: var(--primary-foreground); }
+.jrc-secondary { background: var(--secondary); color: var(--secondary-foreground); }
+.jrc-input { width: 100%; box-sizing: border-box; resize: none; padding: 0.5rem 0.75rem; border: 1px solid var(--input); border-radius: var(--radius-md); background: var(--card); color: inherit; font: inherit; }
+
+/* Turns: the assistant's beside its avatar, text and then its screen; yours in a bubble on the right. */
+.jrc-messages { list-style: none; margin: 0; padding: 0; display: grid; gap: 1.5rem; }
+.jrc-message { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 0.75rem; align-items: start; min-width: 0; scroll-margin-top: 1rem; }
+.jrc-message[data-role="user"] { grid-template-columns: minmax(0, 1fr); justify-self: end; max-width: 85%; }
+.jrc-avatar { display: grid; place-items: center; width: 2rem; height: 2rem; border-radius: 50%; background: var(--secondary); color: var(--secondary-foreground); font-size: 0.875rem; font-weight: 600; }
+.jrc-body { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0.5rem; min-width: 0; }
+.jrc-body > * { margin: 0; }
+.jrc-message[data-role="user"] .jrc-body { gap: 0.25rem; padding: 0.5rem 1rem 0.75rem; border-radius: var(--radius-lg); background: var(--primary); color: var(--primary-foreground); }
+.jrc-author { font-size: 0.8125rem; font-weight: 600; color: var(--muted-foreground); }
+.jrc-author time { font-weight: 400; }
+.jrc-message[data-role="user"] .jrc-author { color: inherit; }
+.jrc-text { white-space: pre-wrap; overflow-wrap: anywhere; }
+.jrc-screen { padding: 1rem; border-radius: var(--radius-xl); border: 1px solid var(--border); }
+.jrc-notes, .jrc-ending { color: var(--muted-foreground); font-size: 0.8125rem; }
+.jrc-notes { list-style: none; padding: 0 0 0 1rem; display: grid; gap: 0.25rem; }
+.jrc-ending { font-style: italic; }
+
+.jrc-typing { display: flex; gap: 0.25rem; margin: 0; padding: 0.75rem 0; }
+.jrc-typing span { width: 0.5rem; height: 0.5rem; border-radius: 50%; background: var(--muted-foreground); animation: jrc-dot 1.2s infinite ease-in-out; }
+.jrc-typing span:nth-child(2) { animation-delay: 0.15s; }
+.jrc-typing span:nth-child(3) { animation-delay: 0.3s; }
+@keyframes jrc-dot { 0%, 80%, 100% { opacity: 0.3; } 40% { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .jrc-typing span { animation: none; opacity: 0.6; } }
+
+/* The composer stays at the foot of the window when the window has room for it, and scrolls with the page otherwise. */
+.jrc-footer { display: grid; gap: 0.75rem; padding: 0.75rem 0 1rem; background: var(--background); border-top: 1px solid var(--border); }
+@media (min-height: 36em) { .jrc-footer { position: sticky; bottom: 0; z-index: 10; } }
+.jrc-footer > * { margin: 0; }
+.jrc-status { color: var(--destructive); font-size: 0.8125rem; }
+.jrc-composer { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0.5rem 0.75rem; align-items: end; }
+.jrc-composer-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 0.5rem; padding-bottom: 1.75rem; }
+
+/* On a narrow window the screen takes the whole width, and the avatar steps out. */
+@media (width < 37.5em) {
+  .jrc-message[data-role="assistant"] { grid-template-columns: minmax(0, 1fr); }
+  .jrc-message .jrc-avatar { display: none; }
+  .jrc-screen { padding: 0.75rem; }
+}

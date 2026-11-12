@@ -1,0 +1,268 @@
+{
+  "root": "screen",
+  "state": {
+    "open": "",
+    "view": "This week",
+    "focus": false,
+    "meetings": [
+      {
+        "id": "venue-review",
+        "title": "Venue review",
+        "subtitle": "With Grace and Alan",
+        "when": "Today, 2:00 PM"
+      },
+      {
+        "id": "launch-sync",
+        "title": "Launch window sync",
+        "subtitle": "With Katherine",
+        "when": "Thu, 1:00 PM"
+      },
+      {
+        "id": "critique",
+        "title": "Design critique",
+        "subtitle": "Studio B",
+        "when": "Thu, 3:30 PM"
+      }
+    ]
+  },
+  "elements": {
+    "screen": {
+      "type": "Stack",
+      "props": {
+        "direction": "vertical",
+        "gap": "lg"
+      },
+      "children": [
+        "list-view",
+        "detail"
+      ]
+    },
+    "list-view": {
+      "type": "Stack",
+      "props": {
+        "direction": "vertical",
+        "gap": "lg"
+      },
+      "visible": {
+        "$state": "/open",
+        "not": true
+      },
+      "children": [
+        "title",
+        "summary",
+        "period",
+        "meetings",
+        "agenda",
+        "focus"
+      ]
+    },
+    "detail": {
+      "type": "Stack",
+      "props": {
+        "direction": "vertical",
+        "gap": "lg"
+      },
+      "repeat": {
+        "statePath": "/meetings",
+        "key": "id"
+      },
+      "visible": [
+        {
+          "$state": "/open"
+        },
+        {
+          "$item": "id",
+          "eq": {
+            "$state": "/open"
+          }
+        }
+      ],
+      "children": [
+        "detail-back",
+        "detail-title",
+        "detail-when",
+        "detail-who"
+      ]
+    },
+    "title": {
+      "type": "Heading",
+      "props": {
+        "text": "Your week",
+        "level": "h3"
+      },
+      "children": []
+    },
+    "summary": {
+      "type": "Text",
+      "props": {
+        "text": "4 meetings left, and Thursday is the busiest day.",
+        "variant": "muted"
+      },
+      "children": []
+    },
+    "period": {
+      "type": "ToggleGroup",
+      "props": {
+        "type": "single",
+        "items": [
+          {
+            "label": "Today",
+            "value": "Today"
+          },
+          {
+            "label": "This week",
+            "value": "This week"
+          },
+          {
+            "label": "Next week",
+            "value": "Next week"
+          }
+        ],
+        "value": {
+          "$bindState": "/view"
+        }
+      },
+      "children": []
+    },
+    "meetings": {
+      "type": "Card",
+      "props": {
+        "title": "Meetings left: 4",
+        "description": "2 of them are on Thursday afternoon."
+      },
+      "children": [
+        "busy"
+      ]
+    },
+    "busy": {
+      "type": "Badge",
+      "props": {
+        "text": "Busy Thursday",
+        "variant": "secondary"
+      },
+      "children": []
+    },
+    "agenda": {
+      "type": "Card",
+      "props": {
+        "title": "Coming up",
+        "description": "Venue review is next, at 2:00 PM."
+      },
+      "children": [
+        "list"
+      ]
+    },
+    "list": {
+      "type": "Stack",
+      "props": {
+        "direction": "vertical",
+        "gap": "md"
+      },
+      "children": [
+        "meeting"
+      ],
+      "repeat": {
+        "statePath": "/meetings",
+        "key": "id"
+      }
+    },
+    "meeting": {
+      "type": "Stack",
+      "props": {
+        "direction": "vertical",
+        "gap": "sm"
+      },
+      "children": [
+        "meeting-open",
+        "meeting-when"
+      ]
+    },
+    "meeting-open": {
+      "type": "Button",
+      "props": {
+        "label": {
+          "$item": "title"
+        },
+        "variant": "secondary"
+      },
+      "children": [],
+      "on": {
+        "press": {
+          "action": "setState",
+          "params": {
+            "statePath": "/open",
+            "value": {
+              "$template": "${id}"
+            }
+          }
+        }
+      }
+    },
+    "meeting-when": {
+      "type": "Text",
+      "props": {
+        "text": {
+          "$template": "${subtitle}, ${when}"
+        },
+        "variant": "muted"
+      },
+      "children": []
+    },
+    "focus": {
+      "type": "Switch",
+      "props": {
+        "label": "Block Friday morning for focus time",
+        "name": "focus",
+        "checked": {
+          "$bindState": "/focus"
+        }
+      },
+      "children": []
+    },
+    "detail-back": {
+      "type": "Button",
+      "props": {
+        "label": "Back to Your week",
+        "variant": "secondary"
+      },
+      "on": {
+        "press": {
+          "action": "setState",
+          "params": {
+            "statePath": "/open",
+            "value": ""
+          }
+        }
+      },
+      "children": []
+    },
+    "detail-title": {
+      "type": "Heading",
+      "props": {
+        "text": {
+          "$item": "title"
+        },
+        "level": "h3"
+      },
+      "children": []
+    },
+    "detail-when": {
+      "type": "Text",
+      "props": {
+        "text": {
+          "$template": "When: ${when}"
+        }
+      },
+      "children": []
+    },
+    "detail-who": {
+      "type": "Text",
+      "props": {
+        "text": {
+          "$template": "With: ${subtitle}"
+        }
+      },
+      "children": []
+    }
+  }
+}

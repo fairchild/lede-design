@@ -1,11 +1,12 @@
 @import "tailwindcss";
 /* Tailwind skips the files that CI's tiers 1 and 2 check without the whole suite (scripts/ci-tier.mjs): the Markdown
-   the site doesn't render and tests/. A text-only or tests-only change can't add or drop a rule in the site's CSS. */
+   the site doesn't render, integrations/ and tests/. A change only there can't add or drop a rule in the site's CSS. */
 @source not "../../CHANGELOG.md";
 @source not "../../CONTRIBUTING.md";
 @source not "../../CLAUDE.md";
 @source not "../../docs/**/*.md";
 @source not "../../.claude/**/*.md";
+@source not "../../integrations";
 @source not "../../tests";
 @import "./lede.tokens.css";
 @import "../../registry/lede/lede.components.css";
@@ -62,7 +63,6 @@ html, body { margin: 0; background: var(--background-grouped); color: var(--fore
 .docs-steps p code { font-family: var(--font-mono); font-size: var(--text-code-size); }
 .docs-demo { display: flex; flex-wrap: wrap; gap: var(--space-4) var(--space-3); align-items: center; padding: var(--space-4); border-radius: var(--radius-lg); background: var(--card); }
 [data-theme$="-hc"] .docs-demo { box-shadow: 0 0 0 1px var(--input); }
-.docs-check { display: inline-flex; align-items: center; gap: var(--space-2); }
 .docs-usage { margin-top: var(--space-4); }
 .docs-demo-col { display: grid; gap: var(--space-4); align-items: stretch; }
 .docs-theme-panel { display: grid; gap: var(--space-4); padding: var(--space-4); border-radius: var(--radius-lg); }
