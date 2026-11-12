@@ -18,6 +18,8 @@ for (const route of DOCS) {
     await expect(github).toHaveAccessibleName('GitHub');
     await expect(github).toHaveAttribute('href', 'https://github.com/fairchild/lede-design');
     await expect(github.locator('svg[aria-hidden="true"]')).toBeVisible();
+    // The mark sits on the word's line, so the link is as tall as the one beside it.
+    expect((await github.boundingBox())!.height).toBe((await links.nth(1).boundingBox())!.height);
     await expect(links.nth(1)).toHaveAccessibleName(VERSION);
     await expect(links.nth(1)).toHaveAttribute('href', /\/blob\/main\/CHANGELOG\.md$/);
   });
