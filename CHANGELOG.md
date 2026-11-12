@@ -28,6 +28,11 @@
 - A PageHeader inside a flow's stack drops its bottom margin, so the space under it stays one step when an
   inline-level control, such as a SegmentedControl, comes next.
 
+### Changed
+
+- Docs site: the sidebar's footer, and the page foot that holds it on narrow screens, links to GitHub, with its mark,
+  and the version. The demo app and Decisions are reached from Overview.
+
 ### Fixed
 
 - ListRow: after an action that keeps its row, a click that focuses nothing lets the row's saved place go, as a click

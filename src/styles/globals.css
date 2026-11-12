@@ -26,7 +26,8 @@ html, body { margin: 0; background: var(--background-grouped); color: var(--fore
    line of footnote text, so it grows to `--size-hit-absolute-min` each way for a press. */
 .docs-footer { display: grid; gap: var(--space-3); }
 .docs-footer-links { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0 var(--space-4); font-size: var(--text-footnote-size); line-height: var(--text-footnote-line-height); }
-.docs-footer-links a { display: inline-flex; align-items: center; justify-content: center; min-height: var(--size-hit-absolute-min); min-width: var(--size-hit-absolute-min); }
+.docs-footer-links a { display: inline-flex; align-items: center; justify-content: center; gap: var(--space-1); min-height: var(--size-hit-absolute-min); min-width: var(--size-hit-absolute-min); }
+.docs-footer-links svg { flex: none; width: var(--size-icon-inline); height: var(--size-icon-inline); }
 /* Its own box is the hit area, so the sidebar footer's overhang, which would reach the link on the line below, goes. */
 .ld-shell-footer .docs-footer-links a::after { content: none; }
 .docs-page-foot { margin-top: var(--space-8); padding-top: var(--space-4); border-top: 0.5px solid var(--border); }

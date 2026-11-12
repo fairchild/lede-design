@@ -17,16 +17,11 @@ async function openPreview(page: Page, title: string) {
   return page.frameLocator(frameTitle(title));
 }
 
-test('Layouts is one of five navigation places, and the demo stays reachable', async ({ page, isMobile }) => {
+test('Layouts is one of five navigation places, and the demo stays reachable', async ({ page }) => {
   await page.goto('/');
   await expect(docsNav(page).getByRole('list').first().getByRole('listitem')).toHaveText(['Overview', 'Foundations', 'Components', 'Blocks', 'Layouts']);
-  const footer = page.locator('.ld-shell-footer').getByRole('link', { name: 'Demo app' });
-  if (isMobile) {
-    await expect(footer).toBeHidden();
-    await page.locator('.docs-page-foot').getByRole('link', { name: 'Demo app' }).click();
-  } else {
-    await footer.click();
-  }
+  // Overview is the docs' hub, so its Explore card is the way into the demo at every width.
+  await page.getByRole('main').getByRole('link', { name: 'Demo app', exact: true }).click();
   await expect(page).toHaveURL(/\/app$/);
   await page.goto('/layouts');
   await expect(docsNav(page).getByRole('link', { name: 'Layouts' })).toHaveAttribute('aria-current', 'page');
