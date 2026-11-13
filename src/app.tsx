@@ -117,6 +117,8 @@ const routes = () => createBrowserRouter(
             { path: 'blocks/data-table/items/:id', element: <DataTableItemPage />, handle: { title: 'Work item' } },
             { path: 'layouts', element: <Layouts />, handle: { title: 'Layouts' } },
             { path: 'decisions', element: <Decisions />, handle: { title: 'Decisions' } },
+            // Lazy, so json-render loads with this page alone.
+            { path: 'integrations', lazy: load(() => import('@/pages/docs/Integrations'), 'Integrations'), handle: { title: 'Integrations' } },
             ...(FIXTURES ? [
               { path: 'fixtures/data-table', lazy: load(() => import('@/pages/fixtures/DataTableFixtures'), 'DataTableFixtures'), handle: { title: 'Data table fixtures' } },
               { path: 'fixtures/data-table-perf', lazy: load(() => import('@/pages/fixtures/DataTablePerf'), 'DataTablePerf'), handle: { title: 'Data table performance' } },

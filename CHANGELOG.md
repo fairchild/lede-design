@@ -10,6 +10,16 @@
   whose screen can't be written back, where it answered 500 or passed the error to the model.
 - `integrations/json-render-chat-plain`: a message sent while a reply streams waits for that reply, as in the Lede chat.
 
+## 0.5.1
+
+The docs site has an Integrations page, linked from Overview. The registry for this release is
+`https://lede.cloudcompute.com/r/v0.5.1/{name}.json`.
+
+### Added
+
+- The docs site has an Integrations page, reached from Overview's Explore section. It shows how to install SpecView,
+  draws a spec with it on the page and links to the three example apps in `integrations/`.
+
 ## 0.5.0
 
 SpecView lets a model's reply be a Lede screen, and `Table.Row` drops the `linked` prop deprecated in 0.4.0. The

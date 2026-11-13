@@ -134,7 +134,7 @@ A coding agent can build the chat from [`AGENTS.md`](AGENTS.md), which holds the
 break them. Paste this into the agent in your app's folder:
 
 ```text
-Add a chat to this React app whose replies can hold screens built from Lede components, using the AI SDK and json-render. Follow https://github.com/fairchild/lede-design/blob/main/integrations/json-render-chat/AGENTS.md step by step. Install Lede from the shadcn registry at https://lede.cloudcompute.com/r/v0.5.0/{name}.json (before v0.5.0 is tagged, use /r/next/ in place of /r/v0.5.0/). When it builds, check the page in a browser with a reply showing.
+Add a chat to this React app whose replies can hold screens built from Lede components, using the AI SDK and json-render. Follow https://github.com/fairchild/lede-design/blob/main/integrations/json-render-chat/AGENTS.md step by step. Install Lede from the shadcn registry at https://lede.cloudcompute.com/r/v0.5.0/{name}.json. When it builds, check the page in a browser with a reply showing.
 ```
 
 ## Run it against a real model

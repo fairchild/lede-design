@@ -1,0 +1,33 @@
+{
+  "root": "screen",
+  "state": {
+    "alerts": { "push": true, "email": false }
+  },
+  "elements": {
+    "screen": {
+      "type": "Screen",
+      "props": {},
+      "children": ["header", "delivery"]
+    },
+    "header": {
+      "type": "PageHeader",
+      "props": { "title": "Notifications", "summary": "Choose where Daybook’s alerts reach you." },
+      "children": []
+    },
+    "delivery": {
+      "type": "ListGroup",
+      "props": { "title": "Delivery", "footer": "Mentions reach you even when both are off." },
+      "children": ["push", "email"]
+    },
+    "push": {
+      "type": "ListRow",
+      "props": { "title": "Push alerts", "subtitle": "On this device", "checked": { "$bindState": "/alerts/push" } },
+      "children": []
+    },
+    "email": {
+      "type": "ListRow",
+      "props": { "title": "Email alerts", "subtitle": "To ada@example.com", "checked": { "$bindState": "/alerts/email" } },
+      "children": []
+    }
+  }
+}
