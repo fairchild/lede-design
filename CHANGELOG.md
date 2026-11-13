@@ -2,6 +2,29 @@
 
 ## Unreleased
 
+### Changed
+
+- PageHeader's `headingLevel` takes 3, which draws a smaller title, for a header under another heading of the page.
+  Its `back` takes `{ label, onSelect }` for a back that acts in place, drawn as a button, beside `{ href, label }`.
+  `onSelect` decides where focus returns.
+- In `json-render`, every event of every element runs its actions in order, and right before each one the fields its
+  params read are checked, so an earlier action that empties a field holds back the submit that reads it, one that
+  fills it lets the submit run, and a Switch's change is checked as a press is. Actions before a held one resolve their
+  params against their repeat item, as json-render's own run does.
+- `check` reads each element's bindings: an event its type doesn't emit, an action the catalog doesn't have, params
+  its schema rejects, and a slot or `$computed` function the catalog doesn't name. A prop the catalog doesn't have is
+  an issue whatever its value. Before, one bound to an expression made `check` throw.
+- A row whose press opens a detail View acts, and shows its chevron, once that View has arrived, so a press while the
+  reply streams no longer blanks the screen. A press that hides every control leaves focus on the screen.
+- `SpecView` takes `fallback`, drawn for a type the registry doesn't have. Its `handlers` are typed from each action's
+  schema and read through a ref, so an inline object is fine, and one that returns a promise holds the actions after
+  it until it settles. The registry draws every header with PageHeader.
+
+### Removed
+
+- `registry.tsx` in `json-render` no longer exports `actions`, `ActionEvent` or `handlers`, the action log of the
+  repo's json-render page, which now builds its own from `SpecView`'s `handlers`. They weren't documented.
+
 ### Fixed
 
 - `integrations/json-render-chat`: a message sent while a reply streams waits for that reply and says so, and a

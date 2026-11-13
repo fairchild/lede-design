@@ -1316,6 +1316,25 @@ export const ACTIONS: Action[] = [
     target: h1('Screen 2'),
   },
   {
+    // A level 3 PageHeader inside the page: its back is a button that acts in place, as a json-render detail's is.
+    screen: 'Everywhere', action: 'A detail opens in place under a level 3 header',
+    setup: async ({ page }) => { await page.goto('/fixtures/page-header'); },
+    act: (d) => d.press(button('Open the detail')),
+    target: { role: 'heading', level: 3, name: 'Venue for Thursday' },
+  },
+  {
+    screen: 'Everywhere', action: 'A level 3 header’s back button',
+    setup: async (d) => { await d.page.goto('/fixtures/page-header'); await d.press(button('Open the detail')); },
+    act: (d) => d.press(button('Messages')),
+    target: button('Open the detail'),
+  },
+  {
+    screen: 'Everywhere', action: 'Escape under a level 3 header with backOnEscape', only: 'desktop',
+    setup: async (d) => { await d.page.goto('/fixtures/page-header'); await d.press(button('Open the detail')); },
+    act: ({ page }) => page.keyboard.press('Escape'),
+    target: button('Open the detail'),
+  },
+  {
     screen: 'Everywhere', action: 'Disclosure toggle', setup: async ({ page }) => { await page.goto('/app'); },
     act: (d) => d.press(button(/^Meetings/)),
     target: button(/^Meetings/),

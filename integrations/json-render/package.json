@@ -6,7 +6,8 @@
     "tokens": "cd ../.. && node scripts/build-tokens.mjs",
     "dev": "npm run tokens && vite --port 4890",
     "build": "npm run tokens && tsc --noEmit && vite build",
-    "test": "npm run tokens && vitest run"
+    "test": "npm run tokens && vitest run && playwright test",
+    "test:unit": "npm run tokens && vitest run"
   },
   "dependencies": {
     "@base-ui/react": "1.9.0",
@@ -18,6 +19,7 @@
     "zod": "4.6.7"
   },
   "devDependencies": {
+    "@playwright/test": "1.64.1",
     "@tailwindcss/vite": "4.3.3",
     "@types/node": "^22.18.0",
     "@types/react": "19.3.0",

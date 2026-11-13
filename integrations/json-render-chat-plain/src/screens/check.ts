@@ -9,7 +9,7 @@ const isExpression = (value: unknown) =>
 
 /**
  * Every issue with a spec, as a line of text: json-render's shape and structure checks, then each element's props
- * against its schema, strictly. The package marks unused props `.nullable()` and the prompt shows them as optional, so
+ * against its schema: a prop the schema doesn't have, whatever its value, then each value it rejects. The package marks unused props `.nullable()` and the prompt shows them as optional, so
  * a prop left out counts as null, and a prop bound to an expression is resolved later and skipped.
  */
 export function check(spec: Spec): string[] {
@@ -19,13 +19,14 @@ export function check(spec: Spec): string[] {
   for (const [key, element] of Object.entries(spec.elements ?? {})) {
     const entry = components[element.type];
     if (!entry) continue;
-    const entries = Object.entries(element.props ?? {});
+    const known = (name: string) => name in entry.props.shape;
+    for (const name of Object.keys(element.props ?? {}).filter((n) => !known(n))) issues.push(`elements.${key}.props: Unrecognized key: "${name}"`);
+    const entries = Object.entries(element.props ?? {}).filter(([name]) => known(name));
     const bound = Object.fromEntries(entries.filter(([, value]) => isExpression(value)).map(([name]) => [name, true] as const));
     const literal = Object.fromEntries(entries.filter(([name]) => !(name in bound)));
     const absent = Object.keys(entry.props.shape).filter((name) => !(name in literal) && !(name in bound) && entry.props.shape[name].safeParse(null).success);
     const props = entry.props
       .partial(bound as Record<string, true> & Record<number, never>)
-      .strict()
       .safeParse({ ...Object.fromEntries(absent.map((name) => [name, null])), ...literal });
     for (const i of props.success ? [] : props.error.issues) issues.push(`elements.${key}.props${i.path.map((p) => `.${String(p)}`).join('')}: ${i.message}`);
   }

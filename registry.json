@@ -573,7 +573,7 @@
       "name": "json-render",
       "type": "registry:lib",
       "title": "SpecView",
-      "description": "SpecView draws a json-render spec with Lede, so a model\u2019s reply can be a screen. `catalog` lists the components a model may use and goes into its prompt, `registry` draws each one and `check` finds the props a spec gets wrong.",
+      "description": "SpecView draws a json-render spec with Lede, so a model\u2019s reply can be a screen. `catalog` lists the components a model may use and goes into its prompt, `registry` draws each one and `check` finds the props and bindings a spec gets wrong.",
       "registryDependencies": [
         "@lede/lede-theme",
         "@lede/lede-utils",

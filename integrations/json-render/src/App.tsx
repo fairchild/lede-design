@@ -1,19 +1,18 @@
 import * as React from 'react';
 import type { Spec } from '@json-render/core';
-import { JSONUIProvider, Renderer, type ComponentRenderer } from '@json-render/react';
+import type { ComponentRenderer } from '@json-render/react';
 import { ThemeProvider } from '@/components/lede/theme-provider';
 import { Button } from '@/components/lede/button';
 import { Disclosure } from '@/components/lede/disclosure';
 import { SegmentedControl } from '@/components/lede/segmented-control';
 import { PageHeader } from '@/components/lede/blocks/page-header';
-import { functions, prompt } from '@/components/lede/json-render/catalog';
-import { registry, handlers, actions, FieldChecks, type ActionEvent } from '@/components/lede/json-render/registry';
-import { replay } from './stream';
+import { prompt } from '@/components/lede/json-render/catalog';
+import { SpecView, type SpecHandlers } from '@/components/lede/json-render/spec-view';
 import { check } from '@/components/lede/json-render/check';
+import { replay } from './stream';
 import { specs, type SpecName } from './specs';
 
 const shown = prompt({ mode: 'standalone' });
-const actionHandlers = handlers(() => undefined, () => ({}));
 
 /** Drawn for a type the registry doesn't have. Without it, json-render logs a warning and draws nothing. */
 const Unknown: ComponentRenderer = ({ element }) => (
@@ -35,13 +34,10 @@ export function App() {
   const issues = React.useMemo(() => check(full), [full]);
   const streaming = !!streamed && streamed.done < streamed.total;
 
-  React.useEffect(() => {
-    const onAction = (e: Event) => {
-      const { name: action, params } = (e as ActionEvent).detail;
-      setLog((prev) => [`${action} ${JSON.stringify(params ?? {})}`, ...prev].slice(0, 5));
-    };
-    actions.addEventListener('action', onAction);
-    return () => actions.removeEventListener('action', onAction);
+  // Each catalog action a spec runs, with its params, newest first.
+  const handlers = React.useMemo<SpecHandlers>(() => {
+    const record = (action: string) => (params: unknown) => setLog((prev) => [`${action} ${JSON.stringify(params ?? {})}`, ...prev].slice(0, 5));
+    return { archive: record('archive'), submit: record('submit') };
   }, []);
 
   const pick = (next: string) => {
@@ -78,11 +74,7 @@ export function App() {
         </div>
         <div className="jr-layout">
           <section className="jr-preview" aria-label="Preview" aria-busy={streaming}>
-            <JSONUIProvider key={name} registry={registry} functions={functions} initialState={full.state ?? {}} handlers={actionHandlers} onStateChange={(changes) => setState((prev) => apply(prev, changes))}>
-              <FieldChecks>
-                <Renderer spec={spec} registry={registry} loading={streaming} fallback={Unknown} />
-              </FieldChecks>
-            </JSONUIProvider>
+            <SpecView key={name} spec={spec} streaming={streaming} handlers={handlers} fallback={Unknown} onStateChange={setState} />
           </section>
           <aside className="jr-inspector" aria-labelledby="checks">
             <h2 id="checks" className="text-title-3">Checks</h2>
@@ -111,16 +103,4 @@ export function App() {
       </main>
     </ThemeProvider>
   );
-}
-
-/** Applies json-render's state changes, each a JSON Pointer and a value, to a copy of the state. */
-function apply(state: Record<string, unknown>, changes: Array<{ path: string; value: unknown }>) {
-  const next = structuredClone(state);
-  for (const { path, value } of changes) {
-    const keys = path.split('/').slice(1).map((k) => k.replaceAll('~1', '/').replaceAll('~0', '~'));
-    let node = next as Record<string, unknown>;
-    for (const key of keys.slice(0, -1)) node = (node[key] ??= {}) as Record<string, unknown>;
-    node[keys.at(-1)!] = value;
-  }
-  return next;
 }
