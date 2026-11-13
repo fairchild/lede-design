@@ -98,7 +98,8 @@ export function ChatPage({ actions, trace, ask, focusOnMount }: ChatPageProps) {
   // Each screen's state as the person left it, sent with the next message so the model sees what they entered.
   const screens = React.useRef<Record<string, Record<string, unknown>>>({});
   // A reply that failed partway is marked here and left out of what the model reads, so it isn't taken as an answer.
-  const body = () => ({ screens: screens.current, failed: messages.filter((m) => m.role === 'assistant' && endings[m.id] === 'failed').map((m) => m.id) });
+  // The one failing now counts before its mark is recorded, since a waiting question can go in the same render.
+  const body = () => ({ screens: screens.current, failed: messages.filter((m) => m.role === 'assistant' && (endings[m.id] === 'failed' || m.id === failed)).map((m) => m.id) });
   const keep = React.useCallback((id: string, state: Record<string, unknown>) => { screens.current[id] = state; }, []);
   // What each question's request carried, by the question's place among the person's turns, for `trace`.
   const asked = React.useRef<Array<{ text: string; screens: Screens }>>([]);
@@ -368,7 +369,7 @@ function Turn({ message, time, live, ending, notes, onNote, onStateChange, asked
   const spec = React.useMemo(() => specFromParts(message.parts), [message.parts]);
   const specRef = React.useRef(spec);
   specRef.current = spec;
-  // json-render reads its handlers once, when the screen mounts, so these read the latest spec through a ref.
+  // The handlers read the latest spec through a ref, so they stay the same functions while the reply streams.
   const handlers = React.useMemo<SpecHandlers>(
     () => Object.fromEntries(ACTIONS.map((name) => [name, (params: Record<string, unknown>) => {
       onNote(message.id, describe(specRef.current, name, params, focusedName()));

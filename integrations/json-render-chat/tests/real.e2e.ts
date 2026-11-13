@@ -63,6 +63,17 @@ test('a reply that failed partway stays marked after the next question, and the 
   expect(messagesWith('marker-5521').map((m) => m.role)).toEqual(['user']);
 });
 
+test('a question held while a reply streams, sent as that reply fails, leaves the failed reply out of what the model reads', async ({ page }) => {
+  await ask(page, 'Please drop the trip list');
+  await expect(page.locator('.jrc-message[data-role="assistant"] .jrc-text')).not.toHaveCount(0);
+  await ask(page, 'And after that, marker-6630');
+  await expect(page.locator('.jrc-queued')).toHaveText('Next, once this reply ends: “And after that, marker-6630”.');
+  await expect(page.getByRole('heading', { level: 3, name: 'Notifications' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Stop' })).toBeHidden();
+  await expect(page.getByText('This reply failed.')).toHaveCount(1);
+  expect(messagesWith('marker-6630').map((m) => m.role)).toEqual(['user']);
+});
+
 test('a follow-up sends each earlier screen with what the person left in it', async ({ page }) => {
   await ask(page, 'Show my notification settings');
   const push = page.getByRole('switch', { name: 'Push notifications' });
