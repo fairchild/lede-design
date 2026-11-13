@@ -64,7 +64,7 @@ passed. Commands run in your app's folder, and `LEDE` is the path to a clone of 
 
    ```bash
    npx shadcn@latest init --defaults --yes
-   npx shadcn@latest registry add '@lede=https://lede.cloudcompute.com/r/v0.5.0/{name}.json'
+   npx shadcn@latest registry add '@lede=https://lede.cloudcompute.com/r/v0.5.2/{name}.json'
    npx shadcn@latest add @lede/theme-provider @lede/avatar @lede/json-render --yes
    ```
 
@@ -134,7 +134,7 @@ A coding agent can build the chat from [`AGENTS.md`](AGENTS.md), which holds the
 break them. Paste this into the agent in your app's folder:
 
 ```text
-Add a chat to this React app whose replies can hold screens built from Lede components, using the AI SDK and json-render. Follow https://github.com/fairchild/lede-design/blob/main/integrations/json-render-chat/AGENTS.md step by step. Install Lede from the shadcn registry at https://lede.cloudcompute.com/r/v0.5.0/{name}.json. When it builds, check the page in a browser with a reply showing.
+Add a chat to this React app whose replies can hold screens built from Lede components, using the AI SDK and json-render. Follow https://github.com/fairchild/lede-design/blob/main/integrations/json-render-chat/AGENTS.md step by step. Install Lede from the shadcn registry at https://lede.cloudcompute.com/r/v0.5.2/{name}.json. When it builds, check the page in a browser with a reply showing.
 ```
 
 ## Run it against a real model

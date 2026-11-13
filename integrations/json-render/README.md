@@ -68,7 +68,7 @@ Outside this repo, install the item from the hosted registry and keep the import
 components it draws and the npm packages it needs:
 
 ```bash
-npx shadcn@latest registry add '@lede=https://lede.cloudcompute.com/r/v0.5.0/{name}.json'
+npx shadcn@latest registry add '@lede=https://lede.cloudcompute.com/r/v0.5.2/{name}.json'
 npx shadcn@latest add @lede/theme-provider @lede/json-render
 ```
 
