@@ -139,7 +139,7 @@ function DetailHeader({ title, summary, back, actions, level, onBack }: {
       headingLevel={level}
       headingRef={heading}
       focusOnMount={false}
-      back={{ label: back.label, onClick: goBack }}
+      back={{ label: back.label, onSelect: goBack }}
       backOnEscape={!!drill?.within}
     />
   );

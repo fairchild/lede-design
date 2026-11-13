@@ -23,7 +23,11 @@ window.ran = [];
 window.held = [];
 window.states = [];
 const handlers = {
-  archive: (params: { id: string }) => { window.ran.push({ name: 'archive', params }); },
+  // Archiving `slow` takes a moment, as a call to a server does.
+  archive: async (params: { id: string }) => {
+    if (params.id === 'slow') await new Promise((resolve) => setTimeout(resolve, 200));
+    window.ran.push({ name: 'archive', params });
+  },
   submit: (params: { form: string; values?: Record<string, unknown> }) => { window.ran.push({ name: 'submit', params }); },
 };
 

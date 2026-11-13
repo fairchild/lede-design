@@ -12,9 +12,10 @@ export interface PageHeaderProps {
   leading?: React.ReactNode;
   /**
    * Back for nested screens: a link, such as `{ href: '/settings', label: 'Settings' }`, or a button that acts in
-   * place, such as `{ label: 'Inbox', onClick: close }` for a detail that opened inside the page.
+   * place, such as `{ label: 'Inbox', onSelect: close }` for a detail that opened inside the page. A button moves no
+   * focus itself, so `onSelect` decides where focus returns, such as to the control that opened the detail.
    */
-  back?: { href: string; label: string } | { label: string; onClick: () => void };
+  back?: { href: string; label: string } | { label: string; onSelect: () => void };
   /**
    * Escape activates the back link, unless a layer above it took the key first: an open menu or dialog, or the focused
    * field when its text changed since it took focus. It doesn't see a form's other fields, so a form that must keep
@@ -102,7 +103,7 @@ function useEscapeLayer(onEscape: (() => void) | undefined, stack: Layer[]) {
  * repeats back out of nothing more. The press goes to the caller of this hook activated most recently, and to the
  * screen's level 1 PageHeader only when no caller of this hook is active, so an inner layer backs out first even when
  * it opened in the same commit as the screen or the screen turned `backOnEscape` back on while it was open. A level 2
- * PageHeader with `backOnEscape` counts as one of these callers: it sits inside another screen. An inner layer that
+ * or 3 PageHeader with `backOnEscape` counts as one of these callers: it sits inside another screen. An inner layer that
  * handles Escape itself, such as SelectionBar, calls `preventDefault()` and this one leaves it. Pass `undefined` when
  * there's nothing to back out of. PageHeader uses it for `backOnEscape`.
  */
@@ -156,7 +157,7 @@ export function PageHeader(props: PageHeaderProps) {
       {props.back && 'href' in props.back ? (
         <Link ref={backRef} className="ld-back" href={props.back.href}>{chevron}{props.back.label}</Link>
       ) : props.back ? (
-        <button ref={backRef} type="button" className="ld-back" onClick={props.back.onClick}>{chevron}{props.back.label}</button>
+        <button ref={backRef} type="button" className="ld-back" onClick={props.back.onSelect}>{chevron}{props.back.label}</button>
       ) : null}
       <div className="ld-page-header-row">
         {props.leading ? <div className="ld-page-header-lead"><span aria-hidden="true">{props.leading}</span>{text}</div> : text}

@@ -79,6 +79,12 @@ test('actions before a held one read their repeat item, as json-render resolves 
   expect(await ran(page)).toEqual([{ name: 'archive', params: { id: 'a' } }]);
 });
 
+test('an action waits for an async handler before the next one runs', async ({ page }) => {
+  await draw(page, form('Ada', [{ action: 'archive', params: { id: 'slow' } }, submit]));
+  await page.getByRole('button', { name: 'Send' }).click();
+  await expect.poll(() => page.evaluate(() => window.ran.map((r) => r.name))).toEqual(['archive', 'submit']);
+});
+
 test('a number field keeps a number in state', async ({ page }) => {
   await draw(page, {
     root: 'screen',

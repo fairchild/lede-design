@@ -11,7 +11,7 @@ export type { HeldAction } from './registry';
  * The catalog's actions, each called with its params, typed from its schema, when a spec runs it. Add an action to the
  * catalog and it's here.
  */
-export type SpecHandlers = { [K in CatalogAction]?: (params: InferActionParams<typeof catalog, K>) => void };
+export type SpecHandlers = { [K in CatalogAction]?: (params: InferActionParams<typeof catalog, K>) => void | Promise<void> };
 type State = Record<string, unknown>;
 
 export interface SpecViewProps {
@@ -23,7 +23,7 @@ export interface SpecViewProps {
   headingLevel?: 2 | 3;
   /**
    * Called when the spec runs a catalog action. Read through a ref, so each call reaches the latest, and an inline
-   * object is fine. An action whose params read a field that fails its check doesn't run, so its handler isn't called.
+   * object is fine. One that returns a promise holds the actions after it until it settles. An action whose params read a field that fails its check doesn't run, so its handler isn't called.
    */
   handlers?: SpecHandlers;
   /**
@@ -66,9 +66,8 @@ function Screen({ spec, streaming = false, headingLevel = 2, handlers, fallback,
   // json-render keeps the handlers it mounts with, so it gets these, which call the latest.
   const latest = React.useRef(handlers);
   React.useLayoutEffect(() => { latest.current = handlers; });
-  const [dispatch] = React.useState(() => Object.fromEntries(actionNames.map((name) => [name, (params: Record<string, unknown>) => {
-    (latest.current?.[name] as ((p: Record<string, unknown>) => void) | undefined)?.(params);
-  }])));
+  const [dispatch] = React.useState(() => Object.fromEntries(actionNames.map((name) => [name, (params: Record<string, unknown>) =>
+    (latest.current?.[name] as ((p: Record<string, unknown>) => void | Promise<void>) | undefined)?.(params)])));
   useKeptFocus(root);
   useTokensCheck(root);
   const keys = React.useMemo(() => specKeys(spec), [spec]);

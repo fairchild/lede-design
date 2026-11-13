@@ -38,7 +38,7 @@ function DetailInPlace() {
     <section className="ld-flow-stack" aria-labelledby="detail-in-place">
       <h2 id="detail-in-place" className="text-title-3">A detail inside the page</h2>
       {open ? (
-        <PageHeader headingLevel={3} title="Venue for Thursday" summary="It opened in place, under this section’s heading." back={{ label: 'Messages', onClick: close }} backOnEscape />
+        <PageHeader headingLevel={3} title="Venue for Thursday" summary="It opened in place, under this section’s heading." back={{ label: 'Messages', onSelect: close }} backOnEscape />
       ) : (
         <Button ref={opener} variant="gray" onClick={() => setOpen(true)}>Open the detail</Button>
       )}
