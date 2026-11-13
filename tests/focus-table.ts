@@ -225,6 +225,13 @@ export const ARRIVALS: Arrival[] = [
     escape: { url: /:\d+\/$/, target: link('Decisions: how Lede is built and checked') },
   },
   {
+    route: '/integrations', arrival: h1('Integrations'),
+    via: { from: '/', link: link('Integrations', main), back: link('Integrations', main) },
+    tabs: [link('json-render', main), button('Install commands for SpecView')],
+    shiftTab: link('Overview', main),
+    escape: { url: /:\d+\/$/, target: link('Integrations', main) },
+  },
+  {
     route: '/layouts/workbench', arrival: h1('retry.ts'),
     via: { from: '/layouts', link: link('Open full page: Three panels with top bar'), back: link('Open full page: Three panels with top bar') },
   },

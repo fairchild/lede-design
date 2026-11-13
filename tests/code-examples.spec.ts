@@ -88,7 +88,7 @@ test('The tokenizer keeps every character of awkward input', () => {
     "/it's/.test(s)", '/"/g', '/`/', '/\\/\\//', '/[/*]/; a; /* b */', "<p>Don't stop, won't stop</p>",
     "echo 'open", 'echo "open', 'echo "a\\"b" \'c\\\'d', "echo 'multi\nline'", 'echo a#b # c', 'curl -fsSL https://example.com/#a --b=c',
   ];
-  for (const language of ['tsx', 'shell', 'css'] as const) {
+  for (const language of ['tsx', 'shell', 'css', 'json'] as const) {
     for (const code of awkward) expect(tokenize(code, language).map((t) => t.text).join('')).toBe(code);
   }
 });
@@ -108,7 +108,7 @@ test('A closed example opens and closes from the keyboard', async ({ page }) => 
   await expect(code).toBeHidden();
 });
 
-test('TSX and shell are highlighted, in colours the plain text doesn’t use', async ({ page }) => {
+test('TSX, shell and JSON are highlighted, in colours the plain text doesn’t use', async ({ page }) => {
   await page.goto('/blocks/data-table');
   const tsx = example(page, CLIENT).locator('code');
   const plain = await tsx.evaluate((el) => getComputedStyle(el).color);
@@ -122,6 +122,10 @@ test('TSX and shell are highlighted, in colours the plain text doesn’t use', a
   const shell = example(page, 'Install commands').locator('code');
   await expect(shell.locator('.docs-tk-keyword').first()).toHaveText('npx');
   await expect(shell.locator('.docs-tk-string')).toContainText('@lede=');
+  await page.goto('/integrations');
+  const json = example(page, 'The spec as JSON').locator('code');
+  await expect(json.locator('.docs-tk-string').first()).toHaveText('"root"');
+  await expect(json.locator('.docs-tk-keyword')).toHaveText(['true', 'false']);
 });
 
 test('Highlighting takes no room of its own', async ({ page }) => {

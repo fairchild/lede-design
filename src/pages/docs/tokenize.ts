@@ -1,4 +1,4 @@
-export type Language = 'tsx' | 'shell' | 'css';
+export type Language = 'tsx' | 'shell' | 'css' | 'json';
 type TokenKind = 'comment' | 'string' | 'keyword' | 'tag';
 interface Token { text: string; kind?: TokenKind }
 
@@ -34,6 +34,7 @@ const RULES: Record<Language, RegExp> = {
     ].join('|'),
     'g',
   ),
+  json: new RegExp([`(?<string>${QUOTED})`, String.raw`(?<keyword>\b(?:true|false|null)\b)`].join('|'), 'g'),
 };
 
 /** Splits code into colored runs. Runs are slices of `code` in order, so joining them gives `code` back. */

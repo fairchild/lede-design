@@ -97,7 +97,9 @@ export function ChatPage({ actions, trace, ask, focusOnMount }: ChatPageProps) {
   const form = React.useRef<HTMLFormElement>(null);
   // Each screen's state as the person left it, sent with the next message so the model sees what they entered.
   const screens = React.useRef<Record<string, Record<string, unknown>>>({});
-  const body = () => ({ screens: screens.current });
+  // A reply that failed partway is marked here and left out of what the model reads, so it isn't taken as an answer.
+  // The one failing now counts before its mark is recorded, since a waiting question can go in the same render.
+  const body = () => ({ screens: screens.current, failed: messages.filter((m) => m.role === 'assistant' && (endings[m.id] === 'failed' || m.id === failed)).map((m) => m.id) });
   const keep = React.useCallback((id: string, state: Record<string, unknown>) => { screens.current[id] = state; }, []);
   // What each question's request carried, by the question's place among the person's turns, for `trace`.
   const asked = React.useRef<Array<{ text: string; screens: Screens }>>([]);
@@ -113,11 +115,17 @@ export function ChatPage({ actions, trace, ask, focusOnMount }: ChatPageProps) {
   }, [messages, times]);
 
   /**
-   * Sends `text`, and clears the composer unless the text came from elsewhere, such as a waiting question. A question
-   * held for its button waits again for this reply to end; `replace` drops it, as a newer Try link does.
+   * Sends `text`, and clears the composer unless the text came from elsewhere, such as a waiting question. While a
+   * reply streams, the text waits for it to end in place of any waiting question. A question held for its button waits
+   * again for this reply to end; `replace` drops it, as a newer Try link does.
    */
   const send = (text: string, { keepDraft = false, replace = false } = {}) => {
-    if (!text.trim() || busy) return;
+    if (!text.trim()) return;
+    if (busy) {
+      waitFor(text.trim());
+      if (!keepDraft) setDraft('');
+      return focusComposer();
+    }
     record(questions, text.trim());
     void sendMessage({ text: text.trim() }, { body: body() });
     if (!keepDraft) setDraft('');
@@ -139,16 +147,17 @@ export function ChatPage({ actions, trace, ask, focusOnMount }: ChatPageProps) {
   };
 
   const retry = () => {
+    if (last) setEndings(({ [last.id]: _, ...rest }) => rest);
     const question = messages.findLast((m) => m.role === 'user');
     if (question) record(questions - 1, textOf(question).join(' '));
     focusComposer();
     void regenerate({ body: body() });
   };
 
-  // A question from a link waits for a reply that's still streaming, then goes; a later one takes its place, and Escape
-  // cancels it. If the person has typed in the composer by then, it waits for a press instead, and their text stays.
-  // The page around the chat moved there, so it puts focus in the composer, before this runs. `said` announces each
-  // change.
+  // A question from a link or the composer waits for a reply that's still streaming, then goes; a later one takes its
+  // place, and Escape cancels it. If the person has typed in the composer by then, it waits for a press instead, and
+  // their text stays. The page around the chat moved there, so it puts focus in the composer, before this runs. `said`
+  // announces each change.
   const asking = React.useRef<number | undefined>(undefined);
   const [waiting, setWaiting] = React.useState<{ text: string; ready?: boolean }>();
   const [said, setSaid] = React.useState('');
@@ -156,9 +165,12 @@ export function ChatPage({ actions, trace, ask, focusOnMount }: ChatPageProps) {
     if (!ask || asking.current === ask.key) return;
     asking.current = ask.key;
     if (!busy) return send(ask.text, { keepDraft: true, replace: true });
-    setWaiting({ text: ask.text });
-    setSaid(waiting ? `Next, once this reply ends: “${ask.text}”, in place of “${waiting.text}”.` : `Next, once this reply ends: “${ask.text}”.`);
+    waitFor(ask.text);
   });
+  function waitFor(text: string) {
+    setWaiting({ text });
+    setSaid(waiting && waiting.text !== text ? `Next, once this reply ends: “${text}”, in place of “${waiting.text}”.` : `Next, once this reply ends: “${text}”.`);
+  }
   React.useEffect(() => {
     if (busy || !waiting || waiting.ready) return;
     if (!draft.trim()) return send(waiting.text);
@@ -239,8 +251,12 @@ export function ChatPage({ actions, trace, ask, focusOnMount }: ChatPageProps) {
   const note = React.useCallback((id: string, text: string) => setNotes((prev) => ({ ...prev, [id]: [...(prev[id] ?? []), text] })), []);
 
   const reply = last?.role === 'assistant' ? last : undefined;
-  const empty = status === 'ready' && reply && !endings[reply.id] ? emptiness(reply) : undefined;
+  const empty = status === 'ready' && reply && endings[reply.id] !== 'stopped' ? emptiness(reply) : undefined;
   const failed = status === 'error' || empty ? last?.id : undefined;
+  // The mark outlasts the next question, which ends Try again; only a retry clears it.
+  React.useEffect(() => {
+    if (failed) setEndings((prev) => (prev[failed] === 'failed' ? prev : { ...prev, [failed]: 'failed' }));
+  }, [failed]);
   const statusText =
     busy ? `${ASSISTANT} is replying.`
     : status === 'error' ? `The reply failed: ${error?.message ?? 'unknown error'}`
@@ -319,7 +335,7 @@ export function ChatPage({ actions, trace, ask, focusOnMount }: ChatPageProps) {
             onKeyDown={(e: React.KeyboardEvent<HTMLTextAreaElement>) => {
               if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); e.currentTarget.form?.requestSubmit(); }
             }}
-            hint="Enter sends and Shift+Enter starts a new line. Escape cancels a waiting question, then stops a reply."
+            hint="Enter sends, once any reply ends, and Shift+Enter starts a new line. Escape cancels a waiting question, then stops a reply."
           />
           <div className="jrc-composer-actions">
             {busy ? <Button type="button" onClick={onStop}>Stop</Button> : null}
@@ -353,7 +369,7 @@ function Turn({ message, time, live, ending, notes, onNote, onStateChange, asked
   const spec = React.useMemo(() => specFromParts(message.parts), [message.parts]);
   const specRef = React.useRef(spec);
   specRef.current = spec;
-  // json-render reads its handlers once, when the screen mounts, so these read the latest spec through a ref.
+  // The handlers read the latest spec through a ref, so they stay the same functions while the reply streams.
   const handlers = React.useMemo<SpecHandlers>(
     () => Object.fromEntries(ACTIONS.map((name) => [name, (params: Record<string, unknown>) => {
       onNote(message.id, describe(specRef.current, name, params, focusedName()));

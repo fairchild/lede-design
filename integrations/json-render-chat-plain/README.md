@@ -25,7 +25,7 @@ the Lede chat; the plain column is this entry.
 | --- | --- | --- |
 | Catalog | 12 components, 52 props | 13 components, 53 props (36 and 119 with the whole package) |
 | The server's system prompt | 24,680 characters, 6,215 tokens | 20,930 characters, 5,308 tokens (24,494 and 6,224 with the whole package) |
-| Code between json-render and the screens | 787 lines: catalog, registry, `SpecView`, patches, check and `catalog-fit` | 133 lines: catalog, registry, patches and check. The chat page carries the screen-state glue `SpecView` holds in Lede: `Chat.tsx` is 302 lines here and 268 there |
+| Code between json-render and the screens | 787 lines: catalog, registry, `SpecView`, patches, check and `catalog-fit` | 133 lines: catalog, registry, patches and check. The chat page carries the screen-state glue `SpecView` holds in Lede: `Chat.tsx` is 316 lines here and 268 there |
 | Theme CSS in the app | none: it imports Lede's generated tokens | 79 lines: shadcn's neutral theme as `npx shadcn init` writes it, trimmed to the variables these components read |
 | JS and CSS, `gzip -9` of `dist/assets` | 194 kB and 16 kB | 219 kB and 11 kB |
 | axe violations, each of six replies and all six in one conversation, light and dark | 0 | 0 |

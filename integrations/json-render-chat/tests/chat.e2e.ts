@@ -157,6 +157,48 @@ test('a reply that fails before it begins says so after the question, outside it
   await expect(composer(page)).toBeFocused();
 });
 
+for (const [prompt, at] of [['Fail once', 1], ['Am I offline?', 0]] as const) {
+  test(`a reply that fails (${prompt}) keeps its mark after the next question, and Try again goes`, async ({ page }) => {
+    await ask(page, prompt);
+    await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+    await ask(page, 'How’s my week?');
+    await expect(page.getByRole('heading', { level: 3, name: 'Your week' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Stop' })).toBeHidden();
+    await expect(turns(page).nth(at).getByText('This reply failed.')).toBeVisible();
+    await expect(page.getByText('This reply failed.')).toHaveCount(1);
+    await expect(page.getByRole('button', { name: 'Try again' })).toBeHidden();
+  });
+}
+
+for (const how of ['Enter', 'Send'] as const) {
+  test(`${how} while a reply streams holds the message until the reply ends, and says so`, async ({ page }) => {
+    await ask(page, 'How’s my week?');
+    await expect(page.getByRole('button', { name: 'Stop' })).toBeVisible();
+    await composer(page).fill('Show my tasks');
+    if (how === 'Enter') await composer(page).press('Enter');
+    else await page.getByRole('button', { name: 'Send', exact: true }).click();
+    await expect(composer(page)).toHaveValue('');
+    await expect(page.locator('.jrc-queued')).toHaveText('Next, once this reply ends: “Show my tasks”.');
+    await expect(page.getByRole('heading', { level: 3, name: 'Your week' })).toBeVisible();
+    await expect(turns(page)).toHaveCount(4);
+    await expect(turns(page).nth(2)).toContainText('Show my tasks');
+    await expect(composer(page)).toBeFocused();
+  });
+}
+
+test('Escape cancels a message held for a streaming reply, and the next Escape stops the reply', async ({ page }) => {
+  await ask(page, 'How’s my week?');
+  await expect(page.getByRole('button', { name: 'Stop' })).toBeVisible();
+  await ask(page, 'Show my tasks');
+  await expect(page.locator('.jrc-queued')).toHaveText('Next, once this reply ends: “Show my tasks”.');
+  await composer(page).press('Escape');
+  await expect(page.locator('.jrc-queued')).toHaveText('You canceled “Show my tasks”.');
+  await expect(page.getByRole('button', { name: 'Stop' })).toBeVisible();
+  await composer(page).press('Escape');
+  await expect(page.getByText('You stopped this reply.')).toBeVisible();
+  await expect(turns(page)).toHaveCount(2);
+});
+
 test('a form sends only when its fields pass, each failing field shows its error after a press, and the button names it', async ({ page }) => {
   await ask(page, 'Help me sign up');
   const reply = turns(page).nth(1);

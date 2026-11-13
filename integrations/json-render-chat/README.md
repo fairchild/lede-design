@@ -14,9 +14,15 @@ npm test        # the mock and the server in Vitest, then the chat in a browser 
                 # npm run dev on 4880 and npm run preview on 4881
 ```
 
-Try “how’s my week”, “show my tasks”, “show my notification settings”, “what’s in my inbox”, “help me sign up”, “any
-projects”, “turn off push”, “fail” or “offline”. The last two fail once, partway through or before a word arrives, and
-Try again then answers.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="screenshots/chat-dark.png">
+  <img alt="The chat after “What’s in my inbox?”: the assistant's reply is a sentence, then an Inbox screen with a count of messages that need a reply and three message rows, above the composer." src="screenshots/chat-light.png">
+</picture>
+
+A reply to “What’s in my inbox?”: its words, then a screen of Lede components the person can use in place.
+
+Try “how’s my week”, “show my tasks” or “fail”, which fails once partway through so Try again can answer.
+`mock-transport.ts` lists [every prompt the script answers](src/chat/mock-transport.ts).
 
 The app opens on Try it, the chat, where each reply's “How this reply was made” shows what went to the model, what
 streamed back, the spec it built and what its screen did. How it works and Build it draw this README's sections of
@@ -128,7 +134,7 @@ A coding agent can build the chat from [`AGENTS.md`](AGENTS.md), which holds the
 break them. Paste this into the agent in your app's folder:
 
 ```text
-Add a chat to this React app whose replies can hold screens built from Lede components, using the AI SDK and json-render. Follow https://github.com/fairchild/lede-design/blob/main/integrations/json-render-chat/AGENTS.md step by step. Install Lede from the shadcn registry at https://lede.cloudcompute.com/r/v0.5.0/{name}.json (before v0.5.0 is tagged, use /r/next/ in place of /r/v0.5.0/). When it builds, check the page in a browser with a reply showing.
+Add a chat to this React app whose replies can hold screens built from Lede components, using the AI SDK and json-render. Follow https://github.com/fairchild/lede-design/blob/main/integrations/json-render-chat/AGENTS.md step by step. Install Lede from the shadcn registry at https://lede.cloudcompute.com/r/v0.5.0/{name}.json. When it builds, check the page in a browser with a reply showing.
 ```
 
 ## Run it against a real model
@@ -201,7 +207,8 @@ and may send the state after the elements. `pipeJsonRender` reads both the same 
 apart. It sends each patch in pieces, down to a character at a time, which is how json-render streams them.
 
 The rules ask for a whole screen in each reply; a reply whose screen can't draw, such as patches to an earlier one,
-shows an error with Try again.
+shows an error with Try again. A reply that fails keeps its mark after the next question, and the model doesn't read
+it: the client sends its id as `failed`, and the server leaves it out.
 
 ## Files
 
@@ -214,11 +221,11 @@ shows an error with Try again.
 | `tests/mock-transport.test.ts` | Sends each scripted prompt through the mock and checks the spec against the catalog. |
 | `tests/describe.test.ts` | Checks each action's note, for literal params, params bound to state and rows drawn by repeat. |
 | `tests/model-replies.test.tsx` | Streams 16 replies a model wrote for 8 requests through the server's transform: each parses, draws the titles, rows and buttons its spec holds, once, and gets exactly the issues `check` is expected to report: none, except the obsolete `open` action some of them bind. |
-| `tests/server.test.ts` | Checks that the model sees earlier screens with the state the person left in them, then starts the server: what it refuses, the length cap and parts it passes the model, and one log line per failed model call. |
-| `tests/chat.e2e.ts` | The chat alone (`chat.html`) in a browser: the order of a reply, an action's note, an item opened in place and Back, Escape in a detail and in the composer, Stop, Try again, focus, the composer's scroll padding, checked fields and their errors, a list that fills in as it streams, typing and presses while a reply streams, a checkbox label at 200% text, following a reply as it streams and axe. |
+| `tests/server.test.ts` | Checks that the model sees earlier screens with the state the person left in them and what `handleChat` refuses: a body past its byte cap, counted as it streams in, a reply whose screen can't be written back and a system message or an empty turn. Then it starts the server: the length cap and parts it passes the model, and one log line per failed model call. |
+| `tests/chat.e2e.ts` | The chat alone (`chat.html`) in a browser: the order of a reply, an action's note, an item opened in place and Back, Escape in a detail and in the composer, Stop, Try again, a failed reply's mark after the next question, a message sent while a reply streams, focus, the composer's scroll padding, checked fields and their errors, a list that fills in as it streams, typing and presses while a reply streams, a checkbox label at 200% text, following a reply as it streams and axe. |
 | `tests/guide.e2e.ts` | The guide: each screen's link and h1, Back to where the person was, a Try link pressed mid-reply, each step's example, each reply's account of how it was made, this README's sections shown block for block, Copy and axe on each screen in each theme at 390 and 1280 pixels and 200% text. |
 | `tests/markdown.test.tsx` and `tests/install.test.ts` | The guide's renderer refuses Markdown it can't draw, and the documented install brings every Lede file the copied chat imports. |
-| `tests/real.e2e.ts`, `fake-anthropic.ts` and `fake-replies/` | The chat on the AI SDK's own transport, against `server/chat.ts` and a fake Anthropic: a reply that draws, a connection that drops partway, a malformed body, a follow-up that carries a screen's state, a reply that only patches an earlier screen, focus when a control or row hides itself, a row switched on while its list streams in and a form with a pattern and a decimal. |
+| `tests/real.e2e.ts`, `fake-anthropic.ts` and `fake-replies/` | The chat on the AI SDK's own transport, against `server/chat.ts` and a fake Anthropic: a reply that draws, a connection that drops partway, a failed reply the model doesn't read, a malformed body, a follow-up that carries a screen's state, a reply that only patches an earlier screen, focus when a control or row hides itself, a row switched on while its list streams in and a form with a pattern and a decimal. |
 
 The catalog, the registry and `SpecView` are Lede's `json-render` item, in `registry/lede/json-render/`, which this
 entry and [`../json-render`](../json-render) both import through the `@/components/lede` alias, the path an install
@@ -231,8 +238,10 @@ The page is a sketch on Lede primitives until Lede's Chat block lands, and that 
 
 - The conversation is a named `<section>` holding an ordered list of turns. Each has its author and time as a heading:
   your turns sit in a bubble on the right, and the assistant's beside its avatar, text first and then the screen.
-- The composer is a `<form>`: Enter sends and Shift+Enter starts a new line. Escape, from the composer or a button
-  beside it, backs out one layer: it cancels a question waiting on a reply, and otherwise ends the reply, as Stop does.
+- The composer is a `<form>`: Enter sends and Shift+Enter starts a new line. While a reply streams, Enter or Send holds
+  the message as a question waiting on that reply, sends it when the reply ends and says so in a status line. Escape,
+  from the composer or a button beside it, backs out one layer: it cancels a question waiting on a reply, and
+  otherwise ends the reply, as Stop does.
   The composer stays at the foot of the window when the window is tall enough; with large text on a short screen it
   scrolls with the page.
 - Focus starts in the composer, since a chat's next act is to type, which departs from Lede's usual landing on the h1.

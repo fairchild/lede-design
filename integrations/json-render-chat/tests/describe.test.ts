@@ -16,3 +16,13 @@ test('a param bound to state arrives as its value, and of a field and a button t
 test('a control whose label isn’t literal takes the name of the control that ran it', () => {
   expect(describe(week as Spec, 'archive', { id: 'venue-review' }, 'Venue review')).toBe('You archived Venue review.');
 });
+
+test('of two elements that bind one action, the literal params pick the one that ran', () => {
+  const row = (title: string, id: string) => ({ type: 'ListRow', props: { title }, on: { press: { action: 'archive', params: { id } } } });
+  const spec: Spec = {
+    root: 'list',
+    elements: { list: { type: 'ListGroup', props: {}, children: ['ada', 'grace'] }, ada: row('Ada Lovelace', 'a1'), grace: row('Grace Hopper', 'g1') },
+  };
+  expect(describe(spec, 'archive', { id: 'g1' })).toBe('You archived Grace Hopper.');
+  expect(describe(spec, 'archive', { id: 'a1' })).toBe('You archived Ada Lovelace.');
+});
