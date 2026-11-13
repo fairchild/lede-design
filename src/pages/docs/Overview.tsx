@@ -120,7 +120,7 @@ export function Overview() {
           <li><SummaryCard title="Blocks" figure={BLOCKS} summary="Layouts and the larger parts of a screen." href="/blocks" /></li>
           <li><SummaryCard title="Layouts" figure={LAYOUTS.length} summary={LAYOUT_LINE} href="/layouts" /></li>
           <li><SummaryCard title="Demo app" figure={FLOWS.length} summary={`Hero flows, whole screens built from blocks: ${listed(FLOWS)}.`} href="/app" /></li>
-          <li><SummaryCard title="Integrations" figure={EXAMPLE_APPS.length} summary="Example apps for json-render: Lede screens drawn from JSON specs and in an AI SDK chat." href="/integrations" /></li>
+          <li><SummaryCard title="Integrations" figure={EXAMPLE_APPS.length} summary="Example apps for json-render: Lede screens from JSON specs and in an AI SDK chat, and that chat without Lede." href="/integrations" /></li>
           <li><SummaryCard title="Decisions" figure={decisionCount} summary="How Lede is built and what keeps it that way." href="/decisions" /></li>
         </ul>
       </section>

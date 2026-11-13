@@ -24,7 +24,7 @@ const codeList = (names: string[]) => names.map((name, i) => (
 export function Integrations() {
   return (
     <div className="ld-flow">
-      <PageHeader title="Integrations" back={{ href: '/', label: 'Overview' }} summary="Lede working beside other projects, each with example apps in the repo. json-render draws Lede screens from JSON specs, such as a model’s reply." />
+      <PageHeader title="Integrations" back={{ href: '/', label: 'Overview' }} summary="Each integration runs Lede beside another project and has example apps in the repo. json-render draws Lede screens from JSON specs, such as a model’s reply." />
       <section aria-labelledby="json-render" className="docs-section">
         <h2 id="json-render" className="text-title-3">json-render</h2>
         <p className="docs-intro">SpecView draws a <a href="https://github.com/vercel-labs/json-render">json-render</a> spec with Lede, so a model’s reply can be a screen. <code>catalog</code> lists the components a model may use and goes into its prompt, <code>registry</code> draws each one and <code>check</code> finds the props a spec gets wrong.</p>
