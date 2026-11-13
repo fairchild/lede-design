@@ -5,6 +5,7 @@ import { SpecView, specStore } from '@/components/lede/json-render/spec-view';
 import { catalog, functions, prompt, promptFixes, rules } from '@/components/lede/json-render/catalog';
 import { registry } from '@/components/lede/json-render/registry';
 import { check } from '@/components/lede/json-render/check';
+import { fit } from '@/components/lede/json-render/catalog-fit';
 import { specs } from '../src/specs';
 
 const { 'Invalid spec': invalid, ...recorded } = specs;
@@ -31,6 +32,10 @@ describe.each(Object.entries(recorded))('%s', (_, spec) => {
   });
 });
 
+test('every catalog entry fits its Lede component, which this entry’s typecheck checks too', () => {
+  expect(Object.values(fit).every((v) => v === true)).toBe(true);
+});
+
 test('the registry draws every catalog entry', () => {
   expect(Object.keys(registry).sort()).toEqual(Object.keys(catalog.data.components).sort());
 });
@@ -40,8 +45,55 @@ test('the invalid spec shows each kind of mistake the page explains', () => {
   expect(check(invalid)).toEqual([
     expect.stringMatching(/^elements\.gallery\.type: Invalid option/),
     'screen: Element "screen" references child "missing" which does not exist in the elements map.',
+    'elements.save.props: Unrecognized key: "icon"',
     expect.stringMatching(/^elements\.save\.props\.variant: Invalid option/),
     expect.stringMatching(/^elements\.period\.props\.options: Invalid input: expected array, received number$/),
+  ]);
+});
+
+/** A screen of one element, `el`, keyed `x`, below a header. */
+const one = (el: Record<string, unknown>, state: Record<string, unknown> = {}) => ({
+  root: 'screen',
+  state,
+  elements: {
+    screen: { type: 'Screen', props: {}, children: ['header', 'x'] },
+    header: { type: 'PageHeader', props: { title: 'Check' }, children: [] },
+    x: { children: [], ...el },
+  },
+}) as unknown as (typeof specs)['Inbox'];
+
+test('a prop the catalog doesn’t have is an issue whatever its value, and the check never throws on one', () => {
+  expect(check(one({ type: 'Button', props: { label: 'Save', typo: { $state: '/x' } } }))).toEqual(['elements.x.props: Unrecognized key: "typo"']);
+  expect(check(one({ type: 'Button', props: { label: { $state: '/label' } } }))).toEqual([]);
+});
+
+test('the check reads each binding: its event, its action and that action’s params', () => {
+  const button = (on: unknown) => one({ type: 'Button', props: { label: 'Go' }, on });
+  expect(check(button({ press: { action: 'open', params: { id: 'm1' } } }))).toEqual([
+    'elements.x.on.press.action: there is no action “open”. The actions are setState, pushState, removeState, validateForm, archive, submit.',
+  ]);
+  expect(check(button({ press: { action: 'archive', params: { ids: ['m1'] } } }))).toEqual([
+    'elements.x.on.press.params: Unrecognized key: "ids"',
+    'elements.x.on.press.params.id: Invalid input: expected string, received undefined',
+  ]);
+  expect(check(button({ press: [{ action: 'setState', params: { value: 1 } }, { action: 'archive', params: { id: { $template: '${id}' } } }] }))).toEqual([
+    'elements.x.on.press.0.params.statePath: Invalid input: expected string, received undefined',
+  ]);
+  expect(check(button({ change: { action: 'setState', params: { statePath: '/x', value: 1 } } }))).toEqual([
+    'elements.x.on.change: Button has no event “change”. Its events are press.',
+  ]);
+  expect(check(one({ type: 'TextField', props: { label: 'Name', value: { $bindState: '/name' } }, watch: { '/name': { action: 'lookup' } } }))).toEqual([
+    'elements.x.watch./name.action: there is no action “lookup”. The actions are setState, pushState, removeState, validateForm, archive, submit.',
+  ]);
+});
+
+test('the check names a $computed function or a slot the catalog doesn’t have', () => {
+  expect(check(one({ type: 'SummaryCard', props: { title: 'Total', summary: { $computed: 'average', args: { items: { $state: '/bills' } } } } }))).toEqual([
+    'elements.x: there is no function “average” for $computed. The functions are scale, remaining, sum.',
+  ]);
+  expect(check(one({ type: 'SummaryCard', props: { title: 'Total', summary: { $computed: 'sum', args: { items: { $state: '/bills' } } } } }))).toEqual([]);
+  expect(check(one({ type: 'EmptyState', props: { title: 'Nothing yet' }, slots: { actions: [] } }))).toEqual([
+    'elements.x.slots.actions: EmptyState has no slot “actions”.',
   ]);
 });
 

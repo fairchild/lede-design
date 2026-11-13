@@ -84,7 +84,8 @@ Lede's Disclosure and a `flag` action, and was run on the app the recipe builds.
    ),
    ```
 
-   `flag: async (params) => report('flag', params),`
+   `flag: async () => undefined,` under `actions`, where defineRegistry asks for it. `SpecView` runs the host's
+   handler in its place.
 4. `components/lede/json-render/catalog-fit.ts`: add `Disclosure: typeof Disclosure;` to `interface Lede` (with its
    `import type`) and `Disclosure: true,` to `fit`. A prop that Disclosure doesn't take then fails here by name. A
    prop the registry renames, as Button's `label` becomes its children, goes in `interface Adapted`.
@@ -254,7 +255,7 @@ Each one below broke this example while it was built, or was checked in the pack
   array an earlier patch carried, and the next build adds the items again: a list grows on every render. json-render's
   prompt asks the model to stream arrays an item at a time, so every list a model sends hits this. Build with
   `specFromParts`, which works on copies. `tests/model-replies.test.tsx` streams 16 replies a model wrote and checks
-  each list's rows appear once, render after render.
+  that each draws the titles, rows and buttons its spec holds, once, render after render.
 - `buildSpecFromParts` returns `null` until the first patch, and then a spec whose `root` is set before any element
   exists. Render only when `spec.elements[spec.root]` exists.
 - `JSONUIProvider` takes changes to `initialState` after it mounts, key by key, and an array counts as changed on
@@ -265,10 +266,9 @@ Each one below broke this example while it was built, or was checked in the pack
   that stream in after it still arrive, with the change written back on top. A stream that reorders rows or inserts
   one above it moves the change to whatever row then holds that index. Stream a list's rows by appending, in their
   final order, and never reorder or insert rows mid-stream.
-- `JSONUIProvider` keeps the `handlers` it mounted with. Pass handlers that don't close over changing state, such as
-  ones that call a state setter with a function, or read the latest values through a ref.
-- The registry also defines `actions` that report on its `actions` event target. Handlers passed to `SpecView` (or
-  `JSONUIProvider`) are the ones a screen runs; the event target serves the repo's json-render page.
+- `SpecView` reads its `handlers` through a ref, so each call reaches the latest and an inline object is fine, and
+  each handler's params are typed from its action's schema. `JSONUIProvider` on its own keeps the handlers it mounted
+  with.
 - `convertToModelMessages` drops data parts, so the model never sees the screens it sent, and a follow-up can't refer
   to them. `forModel` in `server/chat.ts` turns each reply's patches back into a fenced spec in its text, with the
   state the person left in that screen, which the client sends as `screens`.

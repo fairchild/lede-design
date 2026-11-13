@@ -39,7 +39,7 @@ interface Lede {
 /**
  * Props the registry reads and turns into something else, such as a Button's `label`, which becomes its children, or a
  * SegmentedControl's `error`, which it draws under the control, or a PageHeader's `back`, a label with no `href`, which
- * it draws as a button that shows the list View again.
+ * it gives an `onClick` that shows the list View again.
  */
 interface Adapted {
   PageHeader: 'back';

@@ -1,14 +1,17 @@
 import * as React from 'react';
-import { createStateStore, type Spec, type StateStore } from '@json-render/core';
-import { JSONUIProvider, Renderer } from '@json-render/react';
+import { createStateStore, type InferActionParams, type Spec, type StateStore } from '@json-render/core';
+import { JSONUIProvider, Renderer, type ComponentRenderer } from '@json-render/react';
 import { focusLanding } from '../input-modality';
-import { functions, type CatalogAction } from './catalog';
-import { ActionHeld, DrillScope, FieldChecks, registry, SpecHeadingLevel, SpecKeys, specKeys, SpecRoot, type HeldAction } from './registry';
+import { catalog, functions, type CatalogAction } from './catalog';
+import { ActionHeld, DrillScope, FieldChecks, registry, SpecHeadingLevel, SpecKeys, specKeys, SpecRoot, SpecShown, type HeldAction } from './registry';
 
 export type { HeldAction } from './registry';
 
-/** The catalog's actions, each called with its params when a spec runs it. Add an action to the catalog and it's here. */
-export type SpecHandlers = Partial<Record<CatalogAction, (params: Record<string, unknown>) => void>>;
+/**
+ * The catalog's actions, each called with its params, typed from its schema, when a spec runs it. Add an action to the
+ * catalog and it's here.
+ */
+export type SpecHandlers = { [K in CatalogAction]?: (params: InferActionParams<typeof catalog, K>) => void };
 type State = Record<string, unknown>;
 
 export interface SpecViewProps {
@@ -19,10 +22,15 @@ export interface SpecViewProps {
   /** The level of the spec's title. Default 2, under a page's h1; a chat message's author heading makes it 3. */
   headingLevel?: 2 | 3;
   /**
-   * Called when the spec runs a catalog action. Keep them stable: json-render reads them once, when the view mounts.
-   * An action whose params read a field that fails its check doesn't run, so its handler isn't called.
+   * Called when the spec runs a catalog action. Read through a ref, so each call reaches the latest, and an inline
+   * object is fine. An action whose params read a field that fails its check doesn't run, so its handler isn't called.
    */
   handlers?: SpecHandlers;
+  /**
+   * Drawn for an element whose type the registry doesn't have, such as one from a newer catalog. Without it, that
+   * element draws nothing and json-render logs a warning.
+   */
+  fallback?: ComponentRenderer;
   /** Called with the screen's whole state after each change, such as for a chat to send what the person entered. */
   onStateChange?: (state: State) => void;
   /**
@@ -41,7 +49,9 @@ export function SpecView({ spec, ...props }: SpecViewProps) {
   return spec?.elements[spec.root] ? <Screen spec={spec} {...props} /> : null;
 }
 
-function Screen({ spec, streaming = false, headingLevel = 2, handlers, onStateChange, onActionHeld }: SpecViewProps & { spec: Spec }) {
+const actionNames = Object.keys(catalog.data.actions) as CatalogAction[];
+
+function Screen({ spec, streaming = false, headingLevel = 2, handlers, fallback, onStateChange, onActionHeld }: SpecViewProps & { spec: Spec }) {
   const root = React.useRef<HTMLDivElement>(null);
   const [{ store, sync }] = React.useState(() => specStore(spec.state));
   React.useLayoutEffect(() => sync(spec.state), [spec.state, sync]);
@@ -53,6 +63,12 @@ function Screen({ spec, streaming = false, headingLevel = 2, handlers, onStateCh
   const held = React.useRef(onActionHeld);
   React.useLayoutEffect(() => { held.current = onActionHeld; });
   const [report] = React.useState(() => (h: HeldAction) => held.current?.(h));
+  // json-render keeps the handlers it mounts with, so it gets these, which call the latest.
+  const latest = React.useRef(handlers);
+  React.useLayoutEffect(() => { latest.current = handlers; });
+  const [dispatch] = React.useState(() => Object.fromEntries(actionNames.map((name) => [name, (params: Record<string, unknown>) => {
+    (latest.current?.[name] as ((p: Record<string, unknown>) => void) | undefined)?.(params);
+  }])));
   useKeptFocus(root);
   useTokensCheck(root);
   const keys = React.useMemo(() => specKeys(spec), [spec]);
@@ -60,14 +76,16 @@ function Screen({ spec, streaming = false, headingLevel = 2, handlers, onStateCh
     <SpecHeadingLevel.Provider value={headingLevel}>
       <SpecRoot.Provider value={root}>
         <div ref={root}>
-          <JSONUIProvider registry={registry} functions={functions} store={store} handlers={handlers as Record<string, (params: Record<string, unknown>) => void>}>
+          <JSONUIProvider registry={registry} functions={functions} store={store} handlers={dispatch}>
             <FieldChecks>
               <ActionHeld.Provider value={report}>
-                <SpecKeys.Provider value={keys}>
-                  <DrillScope>
-                    <Renderer spec={spec} registry={registry} loading={streaming} />
-                  </DrillScope>
-                </SpecKeys.Provider>
+                <SpecShown.Provider value={spec}>
+                  <SpecKeys.Provider value={keys}>
+                    <DrillScope>
+                      <Renderer spec={spec} registry={registry} loading={streaming} fallback={fallback} />
+                    </DrillScope>
+                  </SpecKeys.Provider>
+                </SpecShown.Provider>
               </ActionHeld.Provider>
             </FieldChecks>
           </JSONUIProvider>
@@ -128,19 +146,26 @@ const along = (node: Node | null, step: 'nextSibling' | 'previousSibling') => {
   return null;
 };
 
-/** Where focus goes when the control that held it leaves: the control that took its place, a neighbor, or the title. */
-function landing(records: MutationRecord[], gone: Element, root: HTMLElement) {
+/**
+ * Where focus goes when the control that held it leaves: the control that took its place, a neighbor, the title, or
+ * the screen itself when it shows none of those.
+ */
+function landing(records: MutationRecord[], gone: Element, root: HTMLElement): HTMLElement {
   const added = records.flatMap((r) => [...r.addedNodes]).filter((n) => root.contains(n)).map(focusable).find(Boolean);
   if (added) return added;
   const removal = records.find((r) => [...r.removedNodes].some((n) => n === gone || n.contains(gone)));
   const neighbor = removal && (along(removal.nextSibling, 'nextSibling') ?? along(removal.previousSibling, 'previousSibling'));
-  return neighbor && root.contains(neighbor) ? neighbor : root.querySelector<HTMLElement>('.ld-page-title');
+  if (neighbor && root.contains(neighbor)) return neighbor;
+  const title = root.querySelector<HTMLElement>('.ld-page-title');
+  if (title) return title;
+  root.tabIndex = -1;
+  return root;
 }
 
 /**
  * A press can take away the control that made it: a row action that hides its row, or a button that hides itself and
- * shows another. Focus then moves to the control that took its place, the next or previous control beside it, or the
- * screen's title, so it never falls to `<body>`. A control in a menu or other popup counts as the one that opened it.
+ * shows another. Focus then moves to the control that took its place, the next or previous control beside it, the
+ * screen's title or the screen, so it never falls to `<body>`. A control in a menu or other popup counts as the one that opened it.
  */
 function useKeptFocus(root: React.RefObject<HTMLElement | null>) {
   React.useEffect(() => {

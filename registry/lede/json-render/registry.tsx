@@ -1,6 +1,6 @@
 import * as React from 'react';
-import { defineRegistry, useActions, useBoundProp, useRepeatScope, type ComponentRegistry } from '@json-render/react';
-import type { ActionBinding, Spec } from '@json-render/core';
+import { defineRegistry, useActions, useBoundProp, useRepeatScope, useStateStore, type ComponentRegistry } from '@json-render/react';
+import { resolveActionParam, type ActionBinding, type Spec } from '@json-render/core';
 import { Button } from '../button';
 import { Checkbox } from '../checkbox';
 import { ListGroup, ListRow } from '../list';
@@ -9,10 +9,11 @@ import { Switch } from '../switch';
 import { TextField } from '../text-field';
 import { EmptyState } from '../blocks/empty-state';
 import { FormSection } from '../blocks/form-section';
-import { PageHeader, useBackOnEscape } from '../blocks/page-header';
+import { PageHeader } from '../blocks/page-header';
 import { focusLanding } from '../input-modality';
 import { SummaryCard } from '../blocks/summary-card';
-import { catalog } from './catalog';
+import { catalog, functions } from './catalog';
+import { opensView } from './check';
 
 /**
  * The level of a spec's title. A spec renders below its host page's own h1, so it starts at h2 by default, and a host
@@ -26,6 +27,8 @@ const useLevels = () => {
 
 /** The element around a SpecView's screen, where a press looks for the fields its actions read. */
 export const SpecRoot = React.createContext<React.RefObject<HTMLElement | null> | null>(null);
+/** The spec a SpecView draws, which a row reads to know whether the View its press shows has arrived. */
+export const SpecShown = React.createContext<Spec | null>(null);
 /** The `on` bindings of the element being drawn, which defineRegistry's render props leave out. */
 const ElementOn = React.createContext<Record<string, ActionBinding | ActionBinding[]> | undefined>(undefined);
 /** The drawn element's key in the spec, with its item's index inside a repeat: a name that outlives a remount. */
@@ -94,9 +97,9 @@ const controlFor = (scope: ParentNode, id: string) =>
   scope.querySelector<HTMLElement>(`[data-row-id="${CSS.escape(id)}"] .ld-row-target, [data-jr-id="${CSS.escape(id)}"]`);
 
 /**
- * A detail View's header. When it shows because a press took the list away, its title takes focus. Its back button,
- * or Escape while focus is in the screen, emits “back”, and once the list is back focus returns to the control that
- * opened the detail, or to the screen's title when that control is gone.
+ * A detail View's header: Lede's PageHeader with a back button. When it shows because a press took the list away, its
+ * title takes focus. Its back button, or Escape while focus is in the screen, emits “back”, and once the list is back
+ * focus returns to the control that opened the detail, or to the screen's title when that control is gone.
  */
 function DetailHeader({ title, summary, back, actions, level, onBack }: {
   title: string; summary?: string; back: { label: string }; actions?: React.ReactNode; level: 2 | 3; onBack: () => void;
@@ -111,7 +114,6 @@ function DetailHeader({ title, summary, back, actions, level, onBack }: {
     if (drill) drill.returnTo.current = openedBy;
     onBack();
   };
-  useBackOnEscape(drill?.within ? goBack : undefined);
   React.useLayoutEffect(() => {
     const scope = root?.current;
     const active = document.activeElement;
@@ -129,23 +131,17 @@ function DetailHeader({ title, summary, back, actions, level, onBack }: {
       focusLanding(scope.querySelector<HTMLElement>('.ld-page-title'));
     });
   }, []);
-  const H = `h${level}` as 'h2';
   return (
-    <header className="ld-page-header">
-      <button type="button" className="ld-back" onClick={goBack}>
-        <svg viewBox="0 0 8 14" width="8" height="14" fill="none" aria-hidden="true">
-          <path d="M6.5 1.5 1.5 7l5 5.5" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-        {back.label}
-      </button>
-      <div className="ld-page-header-row">
-        <div className="ld-page-header-text">
-          <H ref={heading} tabIndex={-1} className={`${level === 2 ? 'text-large-title' : 'text-title-2'} ld-page-title`}>{title}</H>
-          {summary ? <p className="ld-page-summary">{summary}</p> : null}
-        </div>
-        {actions ? <div className="ld-page-actions">{actions}</div> : null}
-      </div>
-    </header>
+    <PageHeader
+      title={title}
+      summary={summary}
+      actions={actions}
+      headingLevel={level}
+      headingRef={heading}
+      focusOnMount={false}
+      back={{ label: back.label, onClick: goBack }}
+      backOnEscape={!!drill?.within}
+    />
   );
 }
 
@@ -219,36 +215,40 @@ function useFieldError(name: string | undefined, error: string | undefined, valu
 }
 
 /**
- * An event's emit, held back at the first action that reads a field failing its native check: empty and required,
- * outside its min and max, or not the email or URL its type asks for. The actions before that one run. Each field it
- * reads that fails shows its error, and focus moves to the first. Each field's `name` is the state path it binds.
+ * An event's emit, which runs its actions in order as json-render's does, each with its params resolved against the
+ * state as it is then and the repeat item the element is drawn for. Right before each action, the fields its params
+ * read are checked: one that is empty and required, outside its min and max, or not the email or URL its type asks for
+ * holds that action and the rest back. Each field it reads that fails shows its error, and focus moves to the first.
+ * Each field's `name` is the state path it binds. Every event of every element runs through here.
  */
-function useCheckedEmit(emit: (event: string) => void) {
+function useCheckedEmit(on: Record<string, ActionBinding | ActionBinding[]> | undefined) {
   const root = React.useContext(SpecRoot);
-  const on = React.useContext(ElementOn);
   const checks = React.useContext(Checked);
   const report = React.useContext(ActionHeld);
   const { execute } = useActions();
+  const { getSnapshot } = useStateStore();
+  const repeat = useRepeatScope();
   return async (event: string) => {
     const bound = on?.[event];
-    const list = bound ? (Array.isArray(bound) ? bound : [bound]) : [];
-    const scope: ParentNode = root?.current ?? document;
-    const failing = [...scope.querySelectorAll<Field>('input[name]:invalid, textarea[name]:invalid')];
-    const reads = (b: ActionBinding) => failing.filter((f) => statePaths(b.params).some((p) => f.name === p || f.name.startsWith(`${p}/`)));
-    const stop = list.findIndex((b) => reads(b).length > 0);
-    if (stop < 0) return emit(event);
-    for (const b of list.slice(0, stop)) await execute(b);
-    const held = reads(list[stop]);
-    checks?.show(held);
-    report?.({ action: list[stop].action, fields: held.map((f) => ({ name: f.name, message: checks?.errors.get(f.name) || f.validationMessage })) });
-    held[0]?.focus();
+    for (const b of bound ? (Array.isArray(bound) ? bound : [bound]) : []) {
+      const scope: ParentNode = root?.current ?? document;
+      const held = [...scope.querySelectorAll<Field>('input[name]:invalid, textarea[name]:invalid')]
+        .filter((f) => statePaths(b.params).some((p) => f.name === p || f.name.startsWith(`${p}/`)));
+      if (held.length) {
+        checks?.show(held);
+        report?.({ action: b.action, fields: held.map((f) => ({ name: f.name, message: checks?.errors.get(f.name) || f.validationMessage })) });
+        held[0].focus();
+        return;
+      }
+      const ctx = { stateModel: getSnapshot(), repeatItem: repeat?.item, repeatIndex: repeat?.index, repeatBasePath: repeat?.basePath, functions };
+      await execute(b.params ? { ...b, params: Object.fromEntries(Object.entries(b.params).map(([k, v]) => [k, resolveActionParam(v, ctx)])) } : b);
+    }
   };
 }
 
 /**
- * Each catalog type drawn by its Lede component. The spec's PageHeader leaves focus where the reader is. PageHeader
- * takes an h1 or h2 only, so a deeper title draws its parts with the same classes, its title focusable as PageHeader's
- * is, so focus can land there.
+ * Each catalog type drawn by its Lede component. The spec's PageHeader leaves focus where the reader is, and its title
+ * takes the level SpecView gives it.
  */
 const drawn = defineRegistry(catalog, {
   components: {
@@ -257,26 +257,17 @@ const drawn = defineRegistry(catalog, {
     PageHeader: ({ props, slots, emit }) => {
       const { title } = useLevels();
       if (props.back) return <DetailHeader title={props.title} summary={props.summary} back={props.back} actions={slots?.actions} level={title} onBack={() => emit('back')} />;
-      if (title === 2) return <PageHeader title={props.title} summary={props.summary} actions={slots?.actions} headingLevel={2} focusOnMount={false} />;
-      const H = `h${title}` as 'h3';
-      return (
-        <header className="ld-page-header">
-          <div className="ld-page-header-row">
-            <div className="ld-page-header-text">
-              <H tabIndex={-1} className="text-title-2 ld-page-title">{props.title}</H>
-              {props.summary ? <p className="ld-page-summary">{props.summary}</p> : null}
-            </div>
-            {slots?.actions ? <div className="ld-page-actions">{slots.actions}</div> : null}
-          </div>
-        </header>
-      );
+      return <PageHeader title={props.title} summary={props.summary} actions={slots?.actions} headingLevel={title} focusOnMount={false} />;
     },
     ListGroup: ({ props, children }) => (
       <ListGroup title={props.title} summary={props.summary} footer={props.footer} headingLevel={useLevels().section}>{children}</ListGroup>
     ),
     ListRow: ({ props, bindings, emit, on }) => {
       const [checked, setChecked] = useBoundProp(props.checked, bindings?.checked);
-      const press = on('press');
+      const spec = React.useContext(SpecShown);
+      const raw = React.useContext(ElementOn)?.press;
+      // A row's press opens its detail View, so the row acts once that View has arrived, and not while it streams.
+      const opens = on('press').bound && (spec ? opensView(spec, raw) : true);
       const { id, note } = usePress();
       return (
         <ListRow
@@ -284,9 +275,9 @@ const drawn = defineRegistry(catalog, {
           title={props.title}
           subtitle={props.subtitle}
           value={props.value}
-          // A chevron says the row leads somewhere, so it shows only on a row whose press is bound.
-          chevron={press.bound && props.chevron !== false}
-          onClick={press.bound ? () => { note(); press.emit(); } : undefined}
+          // A chevron says the row leads somewhere, so it shows only on a row whose press opens a View.
+          chevron={opens && props.chevron !== false}
+          onClick={opens ? () => { note(); emit('press'); } : undefined}
           trailing={checked === undefined ? undefined : (
             <Switch aria-label={props.title} checked={checked} onCheckedChange={(next) => { setChecked(next); emit('change'); }} />
           )}
@@ -295,10 +286,9 @@ const drawn = defineRegistry(catalog, {
       );
     },
     Button: ({ props, emit }) => {
-      const checked = useCheckedEmit(emit);
       const { id, note } = usePress();
       return (
-        <Button data-jr-id={id} variant={props.variant} tone={props.tone} size={props.size} block={props.block} disabled={props.disabled} onClick={() => { note(); void checked('press'); }}>
+        <Button data-jr-id={id} variant={props.variant} tone={props.tone} size={props.size} block={props.block} disabled={props.disabled} onClick={() => { note(); emit('press'); }}>
           {props.label}
         </Button>
       );
@@ -306,7 +296,6 @@ const drawn = defineRegistry(catalog, {
     TextField: ({ props, bindings, on, emit }) => {
       const [value, setValue] = useBoundProp(props.value, bindings?.value);
       const submit = on('submit');
-      const checked = useCheckedEmit(emit);
       const error = useFieldError(bindings?.value, props.error, value);
       return (
         <TextField
@@ -332,7 +321,7 @@ const drawn = defineRegistry(catalog, {
             setValue(props.type === 'number' && input.value !== '' ? (input as HTMLInputElement).valueAsNumber : input.value);
           }}
           onKeyDown={submit.bound && !props.rows ? (e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-            if (e.key === 'Enter' && !e.nativeEvent.isComposing) { e.preventDefault(); void checked('submit'); }
+            if (e.key === 'Enter' && !e.nativeEvent.isComposing) { e.preventDefault(); emit('submit'); }
           } : undefined}
         />
       );
@@ -396,13 +385,14 @@ const drawn = defineRegistry(catalog, {
       <SummaryCard title={props.title} summary={props.summary} figure={props.figure} status={props.status} headingLevel={useLevels().section} />
     ),
   },
-  actions: {
-    archive: async (params) => report('archive', params),
-    submit: async (params) => report('submit', params),
-  },
+  // defineRegistry asks for the catalog's actions. SpecView runs the host's `handlers` in their place.
+  actions: { archive: async () => undefined, submit: async () => undefined },
 });
 
-/** The registry, each entry given its element's `on` bindings, which `useCheckedEmit` reads, and its `ElementId`. */
+/**
+ * The registry, each entry given its element's `on` bindings and its `ElementId`, with `emit` and `on` running every
+ * event through `useCheckedEmit`.
+ */
 export const registry: ComponentRegistry = Object.fromEntries(
   Object.entries(drawn.registry).map(([type, Draw]) => [
     type,
@@ -410,17 +400,14 @@ export const registry: ComponentRegistry = Object.fromEntries(
       const keys = React.useContext(SpecKeys);
       const key = keys.get(ctx.element.children) ?? keys.get(ctx.element.on) ?? type;
       const index = useRepeatScope()?.index;
+      const checked = useCheckedEmit(ctx.element.on);
+      const emit = (event: string) => { void checked(event); };
+      const on = (event: string) => ({ ...ctx.on(event), emit: () => emit(event) });
       return (
         <ElementId.Provider value={index === undefined ? key : `${key}/${index}`}>
-          <ElementOn.Provider value={ctx.element.on}><Draw {...ctx} /></ElementOn.Provider>
+          <ElementOn.Provider value={ctx.element.on}><Draw {...ctx} emit={emit} on={on} /></ElementOn.Provider>
         </ElementId.Provider>
       );
     },
   ]),
 );
-export const { handlers } = drawn;
-
-/** The page's action log listens here: each catalog action a spec runs, with its params. */
-export const actions = new EventTarget();
-export type ActionEvent = CustomEvent<{ name: string; params: unknown }>;
-const report = (name: string, params: unknown) => { actions.dispatchEvent(new CustomEvent('action', { detail: { name, params } })); };

@@ -111,7 +111,8 @@ container's font size, and it can also be 0.02px less in a `max-width` query.
   primary button to confirm. Enter acts, and Escape backs out one layer per press. Back and back links return to where
   the person was. Each change moves focus once, in the same task, so `<body>` never shows, and an announcement follows
   it. `tests/focus-table.ts` is the source of truth. Its `test.fixme` rows say what they wait for, and a pull request
-  that adds a screen or an action adds its rows there.
+  that adds a screen or an action adds its rows there. An app in `integrations/` keeps its focus specs in its own
+  tests, beside the screens it builds, since the root suite doesn't build it.
 - **Progressive disclosure.** Every screen, section and row leads with its takeaway (`summary`). Affordances stay quiet
   and appear at the point of use. Expert paths, such as swipe, always have a visible twin.
 - **Tokens only.** Components use no raw colors or radii. They use shadcn's names (`--primary`, `--muted-foreground`)
