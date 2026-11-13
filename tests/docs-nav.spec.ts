@@ -1,19 +1,27 @@
 import { test, expect, type Page } from '@playwright/test';
 
 // The docs keep their way out on every page and at every width: the sidebar's foot on wide screens, the page's foot on
-// narrow ones. The Mode and contrast controls there edit the same appearance as the demo's Settings → Appearance.
+// narrow ones. It holds GitHub, with its mark, and the version's changelog; the demo app and Decisions live on Overview.
+// The Mode and contrast controls there edit the same appearance as the demo's Settings → Appearance.
 const DOCS = ['/', '/foundations', '/components', '/blocks', '/layouts', '/decisions'];
-const LINKS = ['Demo app', 'Decisions', 'GitHub', /^Version \d+\.\d+\.\d+$/];
+const VERSION = /^Version \d+\.\d+\.\d+$/;
 
 const footer = (page: Page) => page.locator('.ld-shell-footer, .docs-page-foot').filter({ visible: true });
 
 for (const route of DOCS) {
-  test(`${route} · links to the demo app, Decisions, GitHub and the changelog at every width`, async ({ page }) => {
+  test(`${route} · links to GitHub and the changelog, and nothing else, at every width`, async ({ page }) => {
     await page.goto(route);
     await expect(footer(page)).toHaveCount(1);
-    for (const name of LINKS) await expect(footer(page).getByRole('link', { name })).toBeVisible();
-    await expect(footer(page).getByRole('link', { name: 'GitHub' })).toHaveAttribute('href', 'https://github.com/fairchild/lede-design');
-    await expect(footer(page).getByRole('link', { name: LINKS[3] })).toHaveAttribute('href', /\/blob\/main\/CHANGELOG\.md$/);
+    const links = footer(page).getByRole('link');
+    await expect(links).toHaveCount(2);
+    const github = links.nth(0);
+    await expect(github).toHaveAccessibleName('GitHub');
+    await expect(github).toHaveAttribute('href', 'https://github.com/fairchild/lede-design');
+    await expect(github.locator('svg[aria-hidden="true"]')).toBeVisible();
+    // The mark sits on the word's line, so the link is as tall as the one beside it.
+    expect((await github.boundingBox())!.height).toBe((await links.nth(1).boundingBox())!.height);
+    await expect(links.nth(1)).toHaveAccessibleName(VERSION);
+    await expect(links.nth(1)).toHaveAttribute('href', /\/blob\/main\/CHANGELOG\.md$/);
   });
 }
 
