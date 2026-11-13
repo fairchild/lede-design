@@ -154,9 +154,9 @@ export function ChatPage({ actions, trace, ask, focusOnMount }: ChatPageProps) {
   };
 
   // A question from a link or the composer waits for a reply that's still streaming, then goes; a later one takes its
-  // place, and Escape cancels it. If the person has typed in the composer by then, it waits for a press instead, and their text stays.
-  // The page around the chat moved there, so it puts focus in the composer, before this runs. `said` announces each
-  // change.
+  // place, and Escape cancels it. If the person has typed in the composer by then, it waits for a press instead, and
+  // their text stays. The page around the chat moved there, so it puts focus in the composer, before this runs. `said`
+  // announces each change.
   const asking = React.useRef<number | undefined>(undefined);
   const [waiting, setWaiting] = React.useState<{ text: string; ready?: boolean }>();
   const [said, setSaid] = React.useState('');
