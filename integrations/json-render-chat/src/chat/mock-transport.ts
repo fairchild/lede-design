@@ -68,8 +68,9 @@ const textOf = (message: AppMessage | undefined) =>
   message?.parts.map((part) => (part.type === 'text' ? part.text : '')).join('') ?? '';
 
 /**
- * The reply as a model writes it under `prompt()`, in inline mode: its prose, then the spec as JSONL patches,
- * one per line. Words go out a few at a time and each patch line in two halves, the way network chunks fall.
+ * The reply as text: its prose, then the spec as bare JSONL patches, one per line. A model under the inline prompt
+ * fences them in a ```spec block, which `pipeJsonRender` reads the same way. Words go out a few at a time and each
+ * patch line in two halves, the way network chunks fall.
  */
 export function modelOutput(reply: Reply): string[] {
   const words = reply.text.match(/\S+\s*/g) ?? [];
