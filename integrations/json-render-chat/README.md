@@ -62,8 +62,6 @@ passed. Commands run in your app's folder, and `LEDE` is the path to a clone of 
    npx shadcn@latest add @lede/theme-provider @lede/avatar @lede/json-render --yes
    ```
 
-   Before v0.5.0 is tagged, use `/r/next/` in place of `/r/v0.5.0/`: the unreleased build of main.
-
    Then import Lede's styles at the end of `src/index.css`, as the main README's step 2 shows. `init` leaves the file
    without a final newline, so start with one:
 

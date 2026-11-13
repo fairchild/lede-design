@@ -325,13 +325,8 @@ function Body({ className, ...rest }: React.HTMLAttributes<HTMLTableSectionEleme
 export interface RowProps extends React.HTMLAttributes<HTMLTableRowElement> {
   /** Styling only. The row's checkbox carries the selection for assistive tech, since table rows take no `aria-selected`. */
   selected?: boolean;
-  /**
-   * @deprecated Since 0.4.0, and removed in 0.5.0: a row that holds a Table.RowLink is linked on its own. Passing it
-   * changes nothing.
-   */
-  linked?: boolean;
 }
-function Row({ selected, linked: _linked, className, ...rest }: RowProps) {
+function Row({ selected, className, ...rest }: RowProps) {
   return <tr className={cn('ld-table-row', className)} data-selected={selected || undefined} {...rest} />;
 }
 

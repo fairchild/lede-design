@@ -25,8 +25,7 @@ for bots on Slack, Teams and Discord, so it doesn't belong in a browser chat.
    replace `src/index.css` with `@import "tailwindcss";`: its demo styles center every line in a bordered 1126px column
    and set `:root` to 18px, which rescales Lede. Then end it with `@import "./styles/lede/index.css";`. Without that
    import the screens draw unstyled with no build error; `SpecView` warns in the console in development.
-2. The registry URL is `https://lede.cloudcompute.com/r/v0.5.0/{name}.json`. Before v0.5.0 is tagged, use `/r/next/`
-   in place of `/r/v0.5.0/`: the unreleased build of main. `shadcn init --defaults` also picks a style and may add a
+2. The registry URL is `https://lede.cloudcompute.com/r/v0.5.0/{name}.json`. `shadcn init --defaults` also picks a style and may add a
    font, `tw-animate-css`, `src/components/ui/button.tsx` and `src/lib/utils.ts`; the chat uses none of them. From a clone,
    `npm run registry` writes the same files to `public/r/`, which any static server can serve.
 3. To change what a model may build, follow “Extend the catalog” below.

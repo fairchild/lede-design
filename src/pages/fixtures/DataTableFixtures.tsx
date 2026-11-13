@@ -378,8 +378,8 @@ function UncontrolledFixture() {
 /**
  * Controls in linked rows: a Button in each row's cell takes its own press while the rest of the row navigates. Its
  * column comes before the row header's, so the link's `::after` would paint over it without the lift. The first row's
- * `rowActions` returns none, so it has no •••. Below it, a plain Table whose rows hold a Table.RowLink and
- * don't pass `linked`: each link still covers only its own row.
+ * `rowActions` returns none, so it has no •••. Below it, a plain Table whose rows hold a Table.RowLink: each link
+ * covers only its own row.
  */
 function RowControlsFixture() {
   const [presses, setPresses] = React.useState<string[]>([]);
@@ -402,7 +402,7 @@ function RowControlsFixture() {
         rowHref={(r) => `#rc-${r.id}`}
         rowActions={actions}
       />
-      <Table.Root aria-label="Rows without linked">
+      <Table.Root aria-label="Rows with a RowLink">
         <Table.Body>
           {['Q1', 'Q2'].map((q) => (
             <Table.Row key={q}>

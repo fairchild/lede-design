@@ -696,9 +696,9 @@ test.describe('DataTable', () => {
       await expect(page).toHaveURL(/#rc-n0$/);
     });
 
-    test('Table.RowLink covers its own row without `linked`', async ({ page }) => {
+    test('Table.RowLink covers its own row', async ({ page }) => {
       await open(page, FIXTURES);
-      const rows = page.getByRole('table', { name: 'Rows without linked' }).getByRole('row');
+      const rows = page.getByRole('table', { name: 'Rows with a RowLink' }).getByRole('row');
       await clickEnd(rows.nth(0).getByRole('cell'));
       await expect(page).toHaveURL(/#bare-Q1$/);
       await clickEnd(rows.nth(1).getByRole('cell'));
