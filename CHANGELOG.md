@@ -1,6 +1,9 @@
 # Changelog
 
-## Unreleased
+## 0.5.1
+
+The docs site has an Integrations page, linked from Overview. The registry for this release is
+`https://lede.cloudcompute.com/r/v0.5.1/{name}.json`.
 
 ### Added
 
