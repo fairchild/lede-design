@@ -55,6 +55,33 @@ PW_TEST_CONNECT_WS_ENDPOINT=ws://127.0.0.1:3000/ PW_TEST_CONNECT_EXPOSE_NETWORK=
 docker stop pw-linux
 ```
 
+## Preview a pull request
+
+`scripts/preview-pr.sh` puts a pull request's docs site and its three example apps on a public URL before it merges.
+It builds the head of an open pull request from a branch of this repo in `~/.worktrees/lede/preview-pr-<N>` and
+uploads it as the Worker Preview `pr-<N>`:
+
+```bash
+scripts/preview-pr.sh 84 --comment
+```
+
+The URL is `https://pr-<N>-lede-design.<subdomain>.workers.dev`, with the example apps under `/examples/<app>/`. They
+answer from the scripted mock transport. `--comment` posts the URL on the pull request and edits the same comment on
+later runs. `--dry-run` builds everything and prints the upload command without running it.
+
+The preview runs the pull request's `worker/` with the settings and bindings of your checkout's `wrangler.jsonc`, so it
+reads the production bucket's releases, `r/next/` and media. Read a change to `worker/` before you preview it.
+
+Wrangler uses `CLOUDFLARE_API_TOKEN` when it's set and your `wrangler login` otherwise, and the script prints which. A
+token needs Workers Scripts: Edit on the irons in the fire account. If the script reports that it can't see that
+account, add Account Settings: Read, which `wrangler whoami` needs to list it. The script refuses any other account.
+
+When the pull request closes, delete its preview and worktree:
+
+```bash
+scripts/preview-pr.sh 84 --delete
+```
+
 ## How the code is organized
 
 Lede has five layers, and dependencies only point down:

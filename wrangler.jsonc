@@ -15,5 +15,8 @@
     "run_worker_first": ["/r/*", "/media/*"]
   },
   // Registry releases (r/v<semver>/), r/next/ and media, kept apart from deploys so a release outlives them.
-  "r2_buckets": [{ "binding": "BUCKET", "bucket_name": "lede-design" }]
+  "r2_buckets": [{ "binding": "BUCKET", "bucket_name": "lede-design" }],
+  // A pull request's Preview (scripts/preview-pr.sh) inherits no bindings, so it names the same bucket. It reads
+  // releases, r/next/ and media as the site does.
+  "previews": { "r2_buckets": [{ "binding": "BUCKET", "bucket_name": "lede-design" }] }
 }
