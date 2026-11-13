@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## 0.5.2
+
+Fixes from the reviews of SpecView: fields are checked right before each action, `check` reads bindings and a row
+waits for the View it opens. PageHeader takes a level 3 title and a back that acts in place. The registry for this
+release is `https://lede.cloudcompute.com/r/v0.5.2/{name}.json`.
 
 ### Changed
 

@@ -1,7 +1,7 @@
 {
   "name": "lede-design",
   "private": true,
-  "version": "0.5.1",
+  "version": "0.5.2",
   "description": "Summary first, depth on request. A content-first design system for React, shipped as a shadcn registry.",
   "license": "MIT",
   "homepage": "https://lede.cloudcompute.com/",
