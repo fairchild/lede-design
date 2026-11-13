@@ -16,7 +16,7 @@
   },
   // Registry releases (r/v<semver>/), r/next/ and media, kept apart from deploys so a release outlives them.
   "r2_buckets": [{ "binding": "BUCKET", "bucket_name": "lede-design" }],
-  // A pull request's Preview (scripts/preview-pr.sh) inherits no bindings, so it names the same bucket. It reads
-  // releases, r/next/ and media as the site does.
+  // A pull request's Preview (scripts/preview-pr.sh) inherits no bindings, so it names the same bucket, with read and
+  // write access. That's accepted; CONTRIBUTING.md says which pull requests get reviewed before a preview.
   "previews": { "r2_buckets": [{ "binding": "BUCKET", "bucket_name": "lede-design" }] }
 }
