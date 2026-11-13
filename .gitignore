@@ -15,3 +15,4 @@ registry/lede/lede.tokens.css
 .dev.vars*
 worker/worker-configuration.d.ts
 dist-strict
+*.tsbuildinfo
