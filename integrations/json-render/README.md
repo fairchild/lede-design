@@ -63,8 +63,7 @@ npx shadcn@latest registry add '@lede=https://lede.cloudcompute.com/r/v0.5.0/{na
 npx shadcn@latest add @lede/theme-provider @lede/json-render
 ```
 
-The item first ships in Lede 0.5.0. Until v0.5.0 is tagged, use `/r/next/{name}.json` on the same site, the unreleased
-build of main.
+The item first ships in Lede 0.5.0.
 
 Then import `./styles/lede/index.css` once in your global CSS, as the main README's step 2 shows. For a chat whose
 replies hold these screens, see [`../json-render-chat`](../json-render-chat).

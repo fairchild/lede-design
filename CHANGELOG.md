@@ -1,6 +1,9 @@
 # Changelog
 
-## Unreleased
+## 0.5.0
+
+SpecView lets a model's reply be a Lede screen, and `Table.Row` drops the `linked` prop deprecated in 0.4.0. The
+registry for this release is `https://lede.cloudcompute.com/r/v0.5.0/{name}.json`.
 
 ### Added
 
@@ -32,6 +35,11 @@
 
 - Docs site: the sidebar's footer, and the page foot that holds it on narrow screens, links to GitHub, with its mark,
   and the version. The demo app and Decisions are reached from Overview.
+
+### Removed
+
+- Table: `Table.Row` no longer takes `linked`, deprecated in 0.4.0. A row that holds a `Table.RowLink` is linked on
+  its own, so drop the prop.
 
 ### Fixed
 
