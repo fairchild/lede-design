@@ -66,6 +66,9 @@ html, body { margin: 0; background: var(--background-grouped); color: var(--fore
 .docs-demo { display: flex; flex-wrap: wrap; gap: var(--space-4) var(--space-3); align-items: center; padding: var(--space-4); border-radius: var(--radius-lg); background: var(--card); }
 [data-theme$="-hc"] .docs-demo { box-shadow: 0 0 0 1px var(--input); }
 .docs-usage { margin-top: var(--space-4); }
+/* A spec SpecView draws in the page, set apart from the docs around it. */
+.docs-spec { margin: 0 0 var(--space-4); padding: var(--space-4); border-radius: var(--radius-lg); box-shadow: inset 0 0 0 0.5px var(--border); }
+[data-theme$="-hc"] .docs-spec { box-shadow: inset 0 0 0 1px var(--input); }
 .docs-demo-col { display: grid; gap: var(--space-4); align-items: stretch; }
 .docs-theme-panel { display: grid; gap: var(--space-4); padding: var(--space-4); border-radius: var(--radius-lg); }
 /* Code examples: one surface, the Disclosure's card, so a syntax color is measured against one background. */

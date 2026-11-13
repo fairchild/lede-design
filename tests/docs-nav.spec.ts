@@ -3,7 +3,7 @@ import { test, expect, type Page } from '@playwright/test';
 // The docs keep their way out on every page and at every width: the sidebar's foot on wide screens, the page's foot on
 // narrow ones. It holds GitHub, with its mark, and the version's changelog; the demo app and Decisions live on Overview.
 // The Mode and contrast controls there edit the same appearance as the demo's Settings → Appearance.
-const DOCS = ['/', '/foundations', '/components', '/blocks', '/layouts', '/decisions'];
+const DOCS = ['/', '/foundations', '/components', '/blocks', '/layouts', '/decisions', '/integrations'];
 const VERSION = /^Version \d+\.\d+\.\d+$/;
 
 const footer = (page: Page) => page.locator('.ld-shell-footer, .docs-page-foot').filter({ visible: true });

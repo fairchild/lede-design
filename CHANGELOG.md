@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- The docs site has an Integrations page, reached from Overview's Explore section. It shows how to install SpecView,
+  draws a spec with it on the page and links to the three example apps in `integrations/`.
+
 ## 0.5.0
 
 SpecView lets a model's reply be a Lede screen, and `Table.Row` drops the `linked` prop deprecated in 0.4.0. The
