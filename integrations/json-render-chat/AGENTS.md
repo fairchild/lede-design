@@ -30,8 +30,10 @@ for bots on Slack, Teams and Discord, so it doesn't belong in a browser chat.
    `npm run registry` writes the same files to `public/r/`, which any static server can serve.
 3. To change what a model may build, follow “Extend the catalog” below.
 4. The server is `server/chat.ts`. It refuses a body that isn't `application/json` (415), is over 1 MB (413) or
-   fails `safeValidateUIMessages` (400), and keeps only the parts the model reads: what the person typed, and the
-   replies' text and screens. Then `streamText({ model: anthropic('claude-sonnet-5-5'), system,
+   fails `safeValidateUIMessages` (400), counting bytes as the body streams in. It keeps only the parts the model reads:
+   what the person typed, and the replies' text and screens, less any reply the client names as `failed`. A turn left
+   with nothing to read, such as any system message, or a reply whose screen can't be written back is refused (400).
+   Then `streamText({ model: anthropic('claude-sonnet-5-5'), system,
    messages: await convertToModelMessages(forModel(messages, screens)), maxOutputTokens })`, where `system` is the catalog's `prompt()` in `src/chat/system.ts`, merged into
    `createUIMessageStream`, so a connection that drops partway through becomes an error the client shows, and piped
    through `pipeJsonRender`. It exports `handleChat(request)`, a fetch-style handler for any framework's route, and
@@ -46,8 +48,9 @@ for bots on Slack, Teams and Discord, so it doesn't belong in a browser chat.
 6. In each assistant message, render its text parts first, then
    `<SpecView spec={specFromParts(message.parts)} streaming={live} headingLevel={3} handlers={…} onStateChange={…} />`,
    with `specFromParts` from `components/lede/json-render/patches`, memoized on `message.parts`. Keep each screen's
-   state from `onStateChange` by message id and send it as `screens` with the next message
-   (`sendMessage({ text }, { body: { screens } })`), so the model sees what the person entered. `onActionHeld` reports
+   state from `onStateChange` by message id and send it as `screens` with the next message, with the ids of replies
+   that failed as `failed` (`sendMessage({ text }, { body: { screens, failed } })`), so the model sees what the person
+   entered and not a half reply. `onActionHeld` reports
    an action that a failing field held back, with the action and each field's name and message.
 7. Check it: `npm run build`, then the page in a browser with a reply showing: the question, the reply's text and then
    its screen, focus in the composer and axe clean. A screen's rows can arrive seconds after its text, so wait for the

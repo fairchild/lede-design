@@ -42,12 +42,37 @@ test('a malformed body gets a 400, a body that isn’t JSON a 415, and the serve
   await expect(page.getByRole('heading', { level: 3, name: 'Notifications' })).toBeVisible();
 });
 
-/** What the model was sent with the request whose last message contains `marker`, as one string. */
-function sentWith(marker: string) {
-  const bodies = readFileSync(fakeLog, 'utf8').trim().split('\n').map((line) => JSON.parse(line) as { messages: Array<{ content: Array<{ text?: string }> | string }> });
-  const body = bodies.findLast((b) => JSON.stringify(b.messages.at(-1)).includes(marker));
-  return body?.messages.flatMap((m) => (typeof m.content === 'string' ? [m.content] : m.content.map((c) => c.text ?? ''))).join('\n') ?? '';
+type Sent = Array<{ role: string; content: Array<{ text?: string }> | string }>;
+/** The messages the model was sent with the request whose last message contains `marker`. */
+function messagesWith(marker: string): Sent {
+  const bodies = readFileSync(fakeLog, 'utf8').trim().split('\n').map((line) => JSON.parse(line) as { messages: Sent });
+  return bodies.findLast((b) => JSON.stringify(b.messages.at(-1)).includes(marker))?.messages ?? [];
 }
+/** What the model was sent with the request whose last message contains `marker`, as one string. */
+const sentWith = (marker: string) =>
+  messagesWith(marker).flatMap((m) => (typeof m.content === 'string' ? [m.content] : m.content.map((c) => c.text ?? ''))).join('\n');
+
+test('a reply that failed partway stays marked after the next question, and the model doesn’t read it', async ({ page }) => {
+  await ask(page, 'Please drop this one');
+  await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+  await expect(page.locator('.jrc-message[data-role="assistant"] .jrc-text')).not.toHaveCount(0);
+  await ask(page, 'And after that, marker-5521');
+  await expect(page.getByRole('heading', { level: 3, name: 'Notifications' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Stop' })).toBeHidden();
+  await expect(page.getByText('This reply failed.')).toHaveCount(1);
+  expect(messagesWith('marker-5521').map((m) => m.role)).toEqual(['user']);
+});
+
+test('a question held while a reply streams, sent as that reply fails, leaves the failed reply out of what the model reads', async ({ page }) => {
+  await ask(page, 'Please drop the trip list');
+  await expect(page.locator('.jrc-message[data-role="assistant"] .jrc-text')).not.toHaveCount(0);
+  await ask(page, 'And after that, marker-6630');
+  await expect(page.locator('.jrc-queued')).toHaveText('Next, once this reply ends: “And after that, marker-6630”.');
+  await expect(page.getByRole('heading', { level: 3, name: 'Notifications' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Stop' })).toBeHidden();
+  await expect(page.getByText('This reply failed.')).toHaveCount(1);
+  expect(messagesWith('marker-6630').map((m) => m.role)).toEqual(['user']);
+});
 
 test('a follow-up sends each earlier screen with what the person left in it', async ({ page }) => {
   await ask(page, 'Show my notification settings');

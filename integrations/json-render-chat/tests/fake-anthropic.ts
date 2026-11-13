@@ -18,11 +18,13 @@ const settings = read('./model-replies/after/2-settings.txt');
 const port = Number(process.env.FAKE_PORT ?? 4885);
 if (process.env.FAKE_LOG) writeFileSync(process.env.FAKE_LOG, '');
 
-createServer(async (req, res) => {
+const server = createServer(async (req, res) => {
   let body = '';
   for await (const chunk of req) body += chunk;
   if (process.env.FAKE_LOG) appendFileSync(process.env.FAKE_LOG, `${body}\n`);
-  const asked = JSON.stringify(JSON.parse(body || '{}').messages?.at(-1) ?? '');
+  // The latest question: the last block of the last message, since Anthropic's API takes consecutive user turns as one.
+  const last = JSON.parse(body || '{}').messages?.at(-1)?.content;
+  const asked = JSON.stringify((Array.isArray(last) ? last.at(-1) : last) ?? '');
   const drop = asked.includes('drop');
   const [, reply, pause = 5] = replies.find(([word]) => asked.includes(word)) ?? ['', settings];
   const send = (type: string, data: object) => res.write(`event: ${type}\ndata: ${JSON.stringify({ type, ...data })}\n\n`);
@@ -40,4 +42,5 @@ createServer(async (req, res) => {
   send('message_delta', { delta: { stop_reason: 'end_turn', stop_sequence: null }, usage: { output_tokens: 15 } });
   send('message_stop', {});
   res.end();
-}).listen(port, () => console.log(`Fake Anthropic on ${port}`));
+});
+server.listen(port, () => console.log(`Fake Anthropic on ${(server.address() as import('node:net').AddressInfo).port}`));

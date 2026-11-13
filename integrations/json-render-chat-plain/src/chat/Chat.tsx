@@ -83,11 +83,24 @@ export function Chat() {
     if (fresh.length) setTimes((prev) => ({ ...prev, ...Object.fromEntries(fresh.map((m) => [m.id, new Date()])) }));
   }, [messages, times]);
 
-  const send = (text: string) => {
-    if (!text.trim() || busy) return;
-    void sendMessage({ text: text.trim() }, { body: body() });
-    setDraft('');
+  // A message sent while a reply streams waits for that reply to end, a later one takes its place and Escape cancels it.
+  const [waiting, setWaiting] = React.useState<string>();
+  const [said, setSaid] = React.useState('');
+  const send = (text: string, keepDraft = false) => {
+    if (!text.trim()) return;
+    setWaiting(busy ? text.trim() : undefined);
+    setSaid(busy ? `Next, once this reply ends: “${text.trim()}”.` : '');
+    if (!keepDraft) setDraft('');
     focusComposer();
+    if (busy) return;
+    void sendMessage({ text: text.trim() }, { body: body() });
+  };
+  React.useEffect(() => { if (!busy && waiting) send(waiting, true); });
+  const cancelWaiting = () => {
+    if (!waiting) return false;
+    setWaiting(undefined);
+    setSaid(`You canceled “${waiting}”.`);
+    return true;
   };
 
   // A reply stopped before it began has no message of its own, so the ending sits on the question.
@@ -219,6 +232,7 @@ export function Chat() {
       <div className="jrc-footer">
         <p role="status" className={failed ? 'jrc-status' : 'sr-only'}>{statusText}</p>
         {failed ? <button type="button" className="jrc-button jrc-secondary justify-self-start" onClick={retry}>Try again</button> : null}
+        <p role="status" className={said ? 'text-sm text-muted-foreground' : 'sr-only'}>{said}</p>
         <form ref={form} className="jrc-composer" onSubmit={(e) => { e.preventDefault(); send(draft); }}>
           <div className="grid gap-2">
             <label htmlFor="message" className="text-sm font-medium">Message</label>
@@ -231,11 +245,11 @@ export function Chat() {
               className="jrc-input"
               onChange={(e) => setDraft(e.currentTarget.value)}
               onKeyDown={(e) => {
-                if (e.key === 'Escape' && busy) { e.preventDefault(); onStop(); }
+                if (e.key === 'Escape' && (waiting || busy)) { e.preventDefault(); if (!cancelWaiting()) onStop(); }
                 if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); e.currentTarget.form?.requestSubmit(); }
               }}
             />
-            <p id="message-hint" className="text-sm text-muted-foreground">Enter sends, Shift+Enter starts a new line and Escape stops a reply.</p>
+            <p id="message-hint" className="text-sm text-muted-foreground">Enter sends, once any reply ends, and Shift+Enter starts a new line. Escape cancels a waiting message, then stops a reply.</p>
           </div>
           <div className="jrc-composer-actions">
             {busy ? <button type="button" className="jrc-button jrc-secondary" onClick={onStop}>Stop</button> : null}

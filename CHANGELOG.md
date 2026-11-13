@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- `integrations/json-render-chat`: a message sent while a reply streams waits for that reply and says so, and a
+  failed reply keeps its mark after the next question and stays out of what the model reads. `handleChat` counts a
+  body's bytes as it streams in and answers 400 to a system message, a turn left with nothing to read and a reply
+  whose screen can't be written back, where it answered 500 or passed the error to the model.
+- `integrations/json-render-chat-plain`: a message sent while a reply streams waits for that reply, as in the Lede chat.
+
 ## 0.5.1
 
 The docs site has an Integrations page, linked from Overview. The registry for this release is
