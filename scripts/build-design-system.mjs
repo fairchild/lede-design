@@ -1,7 +1,9 @@
 // Builds the files of Lede's design system on claude.ai into dist-design-system/project/, from this repo:
 // tokens/tokens.json, the generated and hand-written CSS, registry.json and the docs site's samples, each rendered to
 // static markup by React's server renderer. CONTRIBUTING.md says how to publish the folder.
-// Run with `npm run design-system`, which builds the tokens first.
+// Run with `npm run design-system`, which builds the tokens first. To keep the keys the live page added to its index
+// (asset groups, its own sections, a renamed title), save the live project/design-system.json and pass its path:
+// `npm run design-system -- --index path/to/design-system.json`.
 import { execSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -20,19 +22,27 @@ const write = (path, text) => {
 const pkg = JSON.parse(read('package.json'));
 const registry = JSON.parse(read('registry.json'));
 const source = JSON.parse(read('tokens/tokens.json'));
-const sha = (() => {
+const git = (args, fallback) => {
   try {
-    return execSync('git rev-parse --short HEAD', { encoding: 'utf8' }).trim();
+    return execSync(`git ${args}`, { encoding: 'utf8' }).trim();
   } catch {
-    return 'unknown';
+    return fallback;
   }
-})();
+};
+const sha = git('rev-parse --short HEAD', 'unknown');
+const branch = git('rev-parse --abbrev-ref HEAD', 'unknown');
 const now = new Date().toISOString();
 const VERSION = pkg.version;
 const REGISTRY_URL = `https://lede.cloudcompute.com/r/v${VERSION}/{name}.json`;
+// The design system's own artifact and the canvas of Lede's foundations, named once for the README.
+const DESIGN_SYSTEM_URL = 'https://claude.ai/artifact/Cw9GgaD1zxRk9ewxGMHv4x';
+const CANVAS_URL = 'https://claude.ai/artifact/7eECQYRQWxSkaJhwRtT4rJ';
 
-// An earlier build's index keeps its keys (asset groups, the page's own sections), so a re-publish doesn't drop them.
-const previousIndex = existsSync(join(OUT, 'design-system.json')) ? JSON.parse(read(join(OUT, 'design-system.json'))) : null;
+// The live index passed with --index, else an earlier build's, keeps its keys, so a re-publish doesn't drop them.
+const indexArg = process.argv.indexOf('--index');
+const indexPath = indexArg > -1 ? process.argv[indexArg + 1] : join(OUT, 'design-system.json');
+if (indexArg > -1 && !(indexPath && existsSync(indexPath))) throw new Error(`--index: no file at ${indexPath}`);
+const previousIndex = existsSync(indexPath) ? JSON.parse(read(indexPath)) : null;
 rmSync(OUT, { recursive: true, force: true });
 
 // ---- tokens.json, in the shape the design system page reads ------------------------------------------------------
@@ -69,7 +79,8 @@ for (const [family, fam] of Object.entries(source)) {
   const list = fam.tokens.map((tk) => (family === 'shadow' ? { name: tk.name, value: tk.value, usage: tk.usage } : entry(tk, fam.attribute)));
   if (family === 'radius') {
     // The concentric chain derives in CSS; the page shows its default values beside the seed.
-    const seed = parseFloat(Object.values(fam.tokens.find((t) => t.name === 'radius').value)[0]);
+    const seedValue = fam.tokens.find((t) => t.name === 'radius').value;
+    const seed = parseFloat(typeof seedValue === 'string' ? seedValue : Object.values(seedValue)[0]);
     const step = parseFloat(fam.tokens.find((t) => t.name === 'radius-step').value);
     const floor = step / 4;
     list.push(
@@ -85,7 +96,7 @@ for (const [family, fam] of Object.entries(source)) {
 tokens.meta = {
   source: 'github',
   repo: 'fairchild/lede-design',
-  ref: `main@${sha}`,
+  ref: `${branch}@${sha}`,
   version: VERSION,
   paths: { tokens: ['tokens/tokens.json'], css: ['registry/lede/lede.components.css', 'registry/lede/lede.blocks.css'], docs: ['README.md', 'src/pages/docs/samples/'] },
   synced: now.slice(0, 10),
@@ -142,22 +153,26 @@ const ARGS = {
   },
 };
 const HEIGHT = { 'data-table': 360, 'master-detail': 320, list: 260, table: 220, 'accent-picker': 260, 'form-section': 300, 'text-field': 220, checkbox: 180, 'glass-bar': 160, 'theme-provider': 160 };
-const BLOCK_TAGS = 'section|header|footer|nav|main|aside|article|ul|ol|li|div|fieldset|legend|label|h[1-6]|p|form|table|thead|tbody|tr|th|td|caption|figure|dl|dt|dd';
+// Block containers only: a line break between inline elements, such as two labels, would add a space to the page.
+const BLOCK_TAGS = 'section|header|footer|nav|main|aside|article|ul|ol|li|div|fieldset|legend|h[1-6]|p|form|table|thead|tbody|tr|th|td|caption|figure|dl|dt|dd';
+const SPLIT = new RegExp(`(?=<\\/?(?:${BLOCK_TAGS})\\b)`);
+const OPENING = new RegExp(`^<(?:${BLOCK_TAGS})\\b`);
+const CLOSING = new RegExp(`^<\\/(?:${BLOCK_TAGS})\\b`);
 const pretty = (html) => {
   // One block element per line, indented by depth; inline content stays on its line.
-  const parts = html.split(new RegExp(`(?=<\\/?(?:${BLOCK_TAGS})\\b)`));
+  const parts = html.split(SPLIT);
   let depth = 0;
   let lastWasClosing = false;
   const lines = [];
   for (const part of parts) {
     if (!part) continue;
-    const closing = new RegExp(`^<\\/(?:${BLOCK_TAGS})\\b`).test(part);
+    const closing = CLOSING.test(part);
     if (closing) depth = Math.max(0, depth - 1);
     // A closing tag goes on its own line only after block children, so text keeps its element on one line.
     if (closing && lines.length && !lastWasClosing) lines[lines.length - 1] += part;
     else lines.push(`${'  '.repeat(depth)}${part}`);
     lastWasClosing = closing;
-    const opening = new RegExp(`^<(?:${BLOCK_TAGS})\\b`).test(part) && !closing;
+    const opening = OPENING.test(part) && !closing;
     if (opening) depth += 1;
   }
   return lines.join('\n');
@@ -179,6 +194,7 @@ const vite = await createServer({
     ],
   },
 });
+const { itemsToInstall, installCommand } = await vite.ssrLoadModule('/src/pages/docs/Usage.tsx');
 const cards = [];
 const quiet = console.error;
 console.error = () => {}; // React's development warnings (keys, effects) aren't about the markup.
@@ -187,12 +203,16 @@ try {
     const samplePath = `src/pages/docs/samples/${item.name}.tsx`;
     if (!existsSync(samplePath)) continue;
     const mod = await vite.ssrLoadModule(`/${samplePath}`);
-    const [exportName, Sample] = Object.entries(mod).find(([, v]) => typeof v === 'function') ?? [];
-    if (!Sample) continue;
+    // A sample's component is its one PascalCase function export; a module namespace lists exports alphabetically, so
+    // "the first function" could be a helper.
+    const components = Object.entries(mod).filter(([key, v]) => typeof v === 'function' && /^[A-Z]/.test(key));
+    if (components.length !== 1) throw new Error(`${samplePath}: expected one component export, found ${components.map(([key]) => key).join(', ') || 'none'}`);
+    const [[exportName, Sample]] = components;
     const markup = renderToStaticMarkup(createElement(Sample, ARGS[item.name] ?? {}));
     const name = item.title.split(',')[0].trim();
     const group = item.type === 'registry:component' ? 'Components' : 'Blocks';
-    cards.push({ item, name, group, exportName, markup, code: read(samplePath).trim() });
+    const code = read(samplePath).trim();
+    cards.push({ item, name, group, exportName, markup, code, install: installCommand(itemsToInstall([item.name], code)) });
   }
 } finally {
   console.error = quiet;
@@ -200,7 +220,10 @@ try {
 }
 
 const summary = (text) => text.replace(/\s+/g, ' ').trim();
-for (const { item, name, group, markup, code } of cards) {
+// A sample that renders ThemeProvider pins the server's default, light, on its outermost wrapper. The preview drops it
+// there, so the card follows the page's theme switch; a nested ThemeProvider with its own scheme keeps it.
+const followFrameTheme = (markup) => markup.replace(/^(<div class="ld-theme") data-theme="light"/, '$1');
+for (const { item, name, group, markup, code, install } of cards) {
   const height = HEIGHT[item.name] ?? 140;
   write(
     `components/${name}/preview.html`,
@@ -212,7 +235,7 @@ for (const { item, name, group, markup, code } of cards) {
 </head>
 <body>
 <div class="ld-theme ds-stage" data-surface="grouped">
-${markup}
+${followFrameTheme(markup)}
 </div>
 </body>
 </html>
@@ -227,7 +250,7 @@ ${summary(item.description)}
 ## Use it in React
 
 \`\`\`bash
-npx shadcn@latest add @lede/${item.name}
+${install}
 \`\`\`
 
 The smallest working use, from the docs site:
@@ -255,6 +278,8 @@ const fill = (text) =>
     .replaceAll('{{VERSION}}', VERSION)
     .replaceAll('{{SHA}}', sha)
     .replaceAll('{{REGISTRY_URL}}', REGISTRY_URL)
+    .replaceAll('{{DESIGN_SYSTEM_URL}}', DESIGN_SYSTEM_URL)
+    .replaceAll('{{CANVAS_URL}}', CANVAS_URL)
     .replaceAll('{{MOTION}}', source.motion.tokens.map((t) => `| \`--${t.name}\` | \`${t.value}\` | ${t.usage} |`).join('\n'))
     .replaceAll(
       '{{COMPONENTS}}',
@@ -270,7 +295,7 @@ const index = {
   v: 3,
   layout: 'files',
   ...(previousIndex?.createdOnFiles || previousIndex?.convertedFrom ? {} : { createdOnFiles: { v: 1, at: now } }),
-  title: 'Lede',
+  title: previousIndex?.title ?? 'Lede',
   namespace: 'Lede',
   libraries: [],
   sections: previousIndex?.sections ?? {},

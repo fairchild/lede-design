@@ -7,7 +7,7 @@ opening line.
 This system is generated from [fairchild/lede-design](https://github.com/fairchild/lede-design) at Lede {{VERSION}}
 (`{{SHA}}`). Its tokens, its stylesheet and every component's markup come from the code, so a page built from it
 matches an app built with the registry. Docs: [lede.cloudcompute.com](https://lede.cloudcompute.com/). A visual tour
-of the foundations and components: [the Lede canvas](https://claude.ai/artifact/7eECQYRQWxSkaJhwRtT4rJ).
+of the foundations and components: [the Lede canvas]({{CANVAS_URL}}).
 
 ## Build with it
 
@@ -26,7 +26,7 @@ Pick the line for where the work runs. Each one uses the same tokens and class n
 needs no build step and no Tailwind.
 
 1. Copy it into the artifact. With an Artifact tool that takes `files`, the server copies it from this system:
-   `"files": {"lede.css": {"artifact": "https://claude.ai/artifact/Cw9GgaD1zxRk9ewxGMHv4x", "path": "project/components/bundle.css"}}`.
+   `"files": {"lede.css": {"artifact": "{{DESIGN_SYSTEM_URL}}", "path": "project/components/bundle.css"}}`.
    Without that, read `project/components/bundle.css` and put it in a `<style>` element.
 2. Link it and wrap the page in `ld-theme`, with the theme on the same element.
 3. Build from the markup in each component's card under "Use it in an HTML page or artifact". It is what the React

@@ -18,7 +18,7 @@ function withDependencies(names: string[], into = new Set<string>()) {
 }
 
 /** The section's items, then each item the sample imports that they don't already install. */
-function itemsToInstall(items: string[], code = '') {
+export function itemsToInstall(items: string[], code = '') {
   const installed = withDependencies(items);
   const imported = [...code.matchAll(/from '@\/components\/lede\/([^']+)'/g)].map(([, path]) => itemFor.get(`registry/lede/${path}`));
   const missing = [...new Set(imported)].filter((name): name is string => !!name && !installed.has(name));

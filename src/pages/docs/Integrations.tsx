@@ -16,9 +16,9 @@ const INSTALL_CODE = `npx shadcn@latest registry add '@lede=https://lede.cloudco
 npx shadcn@latest add @lede/theme-provider @lede/json-render`;
 const folder = (name: string) => `${REPO}/tree/main/integrations/${name}`;
 /** Lede's design system on claude.ai, generated from this repo by `npm run design-system`. */
-export const DESIGN_SYSTEM_URL = 'https://claude.ai/artifact/Cw9GgaD1zxRk9ewxGMHv4x';
+const DESIGN_SYSTEM_URL = 'https://claude.ai/artifact/Cw9GgaD1zxRk9ewxGMHv4x';
 /** A canvas of Lede's foundations and components, drawn with Lede's stylesheet. */
-export const CANVAS_URL = 'https://claude.ai/artifact/7eECQYRQWxSkaJhwRtT4rJ#artboard-15dd8cd198dd';
+const CANVAS_URL = 'https://claude.ai/artifact/7eECQYRQWxSkaJhwRtT4rJ#artboard-15dd8cd198dd';
 const ARTIFACT_CODE = `"files": {
   "lede.css": { "artifact": "${DESIGN_SYSTEM_URL}", "path": "project/components/bundle.css" }
 }
