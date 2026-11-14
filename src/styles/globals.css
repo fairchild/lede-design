@@ -8,6 +8,7 @@
 @source not "../../.claude/**/*.md";
 @source not "../../integrations";
 @source not "../../scripts/design-system";
+@source not "../../scripts/llms";
 @source not "../../tests";
 @import "./lede.tokens.css";
 @import "../../registry/lede/lede.components.css";

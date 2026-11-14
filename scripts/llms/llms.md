@@ -1,10 +1,16 @@
 # Lede
 
-> Lede is a design system for React: components, blocks, page layouts and hero flows, installed from a shadcn registry. Every screen, section and row leads with its takeaway, and detail opens on request.
+> Lede {{VERSION}} is a design system for React: components, blocks, page layouts and hero flows, installed from a shadcn registry. Every screen, section and row leads with its takeaway, and detail opens on request.
 
-Lede renders on the client only, so it suits a Vite app or another client-only React app. Install from a release's registry, `https://lede.cloudcompute.com/r/v<version>/{name}.json`, added to `components.json` as `@lede`. Every item's file is at that URL with its name, such as `button` or `data-table`, and the release's index is `https://lede.cloudcompute.com/r/v<version>/registry.json`. A release's files never change.
+Lede renders on the client only, so it suits a Vite app or another client-only React app. Install from a release's registry, `https://lede.cloudcompute.com/r/v{{VERSION}}/{name}.json`, added to `components.json` as `@lede`. Every item's file is at that URL with its name, such as `button` or `data-table`, and the release's index is `https://lede.cloudcompute.com/r/v{{VERSION}}/registry.json`. A release's files never change.
 
-The Docs pages need JavaScript: fetched without it, each one is a short page that links back here. The registry files and the Markdown files under Agents and Source read without it.
+Each docs page has a Markdown version at its address plus `.md`, such as https://lede.cloudcompute.com/components.md, with https://lede.cloudcompute.com/index.md for the home page, and each registry item has a reference page. The links under Docs and the item sections go to them, and [llms-full.txt](https://lede.cloudcompute.com/llms-full.txt) holds all of them in one file.
+
+## Docs
+
+{{DOCS}}
+
+{{ITEMS}}
 
 ## Registry
 
@@ -17,17 +23,6 @@ The Docs pages need JavaScript: fetched without it, each one is a short page tha
 - [Agent skill](https://raw.githubusercontent.com/fairchild/lede-design/main/.claude/skills/lede-design-system/SKILL.md): the `lede-design-system` skill, the rules for building and reviewing UI with Lede
 - [json-render chat recipe](https://raw.githubusercontent.com/fairchild/lede-design/main/integrations/json-render-chat/AGENTS.md): the steps, in order, for a chat whose replies hold Lede screens, on the AI SDK and json-render
 - [README](https://raw.githubusercontent.com/fairchild/lede-design/main/README.md): what Lede is and how to install it. Its Limits section covers server rendering, the page background and installing from the registry URL
-
-## Docs
-
-- [Overview and install](https://lede.cloudcompute.com/): what Lede is, the install steps and the principles
-- [Foundations](https://lede.cloudcompute.com/foundations): tokens for color in four themes, type, spacing, radius, motion and more
-- [Components](https://lede.cloudcompute.com/components): the primitives, each with its install command and code
-- [Blocks](https://lede.cloudcompute.com/blocks): the larger parts of a screen, each with its install command and code
-- [Data table](https://lede.cloudcompute.com/blocks/data-table): DataTable and `useServerRows`, with examples
-- [Layouts](https://lede.cloudcompute.com/layouts): the page layouts AppShell, WorkbenchShell and MasterDetail
-- [Decisions](https://lede.cloudcompute.com/decisions): how Lede is built and what checks it
-- [Integrations](https://lede.cloudcompute.com/integrations): Lede in Claude, and json-render drawing Lede screens from a model's JSON
 
 ## Claude
 

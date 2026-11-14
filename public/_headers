@@ -5,3 +5,9 @@
 # The workers.dev hosts (production and version previews) stay out of search results.
 https://:worker.:subdomain.workers.dev/*
   X-Robots-Tag: noindex
+
+# Markdown is served as plain text, in place of the text/markdown its extension gets: a fetch tool that reads
+# text/markdown as HTML drops the JSX in its code blocks. scripts/llms/vite-plugin.mjs gives the dev and preview servers
+# the same type.
+/*.md
+  Content-Type: text/plain; charset=utf-8

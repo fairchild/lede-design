@@ -10,7 +10,10 @@ interface CodeExampleProps {
   defaultOpen?: boolean;
 }
 
-/** A Disclosure around highlighted code. Wider than its box, the code becomes a named, focusable region, as Table's box does. */
+/**
+ * A Disclosure around highlighted code. Wider than its box, the code becomes a named, focusable region, as Table's box does.
+ * `data-language` names the language for the page's Markdown build.
+ */
 export function CodeExample({ label, language, code, defaultOpen }: CodeExampleProps) {
   const scroller = React.useRef<HTMLPreElement>(null);
   const [overflowing, setOverflowing] = React.useState(false);
@@ -24,7 +27,7 @@ export function CodeExample({ label, language, code, defaultOpen }: CodeExampleP
   }, []);
   return (
     <Disclosure className="docs-code-example" title={label} defaultOpen={defaultOpen}>
-      <pre ref={scroller} className="docs-code" {...(overflowing ? { role: 'region', tabIndex: 0, 'aria-label': label } : {})}>
+      <pre ref={scroller} className="docs-code" data-language={language} {...(overflowing ? { role: 'region', tabIndex: 0, 'aria-label': label } : {})}>
         <code>{tokenize(code, language).map(({ text, kind }, i) => (kind ? <span key={i} className={`docs-tk-${kind}`}>{text}</span> : text))}</code>
       </pre>
     </Disclosure>

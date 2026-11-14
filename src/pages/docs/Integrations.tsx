@@ -6,6 +6,7 @@ import { SpecView } from '@lede/json-render/spec-view';
 import registry from '../../../registry.json';
 import { version } from '../../../package.json';
 import { CodeExample } from './CodeExample';
+import { Live, useTwin } from './twin';
 import { REPO } from './DocsLayout';
 import { EXAMPLE_APPS } from './integration-apps';
 import spec from './examples/json-render-spec.json';
@@ -32,6 +33,7 @@ const codeList = (names: string[]) => names.map((name, i) => (
 ));
 
 export function Integrations() {
+  const twin = useTwin();
   return (
     <div className="ld-flow">
       <PageHeader title="Integrations" back={{ href: '/', label: 'Overview' }} summary="Each integration runs Lede beside another project. Claude builds with Lede from its design system, and json-render draws Lede screens from JSON specs, such as a model’s reply." />
@@ -44,7 +46,7 @@ export function Integrations() {
           <li>A React app in Claude Code installs from the registry, as <RouterLink href="/#install">Overview → Install</RouterLink> shows. The repo’s <code>lede-design-system</code> skill gives Claude the layers and the rules.</li>
         </ul>
         <p className="docs-intro">An HTML artifact copies the stylesheet from the design system and wraps the page in <code>ld-theme</code>:</p>
-        <CodeExample label="Lede in an HTML artifact" language="tsx" code={ARTIFACT_CODE} />
+        <CodeExample label="Lede in an HTML artifact" language="html" code={ARTIFACT_CODE} />
       </section>
       <section aria-labelledby="json-render" className="docs-section">
         <h2 id="json-render" className="text-title-3">json-render</h2>
@@ -54,10 +56,11 @@ export function Integrations() {
       </section>
       <section aria-labelledby="json-render-example" className="docs-section">
         <h2 id="json-render-example" className="text-title-3">A spec drawn by SpecView</h2>
-        <p className="docs-intro">SpecView draws this spec on the page, so its switches work. A model writes the same JSON from the catalog.</p>
-        <div className="docs-spec">
+        {/* The Markdown build leaves the drawn spec out, so it says what SpecView does with it. */}
+        <p className="docs-intro">{twin ? 'SpecView draws this spec as a screen, and a model writes the same JSON from the catalog.' : 'SpecView draws this spec on the page, so its switches work. A model writes the same JSON from the catalog.'}</p>
+        <Live><div className="docs-spec">
           <SpecView spec={spec as Spec} headingLevel={3} />
-        </div>
+        </div></Live>
         <CodeExample label="The spec as JSON" language="json" code={SPEC_CODE.trim()} defaultOpen />
       </section>
       <section aria-labelledby="example-apps" className="docs-section">

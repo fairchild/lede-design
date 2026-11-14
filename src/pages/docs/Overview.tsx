@@ -13,7 +13,8 @@ import registry from '../../../registry.json';
 import { version } from '../../../package.json';
 import { CodeExample } from './CodeExample';
 import { REPO } from './DocsLayout';
-import { installSteps, type Block } from './readme-install';
+import { installGuide, readmeBlocks, type Block } from './readme-install';
+import { useTwin } from './twin';
 import readme from '../../../README.md?raw';
 
 const PRINCIPLES: Array<{ title: string; summary: string; rules: ReactNode[] }> = [
@@ -72,16 +73,19 @@ const INSTALL_CODE = `npx shadcn@latest registry add '@lede=${REGISTRY}'
 npx shadcn@latest add @lede/theme-provider @lede/data-table @lede/daily-brief @lede/inbox`;
 
 const README = `${REPO}#use-it-in-a-shadcn-project`;
-const STEPS = installSteps(readme);
+const GUIDE = installGuide(readme);
+const STEPS = GUIDE.steps;
+const LIMITS = readmeBlocks(readme, 'Limits');
 /** What each step's code shows, in order. A step the README adds later is named by its number. */
 const CODE_LABELS: Record<number, string[]> = { 2: ['CSS import'], 3: ['Import a component'], 4: ['Wrap your app', 'React Router adapter'] };
 
-/** README prose as the site writes it: code in `<code>`, links to the repo, and curly quotes outside code. */
+/** README prose as the site writes it: code in `<code>`, bold, links to the repo, and curly quotes outside code. */
 function inline(text: string): ReactNode[] {
-  return text.split(/(`[^`]+`|\[[^\]]+\]\([^)]+\))/).map((part, i) => {
+  return text.split(/(`[^`]+`|\*\*[^*]+\*\*|\[[^\]]+\]\([^)]+\))/).map((part, i) => {
     if (part.startsWith('`')) return <code key={i}>{part.slice(1, -1)}</code>;
+    if (part.startsWith('**')) return <strong key={i}>{inline(part.slice(2, -2))}</strong>;
     const link = part.match(/^\[([^\]]+)\]\(([^)]+)\)$/);
-    if (link) return <a key={i} href={/^https?:/.test(link[2]) ? link[2] : `${REPO}/blob/main/${link[2]}`}>{curly(link[1])}</a>;
+    if (link) return <a key={i} href={/^https?:/.test(link[2]) ? link[2] : link[2].startsWith('#') ? `${REPO}${link[2]}` : `${REPO}/blob/main/${link[2]}`}>{inline(link[1])}</a>;
     return curly(part);
   });
 }
@@ -91,6 +95,7 @@ function StepBlocks({ number, blocks, code }: { number: number; blocks: Block[];
   let n = 0;
   return blocks.map((block, i) => {
     if (block.kind === 'text') return <p key={i}>{inline(block.text)}</p>;
+    if (block.kind === 'list') return <ul key={i}>{block.items.map((item, j) => <li key={j}>{inline(item)}</li>)}</ul>;
     if (code) return <Fragment key={i}>{code}</Fragment>;
     const label = CODE_LABELS[number]?.[n] ?? `Step ${number} code${n ? ` ${n + 1}` : ''}`;
     n += 1;
@@ -98,7 +103,20 @@ function StepBlocks({ number, blocks, code }: { number: number; blocks: Block[];
   });
 }
 
+/**
+ * The README's text around the steps, for the docs' Markdown build: what a project needs, how to move to a later release
+ * and the limits. The site links the README for these.
+ */
+function ReadmeBlocks({ blocks, label }: { blocks: Block[]; label?: string }) {
+  return blocks.map((block, i) => {
+    if (block.kind === 'text') return <p key={i}>{inline(block.text)}</p>;
+    if (block.kind === 'list') return <ul key={i}>{block.items.map((item, j) => <li key={j}>{inline(item)}</li>)}</ul>;
+    return <CodeExample key={i} label={label ?? 'Code'} language={block.language} code={block.code} defaultOpen />;
+  });
+}
+
 export function Overview() {
+  const twin = useTwin();
   const { hash, key } = useLocation();
   const toInstall = hash === '#install';
   // A link to Install lands on its heading in the commit, as PageHeader does with the h1; the scroll waits a frame for
@@ -109,6 +127,16 @@ export function Overview() {
     const frame = requestAnimationFrame(() => document.getElementById('install')?.scrollIntoView());
     return () => cancelAnimationFrame(frame);
   }, [toInstall, key]);
+  const steps = (
+    <ol className="docs-steps">
+      {STEPS.map((step) => (
+        <li key={step.number}>
+          {/* Step 1's code pins this build's version, which the README's copy repeats by hand. */}
+          <StepBlocks number={step.number} blocks={step.blocks} code={step.number === 1 ? <CodeExample label="Install commands" language="shell" code={INSTALL_CODE} defaultOpen /> : undefined} />
+        </li>
+      ))}
+    </ol>
+  );
   return (
     <div className="ld-flow">
       <PageHeader focusOnMount={!toInstall} title="Lede" summary="A design system for React, installed from a shadcn registry. Every screen, section and row leads with its takeaway, and detail opens on request." />
@@ -135,15 +163,17 @@ export function Overview() {
       </section>
       <section aria-labelledby="install" className="docs-section">
         <h2 id="install" tabIndex={-1} className="text-title-3 docs-target">Install</h2>
-        <p className="docs-intro">Add Lede’s registry to your project, then add the items you need. The registry URL pins version {version}, and a release’s files never change. Lede renders on the client only, so it suits a Vite app or another client-only React app. The <a href={README}>README</a> lists what your project needs first and how to move to a later release. For a chat whose replies hold Lede screens, follow <a href={`${REPO}/blob/main/integrations/json-render-chat/AGENTS.md`}>the json-render chat recipe</a>.</p>
-        <ol className="docs-steps">
-          {STEPS.map((step) => (
-            <li key={step.number}>
-              {/* Step 1's code pins this build's version, which the README's copy repeats by hand. */}
-              <StepBlocks number={step.number} blocks={step.blocks} code={step.number === 1 ? <CodeExample label="Install commands" language="shell" code={INSTALL_CODE} defaultOpen /> : undefined} />
-            </li>
-          ))}
-        </ol>
+        <p className="docs-intro">Add Lede’s registry to your project, then add the items you need. The registry URL pins version {version}, and a release’s files never change. Lede renders on the client only, so it suits a Vite app or another client-only React app. {twin ? 'What your project needs comes first, then the steps, how to move to a later release and the limits.' : <>The <a href={README}>README</a> lists what your project needs first and how to move to a later release.</>} For a chat whose replies hold Lede screens, follow <a href={`${REPO}/blob/main/integrations/json-render-chat/AGENTS.md`}>the json-render chat recipe</a>.</p>
+        {/* The Markdown build adds the README's text around the steps; the site keeps one element here, so its ids stay. */}
+        {twin ? (
+          <>
+            <ReadmeBlocks blocks={GUIDE.before} label="Replace src/index.css" />
+            {steps}
+            <ReadmeBlocks blocks={GUIDE.after} />
+            <h3>Limits</h3>
+            <ReadmeBlocks blocks={LIMITS} />
+          </>
+        ) : steps}
       </section>
     </div>
   );

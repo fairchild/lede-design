@@ -13,6 +13,7 @@ import { allWorkItems, bigWorkItems, createWorkServer, type WorkItem } from '@/d
 import { workColumns, formatMoney, StatusChip } from '@/work-columns';
 import { isExample, itemHref, type Example } from './DataTableItemPage';
 import { CodeExample } from './CodeExample';
+import { Live, ReferenceLinks } from './twin';
 import CLIENT_CODE from './samples/data-table.tsx?raw';
 import NARROW_CODE from './examples/data-table-narrow.tsx?raw';
 import { restoreFocus } from '@/focus-restoration';
@@ -427,23 +428,25 @@ export function DataTablePage() {
         title="Client mode"
         summary={<>For a few hundred rows or fewer, already loaded, which the table sorts by each column’s <code>value</code> or <code>compare</code>. Shift-click a checkbox to select a range, or check the header’s box to select the page.</>}
       >
-        <ClientExample />
+        <Live><ClientExample /></Live>
         <Code label="Code for a client-mode table" defaultOpen>{CLIENT_CODE}</Code>
+        <ReferenceLinks items={['data-table']} />
       </Section>
       <Section
         id="dt-server"
         title="Server mode"
-        summary={<><code>useServerRows</code> fetches pages for each view, caches them, merges duplicate requests and cancels ones that go out of date. The count reads “50 of 100+” until the exact figure arrives, and sorting twice quickly shows a canceled request in the log.</>}
+        summary={<><code>useServerRows</code> fetches pages for each view, caches them, merges duplicate requests and cancels ones that go out of date. The count reads “50 of 100+” until the exact figure arrives<Live>, and sorting twice quickly shows a canceled request in the log</Live>.</>}
       >
-        <ServerExample />
+        <Live><ServerExample /></Live>
         <Code label="Code for a server-mode table">{SERVER_CODE}</Code>
+        <ReferenceLinks items={['use-server-rows']} />
       </Section>
       <Section
         id="dt-search"
         title="Search and filters"
         summary={<>A filter is part of the view: put a search term or a status in <code>view.filter</code>, and it reaches <code>fetchRows</code> and <code>fetchCount</code>, keys the cache, survives a sort and starts again at the first page. A view holds plain JSON values, so it can go in a URL.</>}
       >
-        <SearchExample />
+        <Live><SearchExample /></Live>
         <Code label="Code for a search">{SEARCH_CODE}</Code>
       </Section>
       <Section
@@ -451,7 +454,7 @@ export function DataTablePage() {
         title="States"
         summary="Skeleton rows hold the layout while rows load, and an empty table says so. An error offers to try again, and stale rows stay usable under a notice."
       >
-        <StatesExample />
+        <Live><StatesExample /></Live>
         <Code label="Code for each table state">{STATES_CODE}</Code>
       </Section>
       <Section
@@ -459,11 +462,11 @@ export function DataTablePage() {
         title="Narrow containers"
         summary={<>The table picks its layout from its own width, so it adapts inside a narrow pane on any screen. Below <code>narrowBelow</code> (560px by default), <code>narrow="cards"</code> shows each row as a card with a title, a status and up to three fields, placed by each column’s <code>card</code> option, and <code>narrow="scroll"</code>, the default, keeps the table with a sticky first column.</>}
       >
-        <NarrowExample />
+        <Live><NarrowExample /></Live>
         <Code label="Code for a narrow container">{NARROW_CODE}</Code>
       </Section>
       <Section id="dt-parts" title="Table parts" summary="The styled Table parts that DataTable is built from. Use them on their own for a small static table.">
-        <div className="docs-parts">
+        <Live><div className="docs-parts">
           <Table.Root caption="Quarter totals">
             <Table.Head>
               <Table.Row>
@@ -482,7 +485,7 @@ export function DataTablePage() {
               ))}
             </Table.Body>
           </Table.Root>
-        </div>
+        </div></Live>
         <Code label="Code for a table built from parts">{PARTS_CODE}</Code>
       </Section>
       <Section
@@ -490,7 +493,7 @@ export function DataTablePage() {
         title="Collapsing a table"
         summary={<>Give a captioned table <code>collapsible</code>, and its caption becomes a button that hides the header and rows from sight and from screen readers. The <code>summary</code> stays below the caption’s title, so a collapsed table still says what it holds.</>}
       >
-        <div className="docs-parts">
+        <Live><div className="docs-parts">
           <Table.Root caption="Quarter totals" collapsible={{ summary: `2 quarters · ${formatMoney(22250)}` }}>
             <Table.Head>
               <Table.Row>
@@ -509,7 +512,7 @@ export function DataTablePage() {
               ))}
             </Table.Body>
           </Table.Root>
-        </div>
+        </div></Live>
         <Code label="Code for a collapsible table">{COLLAPSE_CODE}</Code>
       </Section>
     </div>

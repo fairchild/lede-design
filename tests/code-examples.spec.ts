@@ -88,7 +88,7 @@ test('The tokenizer keeps every character of awkward input', () => {
     "/it's/.test(s)", '/"/g', '/`/', '/\\/\\//', '/[/*]/; a; /* b */', "<p>Don't stop, won't stop</p>",
     "echo 'open", 'echo "open', 'echo "a\\"b" \'c\\\'d', "echo 'multi\nline'", 'echo a#b # c', 'curl -fsSL https://example.com/#a --b=c',
   ];
-  for (const language of ['tsx', 'shell', 'css', 'json'] as const) {
+  for (const language of ['tsx', 'shell', 'css', 'json', 'html'] as const) {
     for (const code of awkward) expect(tokenize(code, language).map((t) => t.text).join('')).toBe(code);
   }
 });

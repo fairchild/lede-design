@@ -17,10 +17,20 @@
   text. The docs footer and the README link `llms.txt` too.
 - `llms.txt` names the registry indexes and what they return, and links the README's Limits, the
   `lede-design-system` skill and the json-render chat recipe as Markdown files.
+- Each docs page has a Markdown version at its address plus `.md`, such as
+  https://lede.cloudcompute.com/components.md, built from the page the site renders, with each token's values and each
+  item's import line. `/index.md` has the README's requirements, install steps and limits. Each registry item has a
+  reference page, such as https://lede.cloudcompute.com/reference/list.md: its install command, import line, what each
+  file exports, props, example and types. Each file opens with YAML front matter (`type`, `title`, `description`,
+  `resource`), so it reads as an Open Knowledge Format concept, and is served as `text/plain`.
+  https://lede.cloudcompute.com/llms-full.txt holds the pages and reference pages in one file, without the types or
+  front matter.
+- `llms.txt` is built with them: it names this version and links each docs page's Markdown version and each item's
+  reference page with its import line.
 
 ### Changed
 
-- The site answers 404 for a file it doesn't have, such as `/llms-full.txt`, where it used to answer with the docs
+- The site answers 404 for a file it doesn't have, such as `/reference/nope.md`, where it used to answer with the docs
   page. Paths without a file extension still open the docs. A 404 under `/r/` names the registry index.
 
 ## 0.5.2
