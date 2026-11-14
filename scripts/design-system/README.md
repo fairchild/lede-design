@@ -121,7 +121,9 @@ A page that follows the reader's light, dark and contrast settings:
 
 ## Components
 
-Each card shows Lede's markup for the docs site's sample, the React install command and the sample's code.
+Each card has the component's props with their types, defaults and descriptions, every variant and state rendered with
+its HTML, what a keyboard and a screen reader meet, the React install command and sample, and the sample's HTML. Read a
+card before using its component. `components/index.d.ts` has every module's declarations with their doc comments.
 
 {{COMPONENTS}}
 

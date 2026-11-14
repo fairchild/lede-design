@@ -10,6 +10,7 @@ import { dirname, join } from 'node:path';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { createServer } from 'vite';
+import { readApi } from './design-system-api.mjs';
 
 const OUT = 'dist-design-system/project';
 const SRC = 'scripts/design-system';
@@ -195,6 +196,36 @@ const vite = await createServer({
   },
 });
 const { itemsToInstall, installCommand } = await vite.ssrLoadModule('/src/pages/docs/Usage.tsx');
+// Each component's props, doc comment and declarations, read from its source.
+const registryFiles = [...new Set(registry.items.flatMap((item) => item.files.map((file) => file.path)).filter((path) => /\.tsx?$/.test(path)))];
+const { api, declarations } = readApi(registryFiles);
+// The props a component's gallery renders it with, and the states shown after its variants. Every value of each prop
+// that takes a set of strings (Button's variant, size, shape and tone) is a variant.
+const GALLERY = {
+  Button: { base: { children: 'Save' }, states: [['disabled', { disabled: true }]] },
+  SegmentedControl: { base: { label: 'Range', options: ['Day', 'Week', 'Month'], defaultValue: 'Week' } },
+  Switch: { base: { label: 'Wi-Fi', defaultChecked: true }, states: [['off', { defaultChecked: false }], ['disabled', { disabled: true }]] },
+  TextField: { base: { label: 'Email', hint: 'Receipts go here.' }, states: [['error', { error: 'Enter the whole address, like sam@example.com.' }]] },
+  Checkbox: { base: { 'aria-label': 'Email me a summary' }, states: [['checked', { defaultChecked: true }], ['indeterminate', { indeterminate: true }], ['disabled', { disabled: true }]] },
+  Avatar: { base: { name: 'Sam Rivera' } },
+  Card: { base: { children: 'Storage: 42 GB available' } },
+  Disclosure: { base: { title: 'This week', summary: '2 decisions need you', children: 'The budget review and the launch date.' }, states: [['open', { defaultOpen: true }]] },
+};
+const renderGallery = async (componentNames) => {
+  const rows = [];
+  for (const componentName of componentNames) {
+    const spec = GALLERY[componentName];
+    const component = api.get(componentName);
+    if (!spec || !component) continue;
+    const Component = (await vite.ssrLoadModule(`/${component.file}`))[componentName];
+    const render = (props) => renderToStaticMarkup(createElement(Component, { ...spec.base, ...props }));
+    for (const prop of component.props.filter((p) => p.values)) {
+      rows.push({ title: prop.name, items: prop.values.map((value) => ({ label: `${prop.name}="${value}"`, caption: value, markup: render({ [prop.name]: value }) })) });
+    }
+    if (spec.states) rows.push({ title: 'states', items: spec.states.map(([label, props]) => ({ label, caption: label, markup: render(props) })) });
+  }
+  return rows;
+};
 const cards = [];
 const quiet = console.error;
 console.error = () => {}; // React's development warnings (keys, effects) aren't about the markup.
@@ -212,7 +243,9 @@ try {
     const name = item.title.split(',')[0].trim();
     const group = item.type === 'registry:component' ? 'Components' : 'Blocks';
     const code = read(samplePath).trim();
-    cards.push({ item, name, group, exportName, markup, code, install: installCommand(itemsToInstall([item.name], code)) });
+    const componentNames = item.title.split(',').map((title) => title.trim()).filter((title) => api.has(title));
+    const gallery = await renderGallery(componentNames);
+    cards.push({ item, name, group, exportName, markup, code, componentNames, gallery, install: installCommand(itemsToInstall([item.name], code)) });
   }
 } finally {
   console.error = quiet;
@@ -223,8 +256,51 @@ const summary = (text) => text.replace(/\s+/g, ' ').trim();
 // A sample that renders ThemeProvider pins the server's default, light, on its outermost wrapper. The preview drops it
 // there, so the card follows the page's theme switch; a nested ThemeProvider with its own scheme keeps it.
 const followFrameTheme = (markup) => markup.replace(/^(<div class="ld-theme") data-theme="light"/, '$1');
-for (const { item, name, group, markup, code, install } of cards) {
-  const height = HEIGHT[item.name] ?? 140;
+const cell = (text) => text.replace(/\|/g, '\\|').replace(/\s+/g, ' ').trim();
+const propsTable = ({ props }) =>
+  props.length
+    ? ['| Prop | Type | Default | Description |', '| --- | --- | --- | --- |',
+      ...props.map((p) => `| \`${p.name}\`${p.optional ? '' : ' (required)'} | \`${cell(p.type)}\` | ${p.default ? `\`${cell(p.default)}\`` : ''} | ${cell(p.description)} |`)].join('\n')
+    : 'Only the HTML attributes of the element it renders.';
+// What a keyboard and a screen reader meet in the rendered markup. Each line names the native behavior of an element
+// or role the component writes, so it holds for the HTML copy too.
+const KEYBOARD = [
+  [/<button\b/, '`<button>`: Tab reaches it; Enter and Space press it.'],
+  [/<a\b[^>]*\shref=/, '`<a href>`: Tab reaches it; Enter follows it.'],
+  [/role="switch"/, '`role="switch"`: Space toggles it, and its state is read as on or off.'],
+  [/<input\b(?![^>]*aria-hidden)[^>]*type="checkbox"/, 'Checkbox: Space toggles it; `indeterminate` is read as mixed.'],
+  [/type="radio"/, 'Radio group: Tab reaches the checked option; the arrow keys move and check, and the `<legend>` names the group.'],
+  [/<(?:input|textarea)\b(?![^>]*type="(?:checkbox|radio)")(?![^>]*aria-hidden)/, 'Text field: its `<label>` names it, and the hint or error is its description.'],
+  [/<table\b/, '`<table>`: header cells are `<th>`, so each cell is read with its column.'],
+  [/<nav\b/, '`<nav>`: a landmark, named by its `aria-label`.'],
+];
+const accessibility = (markup, componentNames, gallery) => {
+  // A sample may wrap the component, so the root comes from the component's own render when the gallery has one.
+  const root = (gallery[0]?.items[0]?.markup ?? markup).match(/^<([a-z0-9-]+)/)?.[1];
+  const headings = [...new Set([...markup.matchAll(/<(h[1-6])\b/g)].map((m) => m[1]))];
+  const roles = [...new Set([...markup.matchAll(/\srole="([^"]+)"/g)].map((m) => m[1]))];
+  const aria = [...new Set([...markup.matchAll(/\s(aria-[a-z]+)=/g)].map((m) => m[1]))].filter((a) => a !== 'aria-hidden');
+  const lines = componentNames.map((n) => api.get(n).description).filter(Boolean).map((d) => `- ${d}`);
+  if (root) lines.push(`- Renders a \`<${root}>\`${headings.length ? `, with ${headings.map((h) => `\`<${h}>\``).join(' and ')}` : ''}.`);
+  if (roles.length) lines.push(`- Roles: ${roles.map((r) => `\`${r}\``).join(', ')}.`);
+  if (aria.length) lines.push(`- ARIA it sets: ${aria.map((a) => `\`${a}\``).join(', ')}.`);
+  for (const [pattern, line] of KEYBOARD) if (pattern.test(markup)) lines.push(`- ${line}`);
+  return lines.join('\n');
+};
+const galleryHtml = (gallery) =>
+  gallery.length
+    ? `<section aria-label="Variants and states" style="margin-top:24px;display:grid;gap:16px">
+${gallery.map((row) => `<div><p class="text-caption-1" style="margin:0 0 8px;color:var(--muted-foreground)">${row.title}</p><div style="display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start">
+${row.items.map((it) => `<figure style="margin:0;display:grid;gap:6px;justify-items:start">${it.markup}<figcaption class="text-caption-2" style="color:var(--muted-foreground)">${it.caption}</figcaption></figure>`).join('\n')}
+</div></div>`).join('\n')}
+</section>`
+    : '';
+const galleryMd = (gallery) =>
+  gallery
+    .map((row) => `### ${row.title === 'states' ? 'States' : `\`${row.title}\``}\n\n| | HTML |\n| --- | --- |\n${row.items.map((it) => `| \`${cell(it.label)}\` | \`${cell(it.markup)}\` |`).join('\n')}`)
+    .join('\n\n');
+for (const { item, name, group, markup, code, install, componentNames, gallery } of cards) {
+  const height = (HEIGHT[item.name] ?? 140) + gallery.length * 110;
   write(
     `components/${name}/preview.html`,
     `<!-- @dsCard group="${group}" height=${height} subtitle="Static markup rendered from Lede's docs sample" -->
@@ -236,6 +312,7 @@ for (const { item, name, group, markup, code, install } of cards) {
 <body>
 <div class="ld-theme ds-stage" data-surface="grouped">
 ${followFrameTheme(markup)}
+${galleryHtml(gallery)}
 </div>
 </body>
 </html>
@@ -246,6 +323,12 @@ ${followFrameTheme(markup)}
     `# ${name}
 
 ${summary(item.description)}
+
+${componentNames.map((n) => `## ${componentNames.length > 1 ? `${n} props` : 'Props'}\n\n${propsTable(api.get(n))}`).join('\n\n')}
+${gallery.length ? `\n## Variants and states\n\nEach rendered by the React component with one prop changed, as the preview shows.\n\n${galleryMd(gallery)}\n` : ''}
+## Accessibility
+
+${accessibility(markup, componentNames, gallery)}
 
 ## Use it in React
 
@@ -270,6 +353,22 @@ ${pretty(markup)}
 \`\`\`
 `,
   );
+}
+
+// ---- types: every module's declarations in one file, and each card's own --------------------------------------
+// Documentation, not something to compile against: imports between modules are left out.
+const moduleOf = (file) => file.replace(/^registry\/lede\//, '').replace(/\.tsx?$/, '');
+const strip = (text) => text.replace(/^import .*\n/gm, '').trim();
+write(
+  'components/index.d.ts',
+  `// Lede ${VERSION}: the declarations of every registry module, with their doc comments. GENERATED by scripts/build-design-system.mjs.\n\n${[...declarations]
+    .filter(([rel]) => !/(^|\/)index$/.test(rel))
+    .map(([rel, text]) => `// registry/lede/${rel}\n${strip(text)}`)
+    .join('\n\n')}\n`,
+);
+for (const { name, componentNames } of cards) {
+  const rel = componentNames[0] && moduleOf(api.get(componentNames[0]).file);
+  if (rel && declarations.has(rel)) write(`components/${name}/${name}.d.ts`, `${strip(declarations.get(rel))}\n`);
 }
 
 // ---- README, cover and index ------------------------------------------------------------------------------------
