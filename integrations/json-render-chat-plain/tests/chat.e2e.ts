@@ -73,6 +73,25 @@ for (const how of ['Stop', 'Escape'] as const) {
   });
 }
 
+test('Enter while a reply streams holds the message until the reply ends, and Escape cancels it before it stops the reply', async ({ page }) => {
+  await ask(page, 'How’s my week?');
+  await expect(page.getByRole('button', { name: 'Stop' })).toBeVisible();
+  await ask(page, 'Show my tasks');
+  await expect(composer(page)).toHaveValue('');
+  await expect(page.getByText('Next, once this reply ends: “Show my tasks”.')).toBeVisible();
+  await expect(turns(page)).toHaveCount(4, { timeout: 15_000 });
+  await expect(turns(page).nth(2)).toContainText('Show my tasks');
+  await expect(page.getByRole('button', { name: 'Stop' })).toBeHidden({ timeout: 15_000 });
+  await ask(page, 'How’s my week?');
+  await ask(page, 'Show my tasks');
+  await composer(page).press('Escape');
+  await expect(page.getByText('You canceled “Show my tasks”.')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Stop' })).toBeVisible();
+  await composer(page).press('Escape');
+  await expect(page.getByRole('button', { name: 'Stop' })).toBeHidden();
+  await expect(turns(page)).toHaveCount(6);
+});
+
 test('Try again moves focus to the composer at once, and it never falls to <body> while the retry streams', async ({ page }) => {
   await ask(page, 'Fail once');
   await page.getByRole('button', { name: 'Try again' }).focus();
@@ -103,7 +122,7 @@ test('a reply that fails before it begins says so after the question, outside it
   const question = turns(page).nth(0);
   await expect(question.locator('.jrc-body')).not.toContainText('failed');
   await expect(question.getByText('This reply failed.')).toBeVisible();
-  await expect(page.getByRole('status')).toHaveText('The reply failed: The server couldn’t reach the model.');
+  await expect(page.locator('p.jrc-status[role="status"]')).toHaveText('The reply failed: The server couldn’t reach the model.');
   await page.getByRole('button', { name: 'Try again' }).click();
   await expect(turns(page).nth(1)).toContainText('The connection is back.');
   await expect(page.getByText('This reply failed.')).toBeHidden();

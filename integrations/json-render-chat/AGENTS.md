@@ -25,13 +25,15 @@ for bots on Slack, Teams and Discord, so it doesn't belong in a browser chat.
    replace `src/index.css` with `@import "tailwindcss";`: its demo styles center every line in a bordered 1126px column
    and set `:root` to 18px, which rescales Lede. Then end it with `@import "./styles/lede/index.css";`. Without that
    import the screens draw unstyled with no build error; `SpecView` warns in the console in development.
-2. The registry URL is `https://lede.cloudcompute.com/r/v0.5.0/{name}.json`. `shadcn init --defaults` also picks a style and may add a
+2. The registry URL is `https://lede.cloudcompute.com/r/v0.5.2/{name}.json`. `shadcn init --defaults` also picks a style and may add a
    font, `tw-animate-css`, `src/components/ui/button.tsx` and `src/lib/utils.ts`; the chat uses none of them. From a clone,
    `npm run registry` writes the same files to `public/r/`, which any static server can serve.
 3. To change what a model may build, follow “Extend the catalog” below.
 4. The server is `server/chat.ts`. It refuses a body that isn't `application/json` (415), is over 1 MB (413) or
-   fails `safeValidateUIMessages` (400), and keeps only the parts the model reads: what the person typed, and the
-   replies' text and screens. Then `streamText({ model: anthropic('claude-sonnet-5-5'), system,
+   fails `safeValidateUIMessages` (400), counting bytes as the body streams in. It keeps only the parts the model reads:
+   what the person typed, and the replies' text and screens, less any reply the client names as `failed`. A turn left
+   with nothing to read, such as any system message, or a reply whose screen can't be written back is refused (400).
+   Then `streamText({ model: anthropic('claude-sonnet-5-5'), system,
    messages: await convertToModelMessages(forModel(messages, screens)), maxOutputTokens })`, where `system` is the catalog's `prompt()` in `src/chat/system.ts`, merged into
    `createUIMessageStream`, so a connection that drops partway through becomes an error the client shows, and piped
    through `pipeJsonRender`. It exports `handleChat(request)`, a fetch-style handler for any framework's route, and
@@ -46,8 +48,9 @@ for bots on Slack, Teams and Discord, so it doesn't belong in a browser chat.
 6. In each assistant message, render its text parts first, then
    `<SpecView spec={specFromParts(message.parts)} streaming={live} headingLevel={3} handlers={…} onStateChange={…} />`,
    with `specFromParts` from `components/lede/json-render/patches`, memoized on `message.parts`. Keep each screen's
-   state from `onStateChange` by message id and send it as `screens` with the next message
-   (`sendMessage({ text }, { body: { screens } })`), so the model sees what the person entered. `onActionHeld` reports
+   state from `onStateChange` by message id and send it as `screens` with the next message, with the ids of replies
+   that failed as `failed` (`sendMessage({ text }, { body: { screens, failed } })`), so the model sees what the person
+   entered and not a half reply. `onActionHeld` reports
    an action that a failing field held back, with the action and each field's name and message.
 7. Check it: `npm run build`, then the page in a browser with a reply showing: the question, the reply's text and then
    its screen, focus in the composer and axe clean. A screen's rows can arrive seconds after its text, so wait for the
@@ -84,7 +87,8 @@ Lede's Disclosure and a `flag` action, and was run on the app the recipe builds.
    ),
    ```
 
-   `flag: async (params) => report('flag', params),`
+   `flag: async () => undefined,` under `actions`, where defineRegistry asks for it. `SpecView` runs the host's
+   handler in its place.
 4. `components/lede/json-render/catalog-fit.ts`: add `Disclosure: typeof Disclosure;` to `interface Lede` (with its
    `import type`) and `Disclosure: true,` to `fit`. A prop that Disclosure doesn't take then fails here by name. A
    prop the registry renames, as Button's `label` becomes its children, goes in `interface Adapted`.
@@ -254,7 +258,7 @@ Each one below broke this example while it was built, or was checked in the pack
   array an earlier patch carried, and the next build adds the items again: a list grows on every render. json-render's
   prompt asks the model to stream arrays an item at a time, so every list a model sends hits this. Build with
   `specFromParts`, which works on copies. `tests/model-replies.test.tsx` streams 16 replies a model wrote and checks
-  each list's rows appear once, render after render.
+  that each draws the titles, rows and buttons its spec holds, once, render after render.
 - `buildSpecFromParts` returns `null` until the first patch, and then a spec whose `root` is set before any element
   exists. Render only when `spec.elements[spec.root]` exists.
 - `JSONUIProvider` takes changes to `initialState` after it mounts, key by key, and an array counts as changed on
@@ -265,10 +269,9 @@ Each one below broke this example while it was built, or was checked in the pack
   that stream in after it still arrive, with the change written back on top. A stream that reorders rows or inserts
   one above it moves the change to whatever row then holds that index. Stream a list's rows by appending, in their
   final order, and never reorder or insert rows mid-stream.
-- `JSONUIProvider` keeps the `handlers` it mounted with. Pass handlers that don't close over changing state, such as
-  ones that call a state setter with a function, or read the latest values through a ref.
-- The registry also defines `actions` that report on its `actions` event target. Handlers passed to `SpecView` (or
-  `JSONUIProvider`) are the ones a screen runs; the event target serves the repo's json-render page.
+- `SpecView` reads its `handlers` through a ref, so each call reaches the latest and an inline object is fine, and
+  each handler's params are typed from its action's schema. `JSONUIProvider` on its own keeps the handlers it mounted
+  with.
 - `convertToModelMessages` drops data parts, so the model never sees the screens it sent, and a follow-up can't refer
   to them. `forModel` in `server/chat.ts` turns each reply's patches back into a fenced spec in its text, with the
   state the person left in that screen, which the client sends as `screens`.

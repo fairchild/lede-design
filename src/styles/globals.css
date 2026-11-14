@@ -1,12 +1,13 @@
 @import "tailwindcss";
 /* Tailwind skips the files that CI's tiers 1 and 2 check without the whole suite (scripts/ci-tier.mjs): the Markdown
-   the site doesn't render, integrations/ and tests/. A change only there can't add or drop a rule in the site's CSS. */
+   the site doesn't render, integrations/, the design system's templates and tests/. A change only there can't add or drop a rule in the site's CSS. */
 @source not "../../CHANGELOG.md";
 @source not "../../CONTRIBUTING.md";
 @source not "../../CLAUDE.md";
 @source not "../../docs/**/*.md";
 @source not "../../.claude/**/*.md";
 @source not "../../integrations";
+@source not "../../scripts/design-system";
 @source not "../../tests";
 @import "./lede.tokens.css";
 @import "../../registry/lede/lede.components.css";

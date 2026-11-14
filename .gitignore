@@ -16,3 +16,4 @@ registry/lede/lede.tokens.css
 worker/worker-configuration.d.ts
 dist-strict
 *.tsbuildinfo
+dist-design-system

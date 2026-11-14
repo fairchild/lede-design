@@ -1,7 +1,7 @@
 {
   "name": "lede-design",
   "private": true,
-  "version": "0.5.1",
+  "version": "0.5.2",
   "description": "Summary first, depth on request. A content-first design system for React, shipped as a shadcn registry.",
   "license": "MIT",
   "homepage": "https://lede.cloudcompute.com/",
@@ -28,6 +28,7 @@
     "contrast": "node scripts/check-contrast.mjs",
     "literals": "node scripts/check-literals.mjs",
     "brand": "node scripts/build-brand.mjs",
+    "design-system": "node scripts/build-tokens.mjs && node scripts/build-design-system.mjs",
     "registry": "node scripts/build-tokens.mjs && node scripts/check-contrast.mjs && node scripts/check-literals.mjs && node scripts/check-registry.mjs && shadcn build --output public/r",
     "dev": "npm run tokens && vite",
     "build": "npm run registry && npm run typecheck && vite build",

@@ -4,7 +4,7 @@
     "screen": { "type": "Screen", "props": {}, "children": ["header", "gallery", "save", "period", "missing"] },
     "header": {
       "type": "PageHeader",
-      "props": { "title": "Trip photos", "summary": "This spec has four mistakes, and the rest of it still renders." },
+      "props": { "title": "Trip photos", "summary": "This spec has five mistakes, and the rest of it still renders." },
       "children": []
     },
     "gallery": {
@@ -14,7 +14,7 @@
     },
     "save": {
       "type": "Button",
-      "props": { "label": "Save to album", "variant": "huge" },
+      "props": { "label": "Save to album", "variant": "huge", "icon": "camera" },
       "children": []
     },
     "period": {

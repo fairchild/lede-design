@@ -227,7 +227,7 @@ export const ARRIVALS: Arrival[] = [
   {
     route: '/integrations', arrival: h1('Integrations'),
     via: { from: '/', link: link('Integrations', main), back: link('Integrations', main) },
-    tabs: [link('json-render', main), button('Install commands for SpecView')],
+    tabs: [link('design system on claude.ai', main), link('The Lede design system', main)],
     shiftTab: link('Overview', main),
     escape: { url: /:\d+\/$/, target: link('Integrations', main) },
   },
@@ -1314,6 +1314,25 @@ export const ACTIONS: Action[] = [
     setup: async ({ page }) => { await page.goto('/fixtures/page-header'); },
     act: (d) => d.press(button('Show the next screen')),
     target: h1('Screen 2'),
+  },
+  {
+    // A level 3 PageHeader inside the page: its back is a button that acts in place, as a json-render detail's is.
+    screen: 'Everywhere', action: 'A detail opens in place under a level 3 header',
+    setup: async ({ page }) => { await page.goto('/fixtures/page-header'); },
+    act: (d) => d.press(button('Open the detail')),
+    target: { role: 'heading', level: 3, name: 'Venue for Thursday' },
+  },
+  {
+    screen: 'Everywhere', action: 'A level 3 header’s back button',
+    setup: async (d) => { await d.page.goto('/fixtures/page-header'); await d.press(button('Open the detail')); },
+    act: (d) => d.press(button('Messages')),
+    target: button('Open the detail'),
+  },
+  {
+    screen: 'Everywhere', action: 'Escape under a level 3 header with backOnEscape', only: 'desktop',
+    setup: async (d) => { await d.page.goto('/fixtures/page-header'); await d.press(button('Open the detail')); },
+    act: ({ page }) => page.keyboard.press('Escape'),
+    target: button('Open the detail'),
   },
   {
     screen: 'Everywhere', action: 'Disclosure toggle', setup: async ({ page }) => { await page.goto('/app'); },

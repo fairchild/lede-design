@@ -1,5 +1,55 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- Lede has a design system on claude.ai, https://claude.ai/artifact/Cw9GgaD1zxRk9ewxGMHv4x, that Claude reads to build
+  with Lede in a chat artifact, a design canvas, a deck or Claude Code. It holds the tokens, the whole stylesheet in one
+  file and a card for each component: its props, read from the source with their doc comments, every variant and state
+  rendered with its HTML, its accessibility, its React sample and the HTML that sample renders. `npm run design-system`
+  builds it from this repo.
+- The Integrations page has a Claude section that links the design system and a canvas of Lede's foundations and
+  components, and shows how an HTML artifact copies Lede's stylesheet. `llms.txt` and the `lede-design-system` skill
+  link them too.
+
+## 0.5.2
+
+Fixes from the reviews of SpecView: fields are checked right before each action, `check` reads bindings and a row
+waits for the View it opens. PageHeader takes a level 3 title and a back that acts in place. The registry for this
+release is `https://lede.cloudcompute.com/r/v0.5.2/{name}.json`.
+
+### Changed
+
+- PageHeader's `headingLevel` takes 3, which draws a smaller title, for a header under another heading of the page.
+  Its `back` takes `{ label, onSelect }` for a back that acts in place, drawn as a button, beside `{ href, label }`.
+  `onSelect` decides where focus returns.
+- In `json-render`, every event of every element runs its actions in order, and right before each one the fields its
+  params read are checked, so an earlier action that empties a field holds back the submit that reads it, one that
+  fills it lets the submit run, and a Switch's change is checked as a press is. Actions before a held one resolve their
+  params against their repeat item, as json-render's own run does.
+- `check` reads each element's bindings: an event its type doesn't emit, an action the catalog doesn't have, params
+  its schema rejects, and a slot or `$computed` function the catalog doesn't name. A prop the catalog doesn't have is
+  an issue whatever its value. Before, one bound to an expression made `check` throw.
+- A row whose press opens a detail View acts, and shows its chevron, once that View has arrived, so a press while the
+  reply streams no longer blanks the screen. A press that hides every control leaves focus on the screen.
+- `SpecView` takes `fallback`, drawn for a type the registry doesn't have. Its `handlers` are typed from each action's
+  schema and read through a ref, so an inline object is fine, and one that returns a promise holds the actions after
+  it until it settles. The registry draws every header with PageHeader.
+
+### Removed
+
+- `registry.tsx` in `json-render` no longer exports `actions`, `ActionEvent` or `handlers`, the action log of the
+  repo's json-render page, which now builds its own from `SpecView`'s `handlers`. They weren't documented.
+
+### Fixed
+
+- `integrations/json-render-chat`: a message sent while a reply streams waits for that reply and says so, and a
+  failed reply keeps its mark after the next question and stays out of what the model reads. `handleChat` counts a
+  body's bytes as it streams in and answers 400 to a system message, a turn left with nothing to read and a reply
+  whose screen can't be written back, where it answered 500 or passed the error to the model.
+- `integrations/json-render-chat-plain`: a message sent while a reply streams waits for that reply, as in the Lede chat.
+
 ## 0.5.1
 
 The docs site has an Integrations page, linked from Overview. The registry for this release is

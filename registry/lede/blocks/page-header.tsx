@@ -10,19 +10,26 @@ export interface PageHeaderProps {
   summary?: React.ReactNode;
   /** A picture beside the title, such as an Avatar. The title already names it, so it's hidden from assistive tech. */
   leading?: React.ReactNode;
-  /** Back link for nested screens, such as `{ href: '/settings', label: 'Settings' }`. */
-  back?: { href: string; label: string };
+  /**
+   * Back for nested screens: a link, such as `{ href: '/settings', label: 'Settings' }`, or a button that acts in
+   * place, such as `{ label: 'Inbox', onSelect: close }` for a detail that opened inside the page. A button moves no
+   * focus itself, so `onSelect` decides where focus returns, such as to the control that opened the detail.
+   */
+  back?: { href: string; label: string } | { label: string; onSelect: () => void };
   /**
    * Escape activates the back link, unless a layer above it took the key first: an open menu or dialog, or the focused
    * field when its text changed since it took focus. It doesn't see a form's other fields, so a form that must keep
    * Escape while it has unsaved changes turns this off while dirty, as ProfileFlow does. Default `true` when `back` is
-   * set on a level 1 heading. A level 2 header sits inside another screen, so its Escape is off unless you turn it on.
+   * set on a level 1 heading. A level 2 or 3 header sits inside another screen, so its Escape is off unless you turn it on.
    */
   backOnEscape?: boolean;
   /** One or two Buttons, at most one of them filled. */
   actions?: React.ReactNode;
-  /** Heading level: 1 for a screen's title, or 2 for a header shown inside another page. Default 1. */
-  headingLevel?: 1 | 2;
+  /**
+   * Heading level: 1 for a screen's title, 2 for a header shown inside another page, or 3 for one under a heading of
+   * that page, such as a chat message's author. Level 3 draws a smaller title. Default 1.
+   */
+  headingLevel?: 1 | 2 | 3;
   /**
    * Focus the heading on mount, and again each time this turns `true`, so people using a keyboard or a screen reader
    * land on the new screen. A screen that shows its list again after a detail, such as InboxFlow, sets it back to `true`
@@ -96,7 +103,7 @@ function useEscapeLayer(onEscape: (() => void) | undefined, stack: Layer[]) {
  * repeats back out of nothing more. The press goes to the caller of this hook activated most recently, and to the
  * screen's level 1 PageHeader only when no caller of this hook is active, so an inner layer backs out first even when
  * it opened in the same commit as the screen or the screen turned `backOnEscape` back on while it was open. A level 2
- * PageHeader with `backOnEscape` counts as one of these callers: it sits inside another screen. An inner layer that
+ * or 3 PageHeader with `backOnEscape` counts as one of these callers: it sits inside another screen. An inner layer that
  * handles Escape itself, such as SelectionBar, calls `preventDefault()` and this one leaves it. Pass `undefined` when
  * there's nothing to back out of. PageHeader uses it for `backOnEscape`.
  */
@@ -104,12 +111,19 @@ export function useBackOnEscape(onEscape: (() => void) | undefined) {
   useEscapeLayer(onEscape, inner);
 }
 
+const chevron = (
+  <svg viewBox="0 0 8 14" width="8" height="14" fill="none" aria-hidden="true">
+    <path d="M6.5 1.5 1.5 7l5 5.5" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
 /** A `<header>` with the screen's `<h1>` and its one-line summary: the top level of progressive disclosure. */
 export function PageHeader(props: PageHeaderProps) {
   const Link = useLinkComponent();
   const ref = React.useRef<HTMLHeadingElement>(null);
-  const H = `h${props.headingLevel ?? 1}` as 'h1';
-  const backRef = React.useRef<HTMLAnchorElement>(null);
+  const level = props.headingLevel ?? 1;
+  const H = `h${level}` as 'h1';
+  const backRef = React.useRef<HTMLAnchorElement & HTMLButtonElement>(null);
   useEscapeLayer(props.back && (props.backOnEscape ?? H === 'h1') ? () => backRef.current?.click() : undefined, H === 'h1' ? screens : inner);
   React.useImperativeHandle(props.headingRef, () => ref.current as HTMLHeadingElement);
   // Where focus was as the screen rendered, before its commit moved it. Read in render, which runs before every effect
@@ -134,19 +148,16 @@ export function PageHeader(props: PageHeaderProps) {
   }, [props.focusOnMount]);
   const text = (
     <div className="ld-page-header-text">
-      <H ref={ref} tabIndex={-1} className="text-large-title ld-page-title">{props.title}</H>
+      <H ref={ref} tabIndex={-1} className={cn(level === 3 ? 'text-title-2' : 'text-large-title', 'ld-page-title')}>{props.title}</H>
       {props.summary ? <p className="ld-page-summary">{props.summary}</p> : null}
     </div>
   );
   return (
     <header className={cn('ld-page-header', props.className)}>
-      {props.back ? (
-        <Link ref={backRef} className="ld-back" href={props.back.href}>
-          <svg viewBox="0 0 8 14" width="8" height="14" fill="none" aria-hidden="true">
-            <path d="M6.5 1.5 1.5 7l5 5.5" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-          {props.back.label}
-        </Link>
+      {props.back && 'href' in props.back ? (
+        <Link ref={backRef} className="ld-back" href={props.back.href}>{chevron}{props.back.label}</Link>
+      ) : props.back ? (
+        <button ref={backRef} type="button" className="ld-back" onClick={props.back.onSelect}>{chevron}{props.back.label}</button>
       ) : null}
       <div className="ld-page-header-row">
         {props.leading ? <div className="ld-page-header-lead"><span aria-hidden="true">{props.leading}</span>{text}</div> : text}

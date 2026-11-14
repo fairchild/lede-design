@@ -108,6 +108,18 @@ Lede has five layers, and dependencies only point down:
 `integrations/` sits outside the layers. It holds self-contained apps that show Lede beside another project. They read
 `registry/`, and no layer imports them.
 
+Lede's design system on claude.ai, which Claude reads to build with Lede in a chat, a canvas or a deck, is generated
+from this repo too. `npm run design-system` writes it to `dist-design-system/project/` (git-ignored): `tokens.json` in
+the shape the design system page reads, `components/bundle.css` with every token, component and block style, and a
+card for each registry item with a sample in `src/pages/docs/samples/`, rendered to static HTML by React's server
+renderer. `scripts/design-system-api.mjs` reads each component's props and doc comments with the TypeScript compiler
+for the card's props table, and the card renders every value of each prop that takes a set of strings. Its
+accessibility section names the native behavior of what the markup holds. A prop's doc comment is the description
+an agent reads, so write its default as "Default `x`". The README and the cover are `scripts/design-system/README.md`
+and `cover.html`. After a release, save the live `project/design-system.json` from the design system's artifact, run
+`npm run design-system -- --index <that file>` so the page's own keys survive, and publish every file under
+`dist-design-system/project/` to the artifact from Claude Code.
+
 Registry files use relative imports (`../list`) that match where they install (`components/lede/…`). Every file that
 installs is listed in `registry.json`. The `index.ts` barrels are for this repo only and don't install.
 `npm run registry` builds each item's JSON from `registry.json` into `public/r`.
@@ -146,7 +158,8 @@ container's font size, and it can also be 0.02px less in a `max-width` query.
   primary button to confirm. Enter acts, and Escape backs out one layer per press. Back and back links return to where
   the person was. Each change moves focus once, in the same task, so `<body>` never shows, and an announcement follows
   it. `tests/focus-table.ts` is the source of truth. Its `test.fixme` rows say what they wait for, and a pull request
-  that adds a screen or an action adds its rows there.
+  that adds a screen or an action adds its rows there. An app in `integrations/` keeps its focus specs in its own
+  tests, beside the screens it builds, since the root suite doesn't build it.
 - **Progressive disclosure.** Every screen, section and row leads with its takeaway (`summary`). Affordances stay quiet
   and appear at the point of use. Expert paths, such as swipe, always have a visible twin.
 - **Tokens only.** Components use no raw colors or radii. They use shadcn's names (`--primary`, `--muted-foreground`)

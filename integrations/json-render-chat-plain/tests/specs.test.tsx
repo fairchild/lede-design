@@ -37,7 +37,9 @@ test('the check rejects a prop the catalog doesn’t have and a value outside a 
   const wrong = structuredClone(settings);
   wrong.elements.title.props = { ...wrong.elements.title.props, level: 'h7' };
   wrong.elements['signature-text'].props = { ...wrong.elements['signature-text'].props, hint: 'Shown under the field.' };
+  wrong.elements.title.props = { ...wrong.elements.title.props, typo: { $state: '/x' } };
   expect(check(wrong)).toEqual([
+    'elements.title.props: Unrecognized key: "typo"',
     expect.stringMatching(/^elements\.title\.props\.level: Invalid option/),
     expect.stringMatching(/^elements\.signature-text\.props: Unrecognized key: "hint"/),
   ]);
