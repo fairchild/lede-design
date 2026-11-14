@@ -227,7 +227,7 @@ export const ARRIVALS: Arrival[] = [
   {
     route: '/integrations', arrival: h1('Integrations'),
     via: { from: '/', link: link('Integrations', main), back: link('Integrations', main) },
-    tabs: [link('json-render', main), button('Install commands for SpecView')],
+    tabs: [link('design system on claude.ai', main), link('The Lede design system', main)],
     shiftTab: link('Overview', main),
     escape: { url: /:\d+\/$/, target: link('Integrations', main) },
   },

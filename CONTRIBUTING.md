@@ -73,6 +73,14 @@ Lede has five layers, and dependencies only point down:
 `integrations/` sits outside the layers. It holds self-contained apps that show Lede beside another project. They read
 `registry/`, and no layer imports them.
 
+Lede's design system on claude.ai, which Claude reads to build with Lede in a chat, a canvas or a deck, is generated
+from this repo too. `npm run design-system` writes it to `dist-design-system/project/` (git-ignored): `tokens.json` in
+the shape the design system page reads, `components/bundle.css` with every token, component and block style, and a
+card for each registry item with a sample in `src/pages/docs/samples/`, rendered to static HTML by React's server
+renderer. The README and the cover are `scripts/design-system/README.md` and `cover.html`. After a release, run it and
+publish the folder to the design system's artifact from Claude Code: read the live `project/design-system.json` first,
+so the page's own keys survive, then send every file under `project/`.
+
 Registry files use relative imports (`../list`) that match where they install (`components/lede/…`). Every file that
 installs is listed in `registry.json`. The `index.ts` barrels are for this repo only and don't install.
 `npm run registry` builds each item's JSON from `registry.json` into `public/r`.

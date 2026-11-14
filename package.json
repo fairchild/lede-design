@@ -28,6 +28,7 @@
     "contrast": "node scripts/check-contrast.mjs",
     "literals": "node scripts/check-literals.mjs",
     "brand": "node scripts/build-brand.mjs",
+    "design-system": "node scripts/build-tokens.mjs && node scripts/build-design-system.mjs",
     "registry": "node scripts/build-tokens.mjs && node scripts/check-contrast.mjs && node scripts/check-literals.mjs && node scripts/check-registry.mjs && shadcn build --output public/r",
     "dev": "npm run tokens && vite",
     "build": "npm run registry && npm run typecheck && vite build",

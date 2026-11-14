@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- Lede has a design system on claude.ai, https://claude.ai/artifact/Cw9GgaD1zxRk9ewxGMHv4x, that Claude reads to build
+  with Lede in a chat artifact, a design canvas, a deck or Claude Code. It holds the tokens, the whole stylesheet in one
+  file and a card for each component with its React sample and the HTML that sample renders. `npm run design-system`
+  builds it from this repo.
+- The Integrations page has a Claude section that links the design system and a canvas of Lede's foundations and
+  components, and shows how an HTML artifact copies Lede's stylesheet. `llms.txt` and the `lede-design-system` skill
+  link them too.
+
 ## 0.5.2
 
 Fixes from the reviews of SpecView: fields are checked right before each action, `check` reads bindings and a row
