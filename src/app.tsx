@@ -55,7 +55,7 @@ function headElement(selector: string, tag: 'link' | 'meta', attributes: Record<
 /**
  * Names the route as canonical, with `og:url`, as the title follows it. `index.html` has neither: a crawler that runs no
  * script would read a static one as the home page's address on every deep link. A not-found route names no address and
- * asks to stay out of search results, since the server answers every path with the same 200.
+ * asks to stay out of search results, since the server answers every route, unknown ones included, with the same 200.
  */
 function useCanonical() {
   const { pathname } = useLocation();

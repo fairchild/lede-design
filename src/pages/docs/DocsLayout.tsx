@@ -21,9 +21,9 @@ const NAV = [
 const SCHEMES = [{ value: 'auto', label: 'Automatic' }, { value: 'light', label: 'Light' }, { value: 'dark', label: 'Dark' }];
 
 /**
- * The site's appearance and its two links out: GitHub and the version's changelog. The sidebar holds it on wide screens
- * and the page's foot on narrow ones, where the tab bar has room for five places at 320px. The demo app and Decisions
- * are reached from Overview.
+ * The site's appearance and its three links out: GitHub, the version's changelog and `llms.txt`, the docs index for
+ * agents. The sidebar holds it on wide screens and the page's foot on narrow ones, where the tab bar has room for five
+ * places at 320px. The demo app and Decisions are reached from Overview.
  */
 function DocsFooter() {
   const { prefs, setPrefs } = useAppearance();
@@ -41,6 +41,8 @@ function DocsFooter() {
       <ul className="docs-footer-links">
         <li><a href={REPO}><IconGitHub />GitHub</a></li>
         <li><a href={`${REPO}/blob/main/CHANGELOG.md`}>Version {version}</a></li>
+        {/* A plain link, so the browser loads the file: the router would render it as a route. */}
+        <li><a href="/llms.txt"><code>llms.txt</code></a></li>
       </ul>
     </div>
   );

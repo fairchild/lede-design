@@ -2,7 +2,21 @@
 
 > Lede is a design system for React: components, blocks, page layouts and hero flows, installed from a shadcn registry. Every screen, section and row leads with its takeaway, and detail opens on request.
 
-Lede renders on the client only, so it suits a Vite app or another client-only React app. Install from a release's registry, `https://lede.cloudcompute.com/r/v<version>/{name}.json`, added to `components.json` as `@lede`. Every item's file is at that URL with its name, such as `button` or `data-table`.
+Lede renders on the client only, so it suits a Vite app or another client-only React app. Install from a release's registry, `https://lede.cloudcompute.com/r/v<version>/{name}.json`, added to `components.json` as `@lede`. Every item's file is at that URL with its name, such as `button` or `data-table`, and the release's index is `https://lede.cloudcompute.com/r/v<version>/registry.json`. A release's files never change.
+
+The Docs pages need JavaScript: fetched without it, each one is a short page that links back here. The registry files and the Markdown files under Agents and Source read without it.
+
+## Registry
+
+- [Registry index](https://lede.cloudcompute.com/r/registry.json): JSON that lists every item of the latest release, with its name, type, title, description, dependencies and file paths
+- [Button](https://lede.cloudcompute.com/r/button.json): one item's JSON, with the source of each file, as `npx shadcn@latest add` reads it
+- [Next index](https://lede.cloudcompute.com/r/next/registry.json): the same list for the head of `main`, which changes with each merge; its items are at `/r/next/{name}.json`
+
+## Agents
+
+- [Agent skill](https://raw.githubusercontent.com/fairchild/lede-design/main/.claude/skills/lede-design-system/SKILL.md): the `lede-design-system` skill, the rules for building and reviewing UI with Lede
+- [json-render chat recipe](https://raw.githubusercontent.com/fairchild/lede-design/main/integrations/json-render-chat/AGENTS.md): the steps, in order, for a chat whose replies hold Lede screens, on the AI SDK and json-render
+- [README](https://raw.githubusercontent.com/fairchild/lede-design/main/README.md): what Lede is and how to install it. Its Limits section covers server rendering, the page background and installing from the registry URL
 
 ## Docs
 
@@ -17,14 +31,16 @@ Lede renders on the client only, so it suits a Vite app or another client-only R
 
 ## Claude
 
+These two links are readable only inside Claude, such as a claude.ai chat or Claude Code. A fetch from anywhere else gets a script page without their contents.
+
 - [Lede design system on claude.ai](https://claude.ai/artifact/Cw9GgaD1zxRk9ewxGMHv4x): tokens, the whole stylesheet (`project/components/bundle.css`) and each component's React sample and rendered HTML, generated from this repo. Read its `project/README.md` first. An HTML artifact copies the stylesheet with `"files": {"lede.css": {"artifact": "https://claude.ai/artifact/Cw9GgaD1zxRk9ewxGMHv4x", "path": "project/components/bundle.css"}}`
 - [Lede canvas](https://claude.ai/artifact/7eECQYRQWxSkaJhwRtT4rJ#artboard-15dd8cd198dd): the foundations and components drawn with Lede's own CSS, in four themes
 
 ## Source
 
-- [README](https://github.com/fairchild/lede-design#readme): what Lede is and how to install it
-- [CHANGELOG](https://github.com/fairchild/lede-design/blob/main/CHANGELOG.md): what each release changed
-- [CONTRIBUTING](https://github.com/fairchild/lede-design/blob/main/CONTRIBUTING.md): the layers, the rules and the writing rules
+- [Repository](https://github.com/fairchild/lede-design): the source on GitHub
+- [CHANGELOG](https://raw.githubusercontent.com/fairchild/lede-design/main/CHANGELOG.md): what each release changed
+- [CONTRIBUTING](https://raw.githubusercontent.com/fairchild/lede-design/main/CONTRIBUTING.md): the layers, the rules and the writing rules
 
 ## Optional
 

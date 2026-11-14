@@ -8,6 +8,8 @@ const RELEASE = /^(?=.{1,1018}$)\/r\/(v\d+\.\d+\.\d+(?:-[0-9A-Za-z-]+(?:\.[0-9A-
 const LATEST = /^\/r\/[a-z0-9-]+\.json$/;
 // The URL parser resolves . and .. segments (and %2e forms) before routing, so a key can't climb out of its prefix.
 const MEDIA = /^(?=.{1,1025}$)\/media\/[A-Za-z0-9._-]+(?:\/[A-Za-z0-9._-]+)*$/;
+// A path whose last segment ends in an extension names a file. Routes of the docs site and Daybook have none.
+const FILE = /\.[A-Za-z0-9]+$/;
 
 type Kind = 'release' | 'next' | 'media';
 
@@ -23,6 +25,10 @@ const JSON_TYPE = contentTypes.json;
 // inline styles and images still render.
 const MEDIA_POLICY = "sandbox; default-src 'none'; img-src 'self' data:; media-src 'self'; style-src 'unsafe-inline'";
 
+// What a fetcher can read next, named in a 404 under /r/ and in one for a missing file.
+const REGISTRY_INDEX = 'The registry index is /r/registry.json';
+const DOCS_INDEX = 'The docs index is /llms.txt';
+
 export default {
   async fetch(request, env): Promise<Response> {
     const { pathname } = new URL(request.url);
@@ -32,11 +38,15 @@ export default {
     }
     const release = RELEASE.exec(pathname);
     if (release) return fromBucket(request, env, pathname.slice(1), release[1] === 'next' ? 'next' : 'release');
-    if (pathname.startsWith('/r/')) return LATEST.test(pathname) ? fromAssets(request, env) : notFound();
+    if (pathname.startsWith('/r/')) return LATEST.test(pathname) ? fromAssets(request, env) : notFound(REGISTRY_INDEX);
     if (pathname.startsWith('/media/')) {
       return MEDIA.test(pathname) ? fromBucket(request, env, pathname.slice(1), 'media') : notFound();
     }
-    return env.ASSETS.fetch(request);
+    // Any other path reaches the Worker only when no asset matches it (wrangler.jsonc). A file that isn't there is a
+    // 404, so a fetcher can tell it from a page, and a route gets the app's shell, with the request's method and headers.
+    // The shell is fetched at /, so a _headers rule written for a route's path doesn't apply to it.
+    if (FILE.test(pathname)) return notFound(DOCS_INDEX);
+    return env.ASSETS.fetch(new Request(new URL('/', request.url), request));
   },
 } satisfies ExportedHandler<Env>;
 
@@ -47,14 +57,14 @@ async function fromBucket(request: Request, env: Env, key: string, kind: Kind): 
   const marker = kind === 'release' && !key.endsWith('/registry.json') ? key.replace(/[^/]+$/, 'registry.json') : null;
   let object: R2ObjectBody | null;
   try {
-    if (marker && !(await env.BUCKET.head(marker))) return notFound();
+    if (marker && !(await env.BUCKET.head(marker))) return notFound(REGISTRY_INDEX);
     object = await env.BUCKET.get(key);
   } catch (error) {
     // The patterns already keep keys valid, so this is R2 failing. A 404 would tell shadcn the item doesn't exist.
     console.error(error);
     return plain(503, 'Storage unavailable', { 'retry-after': '30' });
   }
-  if (!object) return notFound();
+  if (!object) return notFound(kind === 'media' ? undefined : REGISTRY_INDEX);
   const headers = new Headers({
     'cache-control': CACHE[kind],
     'content-type': kind === 'media' ? typeOf(key) : JSON_TYPE,
@@ -68,13 +78,13 @@ async function fromBucket(request: Request, env: Env, key: string, kind: Kind): 
 }
 
 // /r/<name>.json is the deployed build's own dist/r, the latest release once deploys come from tags. A missing file
-// comes back as the SPA shell, so the asset is fetched without the request's conditional headers, anything that isn't
-// JSON is a 404, and preconditions are evaluated here against the JSON's own ETag.
+// comes back as something other than JSON, so the asset is fetched without the request's conditional headers, anything
+// that isn't JSON is a 404, and preconditions are evaluated here against the JSON's own ETag.
 async function fromAssets(request: Request, env: Env): Promise<Response> {
   const asset = await env.ASSETS.fetch(request.url, { method: request.method });
   if (!asset.headers.get('content-type')?.startsWith('application/json')) {
     await asset.body?.cancel();
-    return notFound();
+    return notFound(REGISTRY_INDEX);
   }
   const headers = new Headers(asset.headers);
   headers.set('access-control-allow-origin', '*');
@@ -145,7 +155,7 @@ const preflight = (): Response =>
   });
 
 // no-store: a release that isn't published yet must not stay missing in a cache once it is.
-const notFound = (): Response => plain(404, 'Not found');
+const notFound = (next?: string): Response => plain(404, next ? `Not found. ${next}` : 'Not found');
 
 // An error carries the CORS header too, so a page fetching the registry can read why its request failed.
 const plain = (status: number, body: string, extra: Record<string, string> = {}): Response =>

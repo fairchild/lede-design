@@ -266,6 +266,16 @@ const GROUPS: Group[] = [
         ],
       },
       {
+        title: 'The site reads without JavaScript',
+        summary: <>Every page, fetched without JavaScript, says what Lede is and links <code>llms.txt</code>, the registry index and the repo. A missing file answers 404.</>,
+        why: <>Coding agents and fetch tools read a page’s HTML and run no script. The docs render on the client, so each page alone is the same empty shell, and a missing file that answered with that shell would look like a page.</>,
+        cost: <>The fallback is its own copy in <Path to="index.html" />, apart from the pages’. A route loaded from the address bar, other than <code>/</code>, runs the Worker once to get its shell, where before the shell came from the assets alone. That load counts as a Worker request, and when the Worker fails or its plan’s request limit runs out, a deep link fails with it.</>,
+        heldBy: [
+          <><Path to="tests/no-javascript.spec.ts" /> reads the shell’s HTML and expects the text and links outside <code>{'<head>'}</code> and <code>{'<noscript>'}</code>. It expects the fallback shown with scripts off, never painted with them on and gone once React mounts, and every file <code>llms.txt</code> links on this site served by the build.</>,
+          <><Path to="tests/worker.spec.ts" /> calls the Worker, <Path to="worker/index.ts" />, for a path no asset matches: 404 for one whose last segment has a file extension, and the shell for any other, with the request’s method and headers.</>,
+        ],
+      },
+      {
         title: 'The table store follows table-core',
         summary: <>The server-rows store behind useServerRows is a copy of the one in <code>@fairchild/table-core</code>, kept identical to a pinned release.</>,
         why: 'The store installs with the block as source, so a project needs no package for it. The store is maintained and tested in table-core, and a copy that falls behind loses that work without a sign.',

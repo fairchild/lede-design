@@ -12,6 +12,16 @@
 - The Integrations page has a Claude section that links the design system and a canvas of Lede's foundations and
   components, and shows how an HTML artifact copies Lede's stylesheet. `llms.txt` and the `lede-design-system` skill
   link them too.
+- Every page of the docs site, fetched without JavaScript, says what Lede is and links
+  https://lede.cloudcompute.com/llms.txt, the registry index and the repo. A browser with scripts off shows the same
+  text. The docs footer and the README link `llms.txt` too.
+- `llms.txt` names the registry indexes and what they return, and links the README's Limits, the
+  `lede-design-system` skill and the json-render chat recipe as Markdown files.
+
+### Changed
+
+- The site answers 404 for a file it doesn't have, such as `/llms-full.txt`, where it used to answer with the docs
+  page. Paths without a file extension still open the docs. A 404 under `/r/` names the registry index.
 
 ## 0.5.2
 
