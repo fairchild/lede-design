@@ -57,3 +57,13 @@ test('each example app links to its folder on GitHub, and every folder in integr
   for (const file of files) expect(existsSync(file), `${file} exists`).toBe(true);
   for (const href of hrefs) expect(href.startsWith(`${REPO}/`), href).toBe(true);
 });
+
+test('the Claude section links the design system on claude.ai and the canvas, and shows how an artifact copies the stylesheet', async ({ page }) => {
+  await page.goto('/integrations');
+  const claude = section(page, 'claude');
+  await expect(claude.getByRole('heading', { level: 2, name: 'Claude' })).toBeVisible();
+  await expect(claude.getByRole('link', { name: 'The Lede design system' })).toHaveAttribute('href', 'https://claude.ai/artifact/Cw9GgaD1zxRk9ewxGMHv4x');
+  await expect(claude.getByRole('link', { name: 'The Lede canvas' })).toHaveAttribute('href', /^https:\/\/claude\.ai\/artifact\/7eECQYRQWxSkaJhwRtT4rJ/);
+  const code = claude.locator('.docs-code-example').filter({ has: page.getByRole('button', { name: 'Lede in an HTML artifact' }) });
+  expect(await code.locator('code').textContent()).toContain('"path": "project/components/bundle.css"');
+});

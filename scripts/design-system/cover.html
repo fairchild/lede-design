@@ -1,0 +1,56 @@
+<!-- @dsCard height=288 -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Lede</title>
+<style>
+  html, body { margin: 0; }
+  body { background: var(--background-grouped); font-family: var(--font-sans); }
+  .cover { position: relative; width: 960px; height: 288px; overflow: hidden; }
+  .cover svg { position: absolute; inset: 0; }
+  .primary { fill: var(--primary); }
+  .on-primary { fill: var(--primary-foreground); }
+  .teal { fill: var(--preset-teal); }
+  .ink { fill: var(--foreground); }
+  .orange { fill: var(--preset-orange); }
+  .card { fill: var(--card); }
+  .line { fill: var(--muted-foreground); }
+  .line-strong { fill: var(--foreground); }
+  .text { position: absolute; left: 48px; bottom: 40px; max-width: 420px; }
+  .name { margin: 0; font-size: 120px; line-height: 0.92; font-weight: 700; letter-spacing: -2px; color: var(--foreground); }
+  .tagline { margin: 12px 0 0; font-size: 14px; line-height: 20px; color: var(--muted-foreground); }
+</style>
+</head>
+<body>
+<div class="cover">
+  <svg width="960" height="288" viewBox="0 0 960 288" aria-hidden="true">
+    <!--
+      blocks: primary slab 200×240 (radius-xl 30); teal 200×112, ink 96×112, orange 88×112 (radius-lg 22).
+      arrangement: one tall slab with satellites, from x = 520, gaps of space-4 (16).
+      pattern: the lede mark (a heavy line over two light ones) as capsules, in the slab and on a card nested in the
+        teal block, because Lede's whole idea is the headline over its detail; the card sits space-2 (8) inside the
+        teal block at radius-md 14, the concentric rule.
+      steps and radii: space-2 8, space-4 16, space-6 24; radius-xl 30, radius-lg 22, radius-md 14, capsules.
+    -->
+    <rect class="primary" x="520" y="24" width="200" height="240" rx="30" />
+    <rect class="on-primary" x="552" y="168" width="136" height="24" rx="12" />
+    <rect class="on-primary" x="552" y="204" width="112" height="10" rx="5" opacity="0.72" />
+    <rect class="on-primary" x="552" y="224" width="84" height="10" rx="5" opacity="0.72" />
+
+    <rect class="teal" x="736" y="24" width="200" height="112" rx="22" />
+    <rect class="card" x="744" y="32" width="184" height="96" rx="14" />
+    <rect class="line-strong" x="760" y="52" width="104" height="14" rx="7" />
+    <rect class="line" x="760" y="78" width="136" height="8" rx="4" />
+    <rect class="line" x="760" y="94" width="96" height="8" rx="4" />
+
+    <rect class="ink" x="736" y="152" width="96" height="112" rx="22" />
+    <rect class="orange" x="848" y="152" width="88" height="112" rx="22" />
+  </svg>
+  <div class="text">
+    <h1 class="name">Lede</h1>
+    <p class="tagline">Summary first, depth on request.</p>
+  </div>
+</div>
+</body>
+</html>

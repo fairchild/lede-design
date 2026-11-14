@@ -13,6 +13,12 @@ Lede renders on the client only, so it suits a Vite app or another client-only R
 - [Data table](https://lede.cloudcompute.com/blocks/data-table): DataTable and `useServerRows`, with examples
 - [Layouts](https://lede.cloudcompute.com/layouts): the page layouts AppShell, WorkbenchShell and MasterDetail
 - [Decisions](https://lede.cloudcompute.com/decisions): how Lede is built and what checks it
+- [Integrations](https://lede.cloudcompute.com/integrations): Lede in Claude, and json-render drawing Lede screens from a model's JSON
+
+## Claude
+
+- [Lede design system on claude.ai](https://claude.ai/artifact/Cw9GgaD1zxRk9ewxGMHv4x): tokens, the whole stylesheet (`project/components/bundle.css`) and each component's React sample and rendered HTML, generated from this repo. Read its `project/README.md` first. An HTML artifact copies the stylesheet with `"files": {"lede.css": {"artifact": "https://claude.ai/artifact/Cw9GgaD1zxRk9ewxGMHv4x", "path": "project/components/bundle.css"}}`
+- [Lede canvas](https://claude.ai/artifact/7eECQYRQWxSkaJhwRtT4rJ#artboard-15dd8cd198dd): the foundations and components drawn with Lede's own CSS, in four themes
 
 ## Source
 
