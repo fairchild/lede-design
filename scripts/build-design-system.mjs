@@ -1,6 +1,7 @@
 // Builds the files of Lede's design system on claude.ai into dist-design-system/project/, from this repo:
 // tokens/tokens.json, the generated and hand-written CSS, registry.json and the docs site's samples, each rendered to
-// static markup by React's server renderer. CONTRIBUTING.md says how to publish the folder.
+// static markup by React's server renderer, and design-system-bundle.mjs's live components. CONTRIBUTING.md says how
+// to publish the folder.
 // Run with `npm run design-system`, which builds the tokens first. To keep the keys the live page added to its index
 // (asset groups, its own sections, a renamed title), save the live project/design-system.json and pass its path:
 // `npm run design-system -- --index path/to/design-system.json`.
@@ -11,6 +12,7 @@ import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { createServer } from 'vite';
 import { readApi } from './design-system-api.mjs';
+import { buildBundle, buildLibraries, compileSample, toSource } from './design-system-bundle.mjs';
 
 const OUT = 'dist-design-system/project';
 const SRC = 'scripts/design-system';
@@ -152,8 +154,36 @@ const ARGS = {
     ],
     onArchive: () => {},
   },
+  'daily-brief': { decisions: 2 },
+  inbox: {
+    messages: [
+      { id: 'm1', from: 'Ari Chen', subject: 'Q4 budget', preview: 'Finance needs the revised numbers by Thursday.', date: '9:41 AM', datetime: '2026-11-12T09:41', unread: true, body: ['Finance needs the revised numbers by Thursday.'] },
+      { id: 'm2', from: 'Hana Sato', subject: 'Launch date', preview: 'Two dates work for marketing.', date: 'Tue', datetime: '2026-11-10T14:05', body: ['Two dates work for marketing: the 3rd or the 10th.'] },
+    ],
+    onRemove: () => {},
+  },
+  onboarding: { onComplete: async () => {} },
+  profile: { profile: { name: 'Sam Rivera', email: 'sam@example.com', role: 'Product lead' }, onSave: async () => {} },
+  'app-shell': { current: 'today' },
+  'selection-bar': { picked: ['m1', 'm2'], onArchive: () => {}, onDelete: () => {}, onClear: () => {} },
 };
-const HEIGHT = { 'data-table': 360, 'master-detail': 320, list: 260, table: 220, 'accent-picker': 260, 'form-section': 300, 'text-field': 220, checkbox: 180, 'glass-bar': 160, 'theme-provider': 160 };
+// Code a preview runs before its sample, in the sample's scope: a sample that fetches gets a stand-in, as a preview
+// loads nothing.
+const PRELUDE = {
+  'use-server-rows': `// A stand-in for the server: one page of three rows, the whole list.
+  var fetch = function () {
+    var rows = [{ id: 'WI-104', title: 'Renew venue contract' }, { id: 'WI-105', title: 'Order badges' }, { id: 'WI-106', title: 'Book caterer' }];
+    return Promise.resolve(new Response(JSON.stringify({ rows: rows, total: rows.length })));
+  };`,
+};
+// A flow is a whole screen, so its card is a tall one.
+const HEIGHT = {
+  'daily-brief': 720, inbox: 560, onboarding: 640, profile: 640, settings: 440, 'app-shell': 360, 'workbench-shell': 420,
+  'selection-bar': 120, 'json-render': 280, 'use-server-rows': 280,
+  'data-table': 360, 'master-detail': 320, list: 260, table: 220, 'accent-picker': 260, 'form-section': 300, 'text-field': 220, checkbox: 180, 'glass-bar': 160, 'theme-provider': 160 };
+// The layout width of a card whose wide layout is the point: the shells' sidebars and the Inbox's two panes. The page
+// scales it down to fit.
+const WIDTH = { 'app-shell': 1100, 'workbench-shell': 1200, inbox: 1000 };
 // Block containers only: a line break between inline elements, such as two labels, would add a space to the page.
 const BLOCK_TAGS = 'section|header|footer|nav|main|aside|article|ul|ol|li|div|fieldset|legend|h[1-6]|p|form|table|thead|tbody|tr|th|td|caption|figure|dl|dt|dd';
 const SPLIT = new RegExp(`(?=<\\/?(?:${BLOCK_TAGS})\\b)`);
@@ -196,6 +226,12 @@ const vite = await createServer({
   },
 });
 const { itemsToInstall, installCommand } = await vite.ssrLoadModule('/src/pages/docs/Usage.tsx');
+// What components/bundle.js assigns to window.Lede, which a preview's sample may read.
+const ledeExports = new Set(
+  (await Promise.all(['index.ts', 'blocks/index.ts', 'flows/index.ts'].map((f) => vite.ssrLoadModule(`/registry/lede/${f}`))))
+    .flatMap((mod) => Object.keys(mod))
+    .concat(['SpecView', 'catalog']),
+);
 // Each component's props, doc comment and declarations, read from its source.
 const registryFiles = [...new Set(registry.items.flatMap((item) => item.files.map((file) => file.path)).filter((path) => /\.tsx?$/.test(path)))];
 const { api, declarations } = readApi(registryFiles);
@@ -219,10 +255,11 @@ const renderGallery = async (componentNames) => {
     if (!spec || !component) continue;
     const Component = (await vite.ssrLoadModule(`/${component.file}`))[componentName];
     const render = (props) => renderToStaticMarkup(createElement(Component, { ...spec.base, ...props }));
+      const item = (label, caption, props) => ({ label, caption, componentName, props: { ...spec.base, ...props }, markup: render(props) });
     for (const prop of component.props.filter((p) => p.values)) {
-      rows.push({ title: prop.name, items: prop.values.map((value) => ({ label: `${prop.name}="${value}"`, caption: value, markup: render({ [prop.name]: value }) })) });
+      rows.push({ title: prop.name, items: prop.values.map((value) => item(`${prop.name}="${value}"`, value, { [prop.name]: value })) });
     }
-    if (spec.states) rows.push({ title: 'states', items: spec.states.map(([label, props]) => ({ label, caption: label, markup: render(props) })) });
+    if (spec.states) rows.push({ title: 'states', items: spec.states.map(([label, props]) => item(label, label, props)) });
   }
   return rows;
 };
@@ -241,11 +278,12 @@ try {
     const [[exportName, Sample]] = components;
     const markup = renderToStaticMarkup(createElement(Sample, ARGS[item.name] ?? {}));
     const name = item.title.split(',')[0].trim();
-    const group = item.type === 'registry:component' ? 'Components' : 'Blocks';
+    const group = item.files[0].path.startsWith('registry/lede/flows/') ? 'Flows' : item.name === 'json-render' ? 'Generated UI' : item.type === 'registry:component' ? 'Components' : 'Blocks';
     const code = read(samplePath).trim();
     const componentNames = item.title.split(',').map((title) => title.trim()).filter((title) => api.has(title));
     const gallery = await renderGallery(componentNames);
-    cards.push({ item, name, group, exportName, markup, code, componentNames, gallery, install: installCommand(itemsToInstall([item.name], code)) });
+    const script = compileSample(code, samplePath, ledeExports);
+    cards.push({ item, name, group, exportName, markup, code, script, componentNames, gallery, install: installCommand(itemsToInstall([item.name], code)) });
   }
 } finally {
   console.error = quiet;
@@ -291,7 +329,7 @@ const galleryHtml = (gallery) =>
   gallery.length
     ? `<section aria-label="Variants and states" style="margin-top:24px;display:grid;gap:16px">
 ${gallery.map((row) => `<div><p class="text-caption-1" style="margin:0 0 8px;color:var(--muted-foreground)">${row.title}</p><div style="display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start">
-${row.items.map((it) => `<figure style="margin:0;display:grid;gap:6px;justify-items:start">${it.markup}<figcaption class="text-caption-2" style="color:var(--muted-foreground)">${it.caption}</figcaption></figure>`).join('\n')}
+${row.items.map((it) => `<figure style="margin:0;display:grid;gap:6px;justify-items:start"><div id="${it.id}" style="display:contents">${it.markup}</div><figcaption class="text-caption-2" style="color:var(--muted-foreground)">${it.caption}</figcaption></figure>`).join('\n')}
 </div></div>`).join('\n')}
 </section>`
     : '';
@@ -299,11 +337,39 @@ const galleryMd = (gallery) =>
   gallery
     .map((row) => `### ${row.title === 'states' ? 'States' : `\`${row.title}\``}\n\n| | HTML |\n| --- | --- |\n${row.items.map((it) => `| \`${cell(it.label)}\` | \`${cell(it.markup)}\` |`).join('\n')}`)
     .join('\n\n');
-for (const { item, name, group, markup, code, install, componentNames, gallery } of cards) {
+// The script that makes a preview live: the sample, then each variant, mounted from window.Lede over its static markup.
+// Without the bundle, the static markup stays. A preview takes no focus until someone uses it, so a page of cards
+// doesn't scroll to the last one whose heading focuses on mount, and its links stay in the frame.
+const liveScript = (item, script, gallery) => `<script>
+(function () {
+  var L = window.Lede;
+  if (!L || !window.ReactDOM) return;
+  var h = React.createElement;
+  var focus = HTMLElement.prototype.focus;
+  HTMLElement.prototype.focus = function () {};
+  var restore = function () { HTMLElement.prototype.focus = focus; };
+  addEventListener('pointerdown', restore, { once: true, capture: true });
+  addEventListener('keydown', restore, { once: true, capture: true });
+  var Link = function (p) {
+    return h('a', Object.assign({}, p, { onClick: function (e) { e.preventDefault(); if (p.onClick) p.onClick(e); } }));
+  };
+  var mount = function (id, el) { ReactDOM.createRoot(document.getElementById(id)).render(h(L.LinkProvider, { component: Link }, el)); };
+  var Sample = (function () {${PRELUDE[item.name] ? `\n  ${PRELUDE[item.name]}` : ''}
+${script.replace(/^/gm, '    ')}
+  })();
+  mount('ds-sample', h(Sample, ${toSource(ARGS[item.name] ?? {})}));
+${gallery.flatMap((row) => row.items).map((it) => `  mount(${JSON.stringify(it.id)}, h(L[${JSON.stringify(it.componentName)}], ${toSource(it.props)}));`).join('\n')}
+})();
+</script>`;
+// Flows first, as the lede-design-system skill reaches for them first, then blocks, components and generated UI.
+const GROUPS = ['Flows', 'Blocks', 'Components', 'Generated UI'];
+cards.sort((a, b) => GROUPS.indexOf(a.group) - GROUPS.indexOf(b.group));
+for (const { item, name, group, markup, code, script, install, componentNames, gallery } of cards) {
   const height = (HEIGHT[item.name] ?? 140) + gallery.length * 110;
+  gallery.flatMap((row) => row.items).forEach((it, i) => { it.id = `ds-variant-${i + 1}`; });
   write(
     `components/${name}/preview.html`,
-    `<!-- @dsCard group="${group}" height=${height} subtitle="Static markup rendered from Lede's docs sample" -->
+    `<!-- @dsCard group="${group}" height=${height}${WIDTH[item.name] ? ` width=${WIDTH[item.name]}` : ''} subtitle="Lede's docs sample, mounted from the bundle" -->
 <!doctype html>
 <html lang="en">
 <head><meta charset="utf-8"><title>${name}</title>
@@ -311,9 +377,10 @@ for (const { item, name, group, markup, code, install, componentNames, gallery }
 </head>
 <body>
 <div class="ld-theme ds-stage" data-surface="grouped">
-${followFrameTheme(markup)}
+<div id="ds-sample">${followFrameTheme(markup)}</div>
 ${galleryHtml(gallery)}
 </div>
+${liveScript(item, script, gallery)}
 </body>
 </html>
 `,
@@ -344,9 +411,13 @@ ${code}
 
 ## Use it in an HTML page or artifact
 
-The markup Lede renders for that sample. Load \`components/bundle.css\` and copy it as it is: the class names, elements
-and ARIA attributes are what the component writes. Interactive parts (a switch's toggle, a disclosure opening) need
-the React component; in plain HTML they show their initial state.
+To mount the component itself, load React and \`components/bundle.js\` as the README's "Live components" says. Then
+\`window.Lede.${componentNames[0] ?? name}\` is this component, and the sample above runs with its imports read from
+\`window.React\` and \`window.Lede\`.
+
+Without scripts, use the markup Lede renders for that sample. Load \`components/bundle.css\` and copy it as it is: the
+class names, elements and ARIA attributes are what the component writes. Interactive parts (a switch's toggle, a
+disclosure opening) need the component; in plain HTML they show their initial state.
 
 \`\`\`html
 ${pretty(markup)}
@@ -371,6 +442,16 @@ for (const { name, componentNames } of cards) {
   if (rel && declarations.has(rel)) write(`components/${name}/${name}.d.ts`, `${strip(declarations.get(rel))}\n`);
 }
 
+// ---- components/bundle.js and components/lib/: the live components ------------------------------------------------
+const reactVersion = JSON.parse(read('node_modules/react/package.json')).version;
+const { files: libraryFiles, libraries } = await buildLibraries(reactVersion);
+for (const [path, text] of Object.entries(libraryFiles)) write(path, text);
+const bundleJs = await buildBundle({
+  header: { format: 4, namespace: 'Lede', components: cards.filter((c) => ledeExports.has(c.name)).map((c) => ({ name: c.name })) },
+  banner: `/* Lede ${VERSION} (fairchild/lede-design@${sha}): every registry export as window.Lede, on React ${reactVersion} from components/lib/. GENERATED by scripts/build-design-system.mjs. */`,
+});
+write('components/bundle.js', bundleJs);
+
 // ---- README, cover and index ------------------------------------------------------------------------------------
 const fill = (text) =>
   text
@@ -379,10 +460,11 @@ const fill = (text) =>
     .replaceAll('{{REGISTRY_URL}}', REGISTRY_URL)
     .replaceAll('{{DESIGN_SYSTEM_URL}}', DESIGN_SYSTEM_URL)
     .replaceAll('{{CANVAS_URL}}', CANVAS_URL)
+    .replaceAll('{{REACT_VERSION}}', reactVersion)
     .replaceAll('{{MOTION}}', source.motion.tokens.map((t) => `| \`--${t.name}\` | \`${t.value}\` | ${t.usage} |`).join('\n'))
     .replaceAll(
       '{{COMPONENTS}}',
-      ['Components', 'Blocks']
+      GROUPS
         .map((group) => `**${group}:** ${cards.filter((c) => c.group === group).map((c) => c.name).join(' · ')}`)
         .join('\n\n'),
     );
@@ -396,7 +478,7 @@ const index = {
   ...(previousIndex?.createdOnFiles || previousIndex?.convertedFrom ? {} : { createdOnFiles: { v: 1, at: now } }),
   title: previousIndex?.title ?? 'Lede',
   namespace: 'Lede',
-  libraries: [],
+  libraries,
   sections: previousIndex?.sections ?? {},
   groups: previousIndex?.groups ?? [],
   assetGroups: previousIndex?.assetGroups ?? {},
@@ -406,4 +488,5 @@ const index = {
 };
 write('design-system.json', `${JSON.stringify(index, null, 1)}\n`);
 
-console.log(`design-system: ${OUT} — ${tokens.color.tokens.length} colors × ${tokens.color.themes.length} themes, ${cards.length} components (${cards.map((c) => c.name).join(', ')})`);
+const kb = (text) => `${Math.round(Buffer.byteLength(text) / 1024)} KB`;
+console.log(`design-system: ${OUT} — ${tokens.color.tokens.length} colors × ${tokens.color.themes.length} themes, ${cards.length} components (${cards.map((c) => c.name).join(', ')}), bundle.js ${kb(bundleJs)} on React ${reactVersion}`);

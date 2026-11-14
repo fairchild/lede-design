@@ -12,6 +12,13 @@
 - The Integrations page has a Claude section that links the design system and a canvas of Lede's foundations and
   components, and shows how an HTML artifact copies Lede's stylesheet. `llms.txt` and the `lede-design-system` skill
   link them too.
+- The design system's previews are the real components. `components/bundle.js` assigns every registry export to
+  `window.Lede`, and the system carries React 19 in `components/lib/`, so a canvas or an artifact can mount Lede's
+  components instead of copying their markup. The README says how.
+- The design system has a card for each hero flow (DailyBriefFlow, InboxFlow, OnboardingFlow, ProfileFlow and
+  SettingsFlow), for AppShell, WorkbenchShell and SelectionBar, and for useServerRows and SpecView, from new samples in
+  the docs. The flows come first. The README covers the theme and the shared utilities, which draw nothing.
+- The Blocks page shows the code for AppShell, WorkbenchShell and useServerRows.
 
 ## 0.5.2
 

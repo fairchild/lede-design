@@ -112,7 +112,12 @@ Lede's design system on claude.ai, which Claude reads to build with Lede in a ch
 from this repo too. `npm run design-system` writes it to `dist-design-system/project/` (git-ignored): `tokens.json` in
 the shape the design system page reads, `components/bundle.css` with every token, component and block style, and a
 card for each registry item with a sample in `src/pages/docs/samples/`, rendered to static HTML by React's server
-renderer. `scripts/design-system-api.mjs` reads each component's props and doc comments with the TypeScript compiler
+renderer. `scripts/design-system-bundle.mjs` builds `components/bundle.js`, every registry export as `window.Lede`,
+and React and ReactDOM into `components/lib/`, because Lede needs React 19 and the page loads React 18 unless the
+system carries its own. Each preview compiles its sample against those globals and mounts it over the static markup,
+which stays if the bundle doesn't load. A sample can import only from `react` and `@/components/lede/…`, and only
+names the registry's `index.ts` barrels export, and a preview fetches nothing: a sample that fetches gets a stand-in
+in the generator's `PRELUDE`. `scripts/design-system-api.mjs` reads each component's props and doc comments with the TypeScript compiler
 for the card's props table, and the card renders every value of each prop that takes a set of strings. Its
 accessibility section names the native behavior of what the markup holds. A prop's doc comment is the description
 an agent reads, so write its default as "Default `x`". The README and the cover are `scripts/design-system/README.md`
