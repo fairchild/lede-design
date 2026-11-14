@@ -20,6 +20,8 @@ picks what to run.
   from `npm run preview` (4173), because outside CI they reuse whatever server is on their port; a first check fails
   if that server has no fixture pages.
 - `npm run contrast` — the contrast gate alone; `npm run contrast -- --report` prints every pair.
+- `scripts/preview-pr.sh <N>` — builds pull request N and uploads it as the Worker Preview `pr-<N>` (`--dry-run`,
+  `--comment`, `--delete`). `CONTRIBUTING.md` covers credentials.
 - `npm run design-system` — writes Lede's design system for claude.ai to `dist-design-system/project/`.
   CONTRIBUTING.md says how to publish it.
 - CI runs what a PR into main can affect, and `check` is the one status to read. `scripts/ci-tier.mjs` sorts the

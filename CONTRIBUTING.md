@@ -55,6 +55,41 @@ PW_TEST_CONNECT_WS_ENDPOINT=ws://127.0.0.1:3000/ PW_TEST_CONNECT_EXPOSE_NETWORK=
 docker stop pw-linux
 ```
 
+## Preview a pull request
+
+`scripts/preview-pr.sh` puts a pull request's docs site and its three example apps on a public URL before it merges.
+It builds the head of an open pull request from a branch of this repo in a new worktree under `~/.worktrees/lede/`,
+uploads it as the Worker Preview `pr-<N>` and removes the worktree when it exits:
+
+```bash
+scripts/preview-pr.sh 84 --comment
+```
+
+The URL is `https://pr-<N>-lede-design.<subdomain>.workers.dev`, with the example apps under `/examples/<app>/`. They
+answer from the scripted mock transport. `--comment` posts the URL on the pull request and edits your same comment on
+later runs. `--dry-run` builds everything and prints the upload command without running it.
+
+The preview runs the pull request's `worker/` and site with the settings and bindings of `wrangler.jsonc` on `main`.
+The script passes that file to wrangler with `--config` from a directory of its own, so a `wrangler.json`, a config
+redirect or a `.env` in the pull request has no effect. A config that names an `account_id` stops the run.
+
+Previews bind the production R2 bucket, `lede-design`, with read and write access. The Worker on `main` only reads it,
+and this access is accepted so previews show real releases, `r/next/` and media. A pull request whose `worker/` change
+writes to or deletes from the bucket gets reviewed before anyone previews it.
+
+The script reads `CLOUDFLARE_API_TOKEN`, or `CF_API_TOKEN`, and uses your `wrangler login` when neither is set. It
+prints which. It stops when a global API key (`CLOUDFLARE_API_KEY` or `CF_API_KEY`) is set, since wrangler prefers that
+key to a token. The build runs with every `CLOUDFLARE_`, `CF_` and `WRANGLER_` variable cleared. A token needs Workers
+Scripts: Edit on the irons in the fire account. If the script reports that it can't see that account, add Account
+Settings: Read, which `wrangler whoami` needs to list it. The script refuses any other account, for the upload and for
+`--delete`.
+
+When the pull request closes, delete its preview:
+
+```bash
+scripts/preview-pr.sh 84 --delete
+```
+
 ## How the code is organized
 
 Lede has five layers, and dependencies only point down:
