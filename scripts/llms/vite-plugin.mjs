@@ -63,7 +63,9 @@ export function llms() {
       server.watcher.on('all', () => { files = null; });
       server.middlewares.use(async (req, res, next) => {
         const path = pathOf(req.url);
-        if (path === null || !isGenerated(path)) return next();
+        if (path === null) return next();
+        // Any other Markdown path is a file the site doesn't have: 404, as the Worker and the preview server answer.
+        if (!isGenerated(path)) return path.endsWith('.md') ? send(res, 404, 'Not found\n') : next();
         try {
           files ??= generate((id) => server.ssrLoadModule(id));
           const body = (await files).get(path);

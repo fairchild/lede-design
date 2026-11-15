@@ -75,8 +75,9 @@ export async function generate(load) {
   });
   const llms = read(TEMPLATE)
     .replaceAll('{{VERSION}}', version)
-    .replace('{{DOCS}}', twins.map((twin) => `- [${twin.title}](${SITE}${twin.path}): ${twin.about}`).join('\n'))
-    .replace('{{ITEMS}}', sections.join('\n\n'));
+    // Functions, so a `$` in a description stays a `$`: a replacement string would read `$&` and `$$` as patterns.
+    .replace('{{DOCS}}', () => twins.map((twin) => `- [${twin.title}](${SITE}${twin.path}): ${twin.about}`).join('\n'))
+    .replace('{{ITEMS}}', () => sections.join('\n\n'));
   files.set('llms.txt', llms);
 
   // OKF's index files (§8): no front matter but the root's okf_version, then only headed lists of
