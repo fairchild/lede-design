@@ -34,7 +34,8 @@ const GROUPS = [
 export async function generate(load) {
   const { version } = JSON.parse(read('package.json'));
   const registry = JSON.parse(read('registry.json'));
-  const { api, declarations, exports } = readApi([...new Set(registry.items.flatMap((item) => item.files.map((f) => f.path)).filter((p) => /\.tsx?$/.test(p)))]);
+  const { api, declarations, exports, types, declarationTypes } = readApi([...new Set(registry.items.flatMap((item) => item.files.map((f) => f.path)).filter((p) => /\.tsx?$/.test(p)))]);
+  const owners = new Map(registry.items.flatMap((item) => item.files.map((file) => [file.path, item.name])));
   const imports = Object.fromEntries(registry.items.map((item) => [item.name, importLines(item, exports)]).filter(([, line]) => line));
   const files = new Map();
 
@@ -56,11 +57,13 @@ export async function generate(load) {
     const samplePath = `src/pages/docs/samples/${item.name}.tsx`;
     const sample = existsSync(samplePath) ? read(samplePath) : null;
     const pages = twins.filter((twin) => twin.text.includes(`${SITE}/reference/${item.name}.md`));
-    const install = installCommand(itemsToInstall([item.name], sample ?? ''));
-    const { meta, body, types } = referencePage(item, { version, api, exports, declarations, install, sample, pages });
-    checkHeadings(body + types, `/reference/${item.name}.md`);
-    files.set(`reference/${item.name}.md`, frontMatter(meta) + (types ? `${body}\n${types}` : body));
-    return { item, meta, body, types };
+    // The sample's imports can add items to the command; `itemsToInstall` puts them after the item itself.
+    const [, ...forExample] = itemsToInstall([item.name], sample ?? '');
+    const install = installCommand([item.name, ...forExample]);
+    const page = referencePage(item, { version, api, exports, declarations, declarationTypes, types, owners, install, forExample, sample, pages });
+    checkHeadings(page.body + page.types, `/reference/${item.name}.md`);
+    files.set(`reference/${item.name}.md`, frontMatter(page.meta) + (page.types ? `${page.body}\n${page.types}` : page.body));
+    return { item, ...page };
   });
 
   const placed = new Set();

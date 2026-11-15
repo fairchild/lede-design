@@ -59,8 +59,11 @@ test('llms.txt names this version and every file it links on this site is served
   expect((await request.get('/reference/nope.md')).status()).toBe(404);
 });
 
-test('the site serves Markdown as plain text through public/_headers, which the preview server doesn’t read', () => {
-  expect(readFileSync('public/_headers', 'utf8')).toMatch(/^\/\*\.md\n {2}Content-Type: text\/plain; charset=utf-8$/m);
+test('the site serves Markdown and text files as UTF-8 plain text through public/_headers, which the preview server doesn’t read', () => {
+  const headers = readFileSync('public/_headers', 'utf8');
+  expect(headers).toMatch(/^\/\*\.md\n {2}Content-Type: text\/plain; charset=utf-8$/m);
+  // llms.txt and llms-full.txt hold curly quotes.
+  expect(headers).toMatch(/^\/\*\.txt\n {2}Content-Type: text\/plain; charset=utf-8$/m);
 });
 
 /** Every concept file (each Markdown file but an index) reachable from llms.txt, as served, by path. */
@@ -197,6 +200,88 @@ test('a reference page lists its types, and llms-full.txt leaves them out and li
   const full = await read(request, '/llms-full.txt');
   expect(full).not.toMatch(/^## Types$/m);
   expect(full).toContain(`Its types: ${SITE}/reference/data-table.md#types`);
+});
+
+/** Each registry item's reference page, as served, by item name. */
+async function referencePages(request: APIRequestContext) {
+  return new Map(await Promise.all(registry.items.map(async (item) => [item.name, await read(request, `/reference/${item.name}.md`)] as const)));
+}
+/** A page's sections, each from its `## ` heading to the next. */
+const sectionsOf = (page: string) => page.split(/^(?=## )/m).slice(1);
+/** The names a reference page's Types section declares. */
+const declaredIn = (page: string) =>
+  new Set([...(page.split(/^## Types$/m)[1] ?? '').matchAll(/^(?:export )?(?:declare )?(?:type|interface|enum|class) ([A-Z]\w*)/gm)].map((m) => m[1]));
+/** A section's list of types from other items: each name, by the item its link names. */
+const listedTypes = (section: string) => new Map([...section.matchAll(
+  /^- `([A-Z]\w*)[^`]*` is (?:`[^`]*`, )?declared in \[`([\w-]+)`\]\(https:\/\/lede\.cloudcompute\.com\/reference\/([\w-]+)\.md#types\)\.$/gm,
+)].map((m) => { expect(m[2]).toBe(m[3]); return [m[1], m[2]] as const; }));
+
+test('a reference page shows each type it names from another item, by the props table that uses it', async ({ request }) => {
+  const pages = await referencePages(request);
+  const declared = new Map([...pages].map(([name, page]) => [name, declaredIn(page)]));
+  /** The item, other than `self`, whose reference page declares the type `name`. */
+  const owner = (self: string, name: string) => (declared.get(self)!.has(name) ? null : [...declared].find(([, names]) => names.has(name))?.[0] ?? null);
+  let checked = 0;
+  for (const [item, page] of pages) {
+    for (const section of sectionsOf(page)) {
+      const listed = listedTypes(section);
+      for (const [name, from] of listed) {
+        expect(declared.get(from)!.has(name), `${item}: ${name} is declared in ${from}`).toBe(true);
+        expect(declared.get(item)!.has(name), `${item}: ${name} is declared on the page itself`).toBe(false);
+      }
+      // The names in the props table's Type column, and those the declarations import from another file.
+      const named = /^## (\w+ )?[Pp]rops$/m.test(section)
+        ? [...section.matchAll(/^\| `[^`]+`(?: \(required\))? \| `((?:[^`\\]|\\.)*)` \|/gm)].flatMap((m) => [...m[1].matchAll(/(?<![.\w])[A-Z]\w*/g)].map((n) => n[0]))
+        : /^## Types$/m.test(section)
+          ? [...section.matchAll(/^import (?:type )?\{([^}]*)\} from '\.{1,2}\/[^']*';$/gm)].flatMap((m) => m[1].split(',').map((name) => name.trim().replace(/^type /, '').split(' as ')[0]))
+          : [];
+      for (const name of named) {
+        const from = owner(item, name);
+        if (!from) continue;
+        expect(listed.get(name), `${item}: ${section.split('\n')[0]} names ${name}, from ${from}`).toBe(from);
+        checked += 1;
+      }
+    }
+  }
+  expect(checked, 'types from other items').toBeGreaterThan(10);
+
+  // A short type is written out, and a long one is only linked.
+  const props = sectionsOf(pages.get('data-table')!).find((section) => section.startsWith('## Props'))!;
+  const noun = "- `Noun` is `{ one: string; other: string }`, declared in [`selection-bar`](https://lede.cloudcompute.com/reference/selection-bar.md#types).";
+  expect(props).toContain(noun);
+  expect(props).toContain('- `RowAction` is declared in [`list`](https://lede.cloudcompute.com/reference/list.md#types).');
+  expect(pages.get('data-table')!.split(/^## Types$/m)[1]).toContain("- `SortDirection` is `'ascending' | 'descending'`, declared in [`table`]");
+  // llms-full.txt leaves the Types sections out and keeps the props tables, so it has the type too.
+  expect(await read(request, '/llms-full.txt')).toContain(noun);
+});
+
+test('a props table says which attributes it leaves out, beside the table', async ({ request }) => {
+  const pages = await referencePages(request);
+  expect(pages.get('theme-provider')).toContain('ThemeProvider also takes the attributes of `<div>`, such as `className`.');
+  expect(pages.get('card')).toContain('Card also takes the attributes of `<div>`, such as `className`.');
+  expect(pages.get('button')).toContain('Button also takes the attributes of `<button>` or `<a>`, whichever it renders, such as `className`.');
+  // Switch lists `className` itself, since it goes on the wrapper.
+  expect(pages.get('switch')).toContain('Switch also takes the attributes of `<span>`, such as `aria-describedby`.');
+  expect(pages.get('data-table')).not.toContain(' also takes ');
+  for (const [item, page] of pages) {
+    for (const section of sectionsOf(page).filter((s) => / also takes /.test(s))) {
+      const [, name, example] = section.match(/^(\w+) also takes .*?(?:, such as `([^`]+)`)?(?:, and .*)?\.$/m) ?? [];
+      expect(name, `${item}: the sentence is under a props table`).toBeTruthy();
+      expect(section, item).toMatch(new RegExp(`^## (${name} props|Props)$`, 'm'));
+      if (example) expect(section, `${item}: ${example} is a row of the table`).not.toContain(`| \`${example}\``);
+    }
+  }
+});
+
+test('an install command that adds an item for the example says which', async ({ request }) => {
+  const pages = await referencePages(request);
+  expect(pages.get('page-header')).toContain('npx shadcn@latest add @lede/page-header @lede/button');
+  expect(pages.get('page-header')).toContain('It adds [`button`](https://lede.cloudcompute.com/reference/button.md) only because the example below imports it.');
+  for (const [item, page] of pages) {
+    const [, ...extra] = page.match(/^npx shadcn@latest add (.*)$/m)![1].split(' ').map((name) => name.replace(/^@lede\//, ''));
+    const adds = page.match(/ It adds (.*) only because the example below imports (?:it|them)\./)?.[1] ?? '';
+    expect([...adds.matchAll(/\[`([\w-]+)`\]/g)].map((m) => m[1]), item).toEqual(extra);
+  }
 });
 
 test('a fence indented in a list item hides its # lines from the heading check', () => {
