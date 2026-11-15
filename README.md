@@ -51,7 +51,7 @@ printf '@import "tailwindcss";\n' > src/index.css
    don't install it.
 
    ```bash
-   npx shadcn@latest registry add '@lede=https://lede.cloudcompute.com/r/v0.5.2/{name}.json'
+   npx shadcn@latest registry add '@lede=https://lede.cloudcompute.com/r/v0.5.3/{name}.json'
    npx shadcn@latest add @lede/theme-provider @lede/data-table @lede/daily-brief @lede/inbox
    ```
 

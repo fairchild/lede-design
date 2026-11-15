@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## 0.5.3
+
+The docs site reads without JavaScript: every page links `llms.txt`, and each docs page and registry item has a
+Markdown version. Lede has a design system on claude.ai. The registry's files are the same as in 0.5.2, and the registry
+for this release is `https://lede.cloudcompute.com/r/v0.5.3/{name}.json`.
 
 ### Added
 
