@@ -16,9 +16,8 @@ const section = (readme: string, heading: string) => readme.split(new RegExp(`^#
 
 /**
  * The README's "Use it in a shadcn project" section, so Overview shows the README's own words: what comes before step 1,
- * the numbered steps, each its paragraphs and fenced code, dedented, in order, and what follows them. A `### ` subsection
- * and all under it belong to what follows, so its numbered lines aren't steps. The site shows the steps, and the docs'
- * Markdown build all three.
+ * the numbered steps, each its paragraphs and fenced code, dedented, in order, and what follows them. The site shows the
+ * steps, and the docs' Markdown build all three.
  */
 export function installGuide(readme: string): InstallGuide {
   const before: string[] = [];
@@ -26,11 +25,8 @@ export function installGuide(readme: string): InstallGuide {
   const steps: Step[] = [];
   let lines: string[] | undefined;
   const close = () => { if (lines) steps.push({ number: steps.length + 1, blocks: blocksOf(lines) }); };
-  let subsection = false;
   for (const line of section(readme, 'Use it in a shadcn project').split('\n')) {
-    subsection ||= line.startsWith('### ');
-    if (subsection) { close(); lines = undefined; after.push(line); }
-    else if (/^\d+\. /.test(line)) { close(); lines = [line.replace(/^\d+\. /, '')]; }
+    if (/^\d+\. /.test(line)) { close(); lines = [line.replace(/^\d+\. /, '')]; }
     else if (lines && (line === '' || line.startsWith('   '))) lines.push(line.slice(3));
     else if (lines) { close(); lines = undefined; after.push(line); }
     else (steps.length ? after : before).push(line);

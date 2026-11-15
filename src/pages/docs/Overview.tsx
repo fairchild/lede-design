@@ -79,7 +79,7 @@ const LIMITS = readmeBlocks(readme, 'Limits');
 /** What each step's code shows, in order. A step the README adds later is named by its number. */
 const CODE_LABELS: Record<number, string[]> = { 2: ['CSS import'], 3: ['Import a component'], 4: ['Wrap your app', 'React Router adapter'] };
 /** What the code after the steps shows, in order: “Start from a new Vite app”. A block the README adds later is “Code”. */
-const AFTER_LABELS = ['Create the app', 'vite.config.ts', 'The alias in both tsconfig files', 'Replace src/index.css and run shadcn init', 'Append step 2’s import'];
+const AFTER_LABELS = ['Create the app', 'vite.config.ts', 'The alias in both tsconfig files', 'Replace src/index.css and run shadcn init', 'Append step 2’s import', 'src/main.tsx', 'src/App.tsx'];
 
 /**
  * README prose as the site writes it: code in `<code>`, bold, links to the repo, and curly quotes outside code. With

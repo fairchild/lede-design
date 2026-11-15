@@ -147,7 +147,37 @@ Now follow steps 1 to 4. `init` leaves `src/index.css` without a final newline, 
 printf '\n@import "./styles/lede/index.css";\n' >> src/index.css
 ```
 
-In step 4, wrap `<App />` in `src/main.tsx`, and leave out `LinkProvider`, since a new app has no router.
+For step 4, replace `src/main.tsx` with this one. It leaves out `LinkProvider`, since a new app has no router.
+
+```tsx
+import { StrictMode } from 'react'
+import { createRoot } from 'react-dom/client'
+import { ThemeProvider } from '@/components/lede/theme-provider'
+import './index.css'
+import App from './App.tsx'
+
+createRoot(document.getElementById('root')!).render(
+  <StrictMode>
+    <ThemeProvider surface="grouped" className="min-h-dvh">
+      <App />
+    </ThemeProvider>
+  </StrictMode>,
+)
+```
+
+Then replace `src/App.tsx` with a first screen built from step 1's items, and run `npm run dev`:
+
+```tsx
+import { ListGroup, ListRow } from '@/components/lede/list'
+
+export default function App() {
+  return (
+    <ListGroup title="Account">
+      <ListRow title="Name" value="Ada Lovelace" />
+    </ListGroup>
+  )
+}
+```
 
 ## Limits
 

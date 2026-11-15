@@ -67,6 +67,22 @@ test('/overview.md shows every block and subsection of the README’s install se
   expect(fencesAndHeadings(overview)).toEqual([...expected, 'Limits']);
 });
 
+/** Each block of “Start from a new Vite app”: its label in Overview’s Markdown, and text only that block holds. */
+const NEW_APP_BLOCKS = [
+  ['Create the app', 'npm create vite@latest'], ['vite.config.ts', 'defineConfig({'], ['The alias in both tsconfig files', '"paths"'],
+  ['Replace src/index.css and run shadcn init', 'shadcn@latest init'], ['Append step 2’s import', '>> src/index.css'],
+  ['src/main.tsx', 'createRoot('], ['src/App.tsx', 'export default function App'],
+];
+
+// Overview names these blocks by their position, so a label can end up over another block's code.
+test('/overview.md labels each block of “Start from a new Vite app” for what it holds', async ({ request, isMobile }) => {
+  test.skip(isMobile, 'A file reads the same at every width.');
+  const overview = (await (await request.get('/overview.md')).text()).split(/^### Start from a new Vite app$/m)[1].split(/^##+ /m)[0];
+  const labeled = [...overview.matchAll(/^(.+):\n\n```\w*\n([\s\S]*?)\n```$/gm)].map(([, label, code]) => [label, code]);
+  expect(labeled.map(([label]) => label)).toEqual(NEW_APP_BLOCKS.map(([label]) => label));
+  for (const [i, [label, marker]] of NEW_APP_BLOCKS.entries()) expect(labeled[i][1], label).toContain(marker);
+});
+
 for (const route of ROUTES) {
   test(`${route}: every example shows its source, character for character`, async ({ page }) => {
     await page.goto(route);
