@@ -1,7 +1,8 @@
 // What an agent reads without JavaScript, as the build serves it: llms.txt, each docs page's Markdown, each registry
 // item's reference page and the Open Knowledge Format indexes, from scripts/llms/. The build itself fails a page that
 // keeps a live control or skips a heading level; these read what it wrote.
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
+import { sep } from 'node:path';
 import { parse } from 'yaml';
 import { test, expect, type APIRequestContext } from '@playwright/test';
 import { checkHeadings, withoutCode } from '../scripts/llms/markdown.mjs';
@@ -101,11 +102,23 @@ test('every concept reachable from llms.txt has OKF front matter, then its one h
   }
 });
 
+/** Every Markdown file in the build the tests' server serves (playwright.config.ts), by path, read from disk. */
+const built = () => readdirSync('dist-fixtures', { recursive: true, encoding: 'utf8' })
+  .filter((file) => file.endsWith('.md'))
+  .map((file) => `/${file.split(sep).join('/')}`);
+
 // Its three rules (§11): each concept has front matter with a type; each index follows §8, front matter only at the root
 // and only okf_version (§12); and here, each index entry resolves and every concept is listed.
 test('the Markdown files are an Open Knowledge Format v0.2 bundle', async ({ request }) => {
   const files = await concepts(request);
-  for (const [path, file] of files) {
+  // Every Markdown file in the build, not only those llms.txt reaches: a stray one fails here.
+  const onDisk = built();
+  expect(onDisk.filter(isIndex).sort(), 'the index files in the build').toEqual([...INDEXES].sort());
+  for (const path of onDisk) {
+    const file = readFileSync(`dist-fixtures${path}`, 'utf8');
+    // A line of only spaces is a list item's blank line indented.
+    expect(file, `${path} has a line of only spaces`).not.toMatch(/^ +$/m);
+    if (isIndex(path)) continue;
     const { type } = split(file, path).meta;
     expect(typeof type === 'string' && type.length > 0, `${path}: type`).toBe(true);
   }
@@ -134,7 +147,7 @@ test('the Markdown files are an Open Knowledge Format v0.2 bundle', async ({ req
       if (files.has(target)) expect(description, target).toBe(split(files.get(target)!, target).meta.description);
     }
   }
-  for (const path of files.keys()) expect(listed.has(path), `${path} is in an index`).toBe(true);
+  for (const path of onDisk.filter((file) => !isIndex(file))) expect(listed.has(path), `${path} is in an index`).toBe(true);
   expect(listed.has('/reference/index.md')).toBe(true);
 });
 

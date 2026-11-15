@@ -41,12 +41,15 @@ export function linkTarget(href, routes) {
 
 /** Elements a reader acts on. Only a Disclosure's own trigger may stay in a page's Markdown build. */
 const CONTROL = /^(?:INPUT|SELECT|TEXTAREA|BUTTON|DETAILS|SUMMARY|IFRAME|OBJECT|EMBED|VIDEO|AUDIO|CANVAS)$/;
-const CONTROL_ROLE = /^(?:button|switch|checkbox|radio|slider|spinbutton|textbox|searchbox|combobox|listbox|option|tab|tablist|menuitem|menuitemcheckbox|menuitemradio)$/;
+const CONTROL_ROLE = /^(?:button|switch|checkbox|radio|slider|spinbutton|textbox|searchbox|combobox|listbox|option|tab|tablist|menuitem|menuitemcheckbox|menuitemradio|tree|treeitem|treegrid|grid|gridcell|link|menu|menubar|radiogroup|scrollbar)$/;
 const isControl = (node) => {
   if (node.classList?.contains('ld-disc-head')) return false;
   const role = node.getAttribute?.('role') ?? '';
-  // A separator that takes focus is a window splitter, which a reader drags.
-  return CONTROL.test(node.nodeName) || CONTROL_ROLE.test(role) || (role === 'separator' && node.hasAttribute('tabindex'));
+  const tabindex = node.getAttribute?.('tabindex');
+  // A separator that takes focus is a window splitter, which a reader drags. Any element in the tab order, or that
+  // takes typing, is a control whatever its role.
+  return CONTROL.test(node.nodeName) || CONTROL_ROLE.test(role) || (role === 'separator' && tabindex !== null)
+    || node.hasAttribute?.('contenteditable') || (tabindex !== null && Number(tabindex) >= 0);
 };
 
 /** The page, the section and the element, so a failure says where to look. */
@@ -126,7 +129,7 @@ export function createConverter(routes) {
     replacement: (content, node) => {
       const parent = node.parentNode;
       const marker = parent.nodeName === 'OL' ? `${Array.prototype.indexOf.call(parent.children, node) + 1}. ` : '- ';
-      const body = content.replace(/^\n+/, '').replace(/\n+$/, '\n').replace(/\n/gm, `\n${' '.repeat(marker.length)}`);
+      const body = content.replace(/^\n+/, '').replace(/\n+$/, '\n').replace(/\n(?=.)/g, `\n${' '.repeat(marker.length)}`);
       return marker + body + (node.nextSibling && !/\n$/.test(body) ? '\n' : '');
     },
   });

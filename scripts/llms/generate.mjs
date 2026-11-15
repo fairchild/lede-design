@@ -89,7 +89,7 @@ export async function generate(load) {
     ...itemSections('reference/'),
     section('Other indexes', [
       entry('Reference pages', 'reference/index.md', 'Every registry item\'s reference page, by group.'),
-      entry('llms.txt', 'llms.txt', `These files for agents, with Lede ${version}, the registry indexes and the source's Markdown files.`),
+      entry('llms.txt', 'llms.txt', `Every docs page and reference page, with Lede ${version}, the registry indexes and the repo's Markdown files.`),
     ]),
   ].join('\n\n')}\n`);
   files.set('reference/index.md', `${itemSections('').join('\n\n')}\n`);

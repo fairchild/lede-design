@@ -6,7 +6,7 @@ import { SpecView } from '@lede/json-render/spec-view';
 import registry from '../../../registry.json';
 import { version } from '../../../package.json';
 import { CodeExample } from './CodeExample';
-import { Live, useTwin } from './twin';
+import { Live, ReferenceLinks, useTwin } from './twin';
 import { REPO } from './DocsLayout';
 import { EXAMPLE_APPS } from './integration-apps';
 import spec from './examples/json-render-spec.json';
@@ -51,7 +51,9 @@ export function Integrations() {
       <section aria-labelledby="json-render" className="docs-section">
         <h2 id="json-render" className="text-title-3">json-render</h2>
         <p className="docs-intro">SpecView draws a <a href="https://github.com/vercel-labs/json-render">json-render</a> spec with Lede, so a model’s reply can be a screen. <code>catalog</code> lists the components a model may use and goes into its prompt, <code>registry</code> draws each one and <code>check</code> finds the props a spec gets wrong.</p>
-        <CodeExample label="Install commands for SpecView" language="shell" code={INSTALL_CODE} defaultOpen />
+        <ReferenceLinks items={['json-render']}>
+          <CodeExample label="Install commands for SpecView" language="shell" code={INSTALL_CODE} defaultOpen />
+        </ReferenceLinks>
         <p className="docs-intro docs-note">The item brings the Lede components it draws and these npm packages, json-render’s at an exact version: {codeList(ITEM.dependencies ?? [])}. Then import Lede’s CSS once, as <RouterLink href="/#install">Overview → Install</RouterLink> shows.</p>
       </section>
       <section aria-labelledby="json-render-example" className="docs-section">
