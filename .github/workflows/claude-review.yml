@@ -1,0 +1,111 @@
+name: Claude review
+# Claude reviews each pull request with the code-review plugin and posts its findings on the PR.
+#
+# Which account pays is the repository variable CLAUDE_REVIEW_AUTH (Settings → Secrets and variables → Actions →
+# Variables):
+#   api           the Claude API, billed to the Console workspace. It signs in with Workload Identity Federation, so
+#                 there's no API key to store: the job's GitHub OIDC token is exchanged for a short-lived token for
+#                 the service account below. The default when the variable isn't set.
+#   subscription  the Claude subscription, through the CLAUDE_CODE_OAUTH_TOKEN secret (`claude setup-token`).
+#   auto          the subscription first, and the API when that run fails, as it does once the subscription's
+#                 usage runs out. A failure for any other reason also falls through to the API.
+#   off           no review.
+# A manual run takes a PR number and can override the variable for that one run.
+#
+# The federation IDs are identifiers, not credentials. Each can be overridden with a repository variable of the
+# same name. The federation rule has to match this workflow's OIDC subject: `repo:fairchild/lede-design:pull_request`
+# for a PR, and `repo:fairchild/lede-design:ref:refs/heads/<branch>` for a manual run.
+on:
+  pull_request:
+    types: [opened, synchronize, ready_for_review, reopened]
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: Pull request number to review
+        required: true
+        type: number
+      auth:
+        description: Who pays for this run (default is the CLAUDE_REVIEW_AUTH variable)
+        type: choice
+        options: [default, api, subscription, auto]
+        default: default
+permissions:
+  contents: read
+concurrency:
+  group: claude-review-${{ github.event.pull_request.number || inputs.pr }}
+  cancel-in-progress: true
+env:
+  ANTHROPIC_FEDERATION_RULE_ID: ${{ vars.ANTHROPIC_FEDERATION_RULE_ID || 'fdrl_01Svj63dhm2bhEXz55uNu1vG' }}
+  ANTHROPIC_ORGANIZATION_ID: ${{ vars.ANTHROPIC_ORGANIZATION_ID || '661423c5-bf1a-472c-8d9b-07c7950a3daf' }}
+  ANTHROPIC_SERVICE_ACCOUNT_ID: ${{ vars.ANTHROPIC_SERVICE_ACCOUNT_ID || 'svac_01QySJwzBKASBuhaXAC3h8at' }}
+  ANTHROPIC_WORKSPACE_ID: ${{ vars.ANTHROPIC_WORKSPACE_ID || 'wrkspc_017tWLVR4ouF9ZADCnPNoimb' }}
+  REVIEW_PROMPT: /code-review:code-review --comment ${{ github.repository }}/pull/${{ github.event.pull_request.number || inputs.pr }}
+jobs:
+  review:
+    # A fork's PR gets no OIDC token and no secrets, so it has nothing to sign in with.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      pull-requests: read
+      issues: read
+      id-token: write
+    steps:
+      - name: Pick who pays
+        id: auth
+        env:
+          REQUESTED: ${{ inputs.auth }}
+          CONFIGURED: ${{ vars.CLAUDE_REVIEW_AUTH }}
+        run: |
+          mode=${REQUESTED:-default}
+          [ "$mode" = default ] && mode=${CONFIGURED:-api}
+          case $mode in
+            api|subscription|auto|off) ;;
+            *) echo "::error title=CLAUDE_REVIEW_AUTH::'$mode' isn't one of api, subscription, auto or off."; exit 1 ;;
+          esac
+          echo "mode=$mode" >> "$GITHUB_OUTPUT"
+          echo "::notice title=Claude review::Billing: $mode"
+
+      - if: steps.auth.outputs.mode != 'off'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+          ref: ${{ github.event_name == 'workflow_dispatch' && format('refs/pull/{0}/head', inputs.pr) || '' }}
+
+      # The subscription. In auto mode a failure here hands the review to the API step.
+      - name: Review (subscription)
+        id: subscription
+        if: steps.auth.outputs.mode == 'subscription' || steps.auth.outputs.mode == 'auto'
+        continue-on-error: ${{ steps.auth.outputs.mode == 'auto' }}
+        uses: anthropics/claude-code-action@f3b070c88125d33dbae5653df5f143101d4ea9dc # v1.0.276
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          plugin_marketplaces: https://github.com/anthropics/claude-plugins-official.git
+          plugins: code-review@claude-plugins-official
+          prompt: ${{ env.REVIEW_PROMPT }}
+          claude_args: '--allowedTools "mcp__github_inline_comment__create_inline_comment"'
+
+      # The API, signed in with Workload Identity Federation. No static credential may be set on this step, or it
+      # wins over federation.
+      - name: Review (API)
+        if: >-
+          steps.auth.outputs.mode == 'api' ||
+          (steps.auth.outputs.mode == 'auto' && steps.subscription.outcome == 'failure')
+        uses: anthropics/claude-code-action@f3b070c88125d33dbae5653df5f143101d4ea9dc # v1.0.276
+        with:
+          anthropic_federation_rule_id: ${{ env.ANTHROPIC_FEDERATION_RULE_ID }}
+          anthropic_organization_id: ${{ env.ANTHROPIC_ORGANIZATION_ID }}
+          anthropic_service_account_id: ${{ env.ANTHROPIC_SERVICE_ACCOUNT_ID }}
+          anthropic_workspace_id: ${{ env.ANTHROPIC_WORKSPACE_ID }}
+          plugin_marketplaces: https://github.com/anthropics/claude-plugins-official.git
+          plugins: code-review@claude-plugins-official
+          prompt: ${{ env.REVIEW_PROMPT }}
+          claude_args: '--allowedTools "mcp__github_inline_comment__create_inline_comment"'
+
+      - name: Note the fallback
+        if: steps.auth.outputs.mode == 'auto' && steps.subscription.outcome == 'failure'
+        run: echo "::warning title=Claude review::The subscription run failed, so the API reviewed this PR."
