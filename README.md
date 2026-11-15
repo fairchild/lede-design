@@ -6,6 +6,8 @@ takeaway, and detail opens on request. The name is the journalist's word for a s
 [Docs](https://lede.cloudcompute.com/) · [Daybook, the demo app](https://lede.cloudcompute.com/app) ·
 [Install](#use-it-in-a-shadcn-project) · [Changelog](CHANGELOG.md)
 
+A coding agent starts at https://lede.cloudcompute.com/llms.txt, the docs index it can read without JavaScript.
+
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/inbox-dark.png">
   <img alt="Daybook's inbox: a list of messages beside the open one, each row leading with its subject and sender." src="docs/screenshots/inbox-light.png">

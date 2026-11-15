@@ -20,6 +20,8 @@ const ALLOWED: { [K in keyof AppearancePrefs]: (v: unknown) => boolean } = {
 
 /** Storage can hold anything, so each field is kept only when it has the right type and an allowed value. */
 function load(): AppearancePrefs {
+  // The docs' Markdown build renders in Node, which has no window and no stored prefs.
+  if (typeof window === 'undefined') return DEFAULTS;
   try {
     const stored: unknown = JSON.parse(localStorage.getItem(KEY) ?? 'null');
     if (typeof stored !== 'object' || stored === null) return DEFAULTS;

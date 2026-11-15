@@ -11,6 +11,7 @@ import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { createServer } from 'vite';
 import { readApi } from './design-system-api.mjs';
+import { cell, propsTable, titledComponents } from './item-docs.mjs';
 
 const OUT = 'dist-design-system/project';
 const SRC = 'scripts/design-system';
@@ -243,7 +244,7 @@ try {
     const name = item.title.split(',')[0].trim();
     const group = item.type === 'registry:component' ? 'Components' : 'Blocks';
     const code = read(samplePath).trim();
-    const componentNames = item.title.split(',').map((title) => title.trim()).filter((title) => api.has(title));
+    const componentNames = titledComponents(item, api);
     const gallery = await renderGallery(componentNames);
     cards.push({ item, name, group, exportName, markup, code, componentNames, gallery, install: installCommand(itemsToInstall([item.name], code)) });
   }
@@ -256,12 +257,6 @@ const summary = (text) => text.replace(/\s+/g, ' ').trim();
 // A sample that renders ThemeProvider pins the server's default, light, on its outermost wrapper. The preview drops it
 // there, so the card follows the page's theme switch; a nested ThemeProvider with its own scheme keeps it.
 const followFrameTheme = (markup) => markup.replace(/^(<div class="ld-theme") data-theme="light"/, '$1');
-const cell = (text) => text.replace(/\|/g, '\\|').replace(/\s+/g, ' ').trim();
-const propsTable = ({ props }) =>
-  props.length
-    ? ['| Prop | Type | Default | Description |', '| --- | --- | --- | --- |',
-      ...props.map((p) => `| \`${p.name}\`${p.optional ? '' : ' (required)'} | \`${cell(p.type)}\` | ${p.default ? `\`${cell(p.default)}\`` : ''} | ${cell(p.description)} |`)].join('\n')
-    : 'Only the HTML attributes of the element it renders.';
 // What a keyboard and a screen reader meet in the rendered markup. Each line names the native behavior of an element
 // or role the component writes, so it holds for the HTML copy too.
 const KEYBOARD = [

@@ -12,6 +12,26 @@
 - The Integrations page has a Claude section that links the design system and a canvas of Lede's foundations and
   components, and shows how an HTML artifact copies Lede's stylesheet. `llms.txt` and the `lede-design-system` skill
   link them too.
+- Every page of the docs site, fetched without JavaScript, says what Lede is and links
+  https://lede.cloudcompute.com/llms.txt, the registry index and the repo. A browser with scripts off shows the same
+  text. The docs footer and the README link `llms.txt` too.
+- `llms.txt` names the registry indexes and what they return, and links the README's Limits, the
+  `lede-design-system` skill and the json-render chat recipe as Markdown files.
+- Each docs page has a Markdown version at its address plus `.md`, such as
+  https://lede.cloudcompute.com/components.md, built from the page the site renders, with each token's values and each
+  item's import line. The home page's is `/overview.md`, with the README's requirements, install steps and limits. Each
+  registry item has a reference page, such as https://lede.cloudcompute.com/reference/list.md: its install command,
+  import line, what each file exports, props, example and types. The files are served as `text/plain` and form an Open
+  Knowledge Format v0.2 bundle: each opens with YAML front matter (`type`, `title`, `description`, `resource`), and
+  `/index.md` and `/reference/index.md` list them. https://lede.cloudcompute.com/llms-full.txt holds the pages and
+  reference pages in one file, without the types, the front matter or the indexes.
+- `llms.txt` is built with them: it names this version and links each docs page's Markdown version and each item's
+  reference page with its import line.
+
+### Changed
+
+- The site answers 404 for a file it doesn't have, such as `/reference/nope.md`, where it used to answer with the docs
+  page. Paths without a file extension still open the docs. A 404 under `/r/` names the registry index.
 
 ## 0.5.2
 

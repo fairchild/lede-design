@@ -12,9 +12,13 @@ const load = async (): Promise<Handler> => (await import(WORKER)).default;
 
 interface Stored { body: string; contentType?: string }
 
-/** An R2 bucket of `objects` that logs each head and get, and an assets binding that answers JSON under /r/. */
+/**
+ * An R2 bucket of `objects` that logs each head and get, and an assets binding that answers JSON under /r/ and keeps
+ * each Request it's given.
+ */
 function binding(objects: Record<string, Stored> = {}, { failing = false } = {}) {
   const reads: string[] = [];
+  const forwarded: Request[] = [];
   const object = (key: string) => {
     const stored = objects[key];
     return stored && {
@@ -33,21 +37,22 @@ function binding(objects: Record<string, Stored> = {}, { failing = false } = {})
       fetch: async (input: Request | string) => {
         const { pathname } = new URL(typeof input === 'string' ? input : input.url);
         reads.push(`asset ${pathname}`);
+        if (typeof input !== 'string') forwarded.push(input);
         return pathname.startsWith('/r/')
           ? new Response('{}', { headers: { 'content-type': 'application/json', etag: '"a"' } })
           : new Response('<!doctype html>', { headers: { 'content-type': 'text/html' } });
       },
     },
   };
-  return { env, reads };
+  return { env, reads, forwarded };
 }
 
 const ask = async (path: string, objects?: Record<string, Stored>, init?: RequestInit & { failing?: boolean }) => {
-  const { env, reads } = binding(objects, { failing: init?.failing });
+  const { env, reads, forwarded } = binding(objects, { failing: init?.failing });
   const logged = console.error;
   console.error = () => {};
   const response = await (await load()).fetch(new Request(`https://lede.test${path}`, init), env).finally(() => { console.error = logged; });
-  return { response, reads, status: response.status, header: (name: string) => response.headers.get(name) };
+  return { response, reads, forwarded, status: response.status, header: (name: string) => response.headers.get(name) };
 };
 
 const RELEASE = { 'r/v0.4.0/registry.json': { body: '{}' }, 'r/v0.4.0/button.json': { body: '{"name":"button"}' } };
@@ -60,7 +65,7 @@ test('routes a release, next, the latest, media and the site, each to its own st
     ['/r/next/button.json', ['get r/next/button.json']],
     ['/r/button.json', ['asset /r/button.json']],
     ['/media/logos/lede.svg', ['get media/logos/lede.svg']],
-    ['/docs/components', ['asset /docs/components']],
+    ['/docs/components', ['asset /']],
   ];
   for (const [path, reads] of cases) expect((await ask(path, RELEASE)).reads, path).toEqual(reads);
 });
@@ -73,13 +78,50 @@ test('answers 404 without a read for a path outside the patterns', async () => {
   }
 });
 
+// wrangler.jsonc sends a path outside /r/ and /media/ here only when no asset matches it.
+test('answers 404 for a missing file and the shell for a route, with the request’s method and headers', async () => {
+  for (const path of ['/nope.md', '/llms-full.txt', '/sitemap.xml', '/components.md', '/assets/index-old.js', '/a/b/c.JSON', '/.env']) {
+    for (const method of ['GET', 'HEAD']) {
+      const { status, reads, header, response } = await ask(path, {}, { method });
+      expect(status, `${method} ${path}`).toBe(404);
+      expect(reads, path).toEqual([]);
+      expect(header('content-type'), path).toBe('text/plain; charset=utf-8');
+      expect(header('cache-control'), path).toBe('no-store');
+      if (method === 'GET') expect(await response.text(), path).toBe('Not found. The docs index is /llms.txt\n');
+    }
+  }
+  for (const path of ['/components', '/app/inbox/m1', '/blocks/data-table/items/WI-1001', '/foo.bar/baz', '/layouts/', '/missing']) {
+    const { status, reads, forwarded } = await ask(path, {}, { method: 'HEAD', headers: { 'if-none-match': '"shell"', 'sec-fetch-mode': 'navigate' } });
+    expect(status, path).toBe(200);
+    expect(reads, path).toEqual(['asset /']);
+    expect(forwarded[0].method, path).toBe('HEAD');
+    expect(forwarded[0].headers.get('if-none-match'), path).toBe('"shell"');
+  }
+});
+
+test('names the index a fetcher can read next in a registry 404, and nothing in a media 404', async () => {
+  const registry = 'Not found. The registry index is /r/registry.json\n';
+  for (const path of ['/r/', '/r/x/y', '/r/v0.4.0/missing.json', '/r/v0.5.0/button.json', '/r/next/missing.json']) {
+    const { status, response, header } = await ask(path, RELEASE);
+    expect(status, path).toBe(404);
+    expect(await response.text(), path).toBe(registry);
+    expect(header('access-control-allow-origin'), path).toBe('*');
+  }
+  const { env } = binding();
+  env.ASSETS.fetch = async () => new Response(null, { status: 404 });
+  const latest = await (await load()).fetch(new Request('https://lede.test/r/missing.json'), env);
+  expect(await latest.text(), 'a missing latest item').toBe(registry);
+  for (const path of ['/media/', '/media/missing.png']) expect(await (await ask(path)).response.text(), path).toBe('Not found\n');
+});
+
 test('keeps an encoded or climbing path inside the prefix the URL resolves to', async () => {
   const cases: [string, string[]][] = [
     ['/media/%2e%2e/r/v0.4.0/button.json', ['head r/v0.4.0/registry.json', 'get r/v0.4.0/button.json']],
     ['/media/../r/next/button.json', ['get r/next/button.json']],
     ['/r/v0.4.0/../../media/x.png', ['get media/x.png']],
     ['/r/next/%2E%2E/v0.4.0/button.json', ['head r/v0.4.0/registry.json', 'get r/v0.4.0/button.json']],
-    ['/media/a/%2e%2e/%2e%2e/%2e%2e/etc/passwd', ['asset /etc/passwd']],
+    ['/media/a/%2e%2e/%2e%2e/%2e%2e/etc/passwd', ['asset /']],
+    ['/media/a/%2e%2e/%2e%2e/%2e%2e/etc/passwd.txt', []],
     ['/r/v0.4.0/..%2fregistry.json', []],
   ];
   for (const [path, reads] of cases) expect((await ask(path, RELEASE)).reads, path).toEqual(reads);

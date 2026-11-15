@@ -4,6 +4,7 @@ import { RouterLink } from '@/router-link';
 import { SegmentedControl } from '@lede/segmented-control';
 import { Button } from '@lede/button';
 import { CodeExample } from './CodeExample';
+import { Live, ReferenceLinks } from './twin';
 
 interface Layout {
   id: string;
@@ -105,12 +106,14 @@ export function Layouts() {
         <section key={layout.id} id={layout.id} aria-labelledby={`${layout.id}-title`} className="docs-section">
           <h2 id={`${layout.id}-title`} className="text-title-3">{layout.title}</h2>
           <p className="docs-intro">{layout.purpose}</p>
-          {layout.route ? <LayoutPreview title={layout.title} route={layout.route} /> : null}
+          {layout.route ? <Live><LayoutPreview title={layout.title} route={layout.route} /></Live> : null}
           <h3 className="docs-subhead">Regions</h3>
           <dl className="docs-regions">
             {layout.regions.map(([element, role]) => <div key={element}><dt><code>{element}</code></dt><dd>{role}</dd></div>)}
           </dl>
-          <CodeExample label={`Install ${layout.block}`} language="shell" code={`npx shadcn@latest add @lede/${layout.item}`} defaultOpen />
+          <ReferenceLinks items={[layout.item]}>
+            <CodeExample label={`Install ${layout.block}`} language="shell" code={`npx shadcn@latest add @lede/${layout.item}`} defaultOpen />
+          </ReferenceLinks>
           <p className="docs-actions">
             {layout.route
               ? <Button variant="tinted" href={layout.route} aria-label={`Open full page: ${layout.title}`}>Open full page</Button>

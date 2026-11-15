@@ -6,12 +6,14 @@
   "compatibility_date": "2026-11-01",
   "workers_dev": true,
   "preview_urls": true,
-  // The site is the build in dist/. Registry and media requests run the Worker first; every other path is an asset,
-  // or the SPA shell when no asset matches.
+  // The site is the build in dist/. Registry and media requests run the Worker first. Every other path is an asset, and
+  // reaches the Worker only when no asset matches: a path with a file extension gets a 404 there and a route gets the
+  // SPA shell. A run_worker_first list turns off the shortcut that serves navigations from assets, so with "none" a
+  // navigation reaches the Worker too, and an asset that exists never runs it.
   "assets": {
     "directory": "./dist",
     "binding": "ASSETS",
-    "not_found_handling": "single-page-application",
+    "not_found_handling": "none",
     "run_worker_first": ["/r/*", "/media/*"]
   },
   // Registry releases (r/v<semver>/), r/next/ and media, kept apart from deploys so a release outlives them.

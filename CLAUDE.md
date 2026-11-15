@@ -9,7 +9,9 @@ picks what to run.
 
 ## Commands
 - `npm run dev` — site at http://localhost:5173
-- `npm run build` — tokens → registry → typecheck → site (`dist/`, includes `dist/r/`)
+- `npm run build` — tokens → registry → typecheck → site (`dist/`, includes `dist/r/`, and from `scripts/llms/` each
+  docs page's `.md`, `dist/reference/`, the Open Knowledge Format indexes `index.md` and `reference/index.md`,
+  `llms.txt` and `llms-full.txt`, which `npm run dev` serves too)
 - `npm test` — Playwright + axe on every route, in light, dark, light-hc and dark-hc on desktop and in light and
   dark-hc on a phone (run `npm run build` first).
   It builds and serves its own copy, `dist-fixtures/`, with the `/fixtures/*` test pages, and a second on the next
@@ -35,4 +37,5 @@ picks what to run.
   each `integrations/` entry's own build and tests on every PR. The `@source not` lines in `src/styles/globals.css`
   keep Tailwind from scanning those Markdown files, `tests/`, `integrations/` and `scripts/design-system/`, so none of
   those diffs reaches the site's CSS, and they change with the script's lists. If the site starts to render one of
-  those Markdown files, take it out of both.
+  those Markdown files, take it out of both. One more, `scripts/llms/`, keeps the Markdown generator's selector
+  strings out of the CSS; it stays out of the script's lists, since its diffs change the built Markdown.

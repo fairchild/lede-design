@@ -120,6 +120,21 @@ and `cover.html`. After a release, save the live `project/design-system.json` fr
 `npm run design-system -- --index <that file>` so the page's own keys survive, and publish every file under
 `dist-design-system/project/` to the artifact from Claude Code.
 
+The docs site also builds as Markdown, for coding agents and other readers without JavaScript. A Vite plugin,
+`scripts/llms/`, renders each docs page in Node to `<route>.md` (`/` is `/overview.md`), writes a reference page for
+each registry item to `/reference/<item>.md` from the props and declarations `scripts/design-system-api.mjs` reads, and
+builds `llms.txt` from `scripts/llms/llms.md` and `llms-full.txt` from all of them. Every build has them, and the dev
+server answers them too. The Markdown files are an
+[Open Knowledge Format](https://github.com/GoogleCloudPlatform/open-knowledge-format) v0.2 bundle: each page and
+reference page opens with YAML front matter whose `type` makes it a concept, and `/index.md` and `/reference/index.md`,
+which OKF reserves for indexes, list them with relative links. Links inside the pages are absolute URLs to the site, so
+a reader of one fetched file follows them without resolving anything. The site serves the Markdown files as
+`text/plain` through `public/_headers`: some fetch tools read `text/markdown` as HTML and drop the JSX in its code. A
+live example on a docs page goes in `<Live>` from `src/pages/docs/twin.tsx`, which the Markdown leaves out. The build
+fails on a page whose Markdown keeps an interactive element or skips a heading level; a static example outside `<Live>`
+shows in the Markdown. A page reads `useTwin()` to write something for the Markdown alone, as Foundations does with each
+token's values and Overview with the README's requirements and limits.
+
 Registry files use relative imports (`../list`) that match where they install (`components/lede/…`). Every file that
 installs is listed in `registry.json`. The `index.ts` barrels are for this repo only and don't install.
 `npm run registry` builds each item's JSON from `registry.json` into `public/r`.

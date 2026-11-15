@@ -15,11 +15,24 @@
     <link rel="icon" href="/favicon.ico" sizes="32x32" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="alternate" href="/llms.txt" type="text/plain" title="Lede’s docs index for agents" />
     <title>Lede</title>
+    <!-- The fallback in #root is for a reader without JavaScript: a fetch tool, which reads the text and applies no
+         styles, or a browser with scripts off, where the noscript style shows it. With scripts on it never paints, and
+         React replaces it on mount. -->
+    <style>.docs-fallback { display: none; }</style>
+    <noscript><style>.docs-fallback { display: block; }</style></noscript>
   </head>
   <body>
-    <div id="root"></div>
-    <noscript>Lede’s documentation needs JavaScript for its live examples. The registry files under /r/ work without it.</noscript>
+    <div id="root"><div class="docs-fallback">
+      <p>Lede is a design system for React: components, blocks, page layouts and hero flows, installed from a shadcn registry.</p>
+      <p>This page needs JavaScript. Each docs page also has a Markdown version, and <code>llms.txt</code> lists them all. These links work without JavaScript:</p>
+      <ul>
+        <li><a href="https://lede.cloudcompute.com/llms.txt">https://lede.cloudcompute.com/llms.txt</a>, the docs index for agents and for reading without JavaScript</li>
+        <li><a href="https://lede.cloudcompute.com/r/registry.json">https://lede.cloudcompute.com/r/registry.json</a>, the registry index: every item with its description and files</li>
+        <li><a href="https://github.com/fairchild/lede-design">https://github.com/fairchild/lede-design</a>, the source and the README</li>
+      </ul>
+    </div></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
