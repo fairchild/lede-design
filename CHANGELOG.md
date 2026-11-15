@@ -4,8 +4,8 @@
 
 ### Added
 
-- The README's install section has "Start from a new Vite app": the commands and file edits that give an app made
-  with create-vite Tailwind v4, the `@/*` alias and a `components.json`, run as written.
+- The README's install section has "Start from a new Vite app": the commands and file edits that set up Tailwind v4,
+  the `@/*` alias and a `components.json` in an app made with create-vite, run as written.
   https://lede.cloudcompute.com/overview.md shows it too.
 
 ### Changed
