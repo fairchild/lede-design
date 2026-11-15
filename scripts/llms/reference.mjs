@@ -52,7 +52,7 @@ export function referencePage(item, { version, api, exports, declarations, insta
     item.description.replace(/\s+/g, ' ').trim(),
     '## Install',
     fence(install, 'bash'),
-    `The command needs Lede's registry in \`components.json\`, as [Overview → Install](${SITE}/index.md) shows.${brings.length ? ` It also installs ${brings.join(', and ')}.` : ''} The item's JSON, with each file's source, is ${SITE}/r/v${version}/${item.name}.json.`,
+    `The command needs Lede's registry in \`components.json\`, as [Overview → Install](${SITE}/overview.md) shows.${brings.length ? ` It also installs ${brings.join(', and ')}.` : ''} The item's JSON, with each file's source, is ${SITE}/r/v${version}/${item.name}.json.`,
     ...(imports ? ['## Import', fence(imports, 'tsx')] : []),
     '## Files and exports',
     `| Installs to | Import from | Exports |\n| --- | --- | --- |\n${files.join('\n')}`,

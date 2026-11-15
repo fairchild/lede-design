@@ -79,13 +79,16 @@ const LIMITS = readmeBlocks(readme, 'Limits');
 /** What each step's code shows, in order. A step the README adds later is named by its number. */
 const CODE_LABELS: Record<number, string[]> = { 2: ['CSS import'], 3: ['Import a component'], 4: ['Wrap your app', 'React Router adapter'] };
 
-/** README prose as the site writes it: code in `<code>`, bold, links to the repo, and curly quotes outside code. */
-function inline(text: string): ReactNode[] {
+/**
+ * README prose as the site writes it: code in `<code>`, bold, links to the repo, and curly quotes outside code. With
+ * `here`, a link to a README section, such as `#limits`, stays on this page, which shows that section.
+ */
+function inline(text: string, here = false): ReactNode[] {
   return text.split(/(`[^`]+`|\*\*[^*]+\*\*|\[[^\]]+\]\([^)]+\))/).map((part, i) => {
     if (part.startsWith('`')) return <code key={i}>{part.slice(1, -1)}</code>;
-    if (part.startsWith('**')) return <strong key={i}>{inline(part.slice(2, -2))}</strong>;
+    if (part.startsWith('**')) return <strong key={i}>{inline(part.slice(2, -2), here)}</strong>;
     const link = part.match(/^\[([^\]]+)\]\(([^)]+)\)$/);
-    if (link) return <a key={i} href={/^https?:/.test(link[2]) ? link[2] : link[2].startsWith('#') ? `${REPO}${link[2]}` : `${REPO}/blob/main/${link[2]}`}>{inline(link[1])}</a>;
+    if (link) return <a key={i} href={/^https?:/.test(link[2]) ? link[2] : link[2].startsWith('#') ? `${here ? '' : REPO}${link[2]}` : `${REPO}/blob/main/${link[2]}`}>{inline(link[1], here)}</a>;
     return curly(part);
   });
 }
@@ -109,8 +112,8 @@ function StepBlocks({ number, blocks, code }: { number: number; blocks: Block[];
  */
 function ReadmeBlocks({ blocks, label }: { blocks: Block[]; label?: string }) {
   return blocks.map((block, i) => {
-    if (block.kind === 'text') return <p key={i}>{inline(block.text)}</p>;
-    if (block.kind === 'list') return <ul key={i}>{block.items.map((item, j) => <li key={j}>{inline(item)}</li>)}</ul>;
+    if (block.kind === 'text') return <p key={i}>{inline(block.text, true)}</p>;
+    if (block.kind === 'list') return <ul key={i}>{block.items.map((item, j) => <li key={j}>{inline(item, true)}</li>)}</ul>;
     return <CodeExample key={i} label={label ?? 'Code'} language={block.language} code={block.code} defaultOpen />;
   });
 }

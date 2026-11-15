@@ -1,6 +1,6 @@
-// What an agent reads without JavaScript, as the build serves it: llms.txt, each docs page's Markdown and each registry
-// item's reference page, from scripts/llms/. The build itself fails a page that keeps a live control or skips a heading
-// level; these read what it wrote.
+// What an agent reads without JavaScript, as the build serves it: llms.txt, each docs page's Markdown, each registry
+// item's reference page and the Open Knowledge Format indexes, from scripts/llms/. The build itself fails a page that
+// keeps a live control or skips a heading level; these read what it wrote.
 import { readFileSync } from 'node:fs';
 import { parse } from 'yaml';
 import { test, expect, type APIRequestContext } from '@playwright/test';
@@ -11,7 +11,7 @@ test.skip(({ isMobile }) => isMobile, 'Files read the same at every width: one p
 const SITE = 'https://lede.cloudcompute.com';
 const { version } = JSON.parse(readFileSync('package.json', 'utf8')) as { version: string };
 const registry = JSON.parse(readFileSync('registry.json', 'utf8')) as { items: { name: string; title: string }[] };
-const PAGES = ['/index.md', '/foundations.md', '/components.md', '/blocks.md', '/blocks/data-table.md', '/layouts.md', '/decisions.md', '/integrations.md'];
+const PAGES = ['/overview.md', '/foundations.md', '/components.md', '/blocks.md', '/blocks/data-table.md', '/layouts.md', '/decisions.md', '/integrations.md'];
 /** The SPA shell, which a server without the file could answer with. */
 const SHELL = /<div id="root"|^\s*<!doctype html/i;
 
@@ -30,6 +30,11 @@ async function read(request: APIRequestContext, path: string) {
   expect(body, path).not.toMatch(SHELL);
   return body;
 }
+
+/** OKF reserves `index.md` in every folder for that folder's index (§3.1). */
+const isIndex = (path: string) => /(^|\/)index\.md$/.test(path);
+/** OKF's index files: the root's, and the reference pages' folder's. */
+const INDEXES = ['/index.md', '/reference/index.md'];
 
 /** A Markdown file's YAML front matter, parsed, and the body after it. */
 function split(file: string, path: string) {
@@ -57,37 +62,80 @@ test('the site serves Markdown as plain text through public/_headers, which the 
   expect(readFileSync('public/_headers', 'utf8')).toMatch(/^\/\*\.md\n {2}Content-Type: text\/plain; charset=utf-8$/m);
 });
 
-test('every Markdown file reachable from llms.txt has OKF front matter, then its one h1, and its fragments match a heading', async ({ request }) => {
-  const bodies = new Map<string, string>();
-  const fragments: URL[] = [];
+/** Every concept file (each Markdown file but an index) reachable from llms.txt, as served, by path. */
+async function concepts(request: APIRequestContext) {
+  const files = new Map<string, string>();
   const queue = ['/llms.txt'];
   while (queue.length) {
     const path = queue.shift()!;
     const file = await read(request, path);
-    let body = file;
-    if (path.endsWith('.md')) {
-      const parts = split(file, path);
-      const { meta } = parts;
-      body = parts.body;
-      expect(typeof meta.type === 'string' && meta.type.length > 0, `${path}: type`).toBe(true);
-      expect(meta.lede_version, path).toBe(version);
-      expect(body.split('\n')[0], path).toMatch(/^# \S/);
-      expect(withoutCode(body).match(/^ {0,3}# /gm), path).toHaveLength(1);
-      bodies.set(path, body);
+    if (path.endsWith('.md')) files.set(path, file);
+    for (const { pathname } of siteLinks(file)) {
+      if (!pathname.endsWith('.md') || isIndex(pathname) || files.has(pathname) || queue.includes(pathname)) continue;
+      queue.push(pathname);
     }
-    for (const url of siteLinks(body)) {
-      if (!url.pathname.endsWith('.md')) continue;
-      if (url.hash) fragments.push(url);
-      if (bodies.has(url.pathname) || queue.includes(url.pathname)) continue;
-      queue.push(url.pathname);
-    }
+  }
+  return files;
+}
+const headingsOf = (body: string) => [...withoutCode(body).matchAll(/^ {0,3}#{1,6} (.*)$/gm)].map((m) => slug(m[1]));
+
+test('every concept reachable from llms.txt has OKF front matter, then its one h1, and its fragments match a heading', async ({ request }) => {
+  const bodies = new Map<string, string>();
+  for (const [path, file] of await concepts(request)) {
+    const { meta, body } = split(file, path);
+    expect(typeof meta.type === 'string' && meta.type.length > 0, `${path}: type`).toBe(true);
+    expect(meta.lede_version, path).toBe(version);
+    expect(body.split('\n')[0], path).toMatch(/^# \S/);
+    expect(withoutCode(body).match(/^ {0,3}# /gm), path).toHaveLength(1);
+    bodies.set(path, body);
   }
   for (const path of PAGES) expect(bodies.has(path), path).toBe(true);
   for (const item of registry.items) expect(bodies.has(`/reference/${item.name}.md`), item.name).toBe(true);
-  for (const url of fragments) {
-    const headings = [...withoutCode(bodies.get(url.pathname)!).matchAll(/^ {0,3}#{1,6} (.*)$/gm)].map((m) => slug(m[1]));
-    expect(headings, `${url.pathname}${url.hash}`).toContain(url.hash.slice(1));
+  for (const [path, body] of bodies) {
+    // A fragment on this site, or one in the same file, such as Limits in the home page's install section.
+    const links = [
+      ...siteLinks(body).filter((url) => url.hash && url.pathname.endsWith('.md')).map((url) => ({ target: url.pathname, hash: url.hash.slice(1) })),
+      ...[...body.matchAll(/\]\(#([^)\s]+)\)/g)].map((m) => ({ target: path, hash: m[1] })),
+    ];
+    for (const { target, hash } of links) expect(headingsOf(bodies.get(target)!), `${path} → ${target}#${hash}`).toContain(hash);
   }
+});
+
+// Its three rules (§11): each concept has front matter with a type; each index follows §8, front matter only at the root
+// and only okf_version (§12); and here, each index entry resolves and every concept is listed.
+test('the Markdown files are an Open Knowledge Format v0.2 bundle', async ({ request }) => {
+  const files = await concepts(request);
+  for (const [path, file] of files) {
+    const { type } = split(file, path).meta;
+    expect(typeof type === 'string' && type.length > 0, `${path}: type`).toBe(true);
+  }
+  const listed = new Set<string>();
+  for (const path of INDEXES) {
+    const file = await read(request, path);
+    let body = file;
+    if (path === '/index.md') {
+      const parts = split(file, path);
+      expect(parts.meta, path).toEqual({ okf_version: '0.2' });
+      body = parts.body;
+    } else {
+      expect(file, `${path} has no front matter`).not.toMatch(/^---\n/);
+    }
+    const folder = `https://lede.test${path.replace(/index\.md$/, '')}`;
+    for (const line of body.split('\n')) {
+      if (line === '' || /^#{1,6} \S/.test(line)) continue;
+      const entry = line.match(/^\* \[([^\]]+)\]\(([^)\s]+)\) - (\S.*)$/);
+      expect(entry, `${path}: a line that is neither a heading nor an entry: ${line}`).not.toBeNull();
+      const [, , href, description] = entry!;
+      expect(href, `${path}: ${href} is relative`).not.toMatch(/^(\/|[a-z]+:)/);
+      const target = new URL(href, folder).pathname;
+      expect((await request.get(target)).status(), `${path} → ${target}`).toBe(200);
+      listed.add(target);
+      // Each description is the linked concept's own (§8).
+      if (files.has(target)) expect(description, target).toBe(split(files.get(target)!, target).meta.description);
+    }
+  }
+  for (const path of files.keys()) expect(listed.has(path), `${path} is in an index`).toBe(true);
+  expect(listed.has('/reference/index.md')).toBe(true);
 });
 
 test('front matter names each page: a Guide for a docs page, the item’s kind for a reference page', async ({ request }) => {

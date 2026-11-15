@@ -10,8 +10,11 @@ const RAW = 'https://raw.githubusercontent.com/fairchild/lede-design';
 /** CodeExample's languages, as fences name them. */
 const FENCE = { shell: 'bash', tsx: 'tsx', css: 'css', json: 'json', html: 'html' };
 
-/** A docs route's Markdown file: `/components` is `/components.md`, and `/` is `/index.md`. */
-export const twinPath = (route) => (route === '/' ? '/index.md' : `${route}.md`);
+/**
+ * A docs route's Markdown file: `/components` is `/components.md`, and `/` is `/overview.md`, since OKF reserves
+ * `index.md` for a directory's index.
+ */
+export const twinPath = (route) => (route === '/' ? '/overview.md' : `${route}.md`);
 
 /** A fenced code block, with a fence longer than any run of backticks in the code. */
 export const fence = (code, language) => {

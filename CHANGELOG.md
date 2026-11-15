@@ -19,12 +19,12 @@
   `lede-design-system` skill and the json-render chat recipe as Markdown files.
 - Each docs page has a Markdown version at its address plus `.md`, such as
   https://lede.cloudcompute.com/components.md, built from the page the site renders, with each token's values and each
-  item's import line. `/index.md` has the README's requirements, install steps and limits. Each registry item has a
-  reference page, such as https://lede.cloudcompute.com/reference/list.md: its install command, import line, what each
-  file exports, props, example and types. Each file opens with YAML front matter (`type`, `title`, `description`,
-  `resource`), so it reads as an Open Knowledge Format concept, and is served as `text/plain`.
-  https://lede.cloudcompute.com/llms-full.txt holds the pages and reference pages in one file, without the types or
-  front matter.
+  item's import line. The home page's is `/overview.md`, with the README's requirements, install steps and limits. Each
+  registry item has a reference page, such as https://lede.cloudcompute.com/reference/list.md: its install command,
+  import line, what each file exports, props, example and types. The files are served as `text/plain` and form an Open
+  Knowledge Format v0.2 bundle: each opens with YAML front matter (`type`, `title`, `description`, `resource`), and
+  `/index.md` and `/reference/index.md` list them. https://lede.cloudcompute.com/llms-full.txt holds the pages and
+  reference pages in one file, without the types, the front matter or the indexes.
 - `llms.txt` is built with them: it names this version and links each docs page's Markdown version and each item's
   reference page with its import line.
 

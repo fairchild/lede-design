@@ -1,6 +1,7 @@
 // Every file the docs site serves for readers without JavaScript: each docs page's Markdown, each registry item's
-// reference page, llms.txt from its template and llms-full.txt. Built from the same pages and registry the site renders,
-// so neither can drift from the other. scripts/llms/vite-plugin.mjs runs it in every build and in the dev server.
+// reference page, the two Open Knowledge Format indexes (index.md and reference/index.md), llms.txt from its template
+// and llms-full.txt. Built from the same pages and registry the site renders, so neither can drift from the other.
+// scripts/llms/vite-plugin.mjs runs it in every build and in the dev server.
 import { existsSync, readFileSync } from 'node:fs';
 import { stringify } from 'yaml';
 import { fileURLToPath } from 'node:url';
@@ -46,7 +47,7 @@ export async function generate(load) {
     const path = twinPath(page.route);
     const text = `${h1}\n\n> Every docs page and registry item: ${SITE}/llms.txt\n${rest.join('\n')}\n`;
     const meta = { type: 'Guide', title: page.title, description: sentence(page.about), resource: `${SITE}${page.route}`, lede_version: version };
-    twins.push({ ...page, path, text });
+    twins.push({ ...page, path, text, meta });
     files.set(path.slice(1), frontMatter(meta) + text);
   }
 
@@ -59,14 +60,17 @@ export async function generate(load) {
     const { meta, body, types } = referencePage(item, { version, api, exports, declarations, install, sample, pages });
     checkHeadings(body + types, `/reference/${item.name}.md`);
     files.set(`reference/${item.name}.md`, frontMatter(meta) + (types ? `${body}\n${types}` : body));
-    return { item, body, types };
+    return { item, meta, body, types };
   });
 
   const placed = new Set();
-  const sections = GROUPS.map(([title, test]) => {
-    const items = registry.items.filter((item) => !placed.has(item.name) && test(item));
-    items.forEach((item) => placed.add(item.name));
-    const lines = items.map((item) => `- [${item.title}](${SITE}/reference/${item.name}.md): \`@lede/${item.name}\`${imports[item.name] ? `, \`${imports[item.name].replace(/\n/g, ' ')}\`` : ''}. ${firstSentence(item.description)}`);
+  const groups = GROUPS.map(([title, test]) => {
+    const items = references.filter(({ item }) => !placed.has(item.name) && test(item));
+    items.forEach(({ item }) => placed.add(item.name));
+    return { title, items };
+  });
+  const sections = groups.map(({ title, items }) => {
+    const lines = items.map(({ item }) => `- [${item.title}](${SITE}/reference/${item.name}.md): \`@lede/${item.name}\`${imports[item.name] ? `, \`${imports[item.name].replace(/\n/g, ' ')}\`` : ''}. ${firstSentence(item.description)}`);
     return `## ${title}\n\n${lines.join('\n')}`;
   });
   const llms = read(TEMPLATE)
@@ -75,8 +79,23 @@ export async function generate(load) {
     .replace('{{ITEMS}}', sections.join('\n\n'));
   files.set('llms.txt', llms);
 
-  // Without front matter, whose `---` would read as the separators here. Types stay on each reference page: they would
-  // double the file.
+  // OKF's index files (§8): no front matter but the root's okf_version, then only headed lists of
+  // `* [title](relative path) - description`, each description the linked file's own.
+  const entry = (title, href, description) => `* [${title}](${href}) - ${description}`;
+  const section = (title, lines) => `# ${title}\n\n${lines.join('\n')}`;
+  const itemSections = (prefix) => groups.map(({ title, items }) => section(title, items.map(({ item, meta }) => entry(meta.title, `${prefix}${item.name}.md`, meta.description))));
+  files.set('index.md', `${frontMatter({ okf_version: '0.2' })}${[
+    section('Docs', twins.map((twin) => entry(twin.meta.title, twin.path.slice(1), twin.meta.description))),
+    ...itemSections('reference/'),
+    section('Other indexes', [
+      entry('Reference pages', 'reference/index.md', 'Every registry item\'s reference page, by group.'),
+      entry('llms.txt', 'llms.txt', `These files for agents, with Lede ${version}, the registry indexes and the source's Markdown files.`),
+    ]),
+  ].join('\n\n')}\n`);
+  files.set('reference/index.md', `${itemSections('').join('\n\n')}\n`);
+
+  // Without the indexes, and without front matter, whose `---` would read as the separators here. Types stay on each
+  // reference page: they would double the file.
   const full = [
     llms,
     ...twins.map((twin) => twin.text),

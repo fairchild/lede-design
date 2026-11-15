@@ -13,8 +13,12 @@ import { PAGES } from './pages.mjs';
  */
 const PLAIN = 'text/plain; charset=utf-8';
 const PAGE_FILES = new Set(PAGES.map((page) => twinPath(page.route).slice(1)));
-/** A path the generator writes, or would write for a registry item: only these reach it, so Vite's own requests don't. */
-const isGenerated = (path) => PAGE_FILES.has(path) || /^reference\/[^/]+\.md$/.test(path) || path === 'llms.txt' || path === 'llms-full.txt';
+/**
+ * A path the generator writes, or would write for a registry item: only these reach it, so Vite's own requests don't.
+ * `reference/index.md` matches with the reference pages.
+ */
+const isGenerated = (path) =>
+  PAGE_FILES.has(path) || /^reference\/[^/]+\.md$/.test(path) || ['index.md', 'llms.txt', 'llms-full.txt'].includes(path);
 /** The request's path without its leading slash, or null for a request with a query, such as Vite's `?import&raw`. */
 const pathOf = (url = '/') => {
   const { pathname, search } = new URL(url, 'http://localhost');

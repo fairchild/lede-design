@@ -4,7 +4,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 
 /** Each docs route, the module and export that render it, and what `llms.txt` says it holds. */
 export const PAGES = [
-  { route: '/', module: 'Overview', title: 'Overview and install', about: 'what Lede is, the install steps and the principles' },
+  { route: '/', module: 'Overview', title: 'Overview and install', about: 'what Lede is, what a project needs, the install steps, the limits and the principles' },
   { route: '/foundations', module: 'Foundations', title: 'Foundations', about: 'every token, with its value in each theme, shape or density and its use' },
   { route: '/components', module: 'Components', title: 'Components', about: 'the primitives, each with its install command, code and import line' },
   { route: '/blocks', module: 'Blocks', title: 'Blocks', about: 'the larger parts of a screen, each with its install command, code and import line' },

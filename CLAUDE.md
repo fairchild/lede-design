@@ -10,7 +10,8 @@ picks what to run.
 ## Commands
 - `npm run dev` — site at http://localhost:5173
 - `npm run build` — tokens → registry → typecheck → site (`dist/`, includes `dist/r/`, and from `scripts/llms/` each
-  docs page's `.md`, `dist/reference/`, `llms.txt` and `llms-full.txt`, which `npm run dev` serves too)
+  docs page's `.md`, `dist/reference/`, the Open Knowledge Format indexes `index.md` and `reference/index.md`,
+  `llms.txt` and `llms-full.txt`, which `npm run dev` serves too)
 - `npm test` — Playwright + axe on every route, in light, dark, light-hc and dark-hc on desktop and in light and
   dark-hc on a phone (run `npm run build` first).
   It builds and serves its own copy, `dist-fixtures/`, with the `/fixtures/*` test pages, and a second on the next
