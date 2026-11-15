@@ -50,6 +50,23 @@ function readmeExamples() {
   return fences.map(({ code }, i) => [labels[i], code] as const);
 }
 
+/** A Markdown section's fenced blocks, dedented, and its `### ` headings, in order. */
+function fencesAndHeadings(markdown: string) {
+  return [...markdown.matchAll(/^( *)```\w*\n([\s\S]*?)\n\1```$|^### (.+)$/gm)]
+    .map(([, indent, code, heading]) => heading ?? code.replace(new RegExp(`^${indent}`, 'gm'), ''));
+}
+
+// The Markdown build shows the whole install section, the text around the steps included, which the site links instead.
+// Step 1's code is the site's, so the README's copy of it has to match.
+test('/overview.md shows every block and subsection of the README’s install section, character for character', async ({ request, isMobile }) => {
+  test.skip(isMobile, 'A file reads the same at every width.');
+  const readme = readFileSync('README.md', 'utf8').split(/^## Use it in a shadcn project$/m)[1].split(/^## /m)[0];
+  const overview = (await (await request.get('/overview.md')).text()).split(/^## Install$/m)[1].split(/^## /m)[0];
+  const expected = fencesAndHeadings(readme);
+  expect(expected).toContain('Start from a new Vite app');
+  expect(fencesAndHeadings(overview)).toEqual([...expected, 'Limits']);
+});
+
 for (const route of ROUTES) {
   test(`${route}: every example shows its source, character for character`, async ({ page }) => {
     await page.goto(route);

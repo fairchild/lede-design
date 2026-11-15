@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- The README's install section has "Start from a new Vite app": the commands and file edits that give an app made
+  with create-vite Tailwind v4, the `@/*` alias and a `components.json`, run as written.
+  https://lede.cloudcompute.com/overview.md shows it too.
+
+### Changed
+
+- Step 1 of the install steps adds `@lede/theme-provider` and `@lede/list`, the items step 3 imports, where it added
+  a data table and two hero flows. It links `llms.txt` for the name and import line of every item.
+
 ## 0.5.3
 
 The docs site reads without JavaScript: every page links `llms.txt`, and each docs page and registry item has a
