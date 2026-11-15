@@ -8,7 +8,9 @@
   and under its declarations: a short type written out, such as `Noun` on DataTable's page, and a long one linked to
   the page that declares it. `llms-full.txt` has the props tables' lists too.
 - A reference page says which attributes a component takes beyond its props table: ThemeProvider's says it also takes
-  the attributes of `<div>`, such as `className`.
+  the attributes of `<div>`, such as `className`, and the `render` prop of Base UI's `useRender`.
+- Checkbox's props table lists `className`, `style` and `hidden`, and TextField's lists `className`, each with the
+  wrapper it goes on. Checkbox puts them on its wrapper `<span>` and TextField on its wrapper `<div>`, as before.
 - When a reference page's install command adds an item only for its example, such as `@lede/button` on PageHeader's
   page, the page says so.
 

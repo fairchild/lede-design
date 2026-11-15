@@ -1,10 +1,16 @@
 import * as React from 'react';
 import { cn } from './cn';
 
-export interface CheckboxProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'type' | 'size'> {
+export interface CheckboxProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'type' | 'size' | 'className' | 'style' | 'hidden'> {
   /** Mixed state, such as "some rows on this page". Default `false`. Set as a DOM property, since HTML has no attribute for it. */
   indeterminate?: boolean;
   ref?: React.Ref<HTMLInputElement>;
+  /** On the wrapper `<span>`. */
+  className?: string;
+  /** On the wrapper `<span>`. */
+  style?: React.CSSProperties;
+  /** On the wrapper `<span>`, so the drawn box hides with the input. */
+  hidden?: boolean;
 }
 
 /**

@@ -31,7 +31,7 @@ const itemLink = (name, fragment = '') => `[\`${name}\`](${SITE}/reference/${nam
  * The sentence beside a props table that says which props it leaves out: the attributes or props a component takes
  * from outside Lede, as `readApi` reads them from its props type.
  */
-export function inheritedSentence(name, { from, example }) {
+export function inheritedSentence(name, { from, example, added }) {
   const whole = from.filter((source) => !source.names);
   const elements = [...new Set(whole.filter((source) => source.element).map((source) => `\`<${source.element}>\``))];
   const parts = [
@@ -41,7 +41,11 @@ export function inheritedSentence(name, { from, example }) {
   ];
   const picked = from.filter((source) => source.names?.length)
     .map((source) => `the ${listed(source.names.map((attribute) => `\`${attribute}\``))} attributes of ${source.element ? `\`<${source.element}>\`` : 'its element'}`);
-  const takes = [...(parts.length ? [`${listed(parts)}${example ? `, such as \`${example}\`` : ''}`] : []), ...picked];
+  const via = whole.find((source) => source.via);
+  const extra = via && added.length
+    ? [`the ${listed(added.map((prop) => `\`${prop}\``))} prop${added.length > 1 ? 's' : ''} of \`${via.via}\` from \`${via.module}\``]
+    : [];
+  const takes = [...(parts.length ? [`${listed(parts)}${example ? `, such as \`${example}\`` : ''}`] : []), ...extra, ...picked];
   return `${name} also takes ${takes.join(', and ')}.`;
 }
 

@@ -3,9 +3,21 @@
 // keeps a live control or skips a heading level; these read what it wrote.
 import { readFileSync, readdirSync } from 'node:fs';
 import { sep } from 'node:path';
+import { createElement as h, type ComponentType } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
 import { parse } from 'yaml';
 import { test, expect, type APIRequestContext } from '@playwright/test';
 import { checkHeadings, withoutCode } from '../scripts/llms/markdown.mjs';
+import { Avatar } from '../registry/lede/avatar';
+import { Button } from '../registry/lede/button';
+import { Card } from '../registry/lede/card';
+import { Checkbox } from '../registry/lede/checkbox';
+import { Disclosure } from '../registry/lede/disclosure';
+import { GlassBar, GlassToolbar } from '../registry/lede/glass-bar';
+import { SegmentedControl } from '../registry/lede/segmented-control';
+import { Switch } from '../registry/lede/switch';
+import { TextField } from '../registry/lede/text-field';
+import { ThemeProvider } from '../registry/lede/theme-provider';
 
 test.skip(({ isMobile }) => isMobile, 'Files read the same at every width: one project is enough.');
 
@@ -255,20 +267,95 @@ test('a reference page shows each type it names from another item, by the props 
   expect(await read(request, '/llms-full.txt')).toContain(noun);
 });
 
-test('a props table says which attributes it leaves out, beside the table', async ({ request }) => {
+/**
+ * Each sentence a reference page builds about what a component takes beyond its props table, read against the
+ * component, with renders that show where its example lands: on an element of `tag` that has `has` among its
+ * attributes. The generator infers the sentence from the props type, which can't say where a component puts a prop,
+ * so a new sentence fails here until someone checks it.
+ */
+const TAKES: Record<string, { sentence: string; component: ComponentType<any>; renders: { props: object; tag: string; has?: string }[] }> = {
+  Avatar: {
+    sentence: 'Avatar also takes HTML attributes, such as `className`, and the `loading`, `decoding`, `referrerPolicy` and `crossOrigin` attributes of `<img>`.',
+    component: Avatar,
+    renders: [{ props: { name: 'Hana Sato' }, tag: 'span' }, { props: { name: 'Hana Sato', src: '/hana.png', loading: 'lazy' }, tag: 'img', has: 'loading="lazy"' }],
+  },
+  Button: {
+    sentence: 'Button also takes the attributes of `<button>` or `<a>`, whichever it renders, such as `className`.',
+    component: Button,
+    renders: [{ props: { children: 'Save' }, tag: 'button' }, { props: { children: 'Open', href: '/open' }, tag: 'a' }],
+  },
+  Card: {
+    sentence: 'Card also takes the attributes of `<div>`, such as `className`, and the `render` prop of `useRender` from `@base-ui/react/use-render`.',
+    component: Card,
+    renders: [{ props: {}, tag: 'div' }, { props: { render: h('article') }, tag: 'article' }],
+  },
+  Checkbox: {
+    sentence: 'Checkbox also takes the attributes of `<input>`, such as `aria-describedby`.',
+    component: Checkbox,
+    renders: [{ props: { 'aria-label': 'Done' }, tag: 'input' }],
+  },
+  Disclosure: {
+    sentence: 'Disclosure also takes the attributes of `<section>`, such as `className`.',
+    component: Disclosure,
+    renders: [{ props: { title: 'Details' }, tag: 'section' }],
+  },
+  GlassBar: {
+    sentence: 'GlassBar also takes the attributes of `<nav>`, such as `className`.',
+    component: GlassBar,
+    renders: [{ props: { 'aria-label': 'Places', items: [{ value: 'inbox', label: 'Inbox' }] }, tag: 'nav' }],
+  },
+  GlassToolbar: {
+    sentence: 'GlassToolbar also takes the props of `Toolbar.Root` from `@base-ui/react/toolbar`, such as `aria-describedby`.',
+    component: GlassToolbar,
+    renders: [{ props: { 'aria-label': 'Actions' }, tag: 'div', has: 'role="toolbar"' }],
+  },
+  SegmentedControl: {
+    sentence: 'SegmentedControl also takes the attributes of `<fieldset>`, such as `className`.',
+    component: SegmentedControl,
+    renders: [{ props: { label: 'View', options: ['List', 'Board'] }, tag: 'fieldset' }],
+  },
+  Switch: {
+    sentence: 'Switch also takes the attributes of `<span>`, such as `aria-describedby`.',
+    component: Switch,
+    renders: [{ props: { label: 'Wi-Fi' }, tag: 'span', has: 'role="switch"' }, { props: { 'aria-label': 'Wi-Fi' }, tag: 'span', has: 'role="switch"' }],
+  },
+  TextField: {
+    sentence: 'TextField also takes the attributes of `<input>` or `<textarea>`, whichever it renders, such as `aria-describedby`.',
+    component: TextField,
+    renders: [{ props: { label: 'Name' }, tag: 'input' }, { props: { label: 'Notes', rows: 3 }, tag: 'textarea' }],
+  },
+  ThemeProvider: {
+    sentence: 'ThemeProvider also takes the attributes of `<div>`, such as `className`, and the `render` prop of `useRender` from `@base-ui/react/use-render`.',
+    component: ThemeProvider,
+    renders: [{ props: {}, tag: 'div' }, { props: { render: h('main') }, tag: 'main' }],
+  },
+};
+
+test('a props table says what else its component takes, and the example lands where the sentence says', async ({ request }) => {
   const pages = await referencePages(request);
-  expect(pages.get('theme-provider')).toContain('ThemeProvider also takes the attributes of `<div>`, such as `className`.');
-  expect(pages.get('card')).toContain('Card also takes the attributes of `<div>`, such as `className`.');
-  expect(pages.get('button')).toContain('Button also takes the attributes of `<button>` or `<a>`, whichever it renders, such as `className`.');
-  // Switch lists `className` itself, since it goes on the wrapper.
-  expect(pages.get('switch')).toContain('Switch also takes the attributes of `<span>`, such as `aria-describedby`.');
-  expect(pages.get('data-table')).not.toContain(' also takes ');
+  const found = new Map<string, string>();
   for (const [item, page] of pages) {
-    for (const section of sectionsOf(page).filter((s) => / also takes /.test(s))) {
-      const [, name, example] = section.match(/^(\w+) also takes .*?(?:, such as `([^`]+)`)?(?:, and .*)?\.$/m) ?? [];
-      expect(name, `${item}: the sentence is under a props table`).toBeTruthy();
-      expect(section, item).toMatch(new RegExp(`^## (${name} props|Props)$`, 'm'));
-      if (example) expect(section, `${item}: ${example} is a row of the table`).not.toContain(`| \`${example}\``);
+    for (const section of sectionsOf(page)) {
+      for (const [sentence, name] of section.matchAll(/^(\w+) also takes .*\.$/gm)) {
+        expect(section, `${item}: the sentence is under ${name}'s props table`).toMatch(new RegExp(`^## (${name} props|Props)$`, 'm'));
+        found.set(name, sentence);
+      }
+    }
+  }
+  expect(Object.fromEntries(found), 'every sentence, as read against its component').toEqual(Object.fromEntries(Object.entries(TAKES).map(([name, { sentence }]) => [name, sentence])));
+
+  for (const [name, { sentence, component, renders }] of Object.entries(TAKES)) {
+    const example = sentence.match(/, such as `([^`]+)`/)![1];
+    const attribute = example === 'className' ? 'class' : example;
+    // The elements the sentence names before its example; none for "HTML attributes" or another component's props.
+    const named = [...sentence.split(', such as')[0].matchAll(/`<(\w+)>`/g)].map((m) => m[1]);
+    for (const { props, tag, has } of renders) {
+      const markup = renderToStaticMarkup(h(component, { ...props, [example]: 'ld-probe' }));
+      const tags = [...markup.matchAll(/<(\w+)\b([^>]*)>/g)].filter((m) => new RegExp(`\\s${attribute}="[^"]*\\bld-probe\\b`).test(m[2]));
+      expect(tags.map((m) => m[1]), `${name} ${JSON.stringify(props)}: \`${example}\` lands on one <${tag}>`).toEqual([tag]);
+      if (has) expect(tags[0][2], `${name}: the <${tag}> has ${has}`).toContain(has);
+      // A render that swaps the element (Base UI's `render`) shows that prop; the others land on an element named.
+      if (named.length && !('render' in props)) expect(named, `${name}: <${tag}> is named in the sentence`).toContain(tag);
     }
   }
 });

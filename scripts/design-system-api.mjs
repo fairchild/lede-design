@@ -88,7 +88,7 @@ export function readApi(files) {
     } else if (ts.isInterfaceDeclaration(declaration) && !declaration.heritageClauses) {
       shape = `{ ${declaration.members.map(print).join(' ')} }`;
     }
-    shape = shape?.replace(/\s+/g, ' ').replace(/;? }$/, ' }') ?? null;
+    shape = shape?.replace(/\s+/g, ' ').replace(/;? }/g, ' }') ?? null;
     types.set(key, { name: `${declaration.name.text}${params}`, file, shape: shape && shape.length <= SHORT ? shape : null });
     return key;
   }
@@ -118,8 +118,9 @@ export function readApi(files) {
   }
   /**
    * Where a props type's attributes from outside Lede come from, read from how it's written: `{ element }` for an
-   * element's attributes (null when the type names no one element, as `HTMLAttributes<HTMLElement>`), `{ component,
-   * module }` for another component's props, and `names` when only some attributes are picked.
+   * element's attributes (null when the type names no one element, as `HTMLAttributes<HTMLElement>`), with `via` and
+   * `module` when a package's type adds props to them, `{ component, module }` for another component's props, and
+   * `names` when only some attributes are picked.
    */
   function sourcesOf(node) {
     if (!node) return [];
@@ -135,7 +136,12 @@ export function readApi(files) {
       return sourcesOf(arg).map((source) => ({ ...source, names }));
     }
     if (/^ComponentProps(WithRef|WithoutRef)?$/.test(name) && arg) {
-      if (ts.isLiteralTypeNode(arg) && ts.isStringLiteral(arg.literal)) return [{ element: arg.literal.text }];
+      if (ts.isLiteralTypeNode(arg) && ts.isStringLiteral(arg.literal)) {
+        // A package's own `ComponentProps`, such as Base UI's `useRender.ComponentProps<'div'>`, adds props of its own.
+        const module = ts.isQualifiedName(ref) || ts.isPropertyAccessExpression(ref) ? moduleOf(ref) : null;
+        const via = module && module !== 'react' ? ref.getText().split('.').slice(0, -1).join('.') : null;
+        return [{ element: arg.literal.text, ...(via ? { via, module } : {}) }];
+      }
       if (ts.isTypeQueryNode(arg)) return [{ component: arg.exprName.getText(), module: moduleOf(arg.exprName) }];
     }
     if (/HTMLAttributes$/.test(name)) {
@@ -165,11 +171,13 @@ export function readApi(files) {
       const props = [];
       const seen = new Set();
       const inherited = new Set();
+      const fromPackages = new Set();
       for (const member of members) {
         if (seen.has(member.name)) continue;
         const declarations = (member.declarations ?? []).filter((d) => !d.getSourceFile().fileName.includes('node_modules'));
         if (!declarations.length) {
           if (member.declarations?.length) inherited.add(member.name);
+          if (member.declarations?.every((d) => !/[\\/]@types[\\/]react[\\/]/.test(d.getSourceFile().fileName))) fromPackages.add(member.name);
           continue;
         }
         seen.add(member.name);
@@ -193,8 +201,13 @@ export function readApi(files) {
       }
       for (const prop of props) inherited.delete(prop.name);
       const from = inherited.size ? sourcesOf(param.valueDeclaration?.type) : [];
-      // `inherits`: where the props the table leaves out come from, and one of them to name, or null for none.
-      const inherits = from.length ? { from, example: EXAMPLES.find((name) => inherited.has(name)) ?? null } : null;
+      // `inherits`: where the props the table leaves out come from, one of them to name, and the props a package's
+      // type adds to an element's attributes (`added`), or null for none.
+      const inherits = from.length ? {
+        from,
+        example: EXAMPLES.find((name) => inherited.has(name)) ?? null,
+        added: from.some((source) => source.via) ? [...fromPackages].filter((name) => inherited.has(name)) : [],
+      } : null;
       api.set(exported.name, { name: exported.name, file: path.slice(cwd.length + 1), description: doc(exported, checker), props, inherits });
     }
   }
