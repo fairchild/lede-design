@@ -1,0 +1,89 @@
+name: Mirror the registry on GitHub
+# Copies a published release's registry, byte for byte, from lede.cloudcompute.com/r/<tag>/ to r/<tag>/ on this repo's
+# `registry` branch. A sandbox whose proxy refuses Lede's site but allows raw.githubusercontent.com installs from there.
+# A v* tag mirrors its release once Deploy has published it; a manual run mirrors any release already published. A
+# release already on the branch stays as it was first mirrored.
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: A published release's tag, such as v0.5.3
+        required: true
+permissions:
+  contents: write
+concurrency:
+  group: mirror-registry
+  cancel-in-progress: false
+defaults:
+  run:
+    shell: bash
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    env:
+      TAG: ${{ inputs.tag || github.ref_name }}
+    steps:
+      - name: Check the tag
+        run: |
+          if ! [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+            echo "::error::$TAG isn't a release tag, such as v0.5.3."
+            exit 1
+          fi
+      # Deploy publishes the release only after CI's check passes on the tagged commit, which can take 45 minutes.
+      - name: Wait for the release on lede.cloudcompute.com
+        run: |
+          url="https://lede.cloudcompute.com/r/$TAG/registry.json"
+          for _ in $(seq 1 120); do
+            curl -fsS -o /dev/null "$url" && exit 0
+            sleep 30
+          done
+          echo "::error::$url isn't there after an hour, so $TAG wasn't mirrored. Run this workflow for $TAG once Deploy has published it."
+          exit 1
+      - name: Download the release
+        run: |
+          base="https://lede.cloudcompute.com/r/$TAG"
+          mkdir -p "$RUNNER_TEMP/release" && cd "$RUNNER_TEMP/release"
+          curl -fsS --retry 3 -o registry.json "$base/registry.json"
+          for name in $(jq -r '.items[].name' registry.json); do
+            [[ "$name" =~ ^[a-z0-9-]+$ ]] || { echo "::error::Unexpected item name $name"; exit 1; }
+            curl -fsS --retry 3 -o "$name.json" "$base/$name.json"
+            jq -e --arg name "$name" '.name == $name' "$name.json" >/dev/null
+          done
+          echo "Downloaded $(ls | wc -l) files."
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Commit the release to the registry branch
+        run: |
+          if git ls-remote --exit-code --heads origin registry >/dev/null; then
+            git fetch --depth=1 origin registry
+            git checkout -q -B registry FETCH_HEAD
+          else
+            git checkout -q --orphan registry
+            git rm -rfq --ignore-unmatch .
+          fi
+          if [ -e "r/$TAG/registry.json" ]; then
+            echo "::notice title=Already mirrored::r/$TAG is on the registry branch and was left as it was."
+            exit 0
+          fi
+          mkdir -p "r/$TAG"
+          cp "$RUNNER_TEMP"/release/*.json "r/$TAG/"
+          cat > README.md <<'README'
+          # Lede's registry, mirrored
+
+          Each folder under `r/` is a release of Lede's shadcn registry, copied byte for byte from
+          `https://lede.cloudcompute.com/r/<release>/` by `.github/workflows/mirror-registry.yml` on `main`. A release's
+          files never change. Use it where Lede's site is out of reach but GitHub isn't, such as in a sandbox:
+
+          ```bash
+          npx shadcn@latest registry add '@lede=https://raw.githubusercontent.com/fairchild/lede-design/registry/r/RELEASE/{name}.json'
+          ```
+
+          Change the release in the URL to the one you want. The install steps are in the README on `main`.
+          README
+          sed -i "s/RELEASE/$TAG/" README.md
+          git add -A
+          git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
+            commit -qm "registry: mirror $TAG"
+          git push origin registry
+          echo "Mirrored $TAG at https://raw.githubusercontent.com/$GITHUB_REPOSITORY/registry/r/$TAG/registry.json" >> "$GITHUB_STEP_SUMMARY"

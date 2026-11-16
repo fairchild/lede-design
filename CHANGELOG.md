@@ -4,6 +4,10 @@
 
 ### Added
 
+- Each release's registry is copied to the `registry` branch of the repo, so a sandbox that can reach GitHub but not
+  lede.cloudcompute.com installs from
+  `https://raw.githubusercontent.com/fairchild/lede-design/registry/r/v<version>/{name}.json`. The copy is byte for
+  byte, made once Deploy has published the release, and never changes after.
 - Each registry item installs its docs: its reference page lands at `components/lede/docs/<item>.md`, and `lede-theme`
   adds `components/lede/docs/README.md`, which lists every item of the release and holds the README's setup
   sections. A project that can't reach the docs site, such as an agent's sandbox, has the docs for the release it
