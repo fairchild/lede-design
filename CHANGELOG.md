@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- `tests/agent-names.spec.ts` fails when two visible controls of one role in the same region of a Daybook screen share
+  a name, so a screen reader user or an agent can pick each one. Every screen passes today. The rule is in
+  `CONTRIBUTING.md` and on the Decisions page.
+
 ## 0.6.0
 
 Docs travel with the code: each registry item installs its reference page in `components/lede/docs/`, and each
