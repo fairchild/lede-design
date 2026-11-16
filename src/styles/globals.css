@@ -41,7 +41,8 @@ html, body { margin: 0; background: var(--background-grouped); color: var(--fore
 .docs-section > h2 { margin: 0 0 var(--space-1); overflow-wrap: break-word; }
 /* Overview's index of the site: each place's link, then one line on what it holds, in two columns where they fit. */
 .docs-index { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-3) var(--space-6); grid-template-columns: repeat(auto-fill, minmax(min(var(--layout-summary-wide-min-width), 100%), 1fr)); font-size: var(--text-subheadline-size); line-height: var(--text-subheadline-line-height); color: var(--muted-foreground); }
-.docs-index a { display: flex; align-items: center; width: fit-content; min-height: var(--size-hit-absolute-min); color: var(--primary); font-weight: var(--weight-semibold); }
+.docs-index > li { min-width: 0; overflow-wrap: anywhere; }
+.docs-index a { display: flex; align-items: center; width: fit-content; max-width: 100%; min-height: var(--size-hit-absolute-min); color: var(--primary); font-weight: var(--weight-semibold); }
 .docs-target { scroll-margin-top: var(--space-4); }
 .docs-target:focus, .docs-anchor:focus { outline: none; }
 /* A guide shows several tables at once, so each one's selection bar stays with its own example: sticky at the foot of
