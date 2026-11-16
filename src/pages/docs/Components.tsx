@@ -4,9 +4,11 @@ import { Button } from '@lede/button';
 import { SegmentedControl } from '@lede/segmented-control';
 import { Switch } from '@lede/switch';
 import { TextField } from '@lede/text-field';
+import { SearchField } from '@lede/search-field';
 import { Avatar } from '@lede/avatar';
 import { Card } from '@lede/card';
 import { ListGroup, ListRow } from '@lede/list';
+import { StatusText } from '@lede/status-text';
 import { Disclosure } from '@lede/disclosure';
 import { GlassBar, GlassToolbar, GlassToolbarButton, GlassToolbarSeparator } from '@lede/glass-bar';
 import { ThemeProvider } from '@lede/theme-provider';
@@ -24,6 +26,20 @@ const THEME_SCOPE_CODE = `<Dialog.Portal>
     <Dialog.Popup />
   </ThemeScope>
 </Dialog.Portal>`;
+
+const HOSTS = ['api-iad-1', 'cache-lhr-1', 'db-ord-1', 'edge-sfo-2'];
+function SearchDemo() {
+  const [query, setQuery] = React.useState('');
+  const shown = HOSTS.filter((h) => h.includes(query.trim().toLowerCase()));
+  return (
+    <div className="docs-demo-col">
+      <SearchField label="Filter hosts" value={query} onValueChange={setQuery} />
+      <ListGroup title="All hosts" summary={query ? `${shown.length} of ${HOSTS.length}` : `${HOSTS.length}`} footer={shown.length ? undefined : 'No host matches.'} headingLevel={3}>
+        {shown.map((h) => <ListRow key={h} title={h} />)}
+      </ListGroup>
+    </div>
+  );
+}
 
 function Demo({ id, item, title, summary, children }: { id: string; item: string; title: string; summary: React.ReactNode; children: React.ReactNode }) {
   return (
@@ -76,6 +92,9 @@ export function Components() {
           <TextField label="Short bio" rows={3} hint="Up to 160 characters." />
         </div></Live>
       </Demo>
+      <Demo id="c-search" item="search-field" title="SearchField" summary={<>An <code>{'<input type="search">'}</code> with a visually hidden <code>{'<label>'}</code> and a clear button. Escape clears its text, and on an empty field it goes on to the screen, so PageHeader’s <code>backOnEscape</code> backs out.</>}>
+        <Live><SearchDemo /></Live>
+      </Demo>
       <Demo id="c-avatar" item="avatar" title="Avatar" summary={<>An <code>{'<img>'}</code> with alt text, or initials on a tint when there’s no picture or it fails to load. Pass <code>alt=""</code> when the name is already beside it, so it isn’t read twice.</>}>
         <Live><div className="docs-demo">
           <Avatar name="Hana Sato" src={PICTURE} size="lg" />
@@ -104,6 +123,17 @@ export function Components() {
           <ListRow title="Sync across devices" subtitle="Changes reach all your devices" trailing={<Switch aria-label="Sync across devices" defaultChecked />} />
           <ListRow title="Q4 budget needs your approval" subtitle="From Dana Okafor · 9:41 AM" href="/app/inbox/m1" actions={[{ label: 'Archive', tone: 'neutral' }, { label: 'Delete', tone: 'critical' }]} />
         </ListGroup></Live>
+      </Demo>
+      <Demo id="c-status" item="status-text" title="StatusText" summary={<>A status word in a <code>{'<span>'}</code>, colored by its <code>tone</code>, with a dot before it. It takes the size of the text around it, so it fits a ListRow’s <code>value</code>, a table cell or a sentence.</>}>
+        <Live><ListGroup title="Hosts" summary="1 failed" headingLevel={3}>
+          <ListRow title="edge-sfo-2" subtitle="Deploy failed at 9:41 AM" value={<StatusText tone="critical">Failed</StatusText>} />
+          <ListRow title="api-iad-1" subtitle="Plan has 3 changes" value={<StatusText tone="caution">Would change</StatusText>} />
+          <ListRow title="db-ord-1" subtitle="Checked 2 minutes ago" value={<StatusText tone="positive">Up to date</StatusText>} />
+          <ListRow title="cache-lhr-1" subtitle="Last checked Nov 2" value={<StatusText>Not checked lately</StatusText>} />
+        </ListGroup></Live>
+        <p className="docs-intro docs-note">
+          The words carry the status and the tone only adds color, so a status reads the same without color.
+        </p>
       </Demo>
       <Demo id="c-table" item="table" title="Table" summary={<>A native <code>{'<table>'}</code> in parts: a caption, header cells, one row header per row and optional sort buttons. DataTable builds on it, and on its own it suits a small static table.</>}>
         <Live><Table.Root caption="Quarter totals">
