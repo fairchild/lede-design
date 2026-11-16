@@ -9,10 +9,12 @@ type Common = {
   /** Error message. It marks the field invalid and replaces the hint. Word it as the fix, such as "Enter your name." */
   error?: React.ReactNode;
   size?: 'md' | 'lg';
+  /** On the wrapper `<div>` that holds the label, the field and the hint. */
+  className?: string;
 };
 export type TextFieldProps =
-  | (Common & Omit<React.InputHTMLAttributes<HTMLInputElement>, 'size'> & { rows?: undefined; ref?: React.Ref<HTMLInputElement> })
-  | (Common & React.TextareaHTMLAttributes<HTMLTextAreaElement> & {
+  | (Common & Omit<React.InputHTMLAttributes<HTMLInputElement>, 'size' | 'className'> & { rows?: undefined; ref?: React.Ref<HTMLInputElement> })
+  | (Common & Omit<React.TextareaHTMLAttributes<HTMLTextAreaElement>, 'className'> & {
       ref?: React.Ref<HTMLTextAreaElement>;
       /** Renders a `<textarea>` of this many rows, for text that runs past one line. */
       rows: number;

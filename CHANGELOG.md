@@ -7,11 +7,24 @@
 - The README's install section has "Start from a new Vite app": the commands and file edits that set up Tailwind v4,
   the `@/*` alias and a `components.json` in an app made with create-vite, run as written.
   https://lede.cloudcompute.com/overview.md shows it too.
+- A registry item's reference page shows each type it names from another item, under the props table that uses it
+  and under its declarations: a short type written out, such as `Noun` on DataTable's page, and a long one linked to
+  the page that declares it. `llms-full.txt` has the props tables' lists too.
+- A reference page says which attributes a component takes beyond its props table: ThemeProvider's says it also takes
+  the attributes of `<div>`, such as `className`, and the `render` prop of Base UI's `useRender`.
+- Checkbox's props table lists `className`, `style` and `hidden`, and TextField's lists `className`, each with the
+  wrapper it goes on. Checkbox puts them on its wrapper `<span>` and TextField on its wrapper `<div>`, as before.
+- When a reference page's install command adds an item only for its example, such as `@lede/button` on PageHeader's
+  page, the page says so.
 
 ### Changed
 
 - Step 1 of the install steps adds `@lede/theme-provider` and `@lede/list`, the items step 3 imports, where it added
   a data table and two hero flows. It links `llms.txt` for the name and import line of every item.
+
+### Fixed
+
+- `llms.txt` and `llms-full.txt` are served as `text/plain; charset=utf-8`, so their curly quotes read correctly.
 
 ## 0.5.3
 
