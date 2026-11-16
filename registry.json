@@ -154,6 +154,23 @@
       ]
     },
     {
+      "name": "search-field",
+      "type": "registry:component",
+      "title": "SearchField",
+      "description": "An `<input type=\"search\">` with a visually hidden label and a clear button. Escape clears its text, and on an empty field goes on to PageHeader's `backOnEscape`.",
+      "registryDependencies": [
+        "@lede/lede-theme",
+        "@lede/lede-utils"
+      ],
+      "files": [
+        {
+          "path": "registry/lede/search-field.tsx",
+          "type": "registry:component",
+          "target": "components/lede/search-field.tsx"
+        }
+      ]
+    },
+    {
       "name": "avatar",
       "type": "registry:component",
       "title": "Avatar",
