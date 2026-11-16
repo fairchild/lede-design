@@ -4,6 +4,10 @@
 
 ### Added
 
+- The docs' Overview opens on a live example in place of the grid of count cards: Daybook's inbox, the three-panel
+  workbench with its chat or the daily brief, chosen with a segmented control and shown wide or narrow. A short list
+  of links with one line each takes the cards' place below it, and Install now comes before Principles.
+
 - A registry item's reference page shows each type it names from another item, under the props table that uses it
   and under its declarations: a short type written out, such as `Noun` on DataTable's page, and a long one linked to
   the page that declares it. `llms-full.txt` has the props tables' lists too.

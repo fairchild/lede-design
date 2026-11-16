@@ -1,11 +1,12 @@
-import { Fragment, useEffect, useLayoutEffect, type ReactNode } from 'react';
+import { Fragment, useEffect, useLayoutEffect, useState, type ReactNode } from 'react';
 import { useLocation } from 'react-router';
 import { focusLanding } from '@lede/input-modality';
 import { PageHeader } from '@lede/blocks/page-header';
-import { SummaryCard } from '@lede/blocks/summary-card';
 import { Disclosure } from '@lede/disclosure';
 import { Button } from '@lede/button';
-import { LAYOUTS } from './Layouts';
+import { SegmentedControl } from '@lede/segmented-control';
+import { RouterLink } from '@/router-link';
+import { LAYOUTS, LayoutPreview } from './Layouts';
 import { tokenFamilies } from './Foundations';
 import { decisionCount } from './Decisions';
 import { EXAMPLE_APPS } from './integration-apps';
@@ -14,7 +15,7 @@ import { version } from '../../../package.json';
 import { CodeExample } from './CodeExample';
 import { REPO } from './DocsLayout';
 import { installGuide, readmeBlocks, type Block } from './readme-install';
-import { useTwin } from './twin';
+import { Live, useTwin } from './twin';
 import readme from '../../../README.md?raw';
 
 const PRINCIPLES: Array<{ title: string; summary: string; rules: ReactNode[] }> = [
@@ -60,14 +61,28 @@ const PRINCIPLES: Array<{ title: string; summary: string; rules: ReactNode[] }> 
   },
 ];
 
+/** Reference screens built from Lede, shown live at the top of Overview. Each is a real route of the site. */
+const EXAMPLES = [
+  {
+    value: 'inbox', label: 'Inbox', title: 'Daybook inbox', route: '/app/inbox/m1',
+    summary: 'A left bar of places, a list of messages and the one it opens. It’s the inbox flow inside AppShell, with MasterDetail for the list and the message.',
+  },
+  {
+    value: 'workbench', label: 'Three panels', title: 'Workbench with chat', route: '/layouts/workbench',
+    summary: 'Files, the file they open and a chat about it, side by side under a top bar. It’s WorkbenchShell, whose side panels resize and collapse.',
+  },
+  {
+    value: 'today', label: 'Daily brief', title: 'Daybook today', route: '/app',
+    summary: 'The day at a glance: what’s next, what’s due and what changed. It’s the daily brief flow, built from summary cards and lists.',
+  },
+];
+
 const COMPONENTS = registry.items.filter((item) => item.type === 'registry:component').length;
 const BLOCKS = registry.items.filter((item) => item.categories?.includes('blocks')).length;
 // Titles are export names ("InboxFlow"); item names read as words ("daily-brief").
 const FLOWS = registry.items.filter((item) => item.categories?.includes('flows')).map((item) => item.name.replaceAll('-', ' '));
 /** "a, b and c": Lede's lists have no serial comma, which `Intl.ListFormat('en')` adds. */
 const listed = (items: string[]) => (items.length > 1 ? `${items.slice(0, -1).join(', ')} and ${items.at(-1)}` : items.join(''));
-// Titles that hold "with" and "and" stay apart when a dot separates them.
-const LAYOUT_LINE = LAYOUTS.map((l) => l.title).join(' · ');
 const REGISTRY = `https://lede.cloudcompute.com/r/v${version}/{name}.json`;
 const INSTALL_CODE = `npx shadcn@latest registry add '@lede=${REGISTRY}'
 npx shadcn@latest add @lede/theme-provider @lede/data-table @lede/daily-brief @lede/inbox`;
@@ -120,6 +135,10 @@ function ReadmeBlocks({ blocks, label }: { blocks: Block[]; label?: string }) {
 
 export function Overview() {
   const twin = useTwin();
+  const [shown, setShown] = useState(EXAMPLES[0].value);
+  // The site sets each link on a line of its own; the Markdown runs them together, so a colon parts them there.
+  const sep = twin ? ': ' : ' ';
+  const example = EXAMPLES.find((e) => e.value === shown) ?? EXAMPLES[0];
   const { hash, key } = useLocation();
   const toInstall = hash === '#install';
   // A link to Install lands on its heading in the commit, as PageHeader does with the h1; the scroll waits a frame for
@@ -143,26 +162,30 @@ export function Overview() {
   return (
     <div className="ld-flow">
       <PageHeader focusOnMount={!toInstall} title="Lede" summary="A design system for React, installed from a shadcn registry. Every screen, section and row leads with its takeaway, and detail opens on request." />
-      <section aria-labelledby="explore" className="docs-section docs-explore">
-        <h2 id="explore" className="text-title-3">Explore</h2>
-        <ul className="ld-summary-grid">
-          <li><SummaryCard title="Foundations" figure={tokenFamilies.count} summary={tokenFamilies.summary} href="/foundations" /></li>
-          <li><SummaryCard title="Components" figure={COMPONENTS} summary="Primitives on Base UI and native elements." href="/components" /></li>
-          <li><SummaryCard title="Blocks" figure={BLOCKS} summary="Layouts and the larger parts of a screen." href="/blocks" /></li>
-          <li><SummaryCard title="Layouts" figure={LAYOUTS.length} summary={LAYOUT_LINE} href="/layouts" /></li>
-          <li><SummaryCard title="Demo app" figure={FLOWS.length} summary={`Hero flows, whole screens built from blocks: ${listed(FLOWS)}.`} href="/app" /></li>
-          <li><SummaryCard title="Integrations" figure={EXAMPLE_APPS.length} summary="Example apps for json-render: Lede screens from JSON specs and in an AI SDK chat, and that chat without Lede." href="/integrations" /></li>
-          <li><SummaryCard title="Decisions" figure={decisionCount} summary="How Lede is built and what keeps it that way." href="/decisions" /></li>
-        </ul>
+      <section aria-labelledby="example" className="docs-section">
+        <h2 id="example" className="text-title-3">Example</h2>
+        <p className="docs-intro">{twin ? 'Three screens built only from Lede, each a page of this site that you can open and use.' : example.summary}</p>
+        <Live>
+          <LayoutPreview
+            title={example.title}
+            route={example.route}
+            controls={<SegmentedControl label="Example" options={EXAMPLES.map(({ value, label }) => ({ value, label }))} value={example.value} onValueChange={(v) => setShown(v)} />}
+          />
+          <p className="docs-actions"><Button variant="tinted" href={example.route} aria-label={`Open full page: ${example.title}`}>Open full page</Button></p>
+        </Live>
+        {twin ? <ul>{EXAMPLES.map((e) => <li key={e.value}><a href={e.route}>{e.title}</a>: {e.summary}</li>)}</ul> : null}
       </section>
-      <section aria-labelledby="principles" className="docs-section">
-        <h2 id="principles" className="text-title-3">Principles</h2>
-        {PRINCIPLES.map((p) => (
-          <Disclosure key={p.title} title={p.title} summary={p.summary} headingLevel={3}>
-            <ul className="docs-rules">{p.rules.map((r, i) => <li key={i}>{r}</li>)}</ul>
-          </Disclosure>
-        ))}
-        <p className="docs-actions"><Button variant="tinted" href="/decisions">Decisions: how Lede is built and checked</Button></p>
+      <section aria-labelledby="explore" className="docs-section">
+        <h2 id="explore" className="text-title-3">Explore</h2>
+        <ul className="docs-index">
+          <li><RouterLink href="/foundations">Foundations</RouterLink>{sep}{tokenFamilies.summary}</li>
+          <li><RouterLink href="/components">Components</RouterLink>{sep}{COMPONENTS} primitives on Base UI and native elements.</li>
+          <li><RouterLink href="/blocks">Blocks</RouterLink>{sep}{BLOCKS} layouts and larger parts of a screen.</li>
+          <li><RouterLink href="/layouts">Layouts</RouterLink>{sep}{LAYOUTS.length} page structures, each a block you can install.</li>
+          <li><RouterLink href="/app">Demo app</RouterLink>{sep}{FLOWS.length} hero flows, whole screens built from blocks: {listed(FLOWS)}.</li>
+          <li><RouterLink href="/integrations">Integrations</RouterLink>{sep}{EXAMPLE_APPS.length} example apps for json-render, with Lede screens from JSON specs and in an AI SDK chat.</li>
+          <li><RouterLink href="/decisions">Decisions</RouterLink>{sep}{decisionCount} records of how Lede is built and what keeps it that way.</li>
+        </ul>
       </section>
       <section aria-labelledby="install" className="docs-section">
         <h2 id="install" tabIndex={-1} className="text-title-3 docs-target">Install</h2>
@@ -177,6 +200,15 @@ export function Overview() {
             <ReadmeBlocks blocks={LIMITS} />
           </>
         ) : steps}
+      </section>
+      <section aria-labelledby="principles" className="docs-section">
+        <h2 id="principles" className="text-title-3">Principles</h2>
+        {PRINCIPLES.map((p) => (
+          <Disclosure key={p.title} title={p.title} summary={p.summary} headingLevel={3}>
+            <ul className="docs-rules">{p.rules.map((r, i) => <li key={i}>{r}</li>)}</ul>
+          </Disclosure>
+        ))}
+        <p className="docs-actions"><Button variant="tinted" href="/decisions">Decisions: how Lede is built and checked</Button></p>
       </section>
     </div>
   );
