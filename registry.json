@@ -213,6 +213,23 @@
       ]
     },
     {
+      "name": "status-text",
+      "type": "registry:component",
+      "title": "StatusText",
+      "description": "A status word colored by its tone, with a dot, at the size of the text around it, for a ListRow's `value`, a table cell or a sentence.",
+      "registryDependencies": [
+        "@lede/lede-theme",
+        "@lede/lede-utils"
+      ],
+      "files": [
+        {
+          "path": "registry/lede/status-text.tsx",
+          "type": "registry:component",
+          "target": "components/lede/status-text.tsx"
+        }
+      ]
+    },
+    {
       "name": "disclosure",
       "type": "registry:component",
       "title": "Disclosure",
