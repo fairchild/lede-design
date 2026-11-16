@@ -270,6 +270,7 @@
 .ld-list-title, .ld-list-summary { overflow-wrap: anywhere; }
 .ld-list-footer { padding: 0 var(--space-4); margin-top: var(--space-1_5); }
 .ld-list-body { list-style: none; margin: 0; padding: 0; background: var(--card); border-radius: var(--radius-lg); overflow: hidden; }
+.ld-list-empty { padding: var(--space-3) var(--space-4); font-size: var(--text-subheadline-size); line-height: var(--text-subheadline-line-height); color: var(--muted-foreground); }
 [data-theme$="-hc"] .ld-list-body { box-shadow: 0 0 0 1px var(--input); }
 .ld-row-wrap { position: relative; overflow: hidden; }
 .ld-row-wrap + .ld-row-wrap::before {
@@ -322,6 +323,11 @@
 /* A query's `em` is the browser's text size. Where enlarged text leaves the window under `20em` of it, a subtitle wraps
    so none of it is lost. At the default size, no window 320px or wider matches. */
 @media (width < 20em) { .ld-row-subtitle { white-space: normal; } }
+/* `subtitleLines`: 2 clamps the subtitle to two lines, and `all` shows every line. */
+.ld-row-subtitle[data-lines] { white-space: normal; }
+.ld-row-subtitle[data-lines="2"] { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; }
+/* Under `20em` of enlarged text, a clamped subtitle shows every line, as a one-line one does. */
+@media (width < 20em) { .ld-row-subtitle[data-lines="2"] { display: block; -webkit-line-clamp: none; line-clamp: none; } }
 .ld-row-target[aria-current="page"] { font-weight: var(--weight-semibold); }
 .ld-row:has(.ld-row-target[aria-current="page"]) { background-image: linear-gradient(var(--fill-control), var(--fill-control)); }
 [data-theme$="-hc"] .ld-row:has(.ld-row-target[aria-current="page"]) { box-shadow: inset 0 0 0 1px var(--input); }

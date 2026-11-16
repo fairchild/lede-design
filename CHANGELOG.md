@@ -12,6 +12,9 @@
   of Tailwind's palette and `text-sm`.
 - MasterDetail takes `stickyList`: on wide screens the list pane stays in view and scrolls on its own, and the page
   scrolls the detail, for a long list beside a long detail.
+- ListRow takes `subtitleLines`: `2` clamps the subtitle to two lines and `'all'` shows every line, where the default
+  is one line that ends in an ellipsis.
+- ListGroup takes `empty`, shown in place of the rows when there are none, such as "No hosts match" under a filter.
 - StatusText, `@lede/status-text`: a status word colored by its tone (`neutral`, `positive`, `caution` or
   `critical`), with a dot, at the size of the text around it. Put it in a ListRow's `value` or `subtitle`, a table
   cell or a sentence, as in `value={<StatusText tone="critical">Failed</StatusText>}`.

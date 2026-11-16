@@ -123,6 +123,11 @@ export function Components() {
           <ListRow title="Sync across devices" subtitle="Changes reach all your devices" trailing={<Switch aria-label="Sync across devices" defaultChecked />} />
           <ListRow title="Q4 budget needs your approval" subtitle="From Dana Okafor · 9:41 AM" href="/app/inbox/m1" actions={[{ label: 'Archive', tone: 'neutral' }, { label: 'Delete', tone: 'critical' }]} />
         </ListGroup></Live>
+        <p className="docs-intro docs-note">
+          A subtitle shows one line and ends in an ellipsis; <code>subtitleLines</code> gives it two lines, or every line
+          with <code>'all'</code>. A group’s <code>empty</code> text stands in for its rows when there are none, such as
+          when a filter leaves nothing.
+        </p>
       </Demo>
       <Demo id="c-status" item="status-text" title="StatusText" summary={<>A status word in a <code>{'<span>'}</code>, colored by its <code>tone</code>, with a dot before it. It takes the size of the text around it, so it fits a ListRow’s <code>value</code>, a table cell or a sentence.</>}>
         <Live><ListGroup title="Hosts" summary="1 failed" headingLevel={3}>
