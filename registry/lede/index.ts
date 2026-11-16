@@ -14,6 +14,8 @@ export { Card } from './card';
 export type { CardProps } from './card';
 export { ListGroup, ListRow, RowActionItems } from './list';
 export type { ListGroupProps, ListRowProps, RowAction } from './list';
+export { StatusText } from './status-text';
+export type { StatusTextProps } from './status-text';
 export { Checkbox } from './checkbox';
 export type { CheckboxProps } from './checkbox';
 export { Table } from './table';

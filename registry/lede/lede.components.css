@@ -311,6 +311,13 @@
   min-width: 0; font-size: var(--text-body-size); line-height: var(--text-body-line-height);
   color: var(--muted-foreground); overflow-wrap: break-word;
 }
+/* StatusText: a status word colored by its tone, at the size of the text around it. */
+.ld-status { display: inline-flex; align-items: center; gap: var(--space-1_5); margin: 0; font-weight: var(--weight-semibold); }
+.ld-status-dot { flex: none; width: var(--size-status-dot); height: var(--size-status-dot); border-radius: 999px; background: currentColor; }
+.ld-status-neutral { color: var(--muted-foreground); }
+.ld-status-positive { color: var(--success); }
+.ld-status-caution { color: var(--warning); }
+.ld-status-critical { color: var(--destructive); }
 .ld-row-chevron { flex: none; width: auto; height: var(--size-chevron); color: var(--muted-foreground); pointer-events: none; }
 .ld-tile { width: var(--size-leading); height: var(--size-leading); border-radius: var(--radius-xs); display: flex; align-items: center; justify-content: center; background: var(--primary); color: var(--primary-foreground); }
 .ld-tile svg { width: calc(var(--size-leading) - var(--space-3)); height: calc(var(--size-leading) - var(--space-3)); }
@@ -711,6 +718,7 @@
 
   .ld-row:has(.ld-row-target[aria-current="page"]) { border-inline-start: var(--stroke-marker) solid Highlight; padding-inline-start: calc(var(--space-4) - var(--stroke-marker)); }
   /* An `<svg>` keeps the color it's given here (`preserve-parent-color`), so a chevron takes its parent's forced one. */
+  .ld-status-dot { background: CanvasText; }
   .ld-row-chevron, .ld-disc-chevron, .ld-table-toggle-chevron { opacity: 1; color: inherit; }
   .ld-disc-head:hover .ld-disc-title, .ld-table-toggle:hover .ld-table-toggle-title, .ld-table-sort:hover .ld-table-sort-label { text-decoration: underline; }
   .ld-table-sort:active { color: Highlight; }
