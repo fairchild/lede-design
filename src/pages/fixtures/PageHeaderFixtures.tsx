@@ -17,7 +17,7 @@ export function PageHeaderFixtures() {
       <PageHeader key={screen} title={screen === 1 ? 'Page header fixtures' : `Screen ${screen}`} summary="A screen that mounts under a control that keeps focus, for the automated tests." />
       <Button variant="gray" onClick={() => setScreen((n) => n + 1)}>Show the next screen</Button>
       <section className="ld-flow-stack" aria-label="A header in a stack">
-        <PageHeader headingLevel={2} focusOnMount={false} title="A header in a stack" summary="An inline-level control follows it." />
+        <PageHeader headingLevel={2} focusOnMount={false} title="A header in a stack" summary="An inline-level control follows it." leading={<span className="ld-tile">L</span>} leadingLink={{ href: '/app', label: 'Daybook home' }} />
         <Switch label="Show the stack spacing" />
       </section>
       <DetailInPlace />

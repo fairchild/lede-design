@@ -11,6 +11,8 @@
 - Page and Stack, `@lede/page`: Page is a page's box for an app without AppShell, with a gutter, a widest width
   (`"flow"`, `"narrow"` or `"full"`) and even space between its sections. Stack puts its children one under another
   with one gap, `"sm"`, `"md"` or `"lg"`, and their own top and bottom margins give way to it.
+- PageHeader takes `leadingLink`, such as `{ href: '/', label: 'Home' }`: the picture in `leading` becomes a link
+  named by the label, at least a hit target in size, such as an app's mark that goes home.
 - ListRow takes `details`: content the row opens under itself, in the same list item, such as a run's log. The row
   becomes a `<button aria-expanded>` with a chevron that turns down while they show, find-in-page opens a row whose
   details hold the text, and `open`, `defaultOpen` and `onOpenChange` control it.

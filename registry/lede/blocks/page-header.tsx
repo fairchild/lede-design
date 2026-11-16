@@ -8,8 +8,16 @@ export interface PageHeaderProps {
   title: React.ReactNode;
   /** The page's takeaway in one line: what needs attention, or the state. Lead with the number. */
   summary?: React.ReactNode;
-  /** A picture beside the title, such as an Avatar. The title already names it, so it's hidden from assistive tech. */
+  /**
+   * A picture beside the title, such as an Avatar or an app's mark. The title already names it, so it's hidden from
+   * assistive tech, unless `leadingLink` makes it a link.
+   */
   leading?: React.ReactNode;
+  /**
+   * Makes `leading` a link, such as an app's mark that goes home: `{ href: '/', label: 'Home' }`. The label names the
+   * link, since the picture has no text of its own.
+   */
+  leadingLink?: { href: string; label: string };
   /**
    * Back for nested screens: a link, such as `{ href: '/settings', label: 'Settings' }`, or a button that acts in
    * place, such as `{ label: 'Inbox', onSelect: close }` for a detail that opened inside the page. A button moves no
@@ -160,7 +168,16 @@ export function PageHeader(props: PageHeaderProps) {
         <button ref={backRef} type="button" className="ld-back" onClick={props.back.onSelect}>{chevron}{props.back.label}</button>
       ) : null}
       <div className="ld-page-header-row">
-        {props.leading ? <div className="ld-page-header-lead"><span aria-hidden="true">{props.leading}</span>{text}</div> : text}
+        {props.leading ? (
+          <div className="ld-page-header-lead">
+            {props.leadingLink ? (
+              <Link className="ld-page-header-link" href={props.leadingLink.href} aria-label={props.leadingLink.label}>
+                <span aria-hidden="true">{props.leading}</span>
+              </Link>
+            ) : <span aria-hidden="true">{props.leading}</span>}
+            {text}
+          </div>
+        ) : text}
         {props.actions ? <div className="ld-page-actions">{props.actions}</div> : null}
       </div>
     </header>

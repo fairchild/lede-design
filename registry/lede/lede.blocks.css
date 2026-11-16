@@ -61,6 +61,12 @@
 .ld-page-header-row { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--space-4); flex-wrap: wrap; }
 .ld-page-header-text { min-width: 0; overflow-wrap: break-word; }
 .ld-page-header-lead { min-width: 0; display: flex; align-items: center; gap: var(--space-4); }
+/* A `leadingLink`: the picture is the link, at least a hit target in size, with its ring around it. */
+.ld-page-header-link {
+  flex: none; display: inline-flex; align-items: center; justify-content: center; min-width: var(--size-hit-min); min-height: var(--size-hit-min);
+  border-radius: var(--radius-xs); color: inherit; text-decoration: none;
+}
+.ld-page-header-link:focus-visible { outline: var(--stroke-ring) solid var(--ring); outline-offset: var(--stroke-ring-offset); }
 .ld-page-title { margin: 0; outline: none; }
 .ld-page-title:focus-visible { outline: var(--stroke-ring) solid var(--ring); outline-offset: var(--stroke-ring-offset); border-radius: var(--radius-xs); }
 .ld-page-summary { margin: var(--space-1) 0 0; font-size: var(--text-body-size); line-height: var(--text-body-line-height); color: var(--muted-foreground); }

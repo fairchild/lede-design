@@ -38,7 +38,7 @@ export function Blocks() {
       <Block id="b-workbench" item="workbench-shell" title="WorkbenchShell" summary="A top bar over three panels that fill the window, for tools where people keep several things in view. Side panels collapse and resize, and narrow screens show one panel at a time.">
         <Button variant="tinted" href="/layouts#workbench">See it in Layouts</Button>
       </Block>
-      <Block id="b-header" item="page-header" title="PageHeader" summary={<>A screen’s <code>{'<h1>'}</code> and its one-line summary, with an optional back link, actions and a picture in <code>leading</code>. The heading takes focus on mount, unless <code>focusOnMount</code> is <code>false</code> or something else in the same commit, such as a restore on Back, moved focus inside its <code>{'<main>'}</code>.</>}>
+      <Block id="b-header" item="page-header" title="PageHeader" summary={<>A screen’s <code>{'<h1>'}</code> and its one-line summary, with an optional back link, actions and a picture in <code>leading</code>, which <code>leadingLink</code> makes a link, such as an app’s mark that goes home. The heading takes focus on mount, unless <code>focusOnMount</code> is <code>false</code> or something else in the same commit, such as a restore on Back, moved focus inside its <code>{'<main>'}</code>.</>}>
         <Live><div className="docs-demo" style={{ display: 'block' }}>
           <PageHeader headingLevel={2} focusOnMount={false} title="Inbox" summary="3 unread of 4" back={{ href: '/app', label: 'Today' }} actions={<Button size="sm">Select</Button>} />
           <PageHeader headingLevel={2} focusOnMount={false} title="Hana Sato" summary="Product lead" leading={<Avatar name="Hana Sato" size="lg" />} />
