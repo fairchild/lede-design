@@ -1,6 +1,11 @@
 # Changelog
 
-## Unreleased
+## 0.6.0
+
+Docs travel with the code: each registry item installs its reference page in `components/lede/docs/`, and each
+release is mirrored on GitHub for sandboxes that can't reach the site. It adds StatusText, SearchField and StatusList, and
+the docs' Overview opens on a live example. The registry for this release is
+`https://lede.cloudcompute.com/r/v0.6.0/{name}.json`.
 
 ### Added
 
