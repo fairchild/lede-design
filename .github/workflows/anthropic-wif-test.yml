@@ -1,0 +1,49 @@
+name: anthropic-wif-test
+# Checks that this repository's GitHub OIDC token can be exchanged for a Claude API token, and that the token works.
+# Run it by hand from the Actions tab. A manual run's OIDC subject is `repo:fairchild/lede-design:ref:refs/heads/<branch>`,
+# not the `:pull_request` subject Claude review signs in with, so the federation rule has to match both.
+on: workflow_dispatch
+permissions:
+  id-token: write
+  contents: read
+env:
+  ANTHROPIC_FEDERATION_RULE_ID: ${{ vars.ANTHROPIC_FEDERATION_RULE_ID || 'fdrl_01Svj63dhm2bhEXz55uNu1vG' }}
+  ANTHROPIC_ORGANIZATION_ID: ${{ vars.ANTHROPIC_ORGANIZATION_ID || '661423c5-bf1a-472c-8d9b-07c7950a3daf' }}
+  ANTHROPIC_SERVICE_ACCOUNT_ID: ${{ vars.ANTHROPIC_SERVICE_ACCOUNT_ID || 'svac_01QySJwzBKASBuhaXAC3h8at' }}
+  ANTHROPIC_WORKSPACE_ID: ${{ vars.ANTHROPIC_WORKSPACE_ID || 'wrkspc_017tWLVR4ouF9ZADCnPNoimb' }}
+jobs:
+  call-claude:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch GitHub OIDC token
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const token = await core.getIDToken('https://api.anthropic.com');
+            core.setSecret(token);
+            core.exportVariable('JWT', token);
+      - name: Exchange it for a Claude API token and call the API
+        run: |
+          body=$(jq -n --arg jwt "$JWT" '{
+            grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
+            assertion: $jwt,
+            federation_rule_id: env.ANTHROPIC_FEDERATION_RULE_ID,
+            organization_id: env.ANTHROPIC_ORGANIZATION_ID,
+            service_account_id: env.ANTHROPIC_SERVICE_ACCOUNT_ID,
+            workspace_id: env.ANTHROPIC_WORKSPACE_ID
+          }')
+          response=$(curl -sS https://api.anthropic.com/v1/oauth/token -H 'content-type: application/json' --data "$body")
+          token=$(jq -r '.access_token // empty' <<<"$response")
+          if [ -z "$token" ]; then
+            jq . <<<"$response"
+            echo "::error title=Exchange failed::See the deny reason in the Console, Workload identity → History."
+            exit 1
+          fi
+          echo "::add-mask::$token"
+          echo "Exchanged; the token expires in $(jq -r .expires_in <<<"$response") seconds."
+          curl -sS --fail-with-body https://api.anthropic.com/v1/messages \
+            -H "authorization: Bearer $token" \
+            -H 'anthropic-version: 2026-10-21' \
+            -H 'content-type: application/json' \
+            -d '{"model": "claude-opus-5-5", "max_tokens": 256, "messages": [{"role": "user", "content": "Reply with: ok"}]}' \
+            | jq '{model, stop_reason, usage}'
