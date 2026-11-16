@@ -45,6 +45,7 @@ export const CHOICES: Array<{ id: string; title: string; choices: Choice[] }> = 
     id: 'input', title: 'Actions and input',
     choices: [
       { need: 'An action, or a link that looks like one', item: 'button', title: 'Button', href: '/components#c-button', note: 'One filled Button per view, for the main action.' },
+      { need: 'A question before an action that needs a second thought', item: 'alert-dialog', title: 'AlertDialog', href: '/components#c-alert', note: 'Cancel or confirm; focus opens on Cancel when the action destroys something.' },
       { need: 'One choice from two to five, all in view', item: 'segmented-control', title: 'SegmentedControl', href: '/components#c-seg', note: 'Radio inputs. Use it for a view or a mode, such as Wide and Narrow.' },
       { need: 'A setting that turns on or off at once', item: 'switch', title: 'Switch', href: '/components#c-switch', note: 'For a choice that waits for a Save, use Checkbox.' },
       { need: 'A yes or no in a form, or picking rows', item: 'checkbox', title: 'Checkbox', href: '/components#c-check', note: 'Has a mixed state for “some selected”.' },

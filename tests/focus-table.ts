@@ -1350,6 +1350,18 @@ export const ACTIONS: Action[] = [
     target: button(/^Deploy edge-sfo-2/),
   },
   {
+    screen: 'Everywhere', action: 'A critical AlertDialog opens',
+    setup: async (d) => { await d.page.goto('/fixtures/page-header'); await d.press(button('Open the detail')); },
+    act: (d) => d.press(button('Delete the venue')),
+    target: button('Cancel', { role: 'alertdialog', name: 'Delete Harbor Hall?' }),
+  },
+  {
+    screen: 'Everywhere', action: 'AlertDialog Cancel',
+    setup: async (d) => { await d.page.goto('/fixtures/page-header'); await d.press(button('Open the detail')); await d.press(button('Delete the venue')); },
+    act: (d) => d.press(button('Cancel', { role: 'alertdialog', name: 'Delete Harbor Hall?' })),
+    target: button('Delete the venue'),
+  },
+  {
     screen: 'Data table', action: 'Layout switch, table to cards', only: 'desktop',
     setup: async (d) => { await work(d); await locate(d.page, row('WI-1018')).focus(); },
     act: ({ page }) => page.setViewportSize({ width: 480, height: 800 }),

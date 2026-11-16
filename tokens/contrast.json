@@ -182,7 +182,7 @@
    "on": ["@page", "fill-control over @page"]
   },
   {
-   "why": "Dims content behind an overlay, and nothing is read against it. No CSS uses it yet.",
+   "why": "Dims content behind an AlertDialog, and nothing is read against it: the dialog's own surface carries its text.",
    "role": "exempt",
    "colors": ["scrim"],
    "on": ["@page"]
