@@ -22,7 +22,7 @@ const sentence = (text) => `${text[0].toUpperCase()}${text.slice(1)}.`;
 const kilobytes = (text) => Math.max(1, Math.round(Buffer.byteLength(text, 'utf8') / 1024));
 
 /** The item sections of llms.txt, in this order. */
-const GROUPS = [
+export const GROUPS = [
   ['Components', (item) => item.type === 'registry:component'],
   ['Blocks', (item) => item.categories?.includes('blocks')],
   ['Hero flows', (item) => item.categories?.includes('flows')],

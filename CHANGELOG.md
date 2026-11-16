@@ -4,6 +4,10 @@
 
 ### Added
 
+- Each registry item installs its docs: its reference page lands at `components/lede/docs/<item>.md`, and `lede-theme`
+  adds `components/lede/docs/README.md`, which lists every item of the release and holds the README's setup
+  sections. A project that can't reach the docs site, such as an agent's sandbox, has the docs for the release it
+  installed. The CLI prints where each item's page landed.
 - StatusList, `@lede/status-list`: a block for a "needs attention" list. It takes items with a tone and a status in
   words, lists them worst first with their status as StatusText and two-line subtitles, and shows "Nothing needs a
   look." (or your `empty`) when there are none.

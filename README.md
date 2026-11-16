@@ -61,7 +61,8 @@ in an app made with create-vite. [Limits](#limits) covers server rendering.
    ```
 
 3. Import each component from its own file. Components land in `components/lede/` and styles in `styles/lede/`, under
-   `src/` if your project has one.
+   `src/` if your project has one. Each item's docs land in `components/lede/docs/`, with a guide to them in its
+   `README.md`.
 
    ```tsx
    import { ListGroup, ListRow } from '@/components/lede/list';

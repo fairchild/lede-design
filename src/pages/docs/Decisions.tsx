@@ -278,6 +278,15 @@ const GROUPS: Group[] = [
         ],
       },
       {
+        title: 'Docs install with the code',
+        summary: <>Each registry item installs its reference page at <code>components/lede/docs/&lt;item&gt;.md</code>, and <code>lede-theme</code> installs a guide beside them: every item of the release and the README’s setup sections.</>,
+        why: <>A coding agent in a sandbox often can’t reach the docs site, and then the vendored source is all it has. Docs that come in the same JSON as the code are there wherever the code is, and match its release.</>,
+        cost: <>Each item’s JSON carries a page of Markdown, and a project gets a <code>docs</code> folder it didn’t ask for. Tailwind scans it unless the project’s CSS says <code>@source not</code>. Building the registry renders every docs page, as the site’s build does.</>,
+        heldBy: [
+          <><Path to="tests/registry-docs.spec.ts" /> reads every item’s JSON as the registry build writes it and expects its page, with this release, and each relative link in it naming a page installed with it. It expects the guide to link every item and to hold the README’s setup sections and their code, character for character, and that adding the docs twice leaves one copy.</>,
+        ],
+      },
+      {
         title: 'The table store follows table-core',
         summary: <>The server-rows store behind useServerRows is a copy of the one in <code>@fairchild/table-core</code>, kept identical to a pinned release.</>,
         why: 'The store installs with the block as source, so a project needs no package for it. The store is maintained and tested in table-core, and a copy that falls behind loses that work without a sign.',
