@@ -9,7 +9,8 @@ picks what to run.
 
 ## Commands
 - `npm run dev` — site at http://localhost:5173
-- `npm run build` — tokens → registry → typecheck → site (`dist/`, includes `dist/r/`, and from `scripts/llms/` each
+- `npm run build` — tokens → registry (each item's JSON gains its reference page, from `scripts/llms/registry-docs.mjs`) →
+  typecheck → site (`dist/`, includes `dist/r/`, and from `scripts/llms/` each
   docs page's `.md`, `dist/reference/`, the Open Knowledge Format indexes `index.md` and `reference/index.md`,
   `llms.txt` and `llms-full.txt`, which `npm run dev` serves too)
 - `npm test` — Playwright + axe on every route, in light, dark, light-hc and dark-hc on desktop and in light and

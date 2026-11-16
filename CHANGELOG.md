@@ -4,6 +4,10 @@
 
 ### Added
 
+- Each registry item installs its docs: its reference page lands at `components/lede/docs/<item>.md`, and `lede-theme`
+  adds `components/lede/docs/README.md`, which lists every item of the release and holds the README's setup
+  sections. A project that can't reach the docs site, such as an agent's sandbox, has the docs for the release it
+  installed. The CLI prints where each item's page landed.
 - The README has a components.json section: the fields the shadcn CLI needs for Lede, in a file you can write by hand
   where `shadcn init` can't reach ui.shadcn.com, such as in a sandbox. `"baseColor": ""` keeps `add` from downloading
   too. It also says that Lede doesn't use the `ui`, `lib` and `hooks` aliases.

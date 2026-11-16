@@ -20,7 +20,7 @@ const frontMatter = (meta) => `---\n${stringify(meta, { lineWidth: 0 })}---\n\n`
 const sentence = (text) => `${text[0].toUpperCase()}${text.slice(1)}.`;
 
 /** The item sections of llms.txt, in this order. */
-const GROUPS = [
+export const GROUPS = [
   ['Components', (item) => item.type === 'registry:component'],
   ['Blocks', (item) => item.categories?.includes('blocks')],
   ['Hero flows', (item) => item.categories?.includes('flows')],
