@@ -58,6 +58,16 @@ const GROUPS: Group[] = [
           <>The One h1 per screen rule in <Path to="CONTRIBUTING.md" />, in review, for naming each region.</>,
         ],
       },
+      {
+        title: 'Each control names what it acts on',
+        summary: <>No two controls of one role in the same region share a name: a row’s menu is “More actions for WI-1001”, not “More actions” fifty times.</>,
+        why: 'A screen reader user and an agent reading the accessibility tree both pick a control by its role and name inside its region. Two controls they can’t tell apart send the action to the wrong row.',
+        cost: <>A component that repeats a control per row builds its name from the row’s own name, so a row needs a name of its own. DataTable takes it from the row header’s column.</>,
+        heldBy: [
+          <><Path to="tests/agent-names.spec.ts" /> loads every Daybook screen, on desktop and on a phone, and fails when two visible controls in one named region share a role and a name.</>,
+          <>The rule under One h1 per screen in <Path to="CONTRIBUTING.md" />, in review, for screens outside Daybook.</>,
+        ],
+      },
     ],
   },
   {

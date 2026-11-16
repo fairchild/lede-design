@@ -176,6 +176,8 @@ container's font size, and it can also be 0.02px less in a `max-width` query.
   element inside another.
 - **One h1 per screen.** It's the PageHeader's, and it takes focus on navigation. Regions are named, and headings step
   down one level at a time.
+  Within a region, each control's name says what it acts on, so no two of one role share a name: "Archive Quarterly
+  review", not "Archive" on every row. A screen reader user and an agent both pick a control by role and name.
 - **Focus.** Focus lands where the person acts next: the h1 to read, the first field that needs input to type and the
   primary button to confirm. Enter acts, and Escape backs out one layer per press. Back and back links return to where
   the person was. Each change moves focus once, in the same task, so `<body>` never shows, and an announcement follows
