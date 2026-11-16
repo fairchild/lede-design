@@ -172,9 +172,11 @@ import { ListGroup, ListRow } from '@/components/lede/list'
 
 export default function App() {
   return (
-    <ListGroup title="Account">
-      <ListRow title="Name" value="Ada Lovelace" />
-    </ListGroup>
+    <main className="mx-auto max-w-xl p-4">
+      <ListGroup title="Account">
+        <ListRow title="Name" value="Ada Lovelace" />
+      </ListGroup>
+    </main>
   )
 }
 ```
