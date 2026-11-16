@@ -7,6 +7,13 @@ takeaway, and detail opens on request. The name is the journalist's word for a s
 [Install](#use-it-in-a-shadcn-project) · [Changelog](CHANGELOG.md)
 
 A coding agent starts at https://lede.cloudcompute.com/llms.txt, the docs index it can read without JavaScript.
+For Claude Code, install the `lede-design-system` skill of this release into the project:
+
+```bash
+mkdir -p .claude/skills/lede-design-system
+curl -fsSL https://raw.githubusercontent.com/fairchild/lede-design/v0.5.3/.claude/skills/lede-design-system/SKILL.md \
+  -o .claude/skills/lede-design-system/SKILL.md
+```
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/inbox-dark.png">

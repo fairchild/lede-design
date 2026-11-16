@@ -18,3 +18,10 @@ test('the README’s components.json is valid JSON with Lede’s registry', () =
   expect(config.registries['@lede']).toBe(`https://lede.cloudcompute.com/r/v${version}/{name}.json`);
   expect(config.rsc).toBe(false);
 });
+
+test('the README’s skill install and llms.txt’s skill link pin this release’s tag, not main', () => {
+  const skill = (text: string) => text.match(/https:\/\/raw\.githubusercontent\.com\/fairchild\/lede-design\/[^/\s]+\/\.claude\/skills\/lede-design-system\/SKILL\.md/g) ?? [];
+  const pinned = `https://raw.githubusercontent.com/fairchild/lede-design/v${version}/.claude/skills/lede-design-system/SKILL.md`;
+  expect(skill(readFileSync('README.md', 'utf8'))).toEqual([pinned]);
+  expect(skill(readFileSync('scripts/llms/llms.md', 'utf8').replaceAll('{{VERSION}}', version))).toEqual([pinned]);
+});

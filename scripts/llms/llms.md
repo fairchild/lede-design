@@ -31,7 +31,7 @@ Read the smallest file that answers the task. Each size is this build's, in kilo
 
 ## Agents
 
-- [Agent skill](https://raw.githubusercontent.com/fairchild/lede-design/main/.claude/skills/lede-design-system/SKILL.md): the `lede-design-system` skill, the rules for building and reviewing UI with Lede
+- [Agent skill](https://raw.githubusercontent.com/fairchild/lede-design/v{{VERSION}}/.claude/skills/lede-design-system/SKILL.md): the `lede-design-system` skill for this release, the rules for building and reviewing UI with Lede. To install it for Claude Code, save it as `.claude/skills/lede-design-system/SKILL.md` in the project
 - [json-render chat recipe](https://raw.githubusercontent.com/fairchild/lede-design/main/integrations/json-render-chat/AGENTS.md): the steps, in order, for a chat whose replies hold Lede screens, on the AI SDK and json-render
 - [README](https://raw.githubusercontent.com/fairchild/lede-design/main/README.md): what Lede is and how to install it. Its Limits section covers server rendering, the page background and installing from the registry URL
 
