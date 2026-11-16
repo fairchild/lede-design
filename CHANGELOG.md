@@ -7,6 +7,8 @@
 - `tests/agent-names.spec.ts` fails when two visible controls of one role in the same region of a Daybook screen share
   a name, so a screen reader user or an agent can pick each one. Every screen passes today. The rule is in
   `CONTRIBUTING.md` and on the Decisions page.
+- `docs/releasing.md` says how a release goes from merged pull requests to lede.cloudcompute.com: the release pull
+  request, the tag only an admin can push, how to check the release is live and what to do when a step fails.
 
 ## 0.6.0
 

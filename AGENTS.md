@@ -27,6 +27,8 @@ picks what to run.
 - `npm run contrast` — the contrast gate alone; `npm run contrast -- --report` prints every pair.
 - `scripts/preview-pr.sh <N>` — builds pull request N and uploads it as the Worker Preview `pr-<N>` (`--dry-run`,
   `--comment`, `--delete`). `CONTRIBUTING.md` covers credentials.
+- Releasing: `docs/releasing.md`. Only a repo admin can push the `vX.Y.Z` tag that deploys the site, so prepare the release
+  pull request and leave the tag to them.
 - `npm run design-system` — writes Lede's design system for claude.ai to `dist-design-system/project/`.
   CONTRIBUTING.md says how to publish it.
 - CI runs what a PR into main can affect, and `check` is the one status to read. `scripts/ci-tier.mjs` sorts the
