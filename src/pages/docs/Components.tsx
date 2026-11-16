@@ -34,7 +34,7 @@ function SearchDemo() {
   return (
     <div className="docs-demo-col">
       <SearchField label="Filter hosts" value={query} onValueChange={setQuery} />
-      <ListGroup title="Hosts" summary={query ? `${shown.length} of ${HOSTS.length}` : `${HOSTS.length}`} footer={shown.length ? undefined : 'No host matches.'} headingLevel={3}>
+      <ListGroup title="All hosts" summary={query ? `${shown.length} of ${HOSTS.length}` : `${HOSTS.length}`} footer={shown.length ? undefined : 'No host matches.'} headingLevel={3}>
         {shown.map((h) => <ListRow key={h} title={h} />)}
       </ListGroup>
     </div>
