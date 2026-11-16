@@ -69,6 +69,37 @@ jobs:
           echo "mode=$mode" >> "$GITHUB_OUTPUT"
           echo "::notice title=Claude review::Billing: $mode"
 
+      # The API step's sign-in fails without saying why: Claude Code stops before its first turn and the action only
+      # reports is_error. So exchange the OIDC token here first, and when the Console denies it, print its answer and
+      # skip the review with a warning instead of failing every PR on a setting the PR can't fix. The token this
+      # returns is discarded; the action exchanges its own.
+      - name: Check the API sign-in
+        id: exchange
+        if: steps.auth.outputs.mode == 'api' || steps.auth.outputs.mode == 'auto'
+        run: |
+          jwt=$(curl -sS -H "authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=https://api.anthropic.com" | jq -r .value)
+          echo "::add-mask::$jwt"
+          body=$(jq -n --arg jwt "$jwt" '{
+            grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
+            assertion: $jwt,
+            federation_rule_id: env.ANTHROPIC_FEDERATION_RULE_ID,
+            organization_id: env.ANTHROPIC_ORGANIZATION_ID,
+            service_account_id: env.ANTHROPIC_SERVICE_ACCOUNT_ID,
+            workspace_id: env.ANTHROPIC_WORKSPACE_ID
+          }')
+          response=$(curl -sS https://api.anthropic.com/v1/oauth/token -H 'content-type: application/json' --data "$body")
+          token=$(jq -r '.access_token // empty' <<<"$response")
+          if [ -n "$token" ]; then
+            echo "::add-mask::$token"
+            echo "ok=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          jq . <<<"$response"
+          subject=$(jq -rR 'split(".")[1] | gsub("-";"+") | gsub("_";"/") | . + "==" | @base64d | fromjson | .sub' <<<"$jwt" 2>/dev/null || true)
+          echo "ok=false" >> "$GITHUB_OUTPUT"
+          echo "::warning title=Claude review skipped::The Console refused this run's sign-in (subject '$subject'). Its deny reason is under Workload identity → History; set CLAUDE_REVIEW_AUTH to off to stop trying."
+
       - if: steps.auth.outputs.mode != 'off'
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -93,8 +124,9 @@ jobs:
       # wins over federation.
       - name: Review (API)
         if: >-
-          steps.auth.outputs.mode == 'api' ||
-          (steps.auth.outputs.mode == 'auto' && steps.subscription.outcome == 'failure')
+          steps.exchange.outputs.ok == 'true' && (
+            steps.auth.outputs.mode == 'api' ||
+            (steps.auth.outputs.mode == 'auto' && steps.subscription.outcome == 'failure'))
         uses: anthropics/claude-code-action@f3b070c88125d33dbae5653df5f143101d4ea9dc # v1.0.276
         with:
           anthropic_federation_rule_id: ${{ env.ANTHROPIC_FEDERATION_RULE_ID }}
@@ -108,4 +140,12 @@ jobs:
 
       - name: Note the fallback
         if: steps.auth.outputs.mode == 'auto' && steps.subscription.outcome == 'failure'
-        run: echo "::warning title=Claude review::The subscription run failed, so the API reviewed this PR."
+        env:
+          API: ${{ steps.exchange.outputs.ok }}
+        run: |
+          if [ "$API" = true ]; then
+            echo "::warning title=Claude review::The subscription run failed, so the API reviewed this PR."
+          else
+            echo "::error title=Claude review::The subscription run failed, and the API sign-in was refused too."
+            exit 1
+          fi
