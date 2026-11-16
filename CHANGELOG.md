@@ -10,6 +10,15 @@
 - `docs/releasing.md` says how a release goes from merged pull requests to lede.cloudcompute.com: the release pull
   request, the tag only an admin can push, the `develop` branch every pull request now targets, how to check the release is live and what to do when a step fails.
 
+### Fixed
+
+- `npx shadcn@latest add @lede/theme-provider @lede/list`, the README's install, no longer prints "Docs for
+  ThemeProvider" twice. The shadcn CLI prints an item's line twice when it's named and is also another named item's
+  dependency, so `theme-provider` prints no line; its page still installs, and the guide's line points at the list
+  that names it.
+- Claude review no longer fails every pull request when the Console refuses its sign-in. It checks the sign-in
+  first, and when that's refused it prints the Console's answer and the token's subject, warns and skips the review.
+
 ## 0.6.0
 
 Docs travel with the code: each registry item installs its reference page in `components/lede/docs/`, and each

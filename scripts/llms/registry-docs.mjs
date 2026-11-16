@@ -18,6 +18,13 @@ const REPO = 'https://github.com/fairchild/lede-design';
 export const DOCS_DIR = 'components/lede/docs';
 /** The item that carries the guide: every item but `lede-utils` installs it. */
 const GUIDE_ITEM = 'lede-theme';
+/**
+ * Items that install their page but print no docs line. The shadcn CLI (4.23) keeps an item twice when it is named on
+ * the command line and is also another named item's dependency, and prints that item's line twice. The README's
+ * install names `theme-provider` beside items that depend on it, like `list`, so its line would always repeat; the
+ * guide's line, printed with it, already points at README.md, which lists it.
+ */
+export const NO_DOCS_LINE = new Set(['theme-provider']);
 /** The README's sections the guide holds, in order. */
 const README_SECTIONS = ['Use it in a shadcn project', 'components.json', "Tailwind and Lede's classes", 'Limits'];
 
@@ -99,7 +106,8 @@ export function addDocs(dir, files, { version, registry, readme }) {
       ...docs.map(({ name, content }) => ({ path: `registry/lede/docs/${name}.md`, content, type: 'registry:file', target: `${DOCS_DIR}/${name}.md` })),
     ];
     // The CLI prints this after it installs the item, one line per item.
-    json.docs = `Docs for ${item.title}: ${DOCS_DIR}/${item.name}.md${item.name === GUIDE_ITEM ? `. Setup and every item: ${DOCS_DIR}/README.md` : ''}`;
+    if (NO_DOCS_LINE.has(item.name)) delete json.docs;
+    else json.docs = `Docs for ${item.title}: ${DOCS_DIR}/${item.name}.md${item.name === GUIDE_ITEM ? `. Setup and every item: ${DOCS_DIR}/README.md` : ''}`;
     writeFileSync(path, `${JSON.stringify(json, null, 2)}\n`);
   }
 }
