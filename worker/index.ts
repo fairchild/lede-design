@@ -46,9 +46,44 @@ export default {
     // 404, so a fetcher can tell it from a page, and a route gets the app's shell, with the request's method and headers.
     // The shell is fetched at /, so a _headers rule written for a route's path doesn't apply to it.
     if (FILE.test(pathname)) return notFound(DOCS_INDEX);
-    return env.ASSETS.fetch(new Request(new URL('/', request.url), request));
+    // A docs page asked for as Markdown, as fetch tools and agents do with `Accept: text/markdown`, gets its `.md`
+    // twin. A route without one, such as the demo app, gets the shell.
+    if (wantsMarkdown(request.headers.get('accept'))) {
+      const twin = await env.ASSETS.fetch(new URL(markdownPath(pathname), request.url).href, { method: request.method });
+      if (twin.ok) return varied(twin);
+      await twin.body?.cancel();
+    }
+    return varied(await env.ASSETS.fetch(new Request(new URL('/', request.url), request)));
   },
 } satisfies ExportedHandler<Env>;
+
+// Markdown is wanted when the Accept header names text/markdown and ranks it at least as high as text/html. A browser
+// sends text/html and no Markdown, so it always gets the page.
+function wantsMarkdown(accept: string | null): boolean {
+  if (!accept) return false;
+  const weight = (type: string) => {
+    for (const part of accept.split(',')) {
+      const [name, ...params] = part.trim().split(';');
+      if (name.trim().toLowerCase() !== type) continue;
+      const q = params.map((p) => p.trim()).find((p) => p.startsWith('q='));
+      const value = q ? Number(q.slice(2)) : 1;
+      return Number.isNaN(value) ? 0 : value;
+    }
+    return 0;
+  };
+  const markdown = weight('text/markdown');
+  return markdown > 0 && markdown >= weight('text/html');
+}
+
+// A docs route's Markdown file: `/` is `/overview.md`, as the Markdown build names it, and a trailing slash goes.
+const markdownPath = (pathname: string): string => (pathname === '/' ? '/overview.md' : `${pathname.replace(/\/+$/, '')}.md`);
+
+// A route's answer depends on Accept, so a cache keeps the page and its Markdown apart.
+function varied(response: Response): Response {
+  const out = new Response(response.body, response);
+  out.headers.append('vary', 'Accept');
+  return out;
+}
 
 // A release is readable once its registry.json exists. The publisher writes it last and refuses the release from then
 // on, so an item read after the marker is seen is final. The marker is read first: an item read alongside it could

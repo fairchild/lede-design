@@ -10,6 +10,7 @@ export const PAGES = [
   { route: '/blocks', module: 'Blocks', title: 'Blocks', about: 'the larger parts of a screen, each with its install command, code and import line' },
   { route: '/blocks/data-table', module: 'DataTablePage', title: 'Data table', about: 'DataTable and `useServerRows`: client and server mode, search, states and narrow containers' },
   { route: '/layouts', module: 'Layouts', title: 'Layouts', about: 'the page layouts AppShell, WorkbenchShell and MasterDetail, and their regions' },
+  { route: '/choose', module: 'Choose', title: 'Choose a part', about: 'what you’re building, and the component, block or flow that does it' },
   { route: '/decisions', module: 'Decisions', title: 'Decisions', about: 'how Lede is built, what each decision costs and what checks it' },
   { route: '/integrations', module: 'Integrations', title: 'Integrations', about: 'Lede in Claude, and json-render drawing Lede screens from JSON' },
 ];

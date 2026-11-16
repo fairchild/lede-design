@@ -12,6 +12,7 @@ import { Foundations } from '@/pages/docs/Foundations';
 import { Components } from '@/pages/docs/Components';
 import { Blocks } from '@/pages/docs/Blocks';
 import { Layouts } from '@/pages/docs/Layouts';
+import { Choose } from '@/pages/docs/Choose';
 import { Decisions } from '@/pages/docs/Decisions';
 import { DataTablePage } from '@/pages/docs/DataTablePage';
 import { DataTableItemPage } from '@/pages/docs/DataTableItemPage';
@@ -59,7 +60,16 @@ function headElement(selector: string, tag: 'link' | 'meta', attributes: Record<
  */
 function useCanonical() {
   const { pathname } = useLocation();
-  const notFound = (useMatches().at(-1)?.handle as { notFound?: boolean } | undefined)?.notFound ?? false;
+  const handle = useMatches().at(-1)?.handle as { notFound?: boolean; markdown?: boolean } | undefined;
+  const notFound = handle?.notFound ?? false;
+  const markdown = handle?.markdown ?? false;
+  // A docs page names its Markdown twin, which the docs' Markdown build writes, for a reader that wants the text alone.
+  useEffect(() => {
+    if (!markdown) return undefined;
+    const link = headElement('link[rel="alternate"][type="text/markdown"]', 'link', { rel: 'alternate', type: 'text/markdown' });
+    link.setAttribute('href', `${pathname === '/' ? '/overview' : pathname.replace(/\/+$/, '')}.md`);
+    return () => link.remove();
+  }, [pathname, markdown]);
   useEffect(() => {
     const drop = (selector: string) => document.head.querySelector(selector)?.remove();
     if (notFound) {
@@ -109,16 +119,17 @@ const routes = () => createBrowserRouter(
         {
           element: <DocsLayout />,
           children: [
-            { index: true, element: <Overview /> },
-            { path: 'foundations', element: <Foundations />, handle: { title: 'Foundations' } },
-            { path: 'components', element: <Components />, handle: { title: 'Components' } },
-            { path: 'blocks', element: <Blocks />, handle: { title: 'Blocks' } },
-            { path: 'blocks/data-table', element: <DataTablePage />, handle: { title: 'Data table' } },
+            { index: true, element: <Overview />, handle: { markdown: true } },
+            { path: 'foundations', element: <Foundations />, handle: { markdown: true, title: 'Foundations' } },
+            { path: 'components', element: <Components />, handle: { markdown: true, title: 'Components' } },
+            { path: 'blocks', element: <Blocks />, handle: { markdown: true, title: 'Blocks' } },
+            { path: 'blocks/data-table', element: <DataTablePage />, handle: { markdown: true, title: 'Data table' } },
             { path: 'blocks/data-table/items/:id', element: <DataTableItemPage />, handle: { title: 'Work item' } },
-            { path: 'layouts', element: <Layouts />, handle: { title: 'Layouts' } },
-            { path: 'decisions', element: <Decisions />, handle: { title: 'Decisions' } },
+            { path: 'layouts', element: <Layouts />, handle: { markdown: true, title: 'Layouts' } },
+            { path: 'choose', element: <Choose />, handle: { markdown: true, title: 'Choose a part' } },
+            { path: 'decisions', element: <Decisions />, handle: { markdown: true, title: 'Decisions' } },
             // Lazy, so json-render loads with this page alone.
-            { path: 'integrations', lazy: load(() => import('@/pages/docs/Integrations'), 'Integrations'), handle: { title: 'Integrations' } },
+            { path: 'integrations', lazy: load(() => import('@/pages/docs/Integrations'), 'Integrations'), handle: { markdown: true, title: 'Integrations' } },
             ...(FIXTURES ? [
               { path: 'fixtures/data-table', lazy: load(() => import('@/pages/fixtures/DataTableFixtures'), 'DataTableFixtures'), handle: { title: 'Data table fixtures' } },
               { path: 'fixtures/data-table-perf', lazy: load(() => import('@/pages/fixtures/DataTablePerf'), 'DataTablePerf'), handle: { title: 'Data table performance' } },
