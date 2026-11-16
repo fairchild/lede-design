@@ -154,6 +154,23 @@
       ]
     },
     {
+      "name": "search-field",
+      "type": "registry:component",
+      "title": "SearchField",
+      "description": "An `<input type=\"search\">` with a visually hidden label and a clear button. Escape clears its text, and on an empty field goes on to PageHeader's `backOnEscape`.",
+      "registryDependencies": [
+        "@lede/lede-theme",
+        "@lede/lede-utils"
+      ],
+      "files": [
+        {
+          "path": "registry/lede/search-field.tsx",
+          "type": "registry:component",
+          "target": "components/lede/search-field.tsx"
+        }
+      ]
+    },
+    {
       "name": "avatar",
       "type": "registry:component",
       "title": "Avatar",
@@ -210,6 +227,23 @@
       "dependencies": [
         "@base-ui/react@^1.9.0",
         "@react-aria/interactions@^3.28.1"
+      ]
+    },
+    {
+      "name": "status-text",
+      "type": "registry:component",
+      "title": "StatusText",
+      "description": "A status word colored by its tone, with a dot, at the size of the text around it, for a ListRow's `value`, a table cell or a sentence.",
+      "registryDependencies": [
+        "@lede/lede-theme",
+        "@lede/lede-utils"
+      ],
+      "files": [
+        {
+          "path": "registry/lede/status-text.tsx",
+          "type": "registry:component",
+          "target": "components/lede/status-text.tsx"
+        }
       ]
     },
     {

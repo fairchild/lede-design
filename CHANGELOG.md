@@ -4,6 +4,18 @@
 
 ### Added
 
+- The README has a components.json section: the fields the shadcn CLI needs for Lede, in a file you can write by hand
+  where `shadcn init` can't reach ui.shadcn.com, such as in a sandbox. `"baseColor": ""` keeps `add` from downloading
+  too. It also says that Lede doesn't use the `ui`, `lib` and `hooks` aliases.
+- The README has a Tailwind and Lede's classes section: Lede needs Tailwind v4 and leaves a page's layout to it. Use
+  the token color names, such as `text-muted-foreground`, and Lede's type classes, such as `text-footnote`, in place
+  of Tailwind's palette and `text-sm`.
+- StatusText, `@lede/status-text`: a status word colored by its tone (`neutral`, `positive`, `caution` or
+  `critical`), with a dot, at the size of the text around it. Put it in a ListRow's `value` or `subtitle`, a table
+  cell or a sentence, as in `value={<StatusText tone="critical">Failed</StatusText>}`.
+- SearchField, `@lede/search-field`: an `<input type="search">` with a visually hidden label and a clear button, for
+  filtering a list. Escape clears its text and keeps focus; on an empty field it goes on to the screen, so PageHeader's
+  `backOnEscape` backs out.
 - The README's install section has "Start from a new Vite app": the commands and file edits that set up Tailwind v4,
   the `@/*` alias and a `components.json` in an app made with create-vite, run as written.
   https://lede.cloudcompute.com/overview.md shows it too.
@@ -22,6 +34,8 @@
 
 ### Changed
 
+- The `ld-status` classes live in the components' stylesheet and carry no margin or size of their own, so they fit
+  any text. SummaryCard and DataTable keep their status at the footnote size.
 - Step 1 of the install steps adds `@lede/theme-provider` and `@lede/list`, the items step 3 imports, where it added
   a data table and two hero flows. It links `llms.txt` for the name and import line of every item.
 

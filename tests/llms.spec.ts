@@ -17,6 +17,7 @@ import { GlassBar, GlassToolbar } from '../registry/lede/glass-bar';
 import { SegmentedControl } from '../registry/lede/segmented-control';
 import { Switch } from '../registry/lede/switch';
 import { TextField } from '../registry/lede/text-field';
+import { SearchField } from '../registry/lede/search-field';
 import { ThemeProvider } from '../registry/lede/theme-provider';
 
 test.skip(({ isMobile }) => isMobile, 'Files read the same at every width: one project is enough.');
@@ -334,6 +335,11 @@ const TAKES: Record<string, { sentence: string; component: ComponentType<any>; r
     sentence: 'Switch also takes the attributes of `<span>`, such as `aria-describedby`.',
     component: Switch,
     renders: [{ props: { label: 'Wi-Fi' }, tag: 'span', has: 'role="switch"' }, { props: { 'aria-label': 'Wi-Fi' }, tag: 'span', has: 'role="switch"' }],
+  },
+  SearchField: {
+    sentence: 'SearchField also takes the attributes of `<input>`, such as `aria-describedby`.',
+    component: SearchField,
+    renders: [{ props: { label: 'Filter' }, tag: 'input' }],
   },
   TextField: {
     sentence: 'TextField also takes the attributes of `<input>` or `<textarea>`, whichever it renders, such as `aria-describedby`.',

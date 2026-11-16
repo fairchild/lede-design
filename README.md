@@ -37,9 +37,9 @@ icons or assets.*
 ## Use it in a shadcn project
 
 You need Node 22.12 or later and a client-rendered React 19 project, such as a Vite app, with Tailwind v4, the `@/*`
-path alias and a `components.json`. `npx shadcn@latest init` creates that file, and
-[Start from a new Vite app](#start-from-a-new-vite-app) sets up all of them in an app made with create-vite.
-[Limits](#limits) covers server rendering.
+path alias and a `components.json`. `npx shadcn@latest init` creates that file, or write the shorter one in
+[components.json](README.md#componentsjson) by hand. [Start from a new Vite app](#start-from-a-new-vite-app) sets up all of them
+in an app made with create-vite. [Limits](#limits) covers server rendering.
 
 1. Add the registry and the items you want. Keep `@lede/theme-provider` in the list: step 4 needs it, and most items
    don't install it.
@@ -180,6 +180,46 @@ export default function App() {
   )
 }
 ```
+
+## components.json
+
+Lede's items name each file's place in your project, so the CLI reads only a few fields of `components.json`. This
+file is enough for Lede, and `add` works with it alone, without `shadcn init`. `init` and a non-empty `baseColor` each
+download from ui.shadcn.com, so write this file by hand where that site is out of reach, such as in a sandbox.
+
+```json
+{
+  "$schema": "https://ui.shadcn.com/schema.json",
+  "style": "new-york",
+  "tsx": true,
+  "rsc": false,
+  "tailwind": { "css": "src/index.css", "baseColor": "" },
+  "aliases": { "components": "@/components", "utils": "@/lib/utils" },
+  "registries": { "@lede": "https://lede.cloudcompute.com/r/v0.5.3/{name}.json" }
+}
+```
+
+- `style`, `tailwind.css`, `tailwind.baseColor`, `aliases.components` and `aliases.utils` have to be there, or the CLI
+  stops with "Invalid configuration". Lede reads none of them: its files import each other by relative path.
+- `rsc: false` says the project has no React Server Components. Lede renders on the client only, as
+  [Limits](#limits) says.
+- `init` also writes `ui`, `lib` and `hooks` aliases. Lede doesn't use them, and stock shadcn components do, so keep
+  them if you add those.
+
+## Tailwind and Lede's classes
+
+Lede needs Tailwind v4, and leaves your page's own layout to it. Lede's components style themselves with their own
+`ld-` classes, from `styles/lede/`, so they need no utilities. Your page uses Tailwind for what sits around them, such
+as `flex gap-2` or `mx-auto max-w-xl p-4`.
+
+- **Color:** `lede-theme` maps its tokens to Tailwind's color names, so `bg-background-grouped`,
+  `text-muted-foreground` and `border-border` follow all four themes. Tailwind's palette, such as `bg-red-500`,
+  doesn't; use `text-destructive`, `text-success` or `text-warning` for status.
+- **Type:** use Lede's type classes, such as `text-body`, `text-headline` and `text-footnote`, in place of
+  `text-sm` or `text-lg`. Each sets size, line height and weight from Lede's scale. They sit in
+  `@layer components`, so a Tailwind utility on the same element wins.
+- **Space and corners:** Tailwind's 4px spacing steps match Lede's `--space-*` tokens (`p-4` is `--space-4`, 16px),
+  and `rounded-xs` to `rounded-xl` follow `--radius`.
 
 ## Limits
 

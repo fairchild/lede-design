@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { Button } from '@lede/button';
 import { Switch } from '@lede/switch';
+import { SearchField } from '@lede/search-field';
 import { PageHeader } from '@lede/blocks/page-header';
 
 /**
@@ -23,7 +24,10 @@ export function PageHeaderFixtures() {
   );
 }
 
-/** A detail that opens inside the page. Its back button, or Escape, closes it, and focus returns to the opener. */
+/**
+ * A detail that opens inside the page. Its back button, or Escape, closes it, and focus returns to the opener. Its
+ * SearchField keeps Escape while it holds text.
+ */
 function DetailInPlace() {
   const [open, setOpen] = React.useState(false);
   const opener = React.useRef<HTMLButtonElement>(null);
@@ -38,7 +42,10 @@ function DetailInPlace() {
     <section className="ld-flow-stack" aria-labelledby="detail-in-place">
       <h2 id="detail-in-place" className="text-title-3">A detail inside the page</h2>
       {open ? (
-        <PageHeader headingLevel={3} title="Venue for Thursday" summary="It opened in place, under this section’s heading." back={{ label: 'Messages', onSelect: close }} backOnEscape />
+        <>
+          <PageHeader headingLevel={3} title="Venue for Thursday" summary="It opened in place, under this section’s heading." back={{ label: 'Messages', onSelect: close }} backOnEscape />
+          <SearchField label="Filter venues" />
+        </>
       ) : (
         <Button ref={opener} variant="gray" onClick={() => setOpen(true)}>Open the detail</Button>
       )}
