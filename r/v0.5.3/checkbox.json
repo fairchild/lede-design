@@ -1,0 +1,19 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "checkbox",
+  "title": "Checkbox",
+  "description": "A native `<input type=\"checkbox\">` that is its own hit target, sized by density, with an `indeterminate` state.",
+  "registryDependencies": [
+    "@lede/lede-theme",
+    "@lede/lede-utils"
+  ],
+  "files": [
+    {
+      "path": "registry/lede/checkbox.tsx",
+      "content": "import * as React from 'react';\nimport { cn } from './cn';\n\nexport interface CheckboxProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'type' | 'size'> {\n  /** Mixed state, such as \"some rows on this page\". Default `false`. Set as a DOM property, since HTML has no attribute for it. */\n  indeterminate?: boolean;\n  ref?: React.Ref<HTMLInputElement>;\n}\n\n/**\n * A native `<input type=\"checkbox\">`: keyboard, form and screen-reader behavior come from the browser, and the click\n * event keeps its modifier keys (Shift for ranges). The input itself is the hit target, sized by `--ld-check-hit`\n * (default `--ld-table-hit`, from the density tokens), and the visible box is drawn beside it. Name it with a visible\n * `<label>` or `aria-label`.\n *\n * `className`, `style` and `hidden` go on the wrapper `<span>` that holds the drawn box, so `hidden` hides the whole\n * checkbox. Every other attribute and `ref` go on the input: `id` for a `<label htmlFor>`, the form and ARIA\n * attributes and `data-*`.\n */\nexport function Checkbox({ indeterminate = false, className, style, hidden, ref, ...rest }: CheckboxProps) {\n  const inner = React.useRef<HTMLInputElement>(null);\n  // On every render, since a native click clears the DOM state even while the prop stays true.\n  React.useLayoutEffect(() => {\n    if (inner.current && inner.current.indeterminate !== indeterminate) inner.current.indeterminate = indeterminate;\n  });\n  const setRef = React.useCallback(\n    (el: HTMLInputElement | null) => {\n      inner.current = el;\n      if (typeof ref === 'function') {\n        const cleanup = ref(el);\n        // React 19 calls a returned cleanup instead of calling the ref with `null`, so the consumer's runs too.\n        return () => {\n          inner.current = null;\n          if (typeof cleanup === 'function') cleanup();\n          else ref(null);\n        };\n      }\n      if (ref) (ref as React.RefObject<HTMLInputElement | null>).current = el;\n      return undefined;\n    },\n    [ref],\n  );\n  return (\n    <span className={cn('ld-checkbox', className)} style={style} hidden={hidden}>\n      <input ref={setRef} type=\"checkbox\" className=\"ld-checkbox-input\" {...rest} />\n      {/* The check mark and dash are drawn in CSS: no extra nodes in a 500-row table. */}\n      <span className=\"ld-checkbox-box\" aria-hidden=\"true\" />\n    </span>\n  );\n}\n",
+      "type": "registry:component",
+      "target": "components/lede/checkbox.tsx"
+    }
+  ],
+  "type": "registry:component"
+}

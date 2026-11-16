@@ -1,0 +1,22 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "step-indicator",
+  "title": "StepIndicator",
+  "description": "An `<ol>` of steps that marks the current one with `aria-current=\"step\"`. Narrow screens show only its summary, such as \"Step 2 of 3 · Preferences\".",
+  "registryDependencies": [
+    "@lede/lede-theme",
+    "@lede/lede-utils"
+  ],
+  "files": [
+    {
+      "path": "registry/lede/blocks/step-indicator.tsx",
+      "content": "import { cn } from '../cn';\n\nexport interface StepIndicatorProps {\n  /** Step names, in order. */\n  steps: string[];\n  /** Zero-based index of the current step. */\n  current: number;\n  className?: string;\n}\n\n/**\n * A group named \"Progress\" holding an ordered list with `aria-current=\"step\"`. Summary first: narrow screens show and\n * read only \"Step 2 of 3 · Preferences\", and the full list replaces it when there is room.\n */\nexport function StepIndicator(props: StepIndicatorProps) {\n  return (\n    <div role=\"group\" className={cn('ld-steps', props.className)} aria-label=\"Progress\">\n      <p className=\"ld-steps-summary\">\n        Step {props.current + 1} of {props.steps.length} · {props.steps[props.current]}\n      </p>\n      <ol className=\"ld-steps-list\">\n        {props.steps.map((s, i) => {\n          const state = i < props.current ? 'done' : i === props.current ? 'current' : 'upcoming';\n          return (\n            <li key={s} className=\"ld-step\" data-state={state} aria-current={i === props.current ? 'step' : undefined}>\n              <span className=\"ld-step-mark\" aria-hidden=\"true\">{state === 'done' ? '✓' : i + 1}</span>\n              <span>{s}</span>\n              {state === 'done' ? <span className=\"ld-sr-only\"> (completed)</span> : null}\n            </li>\n          );\n        })}\n      </ol>\n    </div>\n  );\n}\n",
+      "type": "registry:component",
+      "target": "components/lede/blocks/step-indicator.tsx"
+    }
+  ],
+  "categories": [
+    "blocks"
+  ],
+  "type": "registry:block"
+}

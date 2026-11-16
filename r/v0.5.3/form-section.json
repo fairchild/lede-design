@@ -1,0 +1,22 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "form-section",
+  "title": "FormSection",
+  "description": "A native `<fieldset>` and `<legend>` on a card surface, grouping and naming related fields.",
+  "registryDependencies": [
+    "@lede/lede-theme",
+    "@lede/lede-utils"
+  ],
+  "files": [
+    {
+      "path": "registry/lede/blocks/form-section.tsx",
+      "content": "import * as React from 'react';\nimport { cn } from '../cn';\n\nexport interface FormSectionProps {\n  /** Names the group of fields; announced with each field inside. */\n  legend: React.ReactNode;\n  /** One sentence on why these fields are asked for. */\n  description?: React.ReactNode;\n  children: React.ReactNode;\n  className?: string;\n}\n\n/** A native `<fieldset>` and `<legend>` on a card surface: related fields, grouped and named. */\nexport function FormSection(props: FormSectionProps) {\n  const id = React.useId();\n  return (\n    <fieldset className={cn('ld-form-section', props.className)} aria-describedby={props.description ? id : undefined}>\n      <legend className=\"ld-form-legend\">{props.legend}</legend>\n      {props.description ? <p id={id} className=\"ld-form-description\">{props.description}</p> : null}\n      <div className=\"ld-form-body\">{props.children}</div>\n    </fieldset>\n  );\n}\n",
+      "type": "registry:component",
+      "target": "components/lede/blocks/form-section.tsx"
+    }
+  ],
+  "categories": [
+    "blocks"
+  ],
+  "type": "registry:block"
+}

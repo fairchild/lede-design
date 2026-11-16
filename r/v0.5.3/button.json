@@ -1,0 +1,19 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "button",
+  "title": "Button",
+  "description": "A native `<button>`, or an `<a>` when given `href`, in five variants. `buttonClass` gives an element of your own the same classes.",
+  "registryDependencies": [
+    "@lede/lede-theme",
+    "@lede/lede-utils"
+  ],
+  "files": [
+    {
+      "path": "registry/lede/button.tsx",
+      "content": "import * as React from 'react';\nimport { cn } from './cn';\nimport { useLinkComponent } from './link';\nimport type { ToneSubset } from './tone';\n\ntype Common = {\n  /** `'filled'` for the one prominent action, `'tinted'` for secondary emphasis, `'gray'` for the rest, `'plain'` for text only and `'glass'` over media. Default `'gray'`. */\n  variant?: 'filled' | 'tinted' | 'gray' | 'plain' | 'glass';\n  size?: 'sm' | 'md' | 'lg';\n  /** Default `'capsule'`. */\n  shape?: 'capsule' | 'rounded';\n  /** `'critical'` for destructive actions. */\n  tone?: ToneSubset<'primary' | 'critical'>;\n  /** Inline SVG drawn in `currentColor`. With no children the control is square: give it `aria-label`. */\n  icon?: React.ReactNode;\n  /** Full width. */\n  block?: boolean;\n};\nexport type ButtonProps =\n  | (Common & Omit<React.ComponentProps<'button'>, 'ref'> & { href?: undefined; ref?: ButtonRef<HTMLButtonElement> })\n  | (Common & Omit<React.ComponentProps<'a'>, 'ref'> & { href: string; ref?: ButtonRef<HTMLAnchorElement> });\n/** The element's own ref, or one typed for either element, as a Button that may become a link takes. */\ntype ButtonRef<E extends HTMLElement> = React.Ref<E> | React.Ref<HTMLButtonElement | HTMLAnchorElement>;\n\nexport function buttonClass(p: Common & { iconOnly?: boolean; className?: string }) {\n  const { variant = 'gray', size = 'md' } = p;\n  return cn(\n    'ld-btn', `ld-btn-${variant}`, size !== 'md' && `ld-btn-${size}`, p.shape === 'rounded' && 'ld-btn-rounded',\n    p.tone === 'critical' && 'ld-btn-critical', p.block && 'ld-btn-block', variant === 'glass' && 'ld-glass',\n    p.iconOnly && 'ld-btn-icononly', p.className,\n  );\n}\n\n/** A native `<button>`, or a native `<a>` when given `href`. HTML attributes and `ref` go on that element. */\nexport function Button(props: ButtonProps) {\n  const Link = useLinkComponent();\n  const { variant, size, shape, tone, icon, block, className, children, ...rest } = props;\n  const cls = buttonClass({ variant, size, shape, tone, block, className, iconOnly: !!icon && !children });\n  const inner = (\n    <>\n      {icon ? <span className=\"ld-btn-icon\" aria-hidden=\"true\">{icon}</span> : null}\n      {children}\n    </>\n  );\n  if (rest.href !== undefined) return <Link {...(rest as React.ComponentProps<'a'> & { href: string })} className={cls}>{inner}</Link>;\n  return <button type=\"button\" {...(rest as React.ComponentProps<'button'>)} className={cls}>{inner}</button>;\n}\n",
+      "type": "registry:component",
+      "target": "components/lede/button.tsx"
+    }
+  ],
+  "type": "registry:component"
+}

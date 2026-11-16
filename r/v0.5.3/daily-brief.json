@@ -1,0 +1,26 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "daily-brief",
+  "title": "DailyBriefFlow",
+  "description": "A hero flow for a daily brief: the day's summary, then cards that link onward, then sections that open in place to their rows.",
+  "registryDependencies": [
+    "@lede/lede-theme",
+    "@lede/lede-utils",
+    "@lede/disclosure",
+    "@lede/list",
+    "@lede/page-header",
+    "@lede/summary-card"
+  ],
+  "files": [
+    {
+      "path": "registry/lede/flows/daily-brief.tsx",
+      "content": "import * as React from 'react';\nimport { PageHeader } from '../blocks/page-header';\nimport { SummaryCard, type SummaryCardProps } from '../blocks/summary-card';\nimport { Disclosure } from '../disclosure';\nimport { ListGroup, ListRow } from '../list';\n\nexport interface BriefItem { id: string; title: string; subtitle?: string; value?: string; href?: string; }\nexport interface BriefSection {\n  id: string;\n  title: string;\n  /** The section's takeaway, readable without opening it. */\n  summary: string;\n  meta?: string;\n  items: BriefItem[];\n  defaultOpen?: boolean;\n}\nexport interface DailyBriefFlowProps {\n  title: string;\n  /** The day in one line, such as \"2 decisions need you · 3 meetings\". */\n  summary: string;\n  actions?: React.ReactNode;\n  /** Three to five glanceable cards, each a link to its next level. */\n  cards: Omit<SummaryCardProps, 'headingLevel'>[];\n  /** Sections that open in place. */\n  sections: BriefSection[];\n}\n\n/**\n * Hero flow: the daily brief. Level 1 is the page summary. Level 2 is the cards, each a link, and the section\n * summaries. Level 3 is the rows inside an opened section, and level 4 the screen a row links to.\n */\nexport function DailyBriefFlow(props: DailyBriefFlowProps) {\n  const glance = React.useId();\n  return (\n    <div className=\"ld-flow\">\n      <PageHeader title={props.title} summary={props.summary} actions={props.actions} />\n      <section aria-labelledby={glance}>\n        <h2 id={glance} className=\"ld-sr-only\">At a glance</h2>\n        <ul className=\"ld-summary-grid\">\n          {props.cards.map((c) => (\n            <li key={c.title}><SummaryCard {...c} headingLevel={3} /></li>\n          ))}\n        </ul>\n      </section>\n      {props.sections.map((s) => (\n        <Disclosure key={s.id} title={s.title} summary={s.summary} meta={s.meta} defaultOpen={s.defaultOpen} headingLevel={2}>\n          <ListGroup>\n            {s.items.map((it) => (\n              <ListRow key={it.id} title={it.title} subtitle={it.subtitle} value={it.value} href={it.href} />\n            ))}\n          </ListGroup>\n        </Disclosure>\n      ))}\n    </div>\n  );\n}\n",
+      "type": "registry:component",
+      "target": "components/lede/flows/daily-brief.tsx"
+    }
+  ],
+  "categories": [
+    "flows"
+  ],
+  "type": "registry:block"
+}

@@ -1,0 +1,33 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "lede-utils",
+  "title": "Lede utils",
+  "description": "`cn()`, LinkProvider (route Lede's anchors through your router), the tone types (`Tone`, `StatusTone` and `ToneSubset`) and the input helpers `focusLanding()` and `lastInputWasTouch()`.",
+  "files": [
+    {
+      "path": "registry/lede/cn.ts",
+      "content": "/** Joins class names, skipping falsy values. */\nexport function cn(...parts: Array<string | false | null | undefined>): string {\n  return parts.filter(Boolean).join(' ');\n}\n",
+      "type": "registry:lib",
+      "target": "components/lede/cn.ts"
+    },
+    {
+      "path": "registry/lede/link.tsx",
+      "content": "import * as React from 'react';\n\n/** Props every link component receives. A real anchor always renders, and a router only intercepts the navigation. */\nexport type LinkProps = React.AnchorHTMLAttributes<HTMLAnchorElement> & { href: string; ref?: React.Ref<HTMLAnchorElement> };\nexport type LinkComponent = React.ComponentType<LinkProps>;\n\nconst DefaultLink: LinkComponent = ({ ref, ...props }) => <a ref={ref} {...props} />;\nconst LinkContext = React.createContext<LinkComponent>(DefaultLink);\n\n/**\n * Tells Lede components which link to render for an `href`, such as a React Router adapter:\n *   const RouterLink: LinkComponent = ({ href, ref, ...p }) => <Link to={href} ref={ref} {...p} />;\n *   <LinkProvider component={RouterLink}>…</LinkProvider>\n */\nexport function LinkProvider({ component, children }: { component: LinkComponent; children: React.ReactNode }) {\n  return <LinkContext.Provider value={component}>{children}</LinkContext.Provider>;\n}\n\n/** The link component Lede renders for any `href`. */\nexport function useLinkComponent(): LinkComponent {\n  return React.useContext(LinkContext);\n}\n",
+      "type": "registry:lib",
+      "target": "components/lede/link.tsx"
+    },
+    {
+      "path": "registry/lede/tone.ts",
+      "content": "/** Color that carries meaning. A component takes the tones it can show and also states the meaning in words. */\nexport type Tone = 'neutral' | 'primary' | 'positive' | 'caution' | 'critical';\n/** The tones one component takes. A value that isn't a `Tone` fails to compile. */\nexport type ToneSubset<T extends Tone> = T;\n/** A status: SummaryCard's `status`, and the `ld-status-*` classes. */\nexport type StatusTone = ToneSubset<'neutral' | 'positive' | 'caution' | 'critical'>;\n",
+      "type": "registry:lib",
+      "target": "components/lede/tone.ts"
+    },
+    {
+      "path": "registry/lede/input-modality.ts",
+      "content": "// What the person last used to reach the page: keys, a pointer or touch. The browser tracks the same thing for\n// `:focus-visible` and doesn't expose it, so these listeners keep a copy, one set per document.\n\n/**\n * Whether the most recent input was a touch: a tap with a finger or a pen. Before any input, a device whose main\n * pointer is coarse counts as touch, so a phone's cold load starts at the h1 too. A screen reached by touch keeps the\n * on-screen keyboard down, so it lands on its h1 and the field is one tap away.\n */\nlet touch = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;\n/** Whether the most recent input was a key press. Before any input it isn't. */\nlet keyed = false;\n\nif (typeof document !== 'undefined') {\n  document.addEventListener('pointerdown', (e) => { touch = e.pointerType === 'touch' || e.pointerType === 'pen'; keyed = false; }, true);\n  document.addEventListener('keydown', () => { touch = false; keyed = true; }, true);\n}\n\nexport const lastInputWasTouch = () => touch;\n\n/**\n * Focuses a landing target that isn't a control, such as a screen's title, without scrolling. Chromium matches\n * `:focus-visible` on an element that script focuses before any input, as on a cold load, and after a click on a\n * control that keys had focused. So the target asks for no ring unless the most recent input was a key press, and\n * then the browser decides.\n */\nexport function focusLanding(el: HTMLElement | null | undefined) {\n  const options: FocusOptions & { focusVisible?: boolean } = keyed ? { preventScroll: true } : { preventScroll: true, focusVisible: false };\n  el?.focus(options);\n}\n",
+      "type": "registry:lib",
+      "target": "components/lede/input-modality.ts"
+    }
+  ],
+  "type": "registry:lib"
+}

@@ -1,0 +1,22 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "text-field",
+  "title": "TextField",
+  "description": "A labeled `<input>`, or a `<textarea>` when given `rows`, on Base UI Field, with its hint and error wired up for assistive tech.",
+  "dependencies": [
+    "@base-ui/react@^1.9.0"
+  ],
+  "registryDependencies": [
+    "@lede/lede-theme",
+    "@lede/lede-utils"
+  ],
+  "files": [
+    {
+      "path": "registry/lede/text-field.tsx",
+      "content": "import * as React from 'react';\nimport { Field } from '@base-ui/react/field';\nimport { cn } from './cn';\n\ntype Common = {\n  label: React.ReactNode;\n  /** Helper text, linked to the input with `aria-describedby`. */\n  hint?: React.ReactNode;\n  /** Error message. It marks the field invalid and replaces the hint. Word it as the fix, such as \"Enter your name.\" */\n  error?: React.ReactNode;\n  size?: 'md' | 'lg';\n};\nexport type TextFieldProps =\n  | (Common & Omit<React.InputHTMLAttributes<HTMLInputElement>, 'size'> & { rows?: undefined; ref?: React.Ref<HTMLInputElement> })\n  | (Common & React.TextareaHTMLAttributes<HTMLTextAreaElement> & {\n      ref?: React.Ref<HTMLTextAreaElement>;\n      /** Renders a `<textarea>` of this many rows, for text that runs past one line. */\n      rows: number;\n    });\n\n/**\n * Base UI Field: a real `<label>` and a real `<input>` or `<textarea>`, with the hint and error wired up for assistive\n * tech.\n */\nexport function TextField(props: TextFieldProps) {\n  const { label, hint, error, size, rows, className, ...control } = props;\n  return (\n    <Field.Root invalid={!!error} className={cn('ld-field', size === 'lg' && 'ld-field-lg', className)}>\n      <Field.Label className=\"ld-field-label\">{label}</Field.Label>\n      <Field.Control\n        className=\"ld-field-input\"\n        render={rows ? <textarea rows={rows} /> : undefined}\n        {...(control as React.ComponentProps<typeof Field.Control>)}\n      />\n      {error ? (\n        <Field.Error match className=\"ld-field-hint\">{error}</Field.Error>\n      ) : hint ? (\n        <Field.Description className=\"ld-field-hint\">{hint}</Field.Description>\n      ) : null}\n    </Field.Root>\n  );\n}\n",
+      "type": "registry:component",
+      "target": "components/lede/text-field.tsx"
+    }
+  ],
+  "type": "registry:component"
+}

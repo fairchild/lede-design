@@ -1,0 +1,22 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "card",
+  "title": "Card",
+  "description": "A surface for grouped content, rendered as a `<div>` or the element you pass to `render`. A child with the `ld-concentric` class keeps its corners concentric with the card's.",
+  "dependencies": [
+    "@base-ui/react@^1.9.0"
+  ],
+  "registryDependencies": [
+    "@lede/lede-theme",
+    "@lede/lede-utils"
+  ],
+  "files": [
+    {
+      "path": "registry/lede/card.tsx",
+      "content": "import { useRender } from '@base-ui/react/use-render';\nimport { mergeProps } from '@base-ui/react/merge-props';\nimport { cn } from './cn';\n\nexport interface CardProps extends useRender.ComponentProps<'div'> {\n  /** Outer radius: `'md'` is `--radius-lg`, `'xl'` is `--radius-xl`. Default `'md'`. */\n  size?: 'md' | 'xl';\n  /** Inner padding: `'sm'` is `--space-2`, `'md'` is `--space-4`, `'lg'` is `--space-6`. Default `'sm'`. A child with the `ld-concentric` class gets the card's radius less its padding. */\n  padding?: 'sm' | 'md' | 'lg';\n  surface?: 'card' | 'muted' | 'glass';\n}\n\n/** A neutral `<div>` by default. Pass `render={<article />}` for a self-contained item, or `render={<section />}` for a titled region. */\nexport function Card(props: CardProps) {\n  const { render, size, padding, surface, className, ...rest } = props;\n  return useRender({\n    defaultTagName: 'div',\n    render,\n    props: mergeProps<'div'>(\n      {\n        className: cn(\n          'ld-card', size === 'xl' && 'ld-card-xl', padding && padding !== 'sm' && `ld-card-pad-${padding}`,\n          surface === 'muted' && 'ld-card-muted', surface === 'glass' && 'ld-card-glass ld-glass', className as string,\n        ),\n      },\n      rest,\n    ),\n  });\n}\n",
+      "type": "registry:component",
+      "target": "components/lede/card.tsx"
+    }
+  ],
+  "type": "registry:component"
+}

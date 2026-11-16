@@ -1,0 +1,22 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "summary-card",
+  "title": "SummaryCard",
+  "description": "An `<article>` whose heading is a link that covers the card, with a figure, a one-line takeaway and a status in words.",
+  "registryDependencies": [
+    "@lede/lede-theme",
+    "@lede/lede-utils"
+  ],
+  "files": [
+    {
+      "path": "registry/lede/blocks/summary-card.tsx",
+      "content": "import * as React from 'react';\nimport { useLinkComponent } from '../link';\nimport { cn } from '../cn';\nimport type { StatusTone } from '../tone';\n\nexport type { StatusTone };\nexport interface SummaryCardProps {\n  /** What this card is about, such as \"Decisions\". It is the link text and the card's heading. */\n  title: string;\n  /** The takeaway sentence, such as \"2 need you by Thursday\". */\n  summary: React.ReactNode;\n  /** One glanceable figure, such as \"2\" or \"$420\". */\n  figure?: React.ReactNode;\n  /** A status word, always spelled out. The tone adds color to it. */\n  status?: { tone: StatusTone; label: string };\n  /** Where the next level lives. The whole card is the link's target. */\n  href?: string;\n  /** Heading level. Default 3. */\n  headingLevel?: 2 | 3 | 4;\n  className?: string;\n}\n\n/** An `<article>` whose heading is a real link stretched over the card. Figure, summary and status read in order. */\nexport function SummaryCard(props: SummaryCardProps) {\n  const Link = useLinkComponent();\n  const H = `h${props.headingLevel ?? 3}` as 'h3';\n  return (\n    <article className={cn('ld-summary-card', props.href && 'ld-summary-card-link', props.className)}>\n      <H className=\"ld-summary-title\">\n        {props.href ? <Link href={props.href} className=\"ld-summary-target\">{props.title}</Link> : props.title}\n      </H>\n      {props.figure != null ? <p className=\"ld-summary-figure\">{props.figure}</p> : null}\n      <p className=\"ld-summary-text\">{props.summary}</p>\n      {props.status ? (\n        <p className={`ld-status ld-status-${props.status.tone}`}>\n          <span className=\"ld-status-dot\" aria-hidden=\"true\" />\n          {props.status.label}\n        </p>\n      ) : null}\n      {props.href ? (\n        <svg className=\"ld-summary-chevron\" viewBox=\"0 0 8 14\" fill=\"none\" aria-hidden=\"true\">\n          <path d=\"M1.5 1.5 6.5 7l-5 5.5\" stroke=\"currentColor\" strokeWidth={2} strokeLinecap=\"round\" strokeLinejoin=\"round\" />\n        </svg>\n      ) : null}\n    </article>\n  );\n}\n",
+      "type": "registry:component",
+      "target": "components/lede/blocks/summary-card.tsx"
+    }
+  ],
+  "categories": [
+    "blocks"
+  ],
+  "type": "registry:block"
+}

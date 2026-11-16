@@ -1,0 +1,19 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "avatar",
+  "title": "Avatar",
+  "description": "An `<img>` with alt text, or initials on a tint when there's no picture or it fails to load.",
+  "registryDependencies": [
+    "@lede/lede-theme",
+    "@lede/lede-utils"
+  ],
+  "files": [
+    {
+      "path": "registry/lede/avatar.tsx",
+      "content": "import * as React from 'react';\nimport { cn } from './cn';\n\nexport interface AvatarProps\n  extends Omit<React.HTMLAttributes<HTMLElement>, 'children' | 'role'>,\n    Pick<React.ImgHTMLAttributes<HTMLImageElement>, 'loading' | 'decoding' | 'referrerPolicy' | 'crossOrigin'> {\n  /** Whose avatar this is: the source of the initials and, unless `alt` is set, the text alternative. */\n  name: string;\n  /** Picture URL. With none, or if it fails to load, the initials show. */\n  src?: string;\n  /** Text alternative. Default `name`. Pass `\"\"` when the name is already beside the avatar, so it isn't read twice. */\n  alt?: string;\n  /** `'md'` fits ListRow's leading slot, and `'lg'` leads a profile. Default `'md'`. */\n  size?: 'md' | 'lg';\n  /** The `<img>`, or the `<span>` of initials. It changes from one to the other when the image fails to load. */\n  ref?: React.Ref<HTMLImageElement | HTMLSpanElement>;\n}\n\nconst graphemes = typeof Intl.Segmenter === 'function' ? new Intl.Segmenter() : null;\n/** The first character as a person sees it, so a flag or an emoji stays whole. */\nconst firstCharacter = (word: string) => (graphemes ? [...graphemes.segment(word)][0]?.segment : [...word][0]) ?? '';\n\n/** First and last initials: \"Hana Sato\" is \"HS\". */\nfunction initials(name: string) {\n  const words = name.trim().split(/\\s+/);\n  return (words.length > 1 ? [words[0], words.at(-1)!] : words).map((w) => firstCharacter(w)).join('').toUpperCase();\n}\n\n/**\n * A real `<img>` with alt text when there's a picture, and initials on a tint when there isn't. Other HTML attributes\n * and `ref` go on whichever of the two renders, so the ref's element changes when the image fails. `loading`,\n * `decoding`, `referrerPolicy` and `crossOrigin` go on the `<img>` alone.\n */\nexport function Avatar({\n  name, src, alt = name, size = 'md', className, ref, onError, loading, decoding, referrerPolicy, crossOrigin, ...rest\n}: AvatarProps) {\n  const [failed, setFailed] = React.useState<string>();\n  const cls = cn('ld-avatar', size === 'lg' && 'ld-avatar-lg', className);\n  if (src && src !== failed) {\n    return (\n      <img\n        {...rest}\n        ref={ref as React.Ref<HTMLImageElement>}\n        className={cls}\n        loading={loading}\n        decoding={decoding}\n        referrerPolicy={referrerPolicy}\n        crossOrigin={crossOrigin}\n        src={src}\n        alt={alt}\n        onError={(e) => { setFailed(src); onError?.(e); }}\n      />\n    );\n  }\n  return (\n    <span {...rest} ref={ref as React.Ref<HTMLSpanElement>} className={cls} {...(alt ? { role: 'img', 'aria-label': alt } : { 'aria-hidden': true })}>\n      {initials(name)}\n    </span>\n  );\n}\n",
+      "type": "registry:component",
+      "target": "components/lede/avatar.tsx"
+    }
+  ],
+  "type": "registry:component"
+}

@@ -1,0 +1,23 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "app-shell",
+  "title": "AppShell",
+  "description": "A page layout: a skip link, one primary `<nav>` and a `<main>`, where the nav is a sidebar on wide screens and a floating GlassBar on narrow ones. It fits an app with three to five places, each a whole screen.",
+  "registryDependencies": [
+    "@lede/lede-theme",
+    "@lede/lede-utils",
+    "@lede/glass-bar"
+  ],
+  "files": [
+    {
+      "path": "registry/lede/blocks/app-shell.tsx",
+      "content": "import * as React from 'react';\nimport { GlassBar } from '../glass-bar';\nimport { useLinkComponent } from '../link';\nimport { cn } from '../cn';\n\nexport interface ShellNavItem { value: string; label: string; href: string; icon?: React.ReactNode; }\nexport interface AppShellProps {\n  /** Product name or wordmark, shown at the top of the sidebar. */\n  brand: React.ReactNode;\n  /** Three to five places. Sidebar on wide screens, a floating GlassBar on narrow ones. */\n  nav: ShellNavItem[];\n  /** The current place, marked with `aria-current=\"page\"`. Its label also names `<main>`. */\n  current: string;\n  /** Accessible name of the primary navigation. Default `'Primary'`. */\n  navLabel?: string;\n  /** Extra sidebar content under the nav, on wide screens only, such as a footer link. */\n  sidebarFooter?: React.ReactNode;\n  children: React.ReactNode;\n  className?: string;\n}\n\n/**\n * Page layout: a skip link, a `<nav>` and `<main id=\"main\">`. Wide screens get a sidebar, and narrow screens get the\n * same places in a bottom GlassBar. CSS shows only one of the two navs at a time, so assistive tech meets exactly one\n * \"Primary\" landmark.\n */\nexport function AppShell(props: AppShellProps) {\n  const Link = useLinkComponent();\n  const label = props.navLabel ?? 'Primary';\n  return (\n    <div className={cn('ld-shell', props.className)}>\n      <a className=\"ld-skip\" href=\"#main\">Skip to content</a>\n      <nav className=\"ld-shell-sidebar\" aria-label={label}>\n        <div className=\"ld-shell-brand\">{props.brand}</div>\n        <ul className=\"ld-shell-nav\">\n          {props.nav.map((it) => (\n            <li key={it.value}>\n              <Link className=\"ld-shell-link\" href={it.href} aria-current={it.value === props.current ? 'page' : undefined}>\n                {it.icon ? <span className=\"ld-shell-icon\" aria-hidden=\"true\">{it.icon}</span> : null}\n                <span>{it.label}</span>\n              </Link>\n            </li>\n          ))}\n        </ul>\n        {props.sidebarFooter ? <div className=\"ld-shell-footer\">{props.sidebarFooter}</div> : null}\n      </nav>\n      <main id=\"main\" className=\"ld-shell-main\" tabIndex={-1} aria-label={props.nav.find((it) => it.value === props.current)?.label}>\n        {props.children}\n      </main>\n      <div className=\"ld-shell-tabbar\">\n        <GlassBar aria-label={label} items={props.nav} value={props.current} />\n      </div>\n    </div>\n  );\n}\n",
+      "type": "registry:component",
+      "target": "components/lede/blocks/app-shell.tsx"
+    }
+  ],
+  "categories": [
+    "blocks"
+  ],
+  "type": "registry:block"
+}
