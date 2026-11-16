@@ -211,7 +211,7 @@
       "name": "list",
       "type": "registry:component",
       "title": "ListGroup, ListRow",
-      "description": "ListGroup is a `<section>` with a heading and a `<ul>` of ListRows. A ListRow is a link, a button or a static row, with leading and trailing slots and up to three actions in a \u2022\u2022\u2022 menu and a touch swipe, where a disabled action shows its reason.",
+      "description": "ListGroup is a `<section>` with a heading and a `<ul>` of ListRows. A ListRow is a link, a button, a static row or a row that opens its details, with leading and trailing slots and up to three actions in a \u2022\u2022\u2022 menu and a touch swipe, where a disabled action shows its reason.",
       "registryDependencies": [
         "@lede/lede-theme",
         "@lede/lede-utils",

@@ -128,7 +128,18 @@ export interface ListRowProps {
   current?: boolean;
   /** Acts in place: the row renders a real `<button>`. Use `href` for navigation. With `href`, it runs on the link's click too. */
   onClick?: (e: React.MouseEvent) => void;
-  /** Disclosure chevron. Default `true` when `href` or `onClick` is set. */
+  /**
+   * Content the row opens below itself, inside the same `<li>`, such as a run's log. The row becomes a
+   * `<button aria-expanded>` that shows and hides it, and `href` is ignored. Find-in-page opens it too.
+   */
+  details?: React.ReactNode;
+  /** Whether `details` is shown, for a parent that controls it. */
+  open?: boolean;
+  /** Whether `details` is shown at first. Default `false`. */
+  defaultOpen?: boolean;
+  /** Called with the new state when the row opens or closes its `details`. */
+  onOpenChange?: (open: boolean) => void;
+  /** Disclosure chevron. Default `true` when `href`, `onClick` or `details` is set. It points down while `details` shows. */
   chevron?: boolean;
   /** Up to three actions: a ••• menu, revealed on hover and focus and always shown on a touch screen, and a touch swipe. Every action must also exist one level deeper. */
   actions?: RowAction[];
@@ -295,9 +306,32 @@ export function ListRow(props: ListRowProps) {
     onPointerDown: (e: React.PointerEvent<HTMLElement>) => { if (e.pointerType !== 'mouse' && inRow(e)) mp.onPointerDown?.(press(e)); },
   };
 
+  // `details`: the panel stays in the DOM as `hidden="until-found"`, so find-in-page reaches it and opens the row.
+  const detailsId = React.useId();
+  const hasDetails = props.details != null;
+  const [innerExpanded, setInnerExpanded] = React.useState(props.defaultOpen ?? false);
+  const expanded = hasDetails && (props.open ?? innerExpanded);
+  const setExpanded = (v: boolean) => { if (props.open === undefined) setInnerExpanded(v); props.onOpenChange?.(v); };
+  const setExpandedRef = React.useRef(setExpanded);
+  setExpandedRef.current = setExpanded;
+  const detailsRef = React.useRef<HTMLDivElement>(null);
+  React.useLayoutEffect(() => {
+    const el = detailsRef.current;
+    if (!el) return;
+    if (expanded) el.removeAttribute('hidden');
+    else el.setAttribute('hidden', 'until-found');
+  }, [expanded, hasDetails]);
+  React.useEffect(() => {
+    const el = detailsRef.current;
+    if (!el) return undefined;
+    const reveal = () => setExpandedRef.current(true);
+    el.addEventListener('beforematch', reveal);
+    return () => el.removeEventListener('beforematch', reveal);
+  }, [hasDetails]);
+
   const x = dx ?? (open ? -full : 0);
   const rowName = props.actionsLabel ?? (typeof props.title === 'string' ? props.title : null);
-  const showChevron = props.chevron ?? !!(props.href || props.onClick);
+  const showChevron = props.chevron ?? !!(props.href || props.onClick || hasDetails);
   const content = (
     <>
       {props.leading ? <span className="ld-row-leading" aria-hidden="true">{props.leading}</span> : null}
@@ -308,7 +342,17 @@ export function ListRow(props: ListRowProps) {
       {props.value != null ? <span className="ld-row-value">{props.value}</span> : null}
     </>
   );
-  const primary = props.href ? (
+  const primary = hasDetails ? (
+    <button
+      type="button"
+      className="ld-row-primary ld-row-target"
+      aria-expanded={expanded}
+      aria-controls={detailsId}
+      onClick={(e) => { setExpanded(!expanded); props.onClick?.(e); }}
+    >
+      {content}
+    </button>
+  ) : props.href ? (
     <Link className="ld-row-primary ld-row-target" href={props.href} aria-current={props.current ? 'page' : undefined} onClick={props.onClick}>{content}</Link>
   ) : props.onClick ? (
     <button type="button" className="ld-row-primary ld-row-target" onClick={props.onClick}>{content}</button>
@@ -316,62 +360,74 @@ export function ListRow(props: ListRowProps) {
     <span className="ld-row-primary">{content}</span>
   );
 
+  // With `details`, the swipe actions and the row share a box of their own, so revealed actions stay the row's height.
+  const slide = (children: React.ReactNode) => (hasDetails ? <div className="ld-row-slide">{children}</div> : children);
+
   return (
     <li
       className={cn(
-        'ld-row-wrap', !!(props.leading || props.control) && 'ld-row-lead', open && 'ld-row-open',
+        'ld-row-wrap', hasDetails && 'ld-row-has-details', !!(props.leading || props.control) && 'ld-row-lead', open && 'ld-row-open',
         (open || dx != null) && 'ld-row-revealed', props.actionsVisible && 'ld-row-actions-visible', props.className,
       )}
       data-row-id={props.rowKey}
       ref={liRef}
       onBlur={release}
     >
-      {swipeable ? (
-        <div ref={actionsRef} className="ld-row-actions" aria-hidden={!open}>
-          {actions.map((a, i) => (
-            <button
-              key={i}
-              type="button"
-              disabled={a.disabled}
-              className={cn('ld-row-action', a.tone === 'critical' && 'ld-row-action-critical', a.tone === 'neutral' && 'ld-row-action-neutral')}
-              onClick={() => { setOpen(false); act(() => a.onSelect?.()); }}
-            >
-              {a.label}
-            </button>
-          ))}
+      {slide(
+        <>
+          {swipeable ? (
+            <div ref={actionsRef} className="ld-row-actions" aria-hidden={!open}>
+              {actions.map((a, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  disabled={a.disabled}
+                  className={cn('ld-row-action', a.tone === 'critical' && 'ld-row-action-critical', a.tone === 'neutral' && 'ld-row-action-neutral')}
+                  onClick={() => { setOpen(false); act(() => a.onSelect?.()); }}
+                >
+                  {a.label}
+                </button>
+              ))}
+            </div>
+          ) : null}
+          <div
+            className={cn('ld-row', dx != null && 'ld-row-dragging')}
+            {...(swipeable ? pointerMove : {})}
+            style={swipeable ? { transform: `translateX(${x}px)` } : undefined}
+            onClickCapture={(e) => {
+              if (g.current.moved) { e.preventDefault(); e.stopPropagation(); return; }
+              if (open) { e.preventDefault(); e.stopPropagation(); setOpen(false); }
+            }}
+            onKeyDown={(e) => { if (e.key === 'Escape' && open) setOpen(false); }}
+          >
+            {props.control ? <span className="ld-row-control">{props.control}</span> : null}
+            {primary}
+            {props.trailing ? <span className="ld-row-trailing">{props.trailing}</span> : null}
+            {actions.length ? (
+              <Menu.Root>
+                <Menu.Trigger className="ld-row-more" aria-label={rowName ? `More actions for ${rowName}` : 'More actions'}>
+                  <Dots />
+                </Menu.Trigger>
+                <Menu.Portal>
+                  <ThemeScope>
+                    <Menu.Positioner className="ld-menu-positioner" sideOffset={6} align="end">
+                      <Menu.Popup className="ld-menu">
+                        <RowActionItems actions={actions} onAction={act} />
+                      </Menu.Popup>
+                    </Menu.Positioner>
+                  </ThemeScope>
+                </Menu.Portal>
+              </Menu.Root>
+            ) : null}
+            {showChevron ? <Chevron /> : null}
+          </div>
+        </>,
+      )}
+      {hasDetails ? (
+        <div ref={detailsRef} id={detailsId} className="ld-row-details" hidden={expanded ? undefined : true}>
+          <div className="ld-row-details-body">{props.details}</div>
         </div>
       ) : null}
-      <div
-        className={cn('ld-row', dx != null && 'ld-row-dragging')}
-        {...(swipeable ? pointerMove : {})}
-        style={swipeable ? { transform: `translateX(${x}px)` } : undefined}
-        onClickCapture={(e) => {
-          if (g.current.moved) { e.preventDefault(); e.stopPropagation(); return; }
-          if (open) { e.preventDefault(); e.stopPropagation(); setOpen(false); }
-        }}
-        onKeyDown={(e) => { if (e.key === 'Escape' && open) setOpen(false); }}
-      >
-        {props.control ? <span className="ld-row-control">{props.control}</span> : null}
-        {primary}
-        {props.trailing ? <span className="ld-row-trailing">{props.trailing}</span> : null}
-        {actions.length ? (
-          <Menu.Root>
-            <Menu.Trigger className="ld-row-more" aria-label={rowName ? `More actions for ${rowName}` : 'More actions'}>
-              <Dots />
-            </Menu.Trigger>
-            <Menu.Portal>
-              <ThemeScope>
-                <Menu.Positioner className="ld-menu-positioner" sideOffset={6} align="end">
-                  <Menu.Popup className="ld-menu">
-                    <RowActionItems actions={actions} onAction={act} />
-                  </Menu.Popup>
-                </Menu.Positioner>
-              </ThemeScope>
-            </Menu.Portal>
-          </Menu.Root>
-        ) : null}
-        {showChevron ? <Chevron /> : null}
-      </div>
     </li>
   );
 }
