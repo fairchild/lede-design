@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { PageHeader } from '@lede/blocks/page-header';
 import { SummaryCard } from '@lede/blocks/summary-card';
+import { StatusList } from '@lede/blocks/status-list';
 import { FormSection } from '@lede/blocks/form-section';
 import { StepIndicator } from '@lede/blocks/step-indicator';
 import { EmptyState } from '@lede/blocks/empty-state';
@@ -58,6 +59,21 @@ export function Blocks() {
       </Block>
       <Block id="b-steps" item="step-indicator" title="StepIndicator" summary={<>An <code>{'<ol>'}</code> of steps that marks the current one with <code>aria-current="step"</code>. Narrow screens show only its summary, such as “Step 2 of 3 · Preferences”.</>}>
         <Live><div className="docs-demo"><StepIndicator steps={['Account', 'Preferences', 'Review']} current={1} /></div></Live>
+      </Block>
+      <Block id="b-status" item="status-list" title="StatusList" summary="A list of items that may need a look, worst first, each ending in its status in words. When nothing is listed it says so, in place of an empty list.">
+        <Live><div className="docs-demo-col">
+          <StatusList
+            headingLevel={3}
+            title="Needs attention"
+            summary="1 failed of 3"
+            items={[
+              { id: 'cache-lhr-1', title: 'cache-lhr-1', subtitle: 'Last checked Nov 2, so its state may have drifted', tone: 'neutral', status: 'Not checked lately' },
+              { id: 'edge-sfo-2', title: 'edge-sfo-2', subtitle: 'The deploy failed on the health check, so traffic stays on the previous version', tone: 'critical', status: 'Failed' },
+              { id: 'api-iad-1', title: 'api-iad-1', subtitle: 'The plan has 3 changes to apply', tone: 'caution', status: 'Would change' },
+            ]}
+          />
+          <StatusList headingLevel={3} title="Needs attention later" items={[]} />
+        </div></Live>
       </Block>
       <Block id="b-empty" item="empty-state" title="EmptyState" summary={<>A quiet <code>{'<section>'}</code> for a place with nothing in it: a heading, one sentence and at most one action.</>}>
         <Live><div className="docs-demo" style={{ display: 'block' }}>

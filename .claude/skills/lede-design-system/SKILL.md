@@ -21,7 +21,7 @@ Read the repo's current `README.md` or `CONTRIBUTING.md` before building. Token 
 
 ## Choose the layer
 1. A **flow**, if one fits: `DailyBriefFlow`, `InboxFlow`, `SettingsFlow` / `AppearanceFlow`, `OnboardingFlow`, `ProfileFlow`.
-2. Otherwise compose **blocks**: `AppShell`, `WorkbenchShell`, `PageHeader`, `SummaryCard`, `MasterDetail`, `FormSection`, `StepIndicator`, `EmptyState`, `SelectionBar`, `AccentPicker`, `DataTable` (with `useServerRows` for server-side rows).
+2. Otherwise compose **blocks**: `AppShell`, `WorkbenchShell`, `PageHeader`, `SummaryCard`, `StatusList`, `MasterDetail`, `FormSection`, `StepIndicator`, `EmptyState`, `SelectionBar`, `AccentPicker`, `DataTable` (with `useServerRows` for server-side rows).
 3. Build from **primitives**: `Button`, `SegmentedControl`, `Switch`, `TextField`, `SearchField`, `Card`, `ListGroup` / `ListRow`, `StatusText`, `Checkbox`, `Table` (table parts, with an optional collapsible caption), `Disclosure`, `Avatar`, `GlassBar` / `GlassToolbar`, `ThemeProvider`, `ThemeScope`, `LinkProvider`.
 
 Flows are router-agnostic: data, hrefs and callbacks go in, and they do no fetching. Add a new pattern only when no existing one fits, and document why.

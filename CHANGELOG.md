@@ -8,6 +8,9 @@
   adds `components/lede/docs/README.md`, which lists every item of the release and holds the README's setup
   sections. A project that can't reach the docs site, such as an agent's sandbox, has the docs for the release it
   installed. The CLI prints where each item's page landed.
+- StatusList, `@lede/status-list`: a block for a "needs attention" list. It takes items with a tone and a status in
+  words, lists them worst first with their status as StatusText and two-line subtitles, and shows "Nothing needs a
+  look." (or your `empty`) when there are none.
 - The docs' Overview opens on a live example in place of the grid of count cards: Daybook's inbox, the three-panel
   workbench with its chat or the daily brief, chosen with a segmented control and shown wide or narrow. A short list
   of links with one line each takes the cards' place below it, and Install now comes before Principles.
