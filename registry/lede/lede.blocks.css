@@ -112,6 +112,13 @@ button.ld-back { background: none; border: 0; font-family: inherit; font-weight:
   .ld-md { grid-template-columns: minmax(var(--layout-list-min-width), var(--layout-list-max-width)) minmax(0, 1fr); align-items: start; }
   .ld-md .ld-md-list, .ld-md[data-detail-open] .ld-md-list { display: block; }
   .ld-md .ld-md-detail { display: block; position: sticky; top: var(--space-8); }
+  /* `stickyList`: the list scrolls in its own pane, as tall as the window less the shell's top and bottom inset, and
+     the detail scrolls with the page. The pane's inset keeps its children's focus rings inside its clip. */
+  .ld-md[data-sticky-list] .ld-md-list {
+    position: sticky; top: var(--space-6); max-height: calc(100dvh - 2 * var(--space-6)); box-sizing: border-box; overflow-y: auto; overscroll-behavior: contain;
+    margin: calc(-1 * var(--space-2)); padding: var(--space-2);
+  }
+  .ld-md[data-sticky-list] .ld-md-detail { position: static; }
 }
 
 /* WorkbenchShell: a top bar over three panels that fill the window. Each panel scrolls alone; the page doesn't.
