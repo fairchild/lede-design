@@ -12,6 +12,8 @@ const load = async (): Promise<Handler> => (await import(WORKER)).default;
 
 interface Stored { body: string; contentType?: string }
 
+const MARKDOWN = ['/overview.md', '/components.md', '/blocks/data-table.md'];
+
 /**
  * An R2 bucket of `objects` that logs each head and get, and an assets binding that answers JSON under /r/ and keeps
  * each Request it's given.
@@ -38,6 +40,12 @@ function binding(objects: Record<string, Stored> = {}, { failing = false } = {})
         const { pathname } = new URL(typeof input === 'string' ? input : input.url);
         reads.push(`asset ${pathname}`);
         if (typeof input !== 'string') forwarded.push(input);
+        // The docs pages' Markdown twins; any other .md is missing, as `not_found_handling: "none"` answers.
+        if (pathname.endsWith('.md')) {
+          return MARKDOWN.includes(pathname)
+            ? new Response(`# ${pathname}`, { headers: { 'content-type': 'text/plain; charset=utf-8' } })
+            : new Response('Not found', { status: 404 });
+        }
         return pathname.startsWith('/r/')
           ? new Response('{}', { headers: { 'content-type': 'application/json', etag: '"a"' } })
           : new Response('<!doctype html>', { headers: { 'content-type': 'text/html' } });
@@ -96,6 +104,30 @@ test('answers 404 for a missing file and the shell for a route, with the request
     expect(reads, path).toEqual(['asset /']);
     expect(forwarded[0].method, path).toBe('HEAD');
     expect(forwarded[0].headers.get('if-none-match'), path).toBe('"shell"');
+  }
+});
+
+test('answers a docs route with its Markdown when the request ranks text/markdown first, and says the answer varies', async () => {
+  const markdown = { headers: { accept: 'text/markdown, text/html;q=0.9' } };
+  for (const [path, file] of [['/', '/overview.md'], ['/components', '/components.md'], ['/blocks/data-table/', '/blocks/data-table.md']]) {
+    const { status, reads, header, response } = await ask(path, {}, markdown);
+    expect(status, path).toBe(200);
+    expect(reads, path).toEqual([`asset ${file}`]);
+    expect(await response.text(), path).toBe(`# ${file}`);
+    expect(header('vary'), path).toBe('Accept');
+  }
+  // Ranked equal with HTML, Markdown wins: the client named it, and a browser never does.
+  const tied = await ask('/components', {}, { headers: { accept: 'text/html, text/markdown' } });
+  expect(tied.reads).toEqual(['asset /components.md']);
+  // A route with no Markdown, such as the demo app, gets the shell after one look for it.
+  const app = await ask('/app/inbox', {}, markdown);
+  expect(app.reads).toEqual(['asset /app/inbox.md', 'asset /']);
+  expect(await app.response.text()).toBe('<!doctype html>');
+  // A browser, a client that asks for nothing, one that prefers HTML and one that refuses Markdown get the page.
+  for (const accept of ['text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8', '', 'text/markdown;q=0.5, text/html', 'text/markdown;q=0, */*']) {
+    const { reads, header } = await ask('/components', {}, { headers: accept ? { accept } : {} });
+    expect(reads, accept).toEqual(['asset /']);
+    expect(header('vary'), accept).toBe('Accept');
   }
 });
 

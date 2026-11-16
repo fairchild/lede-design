@@ -25,7 +25,7 @@ test.skip(({ isMobile }) => isMobile, 'Files read the same at every width: one p
 const SITE = 'https://lede.cloudcompute.com';
 const { version } = JSON.parse(readFileSync('package.json', 'utf8')) as { version: string };
 const registry = JSON.parse(readFileSync('registry.json', 'utf8')) as { items: { name: string; title: string }[] };
-const PAGES = ['/overview.md', '/foundations.md', '/components.md', '/blocks.md', '/blocks/data-table.md', '/layouts.md', '/decisions.md', '/integrations.md'];
+const PAGES = ['/overview.md', '/foundations.md', '/components.md', '/blocks.md', '/blocks/data-table.md', '/layouts.md', '/choose.md', '/decisions.md', '/integrations.md'];
 /** The SPA shell, which a server without the file could answer with. */
 const SHELL = /<div id="root"|^\s*<!doctype html/i;
 
@@ -80,12 +80,56 @@ test('llms.txt opens with a Start here section, and each size it prints is the s
   const start = llms.slice(llms.indexOf('## Start here'), llms.indexOf('## Docs'));
   const kilobytes = (text: string) => Math.max(1, Math.round(Buffer.byteLength(text, 'utf8') / 1024));
   const sized = [...start.matchAll(/\]\(https:\/\/lede\.cloudcompute\.com(\/[^)]+)\) \((\d+) KB\)/g)];
-  expect(sized.map(([, path]) => path)).toEqual(['/overview.md', '/layouts.md', '/blocks.md', '/reference/index.md', '/foundations.md', '/llms-full.txt']);
+  expect(sized.map(([, path]) => path)).toEqual(['/overview.md', '/choose.md', '/layouts.md', '/blocks.md', '/reference/index.md', '/foundations.md', '/llms-full.txt']);
   for (const [, path, size] of sized) expect(`${path} ${kilobytes(await read(request, path))} KB`).toBe(`${path} ${size} KB`);
   // The range of the reference pages, from every one the build serves.
   const names = (JSON.parse(readFileSync('registry.json', 'utf8')) as { items: { name: string }[] }).items.map((item) => item.name);
   const pages = await Promise.all(names.map(async (name) => kilobytes(await read(request, `/reference/${name}.md`))));
   expect(start).toContain(`and is ${Math.min(...pages)} to ${Math.max(...pages)} KB.`);
+});
+
+test('each docs page names its Markdown in the head, and a page without one names none', async ({ page, request }) => {
+  const alternate = page.locator('head link[rel="alternate"][type="text/markdown"]');
+  for (const file of PAGES) {
+    const route = file === '/overview.md' ? '/' : file.slice(0, -'.md'.length);
+    await page.goto(route);
+    await expect(alternate, route).toHaveAttribute('href', file);
+    await expect(alternate, route).toHaveCount(1);
+    const response = await request.get(file);
+    expect(response.status(), file).toBe(200);
+    expect(await response.text(), file).not.toMatch(SHELL);
+  }
+  // Leaving the docs for the demo takes the link away.
+  await page.goto('/');
+  await page.getByRole('main').getByRole('link', { name: 'Demo app', exact: true }).click();
+  await expect(page).toHaveURL(/\/app$/);
+  await expect(alternate).toHaveCount(0);
+});
+
+test('Overview’s agent prompt pins this release, names every README install step and the limits that stop an install', async ({ page, request }) => {
+  const readme = readFileSync('README.md', 'utf8');
+  const install = readme.split(/^## Use it in a shadcn project$/m)[1].split(/^## /m)[0];
+  const steps = [...install.matchAll(/^\d+\. (.+?[.:])(?=\s)/gm)].map((m) => m[1].replace(/`/g, ''));
+  expect(steps.length).toBeGreaterThan(2);
+  const checks = [
+    `Set up Lede ${version}`,
+    `'@lede=${SITE}/r/v${version}/{name}.json'`,
+    'Client rendering only.',
+    'Install from the registry URL.',
+    `UI uses Lede ${version}.`,
+    ...steps,
+  ];
+  await page.goto('/');
+  const prompt = page.getByRole('region', { name: 'Use with an agent' }).locator('.docs-prompt');
+  const markdown = await read(request, '/overview.md');
+  for (const text of checks) {
+    await expect(prompt, text).toContainText(text);
+    expect(markdown, text).toContain(text);
+  }
+  await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
+  await page.getByRole('button', { name: 'Copy prompt' }).click();
+  await expect(page.getByRole('status').filter({ hasText: 'Prompt copied' })).toBeAttached();
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(await prompt.textContent());
 });
 
 test('the site serves Markdown and text files as UTF-8 plain text through public/_headers, which the preview server doesn’t read', () => {

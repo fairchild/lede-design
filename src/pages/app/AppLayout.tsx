@@ -4,6 +4,7 @@ import { Avatar } from '@lede/avatar';
 import { IconSun, IconInbox, IconGear, IconTable } from '@/icons';
 import { useProfile } from '@/profile';
 import { RouterLink } from '@/router-link';
+import { EMBEDDED } from '@/pages/layouts/embedded';
 
 const NAV = [
   { value: 'today', label: 'Today', href: '/app', icon: <IconSun /> },
@@ -26,7 +27,8 @@ export function AppLayout() {
         <Avatar name={profile.name} src={profile.avatarUrl} alt="" />
         <span className="docs-person-name">{profile.name}<span className="ld-sr-only"> (your profile)</span></span>
       </RouterLink>
-      <RouterLink href="/">Back to Lede docs</RouterLink>
+      {/* Overview shows the demo in a frame, where a link to the docs would nest them in themselves. */}
+      {EMBEDDED ? null : <RouterLink href="/">Back to Lede docs</RouterLink>}
     </>
   );
   return (

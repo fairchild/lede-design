@@ -4,12 +4,27 @@
 
 ### Added
 
+- The docs' Overview opens on a live example in place of the grid of count cards: Daybook's inbox, the three-panel
+  workbench with its chat or the daily brief, chosen with a segmented control and shown wide or narrow. A short list
+  of links with one line each takes the cards' place below it, and Install now comes before Principles.
+- Overview's Use with an agent section holds a prompt to paste into a coding agent, with a Copy prompt button. It's written
+  from the README's install steps and Limits, pins this release and asks the agent to leave a note in `AGENTS.md`
+  or `CLAUDE.md` on where Lede's docs are. https://lede.cloudcompute.com/overview.md has it too.
+- Choose a part, at https://lede.cloudcompute.com/choose: what you're building, and the component, block or flow that
+  does it, each linked to its example.
+- Each docs page names its Markdown version in a `<link rel="alternate" type="text/markdown">`, and a request for a
+  docs route whose `Accept` header ranks `text/markdown` at least as high as `text/html` gets that Markdown.
 - The README has a components.json section: the fields the shadcn CLI needs for Lede, in a file you can write by hand
   where `shadcn init` can't reach ui.shadcn.com, such as in a sandbox. `"baseColor": ""` keeps `add` from downloading
   too. It also says that Lede doesn't use the `ui`, `lib` and `hooks` aliases.
 - The README has a Tailwind and Lede's classes section: Lede needs Tailwind v4 and leaves a page's layout to it. Use
   the token color names, such as `text-muted-foreground`, and Lede's type classes, such as `text-footnote`, in place
   of Tailwind's palette and `text-sm`.
+- MasterDetail takes `stickyList`: on wide screens the list pane stays in view and scrolls on its own, and the page
+  scrolls the detail, for a long list beside a long detail.
+- ListRow takes `subtitleLines`: `2` clamps the subtitle to two lines and `'all'` shows every line, where the default
+  is one line that ends in an ellipsis.
+- ListGroup takes `empty`, shown in place of the rows when there are none, such as "No hosts match" under a filter.
 - StatusText, `@lede/status-text`: a status word colored by its tone (`neutral`, `positive`, `caution` or
   `critical`), with a dot, at the size of the text around it. Put it in a ListRow's `value` or `subtitle`, a table
   cell or a sentence, as in `value={<StatusText tone="critical">Failed</StatusText>}`.
@@ -28,8 +43,8 @@
   wrapper it goes on. Checkbox puts them on its wrapper `<span>` and TextField on its wrapper `<div>`, as before.
 - When a reference page's install command adds an item only for its example, such as `@lede/button` on PageHeader's
   page, the page says so.
-- `llms.txt` has a "Start here" section above Docs: which file answers which task (install, choose a layout or a
-  block, use one item, change a token), with each file's size in kilobytes and the range of the reference pages, so a
+- `llms.txt` has a "Start here" section above Docs: which file answers which task (install, choose a part, lay out a
+  page, use one item, change a token), with each file's size in kilobytes and the range of the reference pages, so a
   reader can tell what fits before it fetches. It says when `llms-full.txt` is worth its size.
 
 ### Changed

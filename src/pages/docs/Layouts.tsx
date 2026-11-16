@@ -61,8 +61,9 @@ const SITE_IS_NARROW = '(width < 56.25em)';
 /**
  * A real full-page route in a frame, because a full page can't nest in this page's landmarks. A frame also has its
  * own viewport, so the layout's media queries fire at the chosen width. A wide frame scales down to fit the column.
+ * `controls` sit beside the width control, as Overview's choice of example does.
  */
-function LayoutPreview({ title, route }: { title: string; route: string }) {
+export function LayoutPreview({ title, route, controls }: { title: string; route: string; controls?: React.ReactNode }) {
   const [view, setView] = React.useState<View>(() => (window.matchMedia(SITE_IS_NARROW).matches ? 'narrow' : 'wide'));
   const [room, setRoom] = React.useState(0);
   const [loaded, setLoaded] = React.useState(false);
@@ -79,7 +80,10 @@ function LayoutPreview({ title, route }: { title: string; route: string }) {
   const scale = Math.min(1, room / width);
   return (
     <div className="docs-preview">
-      <SegmentedControl label={`${title}: preview width`} options={[{ value: 'wide', label: 'Wide' }, { value: 'narrow', label: 'Narrow' }]} value={view} onValueChange={(v) => setView(v as View)} />
+      <div className="docs-preview-controls">
+        {controls}
+        <SegmentedControl label={`${title}: preview width`} options={[{ value: 'wide', label: 'Wide' }, { value: 'narrow', label: 'Narrow' }]} value={view} onValueChange={(v) => setView(v as View)} />
+      </div>
       <div ref={stage} className="docs-preview-stage" style={{ height: height * scale }}>
         <iframe
           className="docs-preview-frame"

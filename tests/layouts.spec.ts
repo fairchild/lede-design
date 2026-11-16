@@ -20,7 +20,7 @@ async function openPreview(page: Page, title: string) {
 test('Layouts is one of five navigation places, and the demo stays reachable', async ({ page }) => {
   await page.goto('/');
   await expect(docsNav(page).getByRole('list').first().getByRole('listitem')).toHaveText(['Overview', 'Foundations', 'Components', 'Blocks', 'Layouts']);
-  // Overview is the docs' hub, so its Explore card is the way into the demo at every width.
+  // Overview is the docs' hub, so its Explore list is the way into the demo at every width.
   await page.getByRole('main').getByRole('link', { name: 'Demo app', exact: true }).click();
   await expect(page).toHaveURL(/\/app$/);
   await page.goto('/layouts');
@@ -55,14 +55,43 @@ test('Overview counts what is there', async ({ page }) => {
   const decisions = await page.locator('main .ld-disc').count();
   await page.goto('/');
   const registry = JSON.parse(readFileSync('registry.json', 'utf8')) as { items: Array<{ categories?: string[] }> };
-  const figure = (title: string) => page.getByRole('article').filter({ has: page.getByRole('heading', { name: title }) }).locator('.ld-summary-figure');
-  await expect(figure('Layouts')).toHaveText(String(layouts));
-  await expect(figure('Decisions')).toHaveText(String(decisions));
-  await expect(figure('Blocks')).toHaveText(String(registry.items.filter((item) => item.categories?.includes('blocks')).length));
+  // Each entry is the place's link and then a line that leads with its count.
+  const line = (title: string) => page.getByRole('region', { name: 'Explore' }).getByRole('listitem').filter({ has: page.getByRole('link', { name: title, exact: true }) });
+  await expect(line('Layouts')).toHaveText(new RegExp(`^Layouts ${layouts} `));
+  await expect(line('Decisions')).toHaveText(new RegExp(`^Decisions ${decisions} `));
+  await expect(line('Blocks')).toHaveText(new RegExp(`^Blocks ${registry.items.filter((item) => item.categories?.includes('blocks')).length} `));
   // A family is a top-level entry with tokens or type styles: color and type count once each.
   const tokens = JSON.parse(readFileSync('tokens/tokens.json', 'utf8')) as Record<string, unknown>;
   const families = Object.values(tokens).filter((v) => typeof v === 'object' && v !== null && ('tokens' in v || 'groups' in v));
-  await expect(figure('Foundations')).toHaveText(String(families.length));
+  await expect(line('Foundations')).toContainText(`${families.length - 2} more token families`);
+});
+
+test('Overview opens on a live example, and each choice frames a real screen with no way back into the docs', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/');
+  const section = page.getByRole('region', { name: 'Example' });
+  await expect(page.locator('main h2').first()).toHaveText('Example');
+  // The first frame loads with the page, and its own h1 never takes focus from the page's.
+  await expect(section.locator('iframe')).toHaveAttribute('data-loaded', 'true');
+  await expect(page.getByRole('heading', { level: 1, name: 'Lede' })).toBeFocused();
+  const choices = [
+    { name: 'Inbox', title: 'Daybook inbox', route: '/app/inbox/m1' },
+    { name: 'Three panels', title: 'Workbench with chat', route: '/layouts/workbench' },
+    { name: 'Daily brief', title: 'Daybook today', route: '/app' },
+  ];
+  const radios = section.getByRole('group', { name: 'Example' }).getByRole('radio');
+  await expect(radios).toHaveCount(choices.length);
+  for (const [i, { name }] of choices.entries()) await expect(radios.nth(i)).toHaveAccessibleName(name);
+  for (const { name, title, route } of choices) {
+    await section.getByRole('radio', { name }).check();
+    const frame = section.locator(frameTitle(title));
+    await expect(frame).toHaveAttribute('src', route);
+    await expect(frame).toHaveAttribute('data-loaded', 'true');
+    const inner = page.frameLocator(frameTitle(title));
+    await expect(inner.locator('h1')).toBeAttached();
+    await expect(inner.locator('a[href="/"], a[href$="/layouts"]')).toHaveCount(0);
+    await expect(section.getByRole('link', { name: `Open full page: ${title}` })).toHaveAttribute('href', route);
+  }
 });
 
 test('each layout says what it is for, shows its regions and install line, and leads somewhere', async ({ page }) => {

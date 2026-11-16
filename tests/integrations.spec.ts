@@ -1,7 +1,7 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { test, expect, type Page } from '@playwright/test';
 
-// The Integrations page: Overview's card reaches it, its install command names this release, its SpecView example
+// The Integrations page: Overview's entry reaches it, its install command names this release, its SpecView example
 // draws and works, and its links name folders that exist. The folders are read from disk, so a renamed or added
 // example app fails here.
 const { version } = JSON.parse(readFileSync('package.json', 'utf8')) as { version: string };
@@ -11,11 +11,11 @@ const REPO = 'https://github.com/fairchild/lede-design';
 
 const section = (page: Page, id: string) => page.locator(`section[aria-labelledby="${id}"]`);
 
-test('Overview’s Integrations card counts the example apps and opens the page, with Overview current', async ({ page }) => {
+test('Overview’s Integrations entry counts the example apps and opens the page, with Overview current', async ({ page }) => {
   await page.goto('/');
-  const card = page.getByRole('main').getByRole('article').filter({ has: page.getByRole('link', { name: 'Integrations', exact: true }) });
-  await expect(card.locator('.ld-summary-figure')).toHaveText(String(FOLDERS.length));
-  await card.getByRole('link').click();
+  const entry = page.getByRole('region', { name: 'Explore' }).getByRole('listitem').filter({ has: page.getByRole('link', { name: 'Integrations', exact: true }) });
+  await expect(entry).toHaveText(new RegExp(`^Integrations ${FOLDERS.length} example apps`));
+  await entry.getByRole('link').click();
   await expect(page).toHaveURL(/\/integrations$/);
   await expect(page.getByRole('heading', { level: 1, name: 'Integrations' })).toBeVisible();
   await expect(page.getByRole('navigation', { name: 'Documentation' }).getByRole('link', { name: 'Overview' })).toHaveAttribute('aria-current', 'page');
