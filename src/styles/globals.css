@@ -4,6 +4,7 @@
 @source not "../../CHANGELOG.md";
 @source not "../../CONTRIBUTING.md";
 @source not "../../CLAUDE.md";
+@source not "../../AGENTS.md";
 @source not "../../docs/**/*.md";
 @source not "../../.claude/**/*.md";
 @source not "../../integrations";
