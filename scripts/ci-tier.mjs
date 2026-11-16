@@ -12,7 +12,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { deepStrictEqual } from 'node:assert';
 
 // src/styles/globals.css keeps Tailwind from scanning what these match, so a path added here is added there too.
-const TEXT = /^(?:(?:CHANGELOG|CONTRIBUTING|CLAUDE)\.md|(?:docs|\.claude)\/.+\.md)$/;
+const TEXT = /^(?:(?:CHANGELOG|CONTRIBUTING|CLAUDE|AGENTS)\.md|(?:docs|\.claude)\/.+\.md)$/;
 const INTEGRATION = /^(?:integrations|scripts\/design-system)\/.+/;
 const TEST = /^tests\/.+\.ts$/;
 
@@ -31,7 +31,7 @@ const CASES = [
   [[], 3],
   // Overview renders the README's install steps.
   [['README.md'], 3],
-  [['CHANGELOG.md', 'CONTRIBUTING.md', 'CLAUDE.md', 'docs/proposals/data-table.md', '.claude/skills/x/SKILL.md'], 1],
+  [['CHANGELOG.md', 'CONTRIBUTING.md', 'CLAUDE.md', 'AGENTS.md', 'docs/proposals/data-table.md', '.claude/skills/x/SKILL.md'], 1],
   [['docs/diagram.png'], 3],
   [['.claude/settings.json'], 3],
   [['registry/README.md'], 3],

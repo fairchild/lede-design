@@ -12,6 +12,11 @@
   adds `components/lede/docs/README.md`, which lists every item of the release and holds the README's setup
   sections. A project that can't reach the docs site, such as an agent's sandbox, has the docs for the release it
   installed. The CLI prints where each item's page landed.
+- `AGENTS.md` holds the repo's notes for coding agents, so agents other than Claude Code find them. `CLAUDE.md` is now
+  one line that imports it.
+- The README shows how to install the `lede-design-system` skill for Claude Code, from the release's tag, and
+  `llms.txt` links the skill at the release's tag in place of `main`, so an agent reads the rules for the version it
+  installs.
 - StatusList, `@lede/status-list`: a block for a "needs attention" list. It takes items with a tone and a status in
   words, lists them worst first with their status as StatusText and two-line subtitles, and shows "Nothing needs a
   look." (or your `empty`) when there are none.
