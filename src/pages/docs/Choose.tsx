@@ -34,6 +34,7 @@ export const CHOICES: Array<{ id: string; title: string; choices: Choice[] }> = 
       { need: 'A number and what it means, linking to more', item: 'summary-card', title: 'SummaryCard', href: '/blocks#b-summary', note: 'A figure, a one-line takeaway and a status in words.' },
       { need: 'Detail that opens when someone asks for it', item: 'disclosure', title: 'Disclosure', href: '/components#c-disc', note: 'Its summary reads while it’s closed, and find-in-page can open it.' },
       { need: 'Related content on one surface', item: 'card', title: 'Card', href: '/components#c-card', note: 'Nested corners stay concentric with the card’s.' },
+      { need: 'A list of things that may need a look, worst first', item: 'status-list', title: 'StatusList', href: '/blocks#b-status', note: 'Each row ends in its status in words, and an empty list says nothing needs a look.' },
       { need: 'A status word in a row or a cell, such as Failed or Done', item: 'status-text', title: 'StatusText', href: '/components#c-status', note: 'Colored by its tone, with a dot, so color never carries it alone.' },
       { need: 'A person, with or without a picture', item: 'avatar', title: 'Avatar', href: '/components#c-avatar', note: 'Falls back to initials.' },
       { need: 'A place with nothing in it yet', item: 'empty-state', title: 'EmptyState', href: '/blocks#b-empty', note: 'A heading, one sentence and at most one action.' },

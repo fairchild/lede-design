@@ -504,6 +504,28 @@
       ]
     },
     {
+      "name": "status-list",
+      "type": "registry:block",
+      "title": "StatusList",
+      "description": "A list of items that may need a look, worst first, each ending in its status in words, with an empty text when there's nothing to list.",
+      "registryDependencies": [
+        "@lede/lede-theme",
+        "@lede/lede-utils",
+        "@lede/list",
+        "@lede/status-text"
+      ],
+      "files": [
+        {
+          "path": "registry/lede/blocks/status-list.tsx",
+          "type": "registry:component",
+          "target": "components/lede/blocks/status-list.tsx"
+        }
+      ],
+      "categories": [
+        "blocks"
+      ]
+    },
+    {
       "name": "workbench-shell",
       "type": "registry:block",
       "title": "WorkbenchShell",
