@@ -416,6 +416,24 @@
 .ld-ansi-underline { text-decoration: underline; }
 @media print { .ld-code-pre { max-height: none; overflow: visible; white-space: pre-wrap; overflow-wrap: anywhere; } }
 
+/* AlertDialog — Base UI AlertDialog: a scrim, and a `role="alertdialog"` box centered in the window */
+.ld-dialog-backdrop { position: fixed; inset: 0; z-index: var(--z-dialog); background: var(--scrim); transition: opacity var(--ld-dur) var(--ld-ease); }
+.ld-dialog-backdrop[data-starting-style], .ld-dialog-backdrop[data-ending-style] { opacity: 0; }
+.ld-dialog-viewport { position: fixed; inset: 0; z-index: var(--z-dialog); display: grid; place-items: center; padding: var(--space-4); overflow-y: auto; }
+.ld-dialog {
+  box-sizing: border-box; width: 100%; max-width: var(--layout-dialog-max-width); padding: var(--space-5);
+  border-radius: var(--radius-lg); background: var(--popover); color: var(--popover-foreground); font-family: var(--font-sans);
+  box-shadow: 0 0 0 0.5px var(--glass-stroke), var(--shadow-float); outline: 0;
+  transition: transform var(--ld-dur) var(--ld-spring), opacity var(--ld-dur) var(--ld-ease);
+}
+.ld-dialog[data-starting-style], .ld-dialog[data-ending-style] { opacity: 0; transform: scale(var(--scale-pressed)); }
+[data-theme$="-hc"] .ld-dialog { box-shadow: 0 0 0 1px var(--input); }
+.ld-dialog-title { margin: 0; font-size: var(--text-headline-size); line-height: var(--text-headline-line-height); font-weight: var(--text-headline-weight); overflow-wrap: break-word; }
+.ld-dialog-description { margin: var(--space-2) 0 0; font-size: var(--text-subheadline-size); line-height: var(--text-subheadline-line-height); color: var(--muted-foreground); overflow-wrap: break-word; }
+/* Cancel then confirm, at the end of the row; a label too long for both to share it gives each a row, confirm on top. */
+.ld-dialog-actions { display: flex; flex-wrap: wrap-reverse; justify-content: flex-end; gap: var(--space-2); margin-top: var(--space-5); }
+.ld-dialog-actions > .ld-btn { flex: 1 1 auto; }
+
 /* Menu — Base UI Menu (ListRow ••• actions) */
 .ld-menu-positioner { z-index: var(--z-menu); outline: 0; }
 .ld-menu {
@@ -721,7 +739,7 @@
 @media (forced-colors: active) {
   .ld-glass, [data-glass] .ld-glass { background: Canvas; -webkit-backdrop-filter: none; backdrop-filter: none; }
   .ld-glass { border: 1px solid CanvasText; }
-  .ld-card, .ld-list-body, .ld-disc:not(.ld-disc-plain), .ld-menu, .ld-table-scroll, .ld-code-pre { border: 1px solid CanvasText; }
+  .ld-card, .ld-list-body, .ld-disc:not(.ld-disc-plain), .ld-menu, .ld-table-scroll, .ld-code-pre, .ld-dialog { border: 1px solid CanvasText; }
   .ld-bar-sep { background: CanvasText; }
   .ld-avatar { outline: 1px solid CanvasText; outline-offset: -1px; }
   .ld-skel { background: GrayText; }

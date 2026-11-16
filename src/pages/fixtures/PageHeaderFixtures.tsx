@@ -3,6 +3,7 @@ import { Button } from '@lede/button';
 import { Switch } from '@lede/switch';
 import { SearchField } from '@lede/search-field';
 import { PageHeader } from '@lede/blocks/page-header';
+import { AlertDialog } from '@lede/alert-dialog';
 
 /**
  * A screen that replaces itself under a control that stays: the button keeps focus as each new screen's PageHeader
@@ -26,7 +27,7 @@ export function PageHeaderFixtures() {
 
 /**
  * A detail that opens inside the page. Its back button, or Escape, closes it, and focus returns to the opener. Its
- * SearchField keeps Escape while it holds text.
+ * SearchField keeps Escape while it holds text, and its AlertDialogs take Escape before it.
  */
 function DetailInPlace() {
   const [open, setOpen] = React.useState(false);
@@ -45,10 +46,38 @@ function DetailInPlace() {
         <>
           <PageHeader headingLevel={3} title="Venue for Thursday" summary="It opened in place, under this section’s heading." back={{ label: 'Messages', onSelect: close }} backOnEscape />
           <SearchField label="Filter venues" />
+          <VenueActions />
         </>
       ) : (
         <Button ref={opener} variant="gray" onClick={() => setOpen(true)}>Open the detail</Button>
       )}
     </section>
+  );
+}
+
+/** A critical AlertDialog with a trigger, and a primary one a parent opens, each saying what it last did. */
+function VenueActions() {
+  const [said, setSaid] = React.useState('Nothing yet');
+  const [asking, setAsking] = React.useState(false);
+  return (
+    <div className="ld-flow-stack">
+      <AlertDialog
+        trigger={<Button variant="gray" tone="critical">Delete the venue</Button>}
+        title="Delete Harbor Hall?"
+        description="Thursday’s booking goes too. You can’t undo this."
+        confirmLabel="Delete"
+        tone="critical"
+        onConfirm={() => setSaid('Deleted')}
+      />
+      <Button variant="gray" onClick={() => setAsking(true)}>Book the venue</Button>
+      <AlertDialog
+        open={asking}
+        onOpenChange={setAsking}
+        title="Book Harbor Hall for Thursday?"
+        confirmLabel="Book"
+        onConfirm={() => setSaid('Booked')}
+      />
+      <p>Last action: {said}</p>
+    </div>
   );
 }

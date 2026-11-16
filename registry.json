@@ -247,6 +247,28 @@
       ]
     },
     {
+      "name": "alert-dialog",
+      "type": "registry:component",
+      "title": "AlertDialog",
+      "description": "A modal that asks before an action that needs a second thought, with Cancel and a confirm Button. Focus opens on confirm, or on Cancel for a critical action, and Escape cancels.",
+      "registryDependencies": [
+        "@lede/lede-theme",
+        "@lede/lede-utils",
+        "@lede/button",
+        "@lede/theme-provider"
+      ],
+      "files": [
+        {
+          "path": "registry/lede/alert-dialog.tsx",
+          "type": "registry:component",
+          "target": "components/lede/alert-dialog.tsx"
+        }
+      ],
+      "dependencies": [
+        "@base-ui/react@^1.9.0"
+      ]
+    },
+    {
       "name": "status-text",
       "type": "registry:component",
       "title": "StatusText",

@@ -11,6 +11,7 @@ import { ListGroup, ListRow } from '@lede/list';
 import { StatusText } from '@lede/status-text';
 import { CodeBlock } from '@lede/code-block';
 import { Disclosure } from '@lede/disclosure';
+import { AlertDialog } from '@lede/alert-dialog';
 import { GlassBar, GlassToolbar, GlassToolbarButton, GlassToolbarSeparator } from '@lede/glass-bar';
 import { ThemeProvider } from '@lede/theme-provider';
 import { Checkbox } from '@lede/checkbox';
@@ -62,6 +63,32 @@ function LogDemo() {
         <Button onClick={() => setCount((c) => Math.min(c + 1, LOG_LINES.length))} disabled={count === LOG_LINES.length}>Add a log line</Button>
         <Button variant="plain" onClick={() => setCount(3)}>Start over</Button>
       </div>
+    </div>
+  );
+}
+
+function AlertDialogDemo() {
+  const [said, setSaid] = React.useState('');
+  return (
+    <div className="docs-demo-col">
+      <div className="docs-demo">
+        <AlertDialog
+          trigger={<Button tone="critical">Delete edge-sfo-2</Button>}
+          title="Delete edge-sfo-2?"
+          description="Its 3 deploy runs go too. You can’t undo this."
+          confirmLabel="Delete"
+          tone="critical"
+          onConfirm={() => setSaid('edge-sfo-2 was deleted. In the demo it comes back.')}
+        />
+        <AlertDialog
+          trigger={<Button>Restart api-iad-1</Button>}
+          title="Restart api-iad-1?"
+          description="It stops answering for about 20 seconds."
+          confirmLabel="Restart"
+          onConfirm={() => setSaid('api-iad-1 is restarting.')}
+        />
+      </div>
+      <p className="docs-intro docs-note" role="status">{said}</p>
     </div>
   );
 }
@@ -209,6 +236,14 @@ export function Components() {
         <Live><Disclosure title="Spending" summary="On track, $420 under budget" headingLevel={3}>
           <p className="m-0">Detail lives here.</p>
         </Disclosure></Live>
+      </Demo>
+      <Demo id="c-alert" item="alert-dialog" title="AlertDialog" summary={<>A Base UI AlertDialog: a modal <code>{'role="alertdialog"'}</code> that asks before an action, named by its question, with Cancel and a confirm button. Escape cancels, and a press outside does nothing.</>}>
+        <Live><AlertDialogDemo /></Live>
+        <p className="docs-intro docs-note">
+          Focus opens on the confirm button, and on Cancel when <code>tone</code> is <code>"critical"</code>, so Enter
+          never destroys anything by itself. It closes back to the control that opened it, or to <code>finalFocus</code>{' '}
+          when that control is gone. Open one from a row action with <code>open</code> and <code>onOpenChange</code>.
+        </p>
       </Demo>
       <Demo id="c-theme" item="theme-provider" title="ThemeProvider" summary={<>ThemeProvider sets the scheme, contrast, accent, shape, density and glass (the translucent, blurred material of bars and toolbars) for a subtree. A nested provider inherits each of those it leaves unset except glass, and ThemeScope carries the theme into an overlay’s portal<Live>: open a row’s ••• menu in each panel to compare</Live>.</>}>
         <div className="docs-demo-col">

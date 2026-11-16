@@ -4,6 +4,10 @@
 
 ### Added
 
+- AlertDialog, `@lede/alert-dialog`: a modal that asks before an action, on Base UI AlertDialog, with Cancel and a
+  confirm Button. Focus opens on the confirm button, or on Cancel when `tone` is `"critical"`, and returns to the
+  control that opened it. Escape cancels, and PageHeader's `backOnEscape` waits for it to close. New tokens:
+  `z-dialog` and `layout-dialog-max-width`.
 - ListRow takes `details`: content the row opens under itself, in the same list item, such as a run's log. The row
   becomes a `<button aria-expanded>` with a chevron that turns down while they show, find-in-page opens a row whose
   details hold the text, and `open`, `defaultOpen` and `onOpenChange` control it.

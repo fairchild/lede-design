@@ -25,6 +25,8 @@ export type { CheckboxProps } from './checkbox';
 export { Table } from './table';
 export type { TableLabel, TableCollapsible, SortDirection, TableRootProps, RowProps, HeaderCellProps, CellProps, SortButtonProps, RowLinkProps, ColumnWidth } from './table';
 export { Disclosure } from './disclosure';
+export { AlertDialog } from './alert-dialog';
+export type { AlertDialogProps } from './alert-dialog';
 export type { DisclosureProps } from './disclosure';
 export { GlassBar, GlassToolbar, GlassToolbarButton, GlassToolbarSeparator } from './glass-bar';
 export type { GlassBarProps, GlassBarItem, GlassToolbarProps, GlassToolbarButtonProps } from './glass-bar';
