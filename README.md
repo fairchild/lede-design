@@ -206,6 +206,9 @@ download from ui.shadcn.com, so write this file by hand where that site is out o
   [Limits](#limits) says.
 - `init` also writes `ui`, `lib` and `hooks` aliases. Lede doesn't use them, and stock shadcn components do, so keep
   them if you add those.
+- Where lede.cloudcompute.com is out of reach too, point `@lede` at the copy of each release on GitHub, the
+  `registry` branch of this repo:
+  `https://raw.githubusercontent.com/fairchild/lede-design/registry/r/v0.5.3/{name}.json`.
 
 ## Tailwind and Lede's classes
 
