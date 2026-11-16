@@ -56,10 +56,13 @@ test('Escape closes the dialog and leaves the detail under it open; a second Esc
 test('Tab stays inside the open dialog, and a press outside it does nothing', async ({ page, isMobile }) => {
   await page.getByRole('button', { name: 'Delete the venue' }).click();
   const dialog = page.getByRole('alertdialog');
+  // Focus moves in once the dialog has opened; Tab before then would start from the trigger.
+  await expect(dialog.getByRole('button', { name: 'Cancel' })).toBeFocused();
   if (!isMobile) {
     for (let i = 0; i < 3; i++) {
       await page.keyboard.press('Tab');
-      expect(await dialog.evaluate((el) => el.contains(document.activeElement))).toBe(true);
+      // Base UI's focus guards sit just outside the box and hand focus back in, so the check waits for that hand-off.
+      await expect.poll(() => dialog.evaluate((el) => el.contains(document.activeElement))).toBe(true);
     }
   }
   await page.mouse.click(5, 5);
