@@ -46,6 +46,9 @@
   wrapper it goes on. Checkbox puts them on its wrapper `<span>` and TextField on its wrapper `<div>`, as before.
 - When a reference page's install command adds an item only for its example, such as `@lede/button` on PageHeader's
   page, the page says so.
+- `llms.txt` has a "Start here" section above Docs: which file answers which task (install, choose a part, lay out a
+  page, use one item, change a token), with each file's size in kilobytes and the range of the reference pages, so a
+  reader can tell what fits before it fetches. It says when `llms-full.txt` is worth its size.
 
 ### Changed
 

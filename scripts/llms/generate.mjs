@@ -18,6 +18,8 @@ const read = (path) => readFileSync(path, 'utf8');
  */
 const frontMatter = (meta) => `---\n${stringify(meta, { lineWidth: 0 })}---\n\n`;
 const sentence = (text) => `${text[0].toUpperCase()}${text.slice(1)}.`;
+/** A file's size as served, in whole kilobytes of UTF-8, and at least 1. */
+const kilobytes = (text) => Math.max(1, Math.round(Buffer.byteLength(text, 'utf8') / 1024));
 
 /** The item sections of llms.txt, in this order. */
 const GROUPS = [
@@ -76,12 +78,11 @@ export async function generate(load) {
     const lines = items.map(({ item }) => `- [${item.title}](${SITE}/reference/${item.name}.md): \`@lede/${item.name}\`${imports[item.name] ? `, \`${imports[item.name].replace(/\n/g, ' ')}\`` : ''}. ${firstSentence(item.description)}`);
     return `## ${title}\n\n${lines.join('\n')}`;
   });
-  const llms = read(TEMPLATE)
+  const template = read(TEMPLATE)
     .replaceAll('{{VERSION}}', version)
     // Functions, so a `$` in a description stays a `$`: a replacement string would read `$&` and `$$` as patterns.
     .replace('{{DOCS}}', () => twins.map((twin) => `- [${twin.title}](${SITE}${twin.path}): ${twin.about}`).join('\n'))
     .replace('{{ITEMS}}', () => sections.join('\n\n'));
-  files.set('llms.txt', llms);
 
   // OKF's index files (§8): no front matter but the root's okf_version, then only headed lists of
   // `* [title](relative path) - description`, each description the linked file's own.
@@ -100,11 +101,25 @@ export async function generate(load) {
 
   // Without the indexes, and without front matter, whose `---` would read as the separators here. Types stay on each
   // reference page: they would double the file.
-  const full = [
+  const fullOf = (llms) => [
     llms,
     ...twins.map((twin) => twin.text),
     ...references.map(({ item, body, types }) => (types ? `${body}\nIts types: ${SITE}/reference/${item.name}.md#types\n` : body)),
-  ];
-  files.set('llms-full.txt', full.map((text) => text.trim()).join('\n\n---\n\n') + '\n');
+  ].map((text) => text.trim()).join('\n\n---\n\n') + '\n';
+
+  // llms.txt prints the size of each file its Start here section links, so a reader can tell what fits before it
+  // fetches. llms-full.txt holds llms.txt, so its size is settled by writing both until the printed size stands.
+  const referenceSizes = references.map(({ item }) => kilobytes(files.get(`reference/${item.name}.md`)));
+  const sizes = (fullSize) => template.replace(/\{\{SIZE ([^}]+)\}\}/g, (_, name) => {
+    if (name === 'reference') return `${Math.min(...referenceSizes)} to ${Math.max(...referenceSizes)} KB`;
+    if (name === '/llms-full.txt') return `${fullSize} KB`;
+    if (!files.has(name.slice(1))) throw new Error(`scripts/llms/llms.md asks the size of ${name}, which the build doesn't write.`);
+    return `${kilobytes(files.get(name.slice(1)))} KB`;
+  });
+  let llms = sizes(0);
+  for (let pass = 0; pass < 4 && llms !== (llms = sizes(kilobytes(fullOf(llms)))); pass += 1);
+  if (llms !== sizes(kilobytes(fullOf(llms)))) throw new Error('llms.txt: the size of llms-full.txt did not settle.');
+  files.set('llms.txt', llms);
+  files.set('llms-full.txt', fullOf(llms));
   return files;
 }
