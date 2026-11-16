@@ -2,6 +2,8 @@ import * as React from 'react';
 import { PageHeader } from '@lede/blocks/page-header';
 import { SummaryCard } from '@lede/blocks/summary-card';
 import { StatusList } from '@lede/blocks/status-list';
+import { Page, Stack } from '@lede/blocks/page';
+import { ListGroup, ListRow } from '@lede/list';
 import { FormSection } from '@lede/blocks/form-section';
 import { StepIndicator } from '@lede/blocks/step-indicator';
 import { EmptyState } from '@lede/blocks/empty-state';
@@ -59,6 +61,26 @@ export function Blocks() {
       </Block>
       <Block id="b-steps" item="step-indicator" title="StepIndicator" summary={<>An <code>{'<ol>'}</code> of steps that marks the current one with <code>aria-current="step"</code>. Narrow screens show only its summary, such as “Step 2 of 3 · Preferences”.</>}>
         <Live><div className="docs-demo"><StepIndicator steps={['Account', 'Preferences', 'Review']} current={1} /></div></Live>
+      </Block>
+      <Block id="b-page" item="page" title="Page & Stack" summary="Page is a page’s box for an app without AppShell: a gutter, a widest width and the space between its sections. Stack puts its children one under another, with one gap between each.">
+        <Live><div className="docs-page-demo">
+          <Page width="narrow" render={<section aria-label="A narrow page" />}>
+            <PageHeader headingLevel={3} focusOnMount={false} title="Hosts" summary="1 needs a look" />
+            <Stack gap="sm">
+              <p className="text-subheadline text-muted-foreground">Checked 2 minutes ago.</p>
+              <ListGroup title="Sorted by name" headingLevel={4}>
+                <ListRow title="api-iad-1" value="Up to date" />
+                <ListRow title="edge-sfo-2" value="Failed" />
+              </ListGroup>
+            </Stack>
+          </Page>
+        </div></Live>
+        <p className="docs-intro docs-note">
+          The gap is <code>"lg"</code> between a page’s sections, <code>"md"</code> between related things and{' '}
+          <code>"sm"</code> between parts of one thing. Each child’s own top and bottom margins give way to it, so a
+          PageHeader, a paragraph and a list space alike. Inside AppShell, which has its own gutter, pass{' '}
+          <code>inset={'{false}'}</code>.
+        </p>
       </Block>
       <Block id="b-status" item="status-list" title="StatusList" summary="A list of items that may need a look, worst first, each ending in its status in words. When nothing is listed it says so, in place of an empty list.">
         <Live><div className="docs-demo-col">
