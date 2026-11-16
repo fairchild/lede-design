@@ -39,11 +39,10 @@ html, body { margin: 0; background: var(--background-grouped); color: var(--fore
 
 .docs-section { margin: 0 0 var(--space-8); }
 .docs-section > h2 { margin: 0 0 var(--space-1); overflow-wrap: break-word; }
-/* Overview: six cards in three even rows of two, or one column in a narrow container. A container's margins don't
-   collapse through it, so the grid drops its own bottom margin. */
-.docs-explore { container-type: inline-size; }
-.docs-explore .ld-summary-grid { grid-template-columns: minmax(0, 1fr); margin-bottom: 0; }
-@container (min-width: 20.75rem) { .docs-explore .ld-summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+/* Overview's index of the site: each place's link, then one line on what it holds, in two columns where they fit. */
+.docs-index { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-3) var(--space-6); grid-template-columns: repeat(auto-fill, minmax(min(var(--layout-summary-wide-min-width), 100%), 1fr)); font-size: var(--text-subheadline-size); line-height: var(--text-subheadline-line-height); color: var(--muted-foreground); }
+.docs-index > li { min-width: 0; overflow-wrap: anywhere; }
+.docs-index a { display: flex; align-items: center; width: fit-content; max-width: 100%; min-height: var(--size-hit-absolute-min); color: var(--primary); font-weight: var(--weight-semibold); }
 .docs-target { scroll-margin-top: var(--space-4); }
 .docs-target:focus, .docs-anchor:focus { outline: none; }
 /* A guide shows several tables at once, so each one's selection bar stays with its own example: sticky at the foot of
@@ -77,6 +76,8 @@ html, body { margin: 0; background: var(--background-grouped); color: var(--fore
 .docs-code-example { min-width: 0; }
 .docs-code-example .ld-disc-body { padding: 0; }
 .docs-code { margin: 0; padding: var(--space-1) var(--space-4) var(--space-4); border-radius: 0 0 var(--radius-lg) var(--radius-lg); font-family: var(--font-mono); font-size: var(--text-code-size); line-height: var(--text-code-line-height); overflow-x: auto; }
+/* Overview's agent prompt wraps, so it never scrolls, on the card a CodeExample's code sits on. */
+.docs-prompt { padding: var(--space-4); border-radius: var(--radius-lg); background: var(--card); white-space: pre-wrap; overflow-wrap: anywhere; }
 .docs-code:focus-visible { outline: 2px solid var(--ring); outline-offset: -2px; }
 .docs-tk-comment { color: var(--muted-foreground); }
 .docs-tk-keyword { color: var(--primary); }
@@ -159,11 +160,17 @@ html, body { margin: 0; background: var(--background-grouped); color: var(--fore
 .docs-regions { display: grid; gap: var(--space-2); margin: 0; font-size: var(--text-subheadline-size); line-height: var(--text-callout-line-height); max-width: 76ch; }
 .docs-regions > div { display: grid; gap: 0 var(--space-4); }
 @media (width >= 40em) { .docs-regions > div { grid-template-columns: 22ch minmax(0, 1fr); } }
+/* Choose a part: each need is a phrase, so its column is wider than a region's element name. */
+@media (width >= 40em) { .docs-choices > div { grid-template-columns: 34ch minmax(0, 1fr); } }
+.docs-choices dt, .docs-choices dd { overflow-wrap: anywhere; }
+.docs-choices a { color: var(--primary); font-weight: var(--weight-semibold); text-decoration: underline; text-underline-offset: 0.15em; }
 .docs-regions code { font-family: var(--font-mono); font-size: var(--text-code-size); }
 .docs-regions dd { margin: 0; }
 .docs-regions + .docs-code-example { margin-top: var(--space-4); }
 .docs-actions { margin: var(--space-4) 0 0; }
 .docs-preview { display: grid; justify-items: start; gap: var(--space-3); min-width: 0; }
+.docs-preview-controls { display: flex; flex-wrap: wrap; gap: var(--space-3); max-width: 100%; min-width: 0; }
+.docs-preview-controls > * { max-width: 100%; min-width: 0; }
 .docs-preview-stage { position: relative; width: 100%; overflow: hidden; border-radius: var(--radius-md); background: var(--muted); }
 /* The frame's edge sits over the frame: its page can share the docs' background, and then only this shows where it ends. */
 .docs-preview-stage::after { content: ""; position: absolute; inset: 0; border: 0.5px solid var(--border); border-radius: inherit; pointer-events: none; }

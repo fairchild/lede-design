@@ -8,6 +8,8 @@ export { Switch } from './switch';
 export type { SwitchProps } from './switch';
 export { TextField } from './text-field';
 export type { TextFieldProps } from './text-field';
+export { SearchField } from './search-field';
+export type { SearchFieldProps } from './search-field';
 export { Avatar } from './avatar';
 export type { AvatarProps } from './avatar';
 export { Card } from './card';

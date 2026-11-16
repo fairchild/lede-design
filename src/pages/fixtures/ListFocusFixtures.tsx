@@ -67,17 +67,21 @@ const ITEMS = [
  * the navigation; `tests/focus-table.ts` and `tests/list-focus.spec.ts` drive it.
  */
 export function MasterDetailFixtures() {
-  const [openId, setOpenId] = React.useState<string | null>(null);
-  const open = ITEMS.find((i) => i.id === openId);
+  // `?long` fills both panes past the window, with `stickyList`, for tests/master-detail.spec.ts.
+  const long = new URLSearchParams(window.location.search).has('long');
+  const items = long ? Array.from({ length: 40 }, (_, n) => ({ id: `l${n}`, title: `Item ${n + 1}`, body: 'A long detail. '.repeat(400) })) : ITEMS;
+  const [openId, setOpenId] = React.useState<string | null>(long ? 'l0' : null);
+  const open = items.find((i) => i.id === openId);
   return (
     <MasterDetail
       listLabel="Items"
       detailLabel="Item"
+      stickyList={long}
       list={
         <>
-          <PageHeader title="Master detail fixture" summary={`${ITEMS.length} items`} />
+          <PageHeader title="Master detail fixture" summary={`${items.length} items`} />
           <ListGroup title="All items">
-            {ITEMS.map((i) => <ListRow key={i.id} title={i.title} onClick={() => setOpenId(i.id)} />)}
+            {items.map((i) => <ListRow key={i.id} title={i.title} onClick={() => setOpenId(i.id)} />)}
           </ListGroup>
         </>
       }

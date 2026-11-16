@@ -2,6 +2,7 @@ import * as React from 'react';
 import { Button } from '@lede/button';
 import { PageHeader } from '@lede/blocks/page-header';
 import { ListGroup, ListRow, type RowAction } from '@lede/list';
+import { StatusText } from '@lede/status-text';
 
 const THREE: RowAction[] = [{ label: 'Archive' }, { label: 'Reassign', tone: 'neutral' }, { label: 'Delete', tone: 'critical' }];
 const TWO: RowAction[] = [{ label: 'Archive' }, { label: 'Delete', tone: 'critical' }];
@@ -72,7 +73,7 @@ const HEADERS = [
 export function ListRowFixtures() {
   return (
     <div className="ld-flow">
-      <PageHeader title="List row fixtures" summary="Revealed swipe actions in narrow boxes and group headers with long summaries, for the automated tests." />
+      <PageHeader title="List row fixtures" summary="Revealed swipe actions in narrow boxes, group headers with long summaries, subtitles that wrap and an emptied group, for the automated tests." />
       {CASES.map((c) => (
         <section key={c.title} aria-label={c.title} className="docs-section">
           <div style={{ width: c.width }}>
@@ -90,6 +91,25 @@ export function ListRowFixtures() {
             <ListRow title="Castelo de São Jorge" value="9:30 AM" />
           </ListGroup>
         ))}
+      </section>
+      <section aria-label="Subtitles that wrap, 288px" className="docs-section">
+        <div style={{ width: 288 }}>
+          <ListGroup title="Needs attention" summary="3 hosts">
+            {(['1', '2', 'all'] as const).map((n) => (
+              <ListRow
+                key={n}
+                rowKey={`lines-${n}`}
+                title={`edge-sfo-${n}`}
+                subtitle="The last deploy failed on the health check, so traffic stays on the previous version until someone looks."
+                subtitleLines={n === '1' ? 1 : n === '2' ? 2 : 'all'}
+                value={<StatusText tone="critical">Failed</StatusText>}
+              />
+            ))}
+          </ListGroup>
+        </div>
+      </section>
+      <section aria-label="An emptied group" className="docs-section">
+        <ListGroup title="Hosts" summary="0 of 4" empty="No hosts match “zz”.">{[].map(() => null)}</ListGroup>
       </section>
     </div>
   );

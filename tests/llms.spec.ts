@@ -17,6 +17,7 @@ import { GlassBar, GlassToolbar } from '../registry/lede/glass-bar';
 import { SegmentedControl } from '../registry/lede/segmented-control';
 import { Switch } from '../registry/lede/switch';
 import { TextField } from '../registry/lede/text-field';
+import { SearchField } from '../registry/lede/search-field';
 import { ThemeProvider } from '../registry/lede/theme-provider';
 
 test.skip(({ isMobile }) => isMobile, 'Files read the same at every width: one project is enough.');
@@ -24,7 +25,7 @@ test.skip(({ isMobile }) => isMobile, 'Files read the same at every width: one p
 const SITE = 'https://lede.cloudcompute.com';
 const { version } = JSON.parse(readFileSync('package.json', 'utf8')) as { version: string };
 const registry = JSON.parse(readFileSync('registry.json', 'utf8')) as { items: { name: string; title: string }[] };
-const PAGES = ['/overview.md', '/foundations.md', '/components.md', '/blocks.md', '/blocks/data-table.md', '/layouts.md', '/decisions.md', '/integrations.md'];
+const PAGES = ['/overview.md', '/foundations.md', '/components.md', '/blocks.md', '/blocks/data-table.md', '/layouts.md', '/choose.md', '/decisions.md', '/integrations.md'];
 /** The SPA shell, which a server without the file could answer with. */
 const SHELL = /<div id="root"|^\s*<!doctype html/i;
 
@@ -69,6 +70,50 @@ test('llms.txt names this version and every file it links on this site is served
   }
   // A Markdown file the build doesn't have is a 404, as on the site.
   expect((await request.get('/reference/nope.md')).status()).toBe(404);
+});
+
+test('each docs page names its Markdown in the head, and a page without one names none', async ({ page, request }) => {
+  const alternate = page.locator('head link[rel="alternate"][type="text/markdown"]');
+  for (const file of PAGES) {
+    const route = file === '/overview.md' ? '/' : file.slice(0, -'.md'.length);
+    await page.goto(route);
+    await expect(alternate, route).toHaveAttribute('href', file);
+    await expect(alternate, route).toHaveCount(1);
+    const response = await request.get(file);
+    expect(response.status(), file).toBe(200);
+    expect(await response.text(), file).not.toMatch(SHELL);
+  }
+  // Leaving the docs for the demo takes the link away.
+  await page.goto('/');
+  await page.getByRole('main').getByRole('link', { name: 'Demo app', exact: true }).click();
+  await expect(page).toHaveURL(/\/app$/);
+  await expect(alternate).toHaveCount(0);
+});
+
+test('Overview’s agent prompt pins this release, names every README install step and the limits that stop an install', async ({ page, request }) => {
+  const readme = readFileSync('README.md', 'utf8');
+  const install = readme.split(/^## Use it in a shadcn project$/m)[1].split(/^## /m)[0];
+  const steps = [...install.matchAll(/^\d+\. (.+?[.:])(?=\s)/gm)].map((m) => m[1].replace(/`/g, ''));
+  expect(steps.length).toBeGreaterThan(2);
+  const checks = [
+    `Set up Lede ${version}`,
+    `'@lede=${SITE}/r/v${version}/{name}.json'`,
+    'Client rendering only.',
+    'Install from the registry URL.',
+    `UI uses Lede ${version}.`,
+    ...steps,
+  ];
+  await page.goto('/');
+  const prompt = page.getByRole('region', { name: 'Use with an agent' }).locator('.docs-prompt');
+  const markdown = await read(request, '/overview.md');
+  for (const text of checks) {
+    await expect(prompt, text).toContainText(text);
+    expect(markdown, text).toContain(text);
+  }
+  await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
+  await page.getByRole('button', { name: 'Copy prompt' }).click();
+  await expect(page.getByRole('status').filter({ hasText: 'Prompt copied' })).toBeAttached();
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(await prompt.textContent());
 });
 
 test('the site serves Markdown and text files as UTF-8 plain text through public/_headers, which the preview server doesn’t read', () => {
@@ -318,6 +363,11 @@ const TAKES: Record<string, { sentence: string; component: ComponentType<any>; r
     sentence: 'Switch also takes the attributes of `<span>`, such as `aria-describedby`.',
     component: Switch,
     renders: [{ props: { label: 'Wi-Fi' }, tag: 'span', has: 'role="switch"' }, { props: { 'aria-label': 'Wi-Fi' }, tag: 'span', has: 'role="switch"' }],
+  },
+  SearchField: {
+    sentence: 'SearchField also takes the attributes of `<input>`, such as `aria-describedby`.',
+    component: SearchField,
+    renders: [{ props: { label: 'Filter' }, tag: 'input' }],
   },
   TextField: {
     sentence: 'TextField also takes the attributes of `<input>` or `<textarea>`, whichever it renders, such as `aria-describedby`.',

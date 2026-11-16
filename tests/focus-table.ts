@@ -175,7 +175,8 @@ export const ARRIVALS: Arrival[] = [
   {
     route: '/', arrival: h1('Lede'),
     via: { from: '/components', link: link('Overview', docsNav), back: h1('Components') },
-    tabs: [link('Foundations', main), link('Components', main), link('Blocks', main)],
+    // The example's choice, then its width, which starts narrow on a phone; the frame's own stops follow.
+    tabs: { desktop: [radio('Inbox'), radio('Wide')], phone: [radio('Inbox'), radio('Narrow')] },
   },
   {
     route: '/#install', arrival: h2('Install'),
@@ -184,6 +185,10 @@ export const ARRIVALS: Arrival[] = [
   {
     route: '/foundations', arrival: h1('Foundations'),
     via: { from: '/', link: link('Foundations', main), back: link('Foundations', main) },
+  },
+  {
+    route: '/choose', arrival: h1('Choose a part'),
+    via: { from: '/', link: link('Choose a part', main), back: link('Choose a part', main) },
   },
   { route: '/components', arrival: h1('Components'), via: { from: '/', link: link('Components', docsNav), back: h1('Lede') } },
   { route: '/blocks', arrival: h1('Blocks'), via: { from: '/', link: link('Blocks', docsNav), back: h1('Lede') } },

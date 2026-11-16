@@ -27,6 +27,11 @@ export interface MasterDetailProps {
   detail: React.ReactNode;
   /** Shown in the detail pane on wide screens when nothing is selected. */
   empty?: React.ReactNode;
+  /**
+   * On wide screens, the list pane stays in view and scrolls on its own while the page scrolls the detail, for a long
+   * list beside a long detail. Default `false`, which keeps the detail in view and scrolls the list with the page.
+   */
+  stickyList?: boolean;
   className?: string;
 }
 
@@ -68,7 +73,7 @@ export function MasterDetail(props: MasterDetailProps) {
     });
   }, [open, stacked]);
   return (
-    <div className={cn('ld-md', props.className)} data-detail-open={open || undefined}>
+    <div className={cn('ld-md', props.className)} data-detail-open={open || undefined} data-sticky-list={props.stickyList || undefined}>
       <section ref={listRef} className="ld-md-list" aria-label={props.listLabel}>{props.list}</section>
       <section ref={detailRef} className="ld-md-detail" aria-label={props.detailLabel}>{open ? props.detail : props.empty}</section>
     </div>

@@ -16,6 +16,11 @@ export interface ListGroupProps {
    */
   summary?: React.ReactNode;
   footer?: React.ReactNode;
+  /**
+   * Shown in place of the rows when there are none, such as "No hosts match" under a filter. Without it, a group with
+   * no rows still shows its empty list.
+   */
+  empty?: React.ReactNode;
   /** Heading level for `title`. Default 2. */
   headingLevel?: 2 | 3 | 4 | 5 | 6;
   /** ListRow elements. */
@@ -36,7 +41,11 @@ export function ListGroup(props: ListGroupProps) {
           {props.summary ? <p className="ld-list-summary">{props.summary}</p> : null}
         </header>
       ) : null}
-      <ul className="ld-list-body">{props.children}</ul>
+      {props.empty != null && React.Children.toArray(props.children).length === 0 ? (
+        <p className="ld-list-body ld-list-empty">{props.empty}</p>
+      ) : (
+        <ul className="ld-list-body">{props.children}</ul>
+      )}
       {props.footer ? <p className="ld-list-footer">{props.footer}</p> : null}
     </section>
   );
@@ -100,6 +109,8 @@ export interface RowAction {
 export interface ListRowProps {
   title: React.ReactNode;
   subtitle?: React.ReactNode;
+  /** How many lines the subtitle shows before it ends in an ellipsis: 1, 2 or `'all'`. Default 1. */
+  subtitleLines?: 1 | 2 | 'all';
   /** Trailing secondary value, such as "On". */
   value?: React.ReactNode;
   /** A 30px leading slot (`--size-leading`): an icon tile (`span.ld-tile`) or an Avatar. It is hidden from assistive tech. */
@@ -292,7 +303,7 @@ export function ListRow(props: ListRowProps) {
       {props.leading ? <span className="ld-row-leading" aria-hidden="true">{props.leading}</span> : null}
       <span className="ld-row-main">
         <span className="ld-row-title">{props.title}</span>
-        {props.subtitle ? <span className="ld-row-subtitle">{props.subtitle}</span> : null}
+        {props.subtitle ? <span className="ld-row-subtitle" data-lines={props.subtitleLines && props.subtitleLines !== 1 ? props.subtitleLines : undefined}>{props.subtitle}</span> : null}
       </span>
       {props.value != null ? <span className="ld-row-value">{props.value}</span> : null}
     </>
