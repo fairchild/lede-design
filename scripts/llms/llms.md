@@ -6,6 +6,16 @@ Lede renders on the client only, so it suits a Vite app or another client-only R
 
 Each docs page has a Markdown version at its address plus `.md`, such as https://lede.cloudcompute.com/components.md, with https://lede.cloudcompute.com/overview.md for the home page, and each registry item has a reference page. The links under Docs and the item sections go to them, and [llms-full.txt](https://lede.cloudcompute.com/llms-full.txt) holds all of them in one file. Together they're an Open Knowledge Format v0.2 bundle, whose index is [index.md](https://lede.cloudcompute.com/index.md).
 
+## Start here
+
+Read the smallest file that answers the task. Each size is this build's, in kilobytes of UTF-8 text.
+
+- [Install Lede in an app](https://lede.cloudcompute.com/overview.md) ({{SIZE /overview.md}}): what a project needs, the install steps and the limits
+- [Choose a page layout](https://lede.cloudcompute.com/layouts.md) ({{SIZE /layouts.md}}) and [choose a block](https://lede.cloudcompute.com/blocks.md) ({{SIZE /blocks.md}}): the larger parts of a screen, then the reference page of each item chosen
+- [Use one item](https://lede.cloudcompute.com/reference/index.md) ({{SIZE /reference/index.md}}): the list of reference pages. A reference page holds one item's install command, import line, props, example and types, and is {{SIZE reference}}. The item sections below give each item's import line
+- [Change a color, a size or a space](https://lede.cloudcompute.com/foundations.md) ({{SIZE /foundations.md}}): every token and its values
+- [Read everything in one file](https://lede.cloudcompute.com/llms-full.txt) ({{SIZE /llms-full.txt}}): this file, every docs page and every reference page without its types. Fetch it when a task needs most of Lede at once and the reader has room for it
+
 ## Docs
 
 {{DOCS}}

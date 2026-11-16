@@ -71,6 +71,22 @@ test('llms.txt names this version and every file it links on this site is served
   expect((await request.get('/reference/nope.md')).status()).toBe(404);
 });
 
+test('llms.txt opens with a Start here section, and each size it prints is the served file’s', async ({ request }) => {
+  const llms = await read(request, '/llms.txt');
+  expect(llms.indexOf('## Start here')).toBeGreaterThan(0);
+  expect(llms.indexOf('## Start here')).toBeLessThan(llms.indexOf('## Docs'));
+  expect(llms).not.toContain('{{');
+  const start = llms.slice(llms.indexOf('## Start here'), llms.indexOf('## Docs'));
+  const kilobytes = (text: string) => Math.max(1, Math.round(Buffer.byteLength(text, 'utf8') / 1024));
+  const sized = [...start.matchAll(/\]\(https:\/\/lede\.cloudcompute\.com(\/[^)]+)\) \((\d+) KB\)/g)];
+  expect(sized.map(([, path]) => path)).toEqual(['/overview.md', '/layouts.md', '/blocks.md', '/reference/index.md', '/foundations.md', '/llms-full.txt']);
+  for (const [, path, size] of sized) expect(`${path} ${kilobytes(await read(request, path))} KB`).toBe(`${path} ${size} KB`);
+  // The range of the reference pages, from every one the build serves.
+  const names = (JSON.parse(readFileSync('registry.json', 'utf8')) as { items: { name: string }[] }).items.map((item) => item.name);
+  const pages = await Promise.all(names.map(async (name) => kilobytes(await read(request, `/reference/${name}.md`))));
+  expect(start).toContain(`and is ${Math.min(...pages)} to ${Math.max(...pages)} KB.`);
+});
+
 test('the site serves Markdown and text files as UTF-8 plain text through public/_headers, which the preview server doesn’t read', () => {
   const headers = readFileSync('public/_headers', 'utf8');
   expect(headers).toMatch(/^\/\*\.md\n {2}Content-Type: text\/plain; charset=utf-8$/m);
