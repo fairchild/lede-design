@@ -230,6 +230,23 @@
       ]
     },
     {
+      "name": "code-block",
+      "type": "registry:component",
+      "title": "CodeBlock",
+      "description": "Code or a log in the mono type, with an optional caption, that scrolls once it outgrows its box. It reads ANSI colors as tokens through `ANSI_TOKENS`, and `follow` keeps a streaming log's end in view.",
+      "registryDependencies": [
+        "@lede/lede-theme",
+        "@lede/lede-utils"
+      ],
+      "files": [
+        {
+          "path": "registry/lede/code-block.tsx",
+          "type": "registry:component",
+          "target": "components/lede/code-block.tsx"
+        }
+      ]
+    },
+    {
       "name": "status-text",
       "type": "registry:component",
       "title": "StatusText",

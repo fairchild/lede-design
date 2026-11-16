@@ -36,6 +36,7 @@ export const CHOICES: Array<{ id: string; title: string; choices: Choice[] }> = 
       { need: 'Related content on one surface', item: 'card', title: 'Card', href: '/components#c-card', note: 'Nested corners stay concentric with the card’s.' },
       { need: 'A list of things that may need a look, worst first', item: 'status-list', title: 'StatusList', href: '/blocks#b-status', note: 'Each row ends in its status in words, and an empty list says nothing needs a look.' },
       { need: 'A status word in a row or a cell, such as Failed or Done', item: 'status-text', title: 'StatusText', href: '/components#c-status', note: 'Colored by its tone, with a dot, so color never carries it alone.' },
+      { need: 'Code or a log, colors from the terminal included', item: 'code-block', title: 'CodeBlock', href: '/components#c-code', note: 'ANSI colors show as tokens, and a streaming log keeps its end in view.' },
       { need: 'A person, with or without a picture', item: 'avatar', title: 'Avatar', href: '/components#c-avatar', note: 'Falls back to initials.' },
       { need: 'A place with nothing in it yet', item: 'empty-state', title: 'EmptyState', href: '/blocks#b-empty', note: 'A heading, one sentence and at most one action.' },
     ],

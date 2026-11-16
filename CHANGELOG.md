@@ -7,6 +7,10 @@
 - ListRow takes `details`: content the row opens under itself, in the same list item, such as a run's log. The row
   becomes a `<button aria-expanded>` with a chevron that turns down while they show, find-in-page opens a row whose
   details hold the text, and `open`, `defaultOpen` and `onOpenChange` control it.
+- CodeBlock, `@lede/code-block`: code or a log in a `<figure>` with an optional caption, in the mono type on
+  `muted`. It grows to `layout-code-max-height` and then scrolls, as a named region a keyboard can scroll. `ansi`
+  reads a terminal's escape codes, showing the eight colors as the tokens in `ANSI_TOKENS` so every app's logs agree,
+  and `follow` keeps a streaming log's end in view until the reader scrolls up. `parseAnsi` is exported too.
 - `tests/agent-names.spec.ts` fails when two visible controls of one role in the same region of a Daybook screen share
   a name, so a screen reader user or an agent can pick each one. Every screen passes today. The rule is in
   `CONTRIBUTING.md` and on the Decisions page.

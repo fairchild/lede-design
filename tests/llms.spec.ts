@@ -13,6 +13,7 @@ import { Button } from '../registry/lede/button';
 import { Card } from '../registry/lede/card';
 import { Checkbox } from '../registry/lede/checkbox';
 import { Disclosure } from '../registry/lede/disclosure';
+import { CodeBlock } from '../registry/lede/code-block';
 import { GlassBar, GlassToolbar } from '../registry/lede/glass-bar';
 import { SegmentedControl } from '../registry/lede/segmented-control';
 import { Switch } from '../registry/lede/switch';
@@ -354,6 +355,11 @@ const TAKES: Record<string, { sentence: string; component: ComponentType<any>; r
     sentence: 'Checkbox also takes the attributes of `<input>`, such as `aria-describedby`.',
     component: Checkbox,
     renders: [{ props: { 'aria-label': 'Done' }, tag: 'input' }],
+  },
+  CodeBlock: {
+    sentence: 'CodeBlock also takes the attributes of `<figure>`, such as `className`.',
+    component: CodeBlock,
+    renders: [{ props: { children: 'npm test' }, tag: 'figure' }],
   },
   Disclosure: {
     sentence: 'Disclosure also takes the attributes of `<section>`, such as `className`.',

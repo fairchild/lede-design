@@ -9,6 +9,7 @@ import { Avatar } from '@lede/avatar';
 import { Card } from '@lede/card';
 import { ListGroup, ListRow } from '@lede/list';
 import { StatusText } from '@lede/status-text';
+import { CodeBlock } from '@lede/code-block';
 import { Disclosure } from '@lede/disclosure';
 import { GlassBar, GlassToolbar, GlassToolbarButton, GlassToolbarSeparator } from '@lede/glass-bar';
 import { ThemeProvider } from '@lede/theme-provider';
@@ -37,6 +38,30 @@ function SearchDemo() {
       <ListGroup title="All hosts" summary={query ? `${shown.length} of ${HOSTS.length}` : `${HOSTS.length}`} empty="No host matches." headingLevel={3}>
         {shown.map((h) => <ListRow key={h} title={h} />)}
       </ListGroup>
+    </div>
+  );
+}
+
+const LOG_LINES = [
+  '\x1b[2m9:41:02\x1b[0m Building \x1b[1medge-sfo-2\x1b[0m',
+  '\x1b[2m9:41:05\x1b[0m Pulling base image',
+  '\x1b[2m9:41:07\x1b[0m \x1b[32m✓\x1b[0m Image pushed',
+  '\x1b[2m9:41:08\x1b[0m Rolling out to 3 instances',
+  '\x1b[2m9:41:20\x1b[0m \x1b[33m! Instance 2 is slow to start\x1b[0m',
+  '\x1b[2m9:41:38\x1b[0m \x1b[31m✗ Health check timed out after 30 seconds\x1b[0m',
+  '\x1b[2m9:41:38\x1b[0m Traffic stays on \x1b[36mv41\x1b[0m',
+];
+function LogDemo() {
+  const [count, setCount] = React.useState(3);
+  return (
+    <div className="docs-demo-col">
+      <CodeBlock title="Deploy log" ansi follow style={{ '--ld-code-max-height': '7.5rem' } as React.CSSProperties}>
+        {LOG_LINES.slice(0, count).join('\n')}
+      </CodeBlock>
+      <div className="docs-demo">
+        <Button onClick={() => setCount((c) => Math.min(c + 1, LOG_LINES.length))} disabled={count === LOG_LINES.length}>Add a log line</Button>
+        <Button variant="plain" onClick={() => setCount(3)}>Start over</Button>
+      </div>
     </div>
   );
 }
@@ -147,6 +172,16 @@ export function Components() {
         </ListGroup></Live>
         <p className="docs-intro docs-note">
           The words carry the status and the tone only adds color, so a status reads the same without color.
+        </p>
+      </Demo>
+      <Demo id="c-code" item="code-block" title="CodeBlock" summary={<>A <code>{'<figure>'}</code> holding a <code>{'<pre>'}</code> of code or a log, with an optional caption. It grows to a set height and then scrolls, and once its text overflows it becomes a named region a keyboard can scroll.</>}>
+        <Live><LogDemo /></Live>
+        <p className="docs-intro docs-note">
+          With <code>ansi</code>, it reads a terminal’s escape codes: each of the eight colors shows as a token, from{' '}
+          <code>ANSI_TOKENS</code>, so every app’s logs agree, and bold, dim, italic and underline keep their look.
+          Other codes are dropped and their text stays. A log’s words carry its meaning, as “✗ Health check timed out”
+          does, and the color only adds to them. <code>follow</code> keeps the end in view as lines arrive, until the
+          reader scrolls up.
         </p>
       </Demo>
       <Demo id="c-table" item="table" title="Table" summary={<>A native <code>{'<table>'}</code> in parts: a caption, header cells, one row header per row and optional sort buttons. DataTable builds on it, and on its own it suits a small static table.</>}>
