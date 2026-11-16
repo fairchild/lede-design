@@ -11,3 +11,7 @@ https://:worker.:subdomain.workers.dev/*
 # the same type.
 /*.md
   Content-Type: text/plain; charset=utf-8
+
+# llms.txt and llms-full.txt hold curly quotes, and robots.txt is ASCII: every text file is UTF-8.
+/*.txt
+  Content-Type: text/plain; charset=utf-8
