@@ -40,6 +40,9 @@ In [CHANGELOG.md](CHANGELOG.md), add your lines under `## Unreleased` at the top
 release renames it to the version. A breaking change or a rename says what a consumer has to change, and a released
 section stays as it shipped, because it's the record of what that version did.
 
+[docs/releasing.md](docs/releasing.md) covers a release: the release pull request, the tag and how to check it's
+live.
+
 A new or changed test or gate is shown failing once. Break the code it guards (a mutant), watch the check fail, put the
 code back and name the mutant in the pull request. A check seen only passing can pass whatever the code does.
 
