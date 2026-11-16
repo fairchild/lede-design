@@ -543,6 +543,29 @@
       ]
     },
     {
+      "name": "page",
+      "type": "registry:block",
+      "title": "Page, Stack",
+      "description": "Page is a page's box for an app without AppShell: a gutter, a widest width and even space between its sections. Stack puts its children one under another with one gap between each.",
+      "registryDependencies": [
+        "@lede/lede-theme",
+        "@lede/lede-utils"
+      ],
+      "files": [
+        {
+          "path": "registry/lede/blocks/page.tsx",
+          "type": "registry:component",
+          "target": "components/lede/blocks/page.tsx"
+        }
+      ],
+      "dependencies": [
+        "@base-ui/react@^1.9.0"
+      ],
+      "categories": [
+        "blocks"
+      ]
+    },
+    {
       "name": "status-list",
       "type": "registry:block",
       "title": "StatusList",

@@ -5,6 +5,8 @@ export type { PageHeaderProps } from './page-header';
 export { SummaryCard } from './summary-card';
 export type { SummaryCardProps, StatusTone } from './summary-card';
 export { StatusList } from './status-list';
+export { Page, Stack } from './page';
+export type { PageProps, StackProps } from './page';
 export type { StatusListProps, StatusItem } from './status-list';
 export { MasterDetail, useStackedPanes } from './master-detail';
 export type { MasterDetailProps } from './master-detail';

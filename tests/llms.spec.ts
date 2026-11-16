@@ -14,6 +14,7 @@ import { Card } from '../registry/lede/card';
 import { Checkbox } from '../registry/lede/checkbox';
 import { Disclosure } from '../registry/lede/disclosure';
 import { CodeBlock } from '../registry/lede/code-block';
+import { Page, Stack } from '../registry/lede/blocks/page';
 import { GlassBar, GlassToolbar } from '../registry/lede/glass-bar';
 import { SegmentedControl } from '../registry/lede/segmented-control';
 import { Switch } from '../registry/lede/switch';
@@ -360,6 +361,16 @@ const TAKES: Record<string, { sentence: string; component: ComponentType<any>; r
     sentence: 'CodeBlock also takes the attributes of `<figure>`, such as `className`.',
     component: CodeBlock,
     renders: [{ props: { children: 'npm test' }, tag: 'figure' }],
+  },
+  Page: {
+    sentence: 'Page also takes the attributes of `<div>`, such as `className`, and the `render` prop of `useRender` from `@base-ui/react/use-render`.',
+    component: Page,
+    renders: [{ props: {}, tag: 'div' }, { props: { render: h('main') }, tag: 'main' }],
+  },
+  Stack: {
+    sentence: 'Stack also takes the attributes of `<div>`, such as `className`, and the `render` prop of `useRender` from `@base-ui/react/use-render`.',
+    component: Stack,
+    renders: [{ props: {}, tag: 'div' }, { props: { render: h('section') }, tag: 'section' }],
   },
   Disclosure: {
     sentence: 'Disclosure also takes the attributes of `<section>`, such as `className`.',
