@@ -38,7 +38,7 @@ icons or assets.*
 
 You need Node 22.12 or later and a client-rendered React 19 project, such as a Vite app, with Tailwind v4, the `@/*`
 path alias and a `components.json`. `npx shadcn@latest init` creates that file, or write the shorter one in
-[components.json](#componentsjson) by hand. [Start from a new Vite app](#start-from-a-new-vite-app) sets up all of them
+[components.json](README.md#componentsjson) by hand. [Start from a new Vite app](#start-from-a-new-vite-app) sets up all of them
 in an app made with create-vite. [Limits](#limits) covers server rendering.
 
 1. Add the registry and the items you want. Keep `@lede/theme-provider` in the list: step 4 needs it, and most items
