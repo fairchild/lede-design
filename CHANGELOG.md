@@ -7,6 +7,13 @@
 - The docs' Overview opens on a live example in place of the grid of count cards: Daybook's inbox, the three-panel
   workbench with its chat or the daily brief, chosen with a segmented control and shown wide or narrow. A short list
   of links with one line each takes the cards' place below it, and Install now comes before Principles.
+- Overview's Install section opens with a prompt to paste into a coding agent, with a Copy prompt button. It's written
+  from the README's install steps and Limits, pins this release and asks the agent to leave a note in `AGENTS.md`
+  or `CLAUDE.md` on where Lede's docs are. https://lede.cloudcompute.com/overview.md has it too.
+- Choose a part, at https://lede.cloudcompute.com/choose: what you're building, and the component, block or flow that
+  does it, each linked to its example.
+- Each docs page names its Markdown version in a `<link rel="alternate" type="text/markdown">`, and a request for a
+  docs route whose `Accept` header ranks `text/markdown` at least as high as `text/html` gets that Markdown.
 - The README's install section has "Start from a new Vite app": the commands and file edits that set up Tailwind v4,
   the `@/*` alias and a `components.json` in an app made with create-vite, run as written.
   https://lede.cloudcompute.com/overview.md shows it too.

@@ -15,6 +15,7 @@ import { version } from '../../../package.json';
 import { CodeExample } from './CodeExample';
 import { REPO } from './DocsLayout';
 import { installGuide, readmeBlocks, type Block } from './readme-install';
+import { agentPrompt } from './agent-prompt';
 import { Live, useTwin } from './twin';
 import readme from '../../../README.md?raw';
 
@@ -88,6 +89,7 @@ const INSTALL_CODE = `npx shadcn@latest registry add '@lede=${REGISTRY}'
 npx shadcn@latest add @lede/theme-provider @lede/list`;
 
 const README = `${REPO}#use-it-in-a-shadcn-project`;
+const PROMPT = agentPrompt(readme, version);
 const GUIDE = installGuide(readme);
 const STEPS = GUIDE.steps;
 const LIMITS = readmeBlocks(readme, 'Limits');
@@ -142,6 +144,30 @@ function ReadmeBlocks({ blocks, labels = [] }: { blocks: Block[]; labels?: strin
   });
 }
 
+/** The setup prompt for a coding agent, with a button that copies it. The Markdown build keeps the prompt and drops the button. */
+function AgentPrompt() {
+  const [copied, setCopied] = useState(false);
+  useEffect(() => {
+    if (!copied) return undefined;
+    const timer = setTimeout(() => setCopied(false), 4000);
+    return () => clearTimeout(timer);
+  }, [copied]);
+  const copy = () => navigator.clipboard.writeText(PROMPT).then(() => setCopied(true), () => setCopied(false));
+  return (
+    <section aria-labelledby="agent" className="docs-section">
+      <h2 id="agent" className="text-title-3">Use with an agent</h2>
+      <p className="docs-intro">Paste this prompt into Claude Code, Cursor or another coding agent in your project. It follows the install steps below, pins version {version} and leaves the agent a note on where Lede’s docs are.</p>
+      <pre className="docs-code docs-prompt"><code>{PROMPT}</code></pre>
+      <Live>
+        <p className="docs-actions">
+          <Button variant="tinted" onClick={copy}>{copied ? 'Copied' : 'Copy prompt'}</Button>
+          <span className="ld-sr-only" role="status">{copied ? 'Prompt copied' : ''}</span>
+        </p>
+      </Live>
+    </section>
+  );
+}
+
 export function Overview() {
   const twin = useTwin();
   const [shown, setShown] = useState(EXAMPLES[0].value);
@@ -187,6 +213,7 @@ export function Overview() {
       <section aria-labelledby="explore" className="docs-section">
         <h2 id="explore" className="text-title-3">Explore</h2>
         <ul className="docs-index">
+          <li><RouterLink href="/choose">Choose a part</RouterLink>{sep}What you’re building, and the component, block or flow that does it.</li>
           <li><RouterLink href="/foundations">Foundations</RouterLink>{sep}{tokenFamilies.summary}</li>
           <li><RouterLink href="/components">Components</RouterLink>{sep}{COMPONENTS} primitives on Base UI and native elements.</li>
           <li><RouterLink href="/blocks">Blocks</RouterLink>{sep}{BLOCKS} layouts and larger parts of a screen.</li>
@@ -196,6 +223,7 @@ export function Overview() {
           <li><RouterLink href="/decisions">Decisions</RouterLink>{sep}{decisionCount} records of how Lede is built and what keeps it that way.</li>
         </ul>
       </section>
+      <AgentPrompt />
       <section aria-labelledby="install" className="docs-section">
         <h2 id="install" tabIndex={-1} className="text-title-3 docs-target">Install</h2>
         <p className="docs-intro">Add Lede’s registry to your project, then add the items you need. The registry URL pins version {version}, and a release’s files never change. Lede renders on the client only, so it suits a Vite app or another client-only React app. {twin ? 'What your project needs comes first, then the steps, how to move to a later release, how to start from a new Vite app and the limits.' : <>The <a href={README}>README</a> lists what your project needs, how to move to a later release and how to start from a new Vite app.</>} For a chat whose replies hold Lede screens, follow <a href={`${REPO}/blob/main/integrations/json-render-chat/AGENTS.md`}>the json-render chat recipe</a>.</p>

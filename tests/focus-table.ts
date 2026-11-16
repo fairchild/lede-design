@@ -186,6 +186,10 @@ export const ARRIVALS: Arrival[] = [
     route: '/foundations', arrival: h1('Foundations'),
     via: { from: '/', link: link('Foundations', main), back: link('Foundations', main) },
   },
+  {
+    route: '/choose', arrival: h1('Choose a part'),
+    via: { from: '/', link: link('Choose a part', main), back: link('Choose a part', main) },
+  },
   { route: '/components', arrival: h1('Components'), via: { from: '/', link: link('Components', docsNav), back: h1('Lede') } },
   { route: '/blocks', arrival: h1('Blocks'), via: { from: '/', link: link('Blocks', docsNav), back: h1('Lede') } },
   { route: '/layouts', arrival: h1('Layouts'), via: { from: '/', link: link('Layouts', docsNav), back: h1('Lede') } },

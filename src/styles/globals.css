@@ -75,6 +75,8 @@ html, body { margin: 0; background: var(--background-grouped); color: var(--fore
 .docs-code-example { min-width: 0; }
 .docs-code-example .ld-disc-body { padding: 0; }
 .docs-code { margin: 0; padding: var(--space-1) var(--space-4) var(--space-4); border-radius: 0 0 var(--radius-lg) var(--radius-lg); font-family: var(--font-mono); font-size: var(--text-code-size); line-height: var(--text-code-line-height); overflow-x: auto; }
+/* Overview's agent prompt wraps, so it never scrolls, on the card a CodeExample's code sits on. */
+.docs-prompt { padding: var(--space-4); border-radius: var(--radius-lg); background: var(--card); white-space: pre-wrap; overflow-wrap: anywhere; }
 .docs-code:focus-visible { outline: 2px solid var(--ring); outline-offset: -2px; }
 .docs-tk-comment { color: var(--muted-foreground); }
 .docs-tk-keyword { color: var(--primary); }
@@ -157,6 +159,10 @@ html, body { margin: 0; background: var(--background-grouped); color: var(--fore
 .docs-regions { display: grid; gap: var(--space-2); margin: 0; font-size: var(--text-subheadline-size); line-height: var(--text-callout-line-height); max-width: 76ch; }
 .docs-regions > div { display: grid; gap: 0 var(--space-4); }
 @media (width >= 40em) { .docs-regions > div { grid-template-columns: 22ch minmax(0, 1fr); } }
+/* Choose a part: each need is a phrase, so its column is wider than a region's element name. */
+@media (width >= 40em) { .docs-choices > div { grid-template-columns: 34ch minmax(0, 1fr); } }
+.docs-choices dt, .docs-choices dd { overflow-wrap: anywhere; }
+.docs-choices a { color: var(--primary); font-weight: var(--weight-semibold); text-decoration: underline; text-underline-offset: 0.15em; }
 .docs-regions code { font-family: var(--font-mono); font-size: var(--text-code-size); }
 .docs-regions dd { margin: 0; }
 .docs-regions + .docs-code-example { margin-top: var(--space-4); }
