@@ -4,6 +4,12 @@
 
 ### Added
 
+- The README has a components.json section: the fields the shadcn CLI needs for Lede, in a file you can write by hand
+  where `shadcn init` can't reach ui.shadcn.com, such as in a sandbox. `"baseColor": ""` keeps `add` from downloading
+  too. It also says that Lede doesn't use the `ui`, `lib` and `hooks` aliases.
+- The README has a Tailwind and Lede's classes section: Lede needs Tailwind v4 and leaves a page's layout to it. Use
+  the token color names, such as `text-muted-foreground`, and Lede's type classes, such as `text-footnote`, in place
+  of Tailwind's palette and `text-sm`.
 - The README's install section has "Start from a new Vite app": the commands and file edits that set up Tailwind v4,
   the `@/*` alias and a `components.json` in an app made with create-vite, run as written.
   https://lede.cloudcompute.com/overview.md shows it too.
