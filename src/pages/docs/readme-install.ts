@@ -1,11 +1,15 @@
 import type { Language } from './tokenize';
 
-export type Block = { kind: 'text'; text: string } | { kind: 'code'; language: Language; code: string } | { kind: 'list'; items: string[] };
+export type Block =
+  | { kind: 'text'; text: string }
+  | { kind: 'heading'; text: string }
+  | { kind: 'code'; language: Language; code: string }
+  | { kind: 'list'; items: string[] };
 export interface Step { number: number; blocks: Block[] }
 /** The README's install section: what comes before step 1, the steps and what follows them. */
 export interface InstallGuide { before: Block[]; steps: Step[]; after: Block[] }
 
-const LANGUAGES: Record<string, Language> = { bash: 'shell', sh: 'shell', shell: 'shell', css: 'css', tsx: 'tsx', ts: 'tsx' };
+const LANGUAGES: Record<string, Language> = { bash: 'shell', sh: 'shell', shell: 'shell', css: 'css', tsx: 'tsx', ts: 'tsx', json: 'json' };
 
 /** A `## ` section of the README, without its heading. */
 const section = (readme: string, heading: string) => readme.split(new RegExp(`^## ${heading}$`, 'm'))[1]?.split(/^## /m)[0] ?? '';
@@ -31,7 +35,7 @@ export function installGuide(readme: string): InstallGuide {
   return { before: blocksOf(before), steps, after: blocksOf(after) };
 }
 
-/** A README section's paragraphs, lists and fenced code, such as Limits. */
+/** A README section's paragraphs, `### ` headings, lists and fenced code, such as Limits. */
 export const readmeBlocks = (readme: string, heading: string) => blocksOf(section(readme, heading).split('\n'));
 
 function blocksOf(lines: string[]): Block[] {
@@ -54,6 +58,9 @@ function blocksOf(lines: string[]): Block[] {
       const end = found < 0 ? lines.length : found;
       blocks.push({ kind: 'code', language: LANGUAGES[fence[1]] ?? 'shell', code: lines.slice(i + 1, end).join('\n') });
       i = end;
+    } else if (lines[i].startsWith('### ')) {
+      flush();
+      blocks.push({ kind: 'heading', text: lines[i].slice(4).trim() });
     } else if (lines[i].trim() === '') flush();
     else text.push(lines[i].trim());
   }

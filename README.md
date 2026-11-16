@@ -37,26 +37,21 @@ icons or assets.*
 ## Use it in a shadcn project
 
 You need Node 22.12 or later and a client-rendered React 19 project, such as a Vite app, with Tailwind v4, the `@/*`
-path alias and a `components.json`. `npx shadcn@latest init` creates that file. [Limits](#limits) covers server
-rendering.
-
-In an app made with create-vite, replace `src/index.css` first. Its demo styles center every line in a bordered 1126px
-column and set `:root` to 18px, which rescales Lede, and `shadcn init` merges into whatever `:root` it finds:
-
-```bash
-printf '@import "tailwindcss";\n' > src/index.css
-```
+path alias and a `components.json`. `npx shadcn@latest init` creates that file, and
+[Start from a new Vite app](#start-from-a-new-vite-app) sets up all of them in an app made with create-vite.
+[Limits](#limits) covers server rendering.
 
 1. Add the registry and the items you want. Keep `@lede/theme-provider` in the list: step 4 needs it, and most items
    don't install it.
 
    ```bash
    npx shadcn@latest registry add '@lede=https://lede.cloudcompute.com/r/v0.5.3/{name}.json'
-   npx shadcn@latest add @lede/theme-provider @lede/data-table @lede/daily-brief @lede/inbox
+   npx shadcn@latest add @lede/theme-provider @lede/list
    ```
 
-   The CLI copies the source into your project and installs what each item depends on. The URL pins a release, and a
-   release's files never change.
+   The CLI copies the source into your project and installs what each item depends on, npm packages included. The URL
+   pins a release, and a release's files never change. [llms.txt](https://lede.cloudcompute.com/llms.txt) lists every
+   item with its name and import line.
 
 2. Import the styles once, at the end of your global CSS file, after your shadcn globals. The path is relative to that
    file. This one suits `src/index.css`.
@@ -100,6 +95,91 @@ printf '@import "tailwindcss";\n' > src/index.css
 
 To move to a later release, read the [CHANGELOG](CHANGELOG.md), change the version in the registry URL in
 `components.json` and run the same `add` with `-o`. That overwrites your copies, including any edits you made to them.
+
+### Start from a new Vite app
+
+These commands give a new app what the steps need. They were run as written with create-vite 9, Vite 8, TypeScript 7
+and shadcn 4.23.
+
+```bash
+npm create vite@latest my-app -- --template react-ts --no-interactive
+cd my-app
+npm install
+npm install tailwindcss @tailwindcss/vite
+```
+
+Replace `vite.config.ts` with this one, which adds Tailwind's plugin and the `@` alias. Vite's dev server doesn't read
+the alias from the tsconfig files.
+
+```ts
+import { fileURLToPath, URL } from 'node:url'
+import tailwindcss from '@tailwindcss/vite'
+import react from '@vitejs/plugin-react'
+import { defineConfig } from 'vite'
+
+export default defineConfig({
+  plugins: [react(), tailwindcss()],
+  resolve: { alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) } },
+})
+```
+
+Add the alias to `compilerOptions` in both `tsconfig.json` and `tsconfig.app.json`. shadcn reads it from
+`tsconfig.json`, which has no `compilerOptions` yet, so add the object too; without the alias there, shadcn writes files
+into a folder named `@`. The typecheck reads `tsconfig.app.json`, which has comments, so edit it by hand. Leave out
+`baseUrl`, which TypeScript 7 rejects.
+
+```json
+"paths": { "@/*": ["./src/*"] }
+```
+
+Then replace create-vite's demo styles and run `shadcn init`, which writes `components.json` and shadcn's variables into
+`src/index.css`. The demo styles center every line in a bordered 1126px column and set `:root` to 18px, which rescales
+Lede, and `init` merges into the `:root` it finds. `init` finds Tailwind through the new file's `@import`.
+
+```bash
+printf '@import "tailwindcss";\n' > src/index.css
+npx shadcn@latest init --defaults --yes
+```
+
+Now follow steps 1 to 4. `init` leaves `src/index.css` without a final newline, so step 2's import starts with one:
+
+```bash
+printf '\n@import "./styles/lede/index.css";\n' >> src/index.css
+```
+
+For step 4, replace `src/main.tsx` with this one. It leaves out `LinkProvider`, since a new app has no router.
+
+```tsx
+import { StrictMode } from 'react'
+import { createRoot } from 'react-dom/client'
+import { ThemeProvider } from '@/components/lede/theme-provider'
+import './index.css'
+import App from './App.tsx'
+
+createRoot(document.getElementById('root')!).render(
+  <StrictMode>
+    <ThemeProvider surface="grouped" className="min-h-dvh">
+      <App />
+    </ThemeProvider>
+  </StrictMode>,
+)
+```
+
+Then replace `src/App.tsx` with a first screen built from step 1's items, and run `npm run dev`:
+
+```tsx
+import { ListGroup, ListRow } from '@/components/lede/list'
+
+export default function App() {
+  return (
+    <main className="mx-auto max-w-xl p-4">
+      <ListGroup title="Account">
+        <ListRow title="Name" value="Ada Lovelace" />
+      </ListGroup>
+    </main>
+  )
+}
+```
 
 ## Limits
 

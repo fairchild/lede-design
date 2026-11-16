@@ -85,7 +85,7 @@ const FLOWS = registry.items.filter((item) => item.categories?.includes('flows')
 const listed = (items: string[]) => (items.length > 1 ? `${items.slice(0, -1).join(', ')} and ${items.at(-1)}` : items.join(''));
 const REGISTRY = `https://lede.cloudcompute.com/r/v${version}/{name}.json`;
 const INSTALL_CODE = `npx shadcn@latest registry add '@lede=${REGISTRY}'
-npx shadcn@latest add @lede/theme-provider @lede/data-table @lede/daily-brief @lede/inbox`;
+npx shadcn@latest add @lede/theme-provider @lede/list`;
 
 const README = `${REPO}#use-it-in-a-shadcn-project`;
 const GUIDE = installGuide(readme);
@@ -93,6 +93,8 @@ const STEPS = GUIDE.steps;
 const LIMITS = readmeBlocks(readme, 'Limits');
 /** What each step's code shows, in order. A step the README adds later is named by its number. */
 const CODE_LABELS: Record<number, string[]> = { 2: ['CSS import'], 3: ['Import a component'], 4: ['Wrap your app', 'React Router adapter'] };
+/** What the code after the steps shows, in order: “Start from a new Vite app”. A block the README adds later is “Code”. */
+const AFTER_LABELS = ['Create the app', 'vite.config.ts', 'The alias in both tsconfig files', 'Replace src/index.css and run shadcn init', 'Append step 2’s import', 'src/main.tsx', 'src/App.tsx'];
 
 /**
  * README prose as the site writes it: code in `<code>`, bold, links to the repo, and curly quotes outside code. With
@@ -114,6 +116,8 @@ function StepBlocks({ number, blocks, code }: { number: number; blocks: Block[];
   return blocks.map((block, i) => {
     if (block.kind === 'text') return <p key={i}>{inline(block.text)}</p>;
     if (block.kind === 'list') return <ul key={i}>{block.items.map((item, j) => <li key={j}>{inline(item)}</li>)}</ul>;
+    // A heading starts the text after the steps, so a step never holds one.
+    if (block.kind === 'heading') return null;
     if (code) return <Fragment key={i}>{code}</Fragment>;
     const label = CODE_LABELS[number]?.[n] ?? `Step ${number} code${n ? ` ${n + 1}` : ''}`;
     n += 1;
@@ -122,14 +126,19 @@ function StepBlocks({ number, blocks, code }: { number: number; blocks: Block[];
 }
 
 /**
- * The README's text around the steps, for the docs' Markdown build: what a project needs, how to move to a later release
- * and the limits. The site links the README for these.
+ * The README's text around the steps, for the docs' Markdown build: what a project needs, how to move to a later release,
+ * how to start from a new Vite app and the limits. The site links the README for these. `labels` names the code blocks
+ * in order.
  */
-function ReadmeBlocks({ blocks, label }: { blocks: Block[]; label?: string }) {
+function ReadmeBlocks({ blocks, labels = [] }: { blocks: Block[]; labels?: string[] }) {
+  let n = 0;
   return blocks.map((block, i) => {
     if (block.kind === 'text') return <p key={i}>{inline(block.text, true)}</p>;
+    if (block.kind === 'heading') return <h3 key={i}>{inline(block.text, true)}</h3>;
     if (block.kind === 'list') return <ul key={i}>{block.items.map((item, j) => <li key={j}>{inline(item, true)}</li>)}</ul>;
-    return <CodeExample key={i} label={label ?? 'Code'} language={block.language} code={block.code} defaultOpen />;
+    const label = labels[n] ?? 'Code';
+    n += 1;
+    return <CodeExample key={i} label={label} language={block.language} code={block.code} defaultOpen />;
   });
 }
 
@@ -189,13 +198,13 @@ export function Overview() {
       </section>
       <section aria-labelledby="install" className="docs-section">
         <h2 id="install" tabIndex={-1} className="text-title-3 docs-target">Install</h2>
-        <p className="docs-intro">Add Lede’s registry to your project, then add the items you need. The registry URL pins version {version}, and a release’s files never change. Lede renders on the client only, so it suits a Vite app or another client-only React app. {twin ? 'What your project needs comes first, then the steps, how to move to a later release and the limits.' : <>The <a href={README}>README</a> lists what your project needs first and how to move to a later release.</>} For a chat whose replies hold Lede screens, follow <a href={`${REPO}/blob/main/integrations/json-render-chat/AGENTS.md`}>the json-render chat recipe</a>.</p>
+        <p className="docs-intro">Add Lede’s registry to your project, then add the items you need. The registry URL pins version {version}, and a release’s files never change. Lede renders on the client only, so it suits a Vite app or another client-only React app. {twin ? 'What your project needs comes first, then the steps, how to move to a later release, how to start from a new Vite app and the limits.' : <>The <a href={README}>README</a> lists what your project needs, how to move to a later release and how to start from a new Vite app.</>} For a chat whose replies hold Lede screens, follow <a href={`${REPO}/blob/main/integrations/json-render-chat/AGENTS.md`}>the json-render chat recipe</a>.</p>
         {/* The Markdown build adds the README's text around the steps; the site keeps one element here, so its ids stay. */}
         {twin ? (
           <>
-            <ReadmeBlocks blocks={GUIDE.before} label="Replace src/index.css" />
+            <ReadmeBlocks blocks={GUIDE.before} />
             {steps}
-            <ReadmeBlocks blocks={GUIDE.after} />
+            <ReadmeBlocks blocks={GUIDE.after} labels={AFTER_LABELS} />
             <h3>Limits</h3>
             <ReadmeBlocks blocks={LIMITS} />
           </>

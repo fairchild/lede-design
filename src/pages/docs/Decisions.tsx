@@ -348,9 +348,9 @@ const GROUPS: Group[] = [
         title: 'The README writes the install steps',
         summary: 'Overview renders the install steps from the README, so the site and the repository give one set of steps.',
         why: 'A newcomer meets the steps on the site or on GitHub, and two copies of them drift apart.',
-        cost: <>A README change can change the site, so it runs the whole suite in CI. Step 1’s commands stay the site’s own, because they pin the version from <Path to="package.json" />.</>,
+        cost: <>A README change can change the site, so it runs the whole suite in CI. Step 1’s commands stay the site’s own, because they pin the version from <Path to="package.json" />, and the README’s copy of them has to match.</>,
         heldBy: [
-          <><Path to="tests/code-examples.spec.ts" /> reads each fenced block from step 2 of the README on and expects Overview to show it, character for character.</>,
+          <><Path to="tests/code-examples.spec.ts" /> reads each fenced block from step 2 of the README on and expects Overview to show it, character for character. It also expects <code>/overview.md</code> to hold every fenced block and <code>###</code> heading of the README’s install section in order, step 1’s included, and each block of the new-app setup under its label.</>,
           <>The chat example’s guide draws How it works and Build it from <Path to="integrations/json-render-chat/README.md" /> the same way. <Path to="integrations/json-render-chat/tests/guide.e2e.ts" /> expects How it works and Build it to show each paragraph, list item and table row of their sections in order, with Markdown’s marks gone, and each fenced block character for character. It checks that its links point at the repo and, with literal text, which way the curly quotes face. <Path to="integrations/json-render-chat/tests/markdown.test.tsx" /> fails when the README uses Markdown the renderer doesn’t draw, and checks the quotes after code and bold.</>,
         ],
       },

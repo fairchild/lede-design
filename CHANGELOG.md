@@ -7,7 +7,9 @@
 - The docs' Overview opens on a live example in place of the grid of count cards: Daybook's inbox, the three-panel
   workbench with its chat or the daily brief, chosen with a segmented control and shown wide or narrow. A short list
   of links with one line each takes the cards' place below it, and Install now comes before Principles.
-
+- The README's install section has "Start from a new Vite app": the commands and file edits that set up Tailwind v4,
+  the `@/*` alias and a `components.json` in an app made with create-vite, run as written.
+  https://lede.cloudcompute.com/overview.md shows it too.
 - A registry item's reference page shows each type it names from another item, under the props table that uses it
   and under its declarations: a short type written out, such as `Noun` on DataTable's page, and a long one linked to
   the page that declares it. `llms-full.txt` has the props tables' lists too.
@@ -17,6 +19,11 @@
   wrapper it goes on. Checkbox puts them on its wrapper `<span>` and TextField on its wrapper `<div>`, as before.
 - When a reference page's install command adds an item only for its example, such as `@lede/button` on PageHeader's
   page, the page says so.
+
+### Changed
+
+- Step 1 of the install steps adds `@lede/theme-provider` and `@lede/list`, the items step 3 imports, where it added
+  a data table and two hero flows. It links `llms.txt` for the name and import line of every item.
 
 ### Fixed
 
