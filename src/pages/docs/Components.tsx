@@ -128,6 +128,15 @@ export function Components() {
           with <code>'all'</code>. A group’s <code>empty</code> text stands in for its rows when there are none, such as
           when a filter leaves nothing.
         </p>
+        <p className="docs-intro docs-note">
+          A row with <code>details</code> opens them under itself, in the same list item: the row is a{' '}
+          <code>{'<button aria-expanded>'}</code>, its chevron turns down while they show, and find-in-page opens a row
+          whose details hold the text. <code>open</code> and <code>onOpenChange</code> control it.
+        </p>
+        <Live><ListGroup title="Runs" summary="2 today" headingLevel={3}>
+          <ListRow title="Deploy edge-sfo-2" subtitle="9:41 AM" value={<StatusText tone="critical">Failed</StatusText>} details={<p className="text-subheadline m-0">The health check timed out after 30 seconds, so traffic stayed on the previous version.</p>} />
+          <ListRow title="Deploy api-iad-1" subtitle="8:02 AM" value={<StatusText tone="positive">Done</StatusText>} details={<p className="text-subheadline m-0">Rolled out to 3 of 3 instances in 2 minutes.</p>} />
+        </ListGroup></Live>
       </Demo>
       <Demo id="c-status" item="status-text" title="StatusText" summary={<>A status word in a <code>{'<span>'}</code>, colored by its <code>tone</code>, with a dot before it. It takes the size of the text around it, so it fits a ListRow’s <code>value</code>, a table cell or a sentence.</>}>
         <Live><ListGroup title="Hosts" summary="1 failed" headingLevel={3}>

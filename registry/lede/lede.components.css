@@ -344,6 +344,11 @@
 .ld-status-caution { color: var(--warning); }
 .ld-status-critical { color: var(--destructive); }
 .ld-row-chevron { flex: none; width: auto; height: var(--size-chevron); color: var(--muted-foreground); pointer-events: none; }
+.ld-row-target[aria-expanded] ~ .ld-row-chevron { transition: transform var(--ld-dur) var(--ld-spring); }
+.ld-row-target[aria-expanded="true"] ~ .ld-row-chevron { transform: rotate(90deg); }
+/* `details`: the row and its swipe actions share a box, and the opened content sits under the row in the same `<li>`. */
+.ld-row-slide { position: relative; overflow: hidden; }
+.ld-row-details-body { padding: 0 var(--space-4) var(--space-3); }
 .ld-tile { width: var(--size-leading); height: var(--size-leading); border-radius: var(--radius-xs); display: flex; align-items: center; justify-content: center; background: var(--primary); color: var(--primary-foreground); }
 .ld-tile svg { width: calc(var(--size-leading) - var(--space-3)); height: calc(var(--size-leading) - var(--space-3)); }
 /* The ••• glyph lines up with the row's inset, and its round button reaches past it. */

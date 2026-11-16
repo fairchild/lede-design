@@ -4,6 +4,9 @@
 
 ### Added
 
+- ListRow takes `details`: content the row opens under itself, in the same list item, such as a run's log. The row
+  becomes a `<button aria-expanded>` with a chevron that turns down while they show, find-in-page opens a row whose
+  details hold the text, and `open`, `defaultOpen` and `onOpenChange` control it.
 - `tests/agent-names.spec.ts` fails when two visible controls of one role in the same region of a Daybook screen share
   a name, so a screen reader user or an agent can pick each one. Every screen passes today. The rule is in
   `CONTRIBUTING.md` and on the Decisions page.

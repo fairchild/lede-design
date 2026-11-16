@@ -1345,6 +1345,11 @@ export const ACTIONS: Action[] = [
     target: button(/^Meetings/),
   },
   {
+    screen: 'Everywhere', action: 'ListRow details toggle', setup: async ({ page }) => { await page.goto('/fixtures/list-row'); },
+    act: (d) => d.press(button(/^Deploy edge-sfo-2/)),
+    target: button(/^Deploy edge-sfo-2/),
+  },
+  {
     screen: 'Data table', action: 'Layout switch, table to cards', only: 'desktop',
     setup: async (d) => { await work(d); await locate(d.page, row('WI-1018')).focus(); },
     act: ({ page }) => page.setViewportSize({ width: 480, height: 800 }),
