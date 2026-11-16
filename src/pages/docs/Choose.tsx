@@ -47,7 +47,7 @@ export const CHOICES: Array<{ id: string; title: string; choices: Choice[] }> = 
       { need: 'A setting that turns on or off at once', item: 'switch', title: 'Switch', href: '/components#c-switch', note: 'For a choice that waits for a Save, use Checkbox.' },
       { need: 'A yes or no in a form, or picking rows', item: 'checkbox', title: 'Checkbox', href: '/components#c-check', note: 'Has a mixed state for “some selected”.' },
       { need: 'Text, a line or several', item: 'text-field', title: 'TextField', href: '/components#c-field', note: 'Its label, hint and error come wired up.' },
-      { need: 'A box that filters a list as people type', item: 'search-field', title: 'SearchField', href: '/components#c-search', note: 'Escape clears it, and a second Escape backs out of the screen.' },
+      { need: 'A box that filters a list as people type', item: 'search-field', title: 'SearchField', href: '/components#c-search', note: 'Its label is hidden, and Escape or its clear button empties it.' },
       { need: 'Fields that belong together under a name', item: 'form-section', title: 'FormSection', href: '/blocks#b-form', note: 'A fieldset and legend on a card.' },
       { need: 'A form in several steps', item: 'step-indicator', title: 'StepIndicator', href: '/blocks#b-steps', note: 'Shows where the person is. The onboarding flow uses it.' },
       { need: 'Actions on everything selected', item: 'selection-bar', title: 'SelectionBar', href: '/blocks#b-md', note: 'Appears once something is selected and announces the count.' },
