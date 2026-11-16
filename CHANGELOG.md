@@ -7,6 +7,9 @@
 - StatusText, `@lede/status-text`: a status word colored by its tone (`neutral`, `positive`, `caution` or
   `critical`), with a dot, at the size of the text around it. Put it in a ListRow's `value` or `subtitle`, a table
   cell or a sentence, as in `value={<StatusText tone="critical">Failed</StatusText>}`.
+- SearchField, `@lede/search-field`: an `<input type="search">` with a visually hidden label and a clear button, for
+  filtering a list. Escape clears its text and keeps focus; on an empty field it goes on to the screen, so PageHeader's
+  `backOnEscape` backs out.
 - The README's install section has "Start from a new Vite app": the commands and file edits that set up Tailwind v4,
   the `@/*` alias and a `components.json` in an app made with create-vite, run as written.
   https://lede.cloudcompute.com/overview.md shows it too.

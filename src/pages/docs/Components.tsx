@@ -4,6 +4,7 @@ import { Button } from '@lede/button';
 import { SegmentedControl } from '@lede/segmented-control';
 import { Switch } from '@lede/switch';
 import { TextField } from '@lede/text-field';
+import { SearchField } from '@lede/search-field';
 import { Avatar } from '@lede/avatar';
 import { Card } from '@lede/card';
 import { ListGroup, ListRow } from '@lede/list';
@@ -25,6 +26,20 @@ const THEME_SCOPE_CODE = `<Dialog.Portal>
     <Dialog.Popup />
   </ThemeScope>
 </Dialog.Portal>`;
+
+const HOSTS = ['api-iad-1', 'cache-lhr-1', 'db-ord-1', 'edge-sfo-2'];
+function SearchDemo() {
+  const [query, setQuery] = React.useState('');
+  const shown = HOSTS.filter((h) => h.includes(query.trim().toLowerCase()));
+  return (
+    <div className="docs-demo-col">
+      <SearchField label="Filter hosts" value={query} onValueChange={setQuery} />
+      <ListGroup title="Hosts" summary={query ? `${shown.length} of ${HOSTS.length}` : `${HOSTS.length}`} footer={shown.length ? undefined : 'No host matches.'} headingLevel={3}>
+        {shown.map((h) => <ListRow key={h} title={h} />)}
+      </ListGroup>
+    </div>
+  );
+}
 
 function Demo({ id, item, title, summary, children }: { id: string; item: string; title: string; summary: React.ReactNode; children: React.ReactNode }) {
   return (
@@ -76,6 +91,9 @@ export function Components() {
           <TextField label="Email" type="email" defaultValue="name@" error="Enter a complete email address." />
           <TextField label="Short bio" rows={3} hint="Up to 160 characters." />
         </div></Live>
+      </Demo>
+      <Demo id="c-search" item="search-field" title="SearchField" summary={<>An <code>{'<input type="search">'}</code> with a visually hidden <code>{'<label>'}</code> and a clear button. Escape clears its text, and on an empty field it goes on to the screen, so PageHeader’s <code>backOnEscape</code> backs out.</>}>
+        <Live><SearchDemo /></Live>
       </Demo>
       <Demo id="c-avatar" item="avatar" title="Avatar" summary={<>An <code>{'<img>'}</code> with alt text, or initials on a tint when there’s no picture or it fails to load. Pass <code>alt=""</code> when the name is already beside it, so it isn’t read twice.</>}>
         <Live><div className="docs-demo">
