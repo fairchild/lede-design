@@ -20,7 +20,9 @@ function initial(): string {
 
 export function LookSwitcher() {
   const [look, setLook] = React.useState(initial);
-  const hidden = typeof window !== 'undefined' && new URLSearchParams(location.search).get('chrome') === '0';
+  // Shown in `npm run dev`, or in a build once a look is chosen with `?look=`, so the test suite's pages stay as they were.
+  const hidden = typeof window === 'undefined' || new URLSearchParams(location.search).get('chrome') === '0'
+    || (!import.meta.env.DEV && look === 'lede' && !new URLSearchParams(location.search).has('look'));
   React.useEffect(() => {
     if (look === 'lede') delete document.documentElement.dataset.look;
     else document.documentElement.dataset.look = look;
