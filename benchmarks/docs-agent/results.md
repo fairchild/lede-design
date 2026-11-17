@@ -32,3 +32,4 @@ In `haiku-x3`, one run used `InboxFlow` without `Page`, and two built the screen
 one of those the list sat in the right half of the screen. `sonnet-high` used `InboxFlow` in `Page`. It also asked the
 registry for `@lede/link` (a 404), because Overview's step 4 imports LinkProvider from `@/components/lede/link` and no
 item has that name: the file comes with `lede-utils`.
+| 2026-11-17 | opus-medium | ce5e8ba | claude-opus-5-5 | medium | 2.1.326 | 1/1 | 24 | 5 | 51 | 0 | 56 | 9270 | 0.66 | 4.0 | 1/1 | 4 | 0 |
