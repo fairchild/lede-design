@@ -109,7 +109,9 @@ Lede has five layers, and dependencies only point down:
 5. `src/` is the docs site and Daybook, the demo app, which wire the flows to React Router and sample data.
 
 `integrations/` sits outside the layers. It holds self-contained apps that show Lede beside another project. They read
-`registry/`, and no layer imports them.
+`registry/`, and no layer imports them. `benchmarks/` sits outside them too: `benchmarks/docs-agent/` measures an agent
+building with Lede from the built docs alone. Run it before and after a change meant to help agents, and put its rows
+in the pull request.
 
 Lede's design system on claude.ai, which Claude reads to build with Lede in a chat, a canvas or a deck, is generated
 from this repo too. `npm run design-system` writes it to `dist-design-system/project/` (git-ignored): `tokens.json` in

@@ -8,6 +8,7 @@
 @source not "../../docs/**/*.md";
 @source not "../../.claude/**/*.md";
 @source not "../../integrations";
+@source not "../../benchmarks";
 @source not "../../scripts/design-system";
 @source not "../../scripts/llms";
 @source not "../../tests";

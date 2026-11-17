@@ -4,6 +4,11 @@
 
 ### Added
 
+- `benchmarks/docs-agent/`: a harness that gives a fresh Claude Code agent a new Vite app and one task, an inbox
+  screen, with this checkout's built docs as its only source, served from `llms.txt`. It records tool calls, the docs
+  files and bytes the agent read, its 404s, cost and time, then builds the app and runs axe on it itself, and appends
+  the medians to `results.md`. A run that reads Lede's checkout is marked contaminated and left out. It defaults to
+  Fable and isn't part of CI, since every run costs money. The fairness rules are in its README.
 - Each registry item says how settled it is, in `meta.stability`: `experimental` for SearchField, StatusText,
   StatusList, CodeBlock, AlertDialog, Page and SpecView, and `stable` for the rest. A reference page's front matter
   and an experimental item's page and `llms.txt` line say so. The rule is in `CONTRIBUTING.md`.
