@@ -1,0 +1,244 @@
+{
+  "servers": [
+    {
+      "name": "api-iad-1",
+      "region": "IAD",
+      "status": "Healthy",
+      "cpu": 44
+    },
+    {
+      "name": "web-sfo-1",
+      "region": "SFO",
+      "status": "Healthy",
+      "cpu": 22
+    },
+    {
+      "name": "db-fra-1",
+      "region": "FRA",
+      "status": "Down",
+      "cpu": 53
+    },
+    {
+      "name": "cache-sin-1",
+      "region": "SIN",
+      "status": "Healthy",
+      "cpu": 86
+    },
+    {
+      "name": "queue-syd-1",
+      "region": "SYD",
+      "status": "Degraded",
+      "cpu": 9
+    },
+    {
+      "name": "search-iad-1",
+      "region": "IAD",
+      "status": "Healthy",
+      "cpu": 12
+    },
+    {
+      "name": "auth-sfo-1",
+      "region": "SFO",
+      "status": "Healthy",
+      "cpu": 71
+    },
+    {
+      "name": "mail-fra-1",
+      "region": "FRA",
+      "status": "Down",
+      "cpu": 15
+    },
+    {
+      "name": "api-sin-2",
+      "region": "SIN",
+      "status": "Healthy",
+      "cpu": 49
+    },
+    {
+      "name": "web-syd-2",
+      "region": "SYD",
+      "status": "Degraded",
+      "cpu": 77
+    },
+    {
+      "name": "db-iad-2",
+      "region": "IAD",
+      "status": "Healthy",
+      "cpu": 10
+    },
+    {
+      "name": "cache-sfo-2",
+      "region": "SFO",
+      "status": "Healthy",
+      "cpu": 67
+    },
+    {
+      "name": "queue-fra-2",
+      "region": "FRA",
+      "status": "Down",
+      "cpu": 30
+    },
+    {
+      "name": "search-sin-2",
+      "region": "SIN",
+      "status": "Healthy",
+      "cpu": 7
+    },
+    {
+      "name": "auth-syd-2",
+      "region": "SYD",
+      "status": "Degraded",
+      "cpu": 14
+    },
+    {
+      "name": "mail-iad-2",
+      "region": "IAD",
+      "status": "Healthy",
+      "cpu": 58
+    },
+    {
+      "name": "api-sfo-3",
+      "region": "SFO",
+      "status": "Healthy",
+      "cpu": 56
+    },
+    {
+      "name": "web-fra-3",
+      "region": "FRA",
+      "status": "Down",
+      "cpu": 11
+    },
+    {
+      "name": "db-sin-3",
+      "region": "SIN",
+      "status": "Healthy",
+      "cpu": 33
+    },
+    {
+      "name": "cache-syd-3",
+      "region": "SYD",
+      "status": "Degraded",
+      "cpu": 14
+    },
+    {
+      "name": "queue-iad-3",
+      "region": "IAD",
+      "status": "Healthy",
+      "cpu": 73
+    },
+    {
+      "name": "search-sfo-3",
+      "region": "SFO",
+      "status": "Healthy",
+      "cpu": 57
+    },
+    {
+      "name": "auth-fra-3",
+      "region": "FRA",
+      "status": "Down",
+      "cpu": 10
+    },
+    {
+      "name": "mail-sin-3",
+      "region": "SIN",
+      "status": "Healthy",
+      "cpu": 75
+    },
+    {
+      "name": "api-syd-4",
+      "region": "SYD",
+      "status": "Degraded",
+      "cpu": 18
+    },
+    {
+      "name": "web-iad-4",
+      "region": "IAD",
+      "status": "Healthy",
+      "cpu": 31
+    },
+    {
+      "name": "db-sfo-4",
+      "region": "SFO",
+      "status": "Healthy",
+      "cpu": 83
+    },
+    {
+      "name": "cache-fra-4",
+      "region": "FRA",
+      "status": "Down",
+      "cpu": 83
+    },
+    {
+      "name": "queue-sin-4",
+      "region": "SIN",
+      "status": "Healthy",
+      "cpu": 77
+    },
+    {
+      "name": "search-syd-4",
+      "region": "SYD",
+      "status": "Degraded",
+      "cpu": 10
+    },
+    {
+      "name": "auth-iad-4",
+      "region": "IAD",
+      "status": "Healthy",
+      "cpu": 76
+    },
+    {
+      "name": "mail-sfo-4",
+      "region": "SFO",
+      "status": "Healthy",
+      "cpu": 77
+    },
+    {
+      "name": "api-fra-5",
+      "region": "FRA",
+      "status": "Down",
+      "cpu": 53
+    },
+    {
+      "name": "web-sin-5",
+      "region": "SIN",
+      "status": "Healthy",
+      "cpu": 9
+    },
+    {
+      "name": "db-syd-5",
+      "region": "SYD",
+      "status": "Degraded",
+      "cpu": 31
+    },
+    {
+      "name": "cache-iad-5",
+      "region": "IAD",
+      "status": "Healthy",
+      "cpu": 8
+    },
+    {
+      "name": "queue-sfo-5",
+      "region": "SFO",
+      "status": "Healthy",
+      "cpu": 74
+    },
+    {
+      "name": "search-fra-5",
+      "region": "FRA",
+      "status": "Down",
+      "cpu": 20
+    },
+    {
+      "name": "auth-sin-5",
+      "region": "SIN",
+      "status": "Healthy",
+      "cpu": 40
+    },
+    {
+      "name": "mail-syd-5",
+      "region": "SYD",
+      "status": "Degraded",
+      "cpu": 56
+    }
+  ]
+}

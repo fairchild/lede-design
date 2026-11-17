@@ -1,7 +1,13 @@
 # Docs benchmark results
 
-`run.mjs` appends a row for each batch of runs. Each number is the median of the clean runs, and the columns are
-explained in [README.md](README.md#what-it-measures). A row holds for its date, model and docs commit only.
+`run.mjs` appends a row for each task in a batch, to the table at the end. The score is the median share of scripted
+checks that pass, with the lowest and highest in brackets, and the grader's column is its median from 1 to 5.
+[README.md](README.md#how-a-run-is-scored) explains both. A row holds for its date, model and docs commit only.
+
+## Version 1: the inbox alone, before scored checks
+
+These rows come from the first version of the harness: one task, the inbox, written by the agent with its own sample
+data, and no scored checks. Each number is the median of the clean runs.
 
 | Date | Label | Docs | Model | Effort | Claude Code | Clean runs | Tool calls | Docs files | Docs KB | Docs 404s | Text read KB | Output tokens | Cost USD | Minutes | Builds | Lede imports | Axe violations |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -33,3 +39,8 @@ one of those the list sat in the right half of the screen. `sonnet-high` used `I
 registry for `@lede/link` (a 404), because Overview's step 4 imports LinkProvider from `@/components/lede/link` and no
 item has that name: the file comes with `lede-utils`.
 | 2026-11-17 | opus-medium | ce5e8ba | claude-opus-5-5 | medium | 2.1.326 | 1/1 | 24 | 5 | 51 | 0 | 56 | 9270 | 0.66 | 4.0 | 1/1 | 4 | 0 |
+
+## Scored runs
+
+| Date | Label | Docs | Task | Model | Effort | Claude Code | Clean runs | Checks passed | Grader | Tool calls | Docs pages | Docs KB | Docs 404s | Cost USD | Minutes |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |

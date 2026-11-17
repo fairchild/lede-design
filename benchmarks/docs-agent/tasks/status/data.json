@@ -1,0 +1,59 @@
+{
+  "services": [
+    {
+      "name": "Website",
+      "status": "operational",
+      "uptime90d": "99.99%"
+    },
+    {
+      "name": "API",
+      "status": "degraded",
+      "uptime90d": "99.71%"
+    },
+    {
+      "name": "Payments",
+      "status": "operational",
+      "uptime90d": "99.98%"
+    },
+    {
+      "name": "Search",
+      "status": "down",
+      "uptime90d": "98.20%"
+    },
+    {
+      "name": "Email delivery",
+      "status": "operational",
+      "uptime90d": "99.95%"
+    },
+    {
+      "name": "File uploads",
+      "status": "degraded",
+      "uptime90d": "99.60%"
+    },
+    {
+      "name": "Login",
+      "status": "operational",
+      "uptime90d": "100.00%"
+    }
+  ],
+  "incidents": [
+    {
+      "title": "Search is not returning results",
+      "service": "Search",
+      "started": "2026-11-17T03:10",
+      "state": "investigating"
+    },
+    {
+      "title": "Slow API responses in Europe",
+      "service": "API",
+      "started": "2026-11-16T22:40",
+      "state": "monitoring"
+    },
+    {
+      "title": "Uploads over 1 GB time out",
+      "service": "File uploads",
+      "started": "2026-11-15T14:05",
+      "state": "identified"
+    }
+  ]
+}
