@@ -4,6 +4,9 @@
 
 ### Added
 
+- Each registry item says how settled it is, in `meta.stability`: `experimental` for SearchField, StatusText,
+  StatusList, CodeBlock, AlertDialog, Page and SpecView, and `stable` for the rest. A reference page's front matter
+  and an experimental item's page and `llms.txt` line say so. The rule is in `CONTRIBUTING.md`.
 - AlertDialog, `@lede/alert-dialog`: a modal that asks before an action, on Base UI AlertDialog, with Cancel and a
   confirm Button. Focus opens on the confirm button, or on Cancel when `tone` is `"critical"`, and returns to the
   control that opened it. Escape cancels, and PageHeader's `backOnEscape` waits for it to close. New tokens:

@@ -196,6 +196,10 @@ container's font size, and it can also be 0.02px less in a `max-width` query.
   `tokens/tokens.json` keep their plain names (`--primary`, `--fill-control`, `--space-4`), type classes are `text-*`
   and docs-site helpers start `docs-`. Two letters keep stacked class lists short. The prefix also sits inside `field-`
   and `build-`, so a search for it uses `(?<![\w-])(--)?ld-`.
+- **Stability.** Each registry item's `meta.stability` is `stable` or `experimental`. A new item is experimental for the
+  release that adds it, and its props can change in a minor release that the CHANGELOG names. The next release that
+  ships it unchanged marks it stable, and from then on a renamed prop keeps its old name for one release, as below.
+  The reference page and `llms.txt` say which items are experimental.
 - **Names.** A heading prop is `title`. A value callback is named for its controlled prop: `value` and
   `onValueChange`, `checked` and `onCheckedChange`, `open` and `onOpenChange`. A wrapper that passes native input props
   through keeps the DOM's `onChange`. Color that carries meaning is a `tone` declared with `ToneSubset<…>`, so a value

@@ -4,6 +4,8 @@
 
 Lede renders on the client only, so it suits a Vite app or another client-only React app. Install from a release's registry, `https://lede.cloudcompute.com/r/v{{VERSION}}/{name}.json`, added to `components.json` as `@lede`. Every item's file is at that URL with its name, such as `button` or `data-table`, and the release's index is `https://lede.cloudcompute.com/r/v{{VERSION}}/registry.json`. A release's files never change.
 
+An item marked Experimental below is new in a recent release, and its props can still change in a minor release.
+
 Each docs page has a Markdown version at its address plus `.md`, such as https://lede.cloudcompute.com/components.md, with https://lede.cloudcompute.com/overview.md for the home page, and each registry item has a reference page. The links under Docs and the item sections go to them, and [llms-full.txt](https://lede.cloudcompute.com/llms-full.txt) holds all of them in one file. Together they're an Open Knowledge Format v0.2 bundle, whose index is [index.md](https://lede.cloudcompute.com/index.md).
 
 ## Start here
