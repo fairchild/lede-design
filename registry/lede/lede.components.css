@@ -619,7 +619,7 @@
 .ld-table-scroll:focus-visible { outline: var(--stroke-ring) solid var(--ring); outline-offset: var(--stroke-ring-offset); }
 /* A border, so the sticky header's background can't paint over it as it did over an inset shadow. */
 [data-theme$="-hc"] .ld-table-scroll { border: 1px solid var(--input); }
-.ld-table { width: 100%; table-layout: fixed; border-collapse: separate; border-spacing: 0; font-size: var(--text-subheadline-size); line-height: var(--text-subheadline-line-height); }
+.ld-table { width: 100%; min-width: var(--ld-table-min-w); table-layout: fixed; border-collapse: separate; border-spacing: 0; font-size: var(--text-subheadline-size); line-height: var(--text-subheadline-line-height); }
 .ld-table-caption { caption-side: top; margin: 0; padding: var(--space-3) var(--space-4) var(--space-2); text-align: start; font-size: var(--text-headline-size); line-height: var(--text-headline-line-height); font-weight: var(--text-headline-weight); color: var(--foreground); }
 /* A collapsible table: the caption holds a button (title, summary, chevron), and collapsed, only the caption shows.
    `display: none` takes the header and rows out of the accessibility tree too. */
