@@ -2,8 +2,9 @@
 // left behind. The harness builds and checks the app itself, so nothing here takes the agent's word.
 import { spawnSync } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
-import { join, relative } from 'node:path';
+import { basename, join, relative } from 'node:path';
 import { serve } from './docs-server.mjs';
+import { axe, ok, pageChecks, safely, sourceChecks } from './checks.mjs';
 
 /**
  * Reads Claude Code's stream-json output.
@@ -122,6 +123,9 @@ export function readLedeUse(workspace) {
     .filter((file) => /[\\/]components[\\/]lede[\\/][^\\/]+\.tsx?$/.test(file))
     .map((file) => relative(src, file));
   const own = all.filter((file) => /\.(tsx?|jsx?)$/.test(file) && !/[\\/]components[\\/]lede[\\/]/.test(file));
+  // CSS counts only when the app's code imports it, so the template's unused App.css doesn't.
+  const imported = own.map((file) => readFileSync(file, 'utf8')).join('\n');
+  const css = all.filter((file) => /\.css$/.test(file) && !/[\\/]styles[\\/]lede[\\/]/.test(file) && [`/${basename(file)}'`, `/${basename(file)}"`].some((end) => imported.includes(end)));
   const imports = new Set();
   for (const file of own) {
     for (const match of readFileSync(file, 'utf8').matchAll(/from\s+['"](@\/components\/lede\/[^'"]+)['"]/g)) {
@@ -132,6 +136,7 @@ export function readLedeUse(workspace) {
     installed: installed.length,
     imported: [...imports].sort(),
     ownFiles: own.map((file) => relative(workspace, file)),
+    ownCss: css.map((file) => relative(workspace, file)),
     ownLines: own.reduce((sum, file) => sum + readFileSync(file, 'utf8').split('\n').length, 0),
   };
 }
@@ -142,37 +147,60 @@ export function build(workspace) {
   return { passed: run.status === 0, tail: `${run.stdout ?? ''}${run.stderr ?? ''}`.split('\n').slice(-30).join('\n') };
 }
 
-/** Serves the built app, takes a screenshot and runs axe on its first screen, in whatever theme the app starts in. */
-export async function check(workspace, screenshotPath) {
+/**
+ * Serves the built app and runs every scripted check: the task's own, at desktop and phone width, then the shared ones
+ * for the page, axe on each screen it reaches (light, after the task's steps, phone and dark) and the app's source.
+ * Screenshots of each screen go to `runDir` for the grader and for people.
+ * @param {string} workspace @param {string} runDir @param {{ task: object, data: object }} context
+ */
+export async function check(workspace, runDir, { task, data, ownFiles, ledeImports }) {
   const dist = join(workspace, 'dist');
-  if (!existsSync(join(dist, 'index.html'))) return { checked: false, reason: 'no dist/index.html' };
+  const checks = [];
+  const source = sourceChecks(ownFiles.map((file) => join(workspace, file)), ledeImports);
+  if (!existsSync(join(dist, 'index.html'))) {
+    return { checked: false, reason: 'no dist/index.html', checks: [ok('builds', false), ...source] };
+  }
   const { chromium } = await import('@playwright/test');
-  const { default: AxeBuilder } = await import('@axe-core/playwright');
   const server = await serve({ root: dist, rewriteOrigin: false });
   const browser = await chromium.launch(process.env.PW_CHROMIUM ? { executablePath: process.env.PW_CHROMIUM } : {});
-  try {
-    const context = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+  const errors = [];
+  const open = async (options) => {
+    const context = await browser.newContext(options);
     const page = await context.newPage();
-    const errors = [];
     page.on('pageerror', (error) => errors.push(String(error.message ?? error)));
     await page.goto(server.url, { waitUntil: 'networkidle' });
-    await page.screenshot({ path: screenshotPath });
-    const text = (await page.locator('body').innerText()).trim();
-    const tags = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'];
-    const first = await new AxeBuilder({ page }).withTags(tags).analyze();
-    return {
-      checked: true,
-      renders: text.length > 0,
-      textChars: text.length,
-      pageErrors: errors,
-      axe: {
-        violations: first.violations.length,
-        nodes: first.violations.reduce((sum, v) => sum + v.nodes.length, 0),
-        rules: first.violations.map((v) => `${v.id} (${v.impact}, ${v.nodes.length})`),
-      },
-    };
+    return page;
+  };
+  try {
+    checks.push(ok('builds', true));
+    const desktop = await open({ viewport: { width: 1280, height: 800 } });
+    const text = (await desktop.locator('body').innerText()).trim();
+    checks.push(ok('desktop: renders text', text.length > 0, `${text.length} characters`));
+    await desktop.screenshot({ path: join(runDir, 'desktop.png') });
+    checks.push(await axe(desktop, 'desktop'), ...(await pageChecks(desktop, 'desktop')));
+    checks.push(...(await safely(() => task.desktop(desktop, data)) ?? [ok('the task checks ran on desktop', false)]));
+    await desktop.screenshot({ path: join(runDir, 'desktop-after.png') });
+    checks.push(await axe(desktop, 'desktop after the task steps'));
+
+    const phone = await open({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, deviceScaleFactor: 1 });
+    await phone.screenshot({ path: join(runDir, 'phone.png') });
+    checks.push(await axe(phone, 'phone'), ...(await pageChecks(phone, 'phone')));
+    if (task.phone) {
+      checks.push(...(await safely(() => task.phone(phone, data)) ?? [ok('the task checks ran on a phone', false)]));
+      await phone.screenshot({ path: join(runDir, 'phone-after.png') });
+    }
+
+    const dark = await open({ viewport: { width: 1280, height: 800 }, colorScheme: 'dark' });
+    await dark.screenshot({ path: join(runDir, 'dark.png') });
+    checks.push(await axe(dark, 'dark'));
+    checks.push(ok('no errors in the page', errors.length === 0, errors.slice(0, 3).join(' | ')));
+    checks.push(...source);
+    return { checked: true, pageErrors: errors, checks };
   } finally {
     await browser.close();
     await server.close();
   }
 }
+
+/** The share of checks that pass, from 0 to 1. */
+export const score = (checks) => (checks.length ? checks.filter((c) => c.pass).length / checks.length : 0);
