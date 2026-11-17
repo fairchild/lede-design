@@ -33,6 +33,10 @@
   `CONTRIBUTING.md` and on the Decisions page.
 - `docs/releasing.md` says how a release goes from merged pull requests to lede.cloudcompute.com: the release pull
   request, the tag only an admin can push, the `develop` branch every pull request now targets, how to check the release is live and what to do when a step fails.
+- Each hero flow's reference page has an example of a whole screen: the flow in `Page`, since a flow brings no gutter
+  of its own. Install step 4 says `LinkProvider` comes with `@lede/lede-utils`, so there's no `@lede/link` to add.
+  The docs benchmark found both: agents asked the registry for `@lede/link`, and three of six screens built on a flow
+  had no gutter.
 
 ### Fixed
 
