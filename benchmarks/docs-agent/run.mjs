@@ -4,7 +4,7 @@
 //
 //   npm run build && node benchmarks/docs-agent/run.mjs --runs 3 --label "before llms.txt change"
 //
-// Options: --model (claude-fable-5-2), --effort (Claude Code's default), --runs (1), --budget USD per run (8),
+// Options: --model (claude-fable-5-2), --effort (Claude Code's default; the effort applied is recorded either way), --runs (1), --budget USD per run (8),
 // --minutes per run (30), --label, --no-record (leave results.md alone).
 import { spawn, spawnSync } from 'node:child_process';
 import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync, appendFileSync } from 'node:fs';
@@ -78,9 +78,15 @@ async function runOnce(n) {
   const env = { ...process.env };
   // A parent Claude Code session passes its memory, skills and extra folders on through these, so they go too.
   for (const key of Object.keys(env)) {
-    if (key === 'CLAUDECODE' || /^CLAUDE_.*(MEMORY|ADDITIONAL_DIRECTORIES|SYNC_SKILLS|SYNC_PLUGINS|SKILL)/.test(key)) delete env[key];
+    if (key === 'CLAUDECODE' || key === 'CLAUDE_EFFORT' || /^CLAUDE_.*(MEMORY|ADDITIONAL_DIRECTORIES|SYNC_SKILLS|SYNC_PLUGINS|SKILL)/.test(key)) delete env[key];
   }
   env.CLAUDE_CONFIG_DIR = mkdtempSync(join(tmpdir(), 'lede-bench-config-'));
+  // A Stop hook records the effort Claude Code actually applied each turn, after any downgrade for the model, since
+  // the transcript doesn't say. --bare skips hooks, so with an API key only the requested effort is known.
+  const effortLog = join(runDir, 'effort.jsonl');
+  const settings = JSON.stringify({
+    hooks: { Stop: [{ hooks: [{ type: 'command', command: `{ cat; echo; } >> '${effortLog}'` }] }] },
+  });
   const claudeArgs = [
     '-p', task.replaceAll('{{DOCS}}', docs.url),
     '--model', args.model,
@@ -92,6 +98,7 @@ async function runOnce(n) {
     '--strict-mcp-config',
     '--disable-slash-commands',
     '--no-session-persistence',
+    '--settings', settings,
     '--max-budget-usd', args.budget,
     ...(env.ANTHROPIC_API_KEY ? ['--bare'] : []),
   ];
@@ -135,7 +142,12 @@ async function runOnce(n) {
   rmSync(workspace, { recursive: true, force: true });
   rmSync(env.CLAUDE_CONFIG_DIR, { recursive: true, force: true });
 
-  const metrics = { run: n, exit, agent, docs: docsRead, lede, build: built, check: checked };
+  let applied = [];
+  try {
+    applied = readFileSync(effortLog, 'utf8').split('\n').filter(Boolean).map((line) => JSON.parse(line).effort?.level ?? 'unknown');
+  } catch {}
+  const effort = { requested: args.effort ?? 'default', applied: [...new Set(applied)] };
+  const metrics = { run: n, exit, effort, agent, docs: docsRead, lede, build: built, check: checked };
   writeFileSync(join(runDir, 'metrics.json'), `${JSON.stringify(metrics, null, 2)}\n`);
   return metrics;
 }
@@ -160,7 +172,12 @@ const summary = {
   label: args.label,
   docs: `${docsCommit}${docsDirty ? '+dirty' : ''}`,
   model: args.model,
-  effort: args.effort ?? 'default',
+  // What Claude Code applied, from the Stop hook, with what was asked for when that differs or is unknown.
+  effort: (() => {
+    const applied = [...new Set(results.flatMap((r) => r.effort.applied))].join('/') || '?';
+    const requested = args.effort ?? 'default';
+    return applied === requested ? applied : `${applied} (asked ${requested})`;
+  })(),
   claudeCode: claudeVersion,
   runs: results.length,
   clean: clean.length,
