@@ -182,7 +182,7 @@ export function Looks() {
   const look = useLook();
   return (
     <div>
-      <PageHeader title="Looks" summary="A look changes how Lede appears and keeps how it works." />
+      <PageHeader title="Looks" back={{ href: '/', label: 'Overview' }} summary="A look changes how Lede appears and keeps how it works." />
       <p className="docs-intro">
         A look is a whole visual style laid over the same components. It changes color, type, edges, depth and texture. It never changes markup, behavior or what a screen reader hears. Pick one here and the whole site follows, this page included.
       </p>

@@ -230,6 +230,13 @@ export const ARRIVALS: Arrival[] = [
     escape: { url: /:\d+\/$/, target: link('Decisions: how Lede is built and checked') },
   },
   {
+    route: '/looks', arrival: h1('Looks'),
+    via: { from: '/', link: link('Looks: the same principles in other styles'), back: link('Looks: the same principles in other styles') },
+    tabs: [radio('Lede')],
+    shiftTab: link('Overview', main),
+    escape: { url: /:\d+\/$/, target: link('Looks: the same principles in other styles') },
+  },
+  {
     route: '/integrations', arrival: h1('Integrations'),
     via: { from: '/', link: link('Integrations', main), back: link('Integrations', main) },
     tabs: [link('Lede on claude.ai: a design system of your own', main), link('The Lede design system', main)],
