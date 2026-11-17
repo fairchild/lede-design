@@ -68,7 +68,7 @@ lowest and highest.
 | The task's own, on desktop and phone | That the screen does what the task asks, using the task's data: every message listed and one opening on a click, each field holding its value and Save saying Saved, search filtering and Name sorting, each service's status in words |
 | Builds and renders | `npm run build` passes, the page has text and no errors |
 | Axe | No WCAG 2.1 A or AA violations on the desktop's first screen, after the task's steps, on a phone and in dark mode |
-| Page | One `h1`; text and controls at least 8px from the window's edges on desktop and phone; no sideways scroll on a phone |
+| Page | One `h1`; text and controls at least 8px from the window's edges on desktop and phone, with text in a region that scrolls sideways measured at that region's edges; no sideways scroll on a phone |
 | Source | The app's own code imports at least one Lede module, has no hard-coded or Tailwind palette colors, and puts no click handler on a `div`, `span`, `li`, `td` or `tr` |
 
 The grader is a second opinion, logged beside the score and never part of it. Sonnet 5.5 reads the run's screenshots

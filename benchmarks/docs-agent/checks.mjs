@@ -48,18 +48,31 @@ export function edges(page) {
     let right = Infinity;
     const width = document.documentElement.clientWidth;
     const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+    // Text inside a region that scrolls sideways, such as a wide table, is measured at that region's edges: what
+    // runs past them is scrolled out of view, not crowding the window.
+    const clip = (el) => {
+      for (let a = el; a && a !== document.body; a = a.parentElement) {
+        const x = getComputedStyle(a).overflowX;
+        if ((x === 'auto' || x === 'scroll' || x === 'hidden' || x === 'clip') && a.scrollWidth > a.clientWidth + 1) return a.getBoundingClientRect();
+      }
+      return null;
+    };
     const boxes = [];
     for (let node = walker.nextNode(); node; node = walker.nextNode()) {
       if (!node.textContent?.trim()) continue;
       const range = document.createRange();
       range.selectNodeContents(node);
-      boxes.push(...range.getClientRects());
+      const region = clip(node.parentElement);
+      for (const r of range.getClientRects()) boxes.push({ r, region });
     }
-    for (const el of document.querySelectorAll('input, button, select, textarea')) boxes.push(el.getBoundingClientRect());
-    for (const box of boxes) {
+    for (const el of document.querySelectorAll('input, button, select, textarea')) boxes.push({ r: el.getBoundingClientRect(), region: clip(el.parentElement) });
+    for (const { r: box, region } of boxes) {
       if (!box.width || !box.height || box.bottom < 0 || box.top > innerHeight) continue;
-      left = Math.min(left, box.left);
-      right = Math.min(right, width - box.right);
+      const l = region ? Math.max(box.left, region.left) : box.left;
+      const r = region ? Math.min(box.right, region.right) : box.right;
+      if (r <= l) continue;
+      left = Math.min(left, l);
+      right = Math.min(right, width - r);
     }
     return { left, right, scrolls: document.documentElement.scrollWidth > width + 1 };
   });
