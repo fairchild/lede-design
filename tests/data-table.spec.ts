@@ -1173,6 +1173,37 @@ test.describe('SelectionBar placement', () => {
   });
 });
 
+test('narrow scroll: columns without a width fit their content, so no word splits and short names show whole', async ({ page }) => {
+  await open(page, '/fixtures/data-table');
+  const table = page.getByRole('table', { name: 'Narrow scroll fixture' });
+  await table.scrollIntoViewIfNeeded();
+  // Lines a cell's text takes: a word split across lines takes two. Text only, so a status dot isn't counted as a line.
+  const lines = (cell: Locator) => cell.evaluate((el) => {
+    const tops = new Set<number>();
+    const walk = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+    for (let n = walk.nextNode(); n; n = walk.nextNode()) {
+      const range = document.createRange();
+      range.selectNodeContents(n);
+      for (const r of range.getClientRects()) if (r.width > 0) tops.add(Math.round(r.top));
+    }
+    return tops.size;
+  });
+  for (const word of ['Degraded', 'Healthy', 'Down', 'Region', 'Status', 'CPU']) {
+    const cells = table.getByRole('cell', { name: word, exact: true }).or(table.getByRole('columnheader', { name: word, exact: true }));
+    for (const cell of await cells.all()) expect(await lines(cell), `"${word}" stays on one line`).toBe(1);
+  }
+  const clipped = (name: string) => table.getByRole('rowheader', { name }).locator('.ld-table-trunc')
+    .evaluate((el) => el.scrollWidth > el.clientWidth);
+  expect(await clipped('search-iad-1'), 'a short name shows whole').toBe(false);
+  expect(await clipped('web-sfo-1')).toBe(false);
+  // A name too long for the pane keeps to one line with an ellipsis, at most half the table's box wide, and the table
+  // scrolls sideways in its own named region rather than squeezing the other columns.
+  const long = table.getByRole('rowheader', { name: 'reporting-warehouse-replica-eu-central-1' });
+  expect(await long.locator('.ld-table-trunc').evaluate((el) => el.scrollWidth > el.clientWidth)).toBe(true);
+  const box = (await page.getByRole('region', { name: 'Narrow scroll fixture' }).boundingBox())!;
+  expect((await long.locator('.ld-table-trunc').boundingBox())!.width).toBeLessThanOrEqual(box.width / 2 + 1);
+});
+
 test('sticky first column: focus stays clear of it, with widths from Table.Columns or measured for auto columns', async ({ page, isMobile }) => {
   test.skip(isMobile, 'Viewport set explicitly.');
   await page.setViewportSize({ width: 420, height: 800 });

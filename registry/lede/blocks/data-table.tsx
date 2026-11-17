@@ -35,7 +35,12 @@ export type DataTableProps<Row> = TableLabel &
     /** Shown when there are no rows. Default: "No {noun.other}". */
     emptyState?: React.ReactNode;
     total?: Total;
-    /** Below `narrowBelow`: `'cards'` renders a list of cards, and `'scroll'` keeps the table with a sticky first column. Default `'scroll'`. */
+    /**
+     * Below `narrowBelow`: `'cards'` renders a list of cards, and `'scroll'` keeps the table with a sticky first column.
+     * With `'scroll'`, when any column has no `width`, columns fit their content (a `width` becomes a minimum) and wrap
+     * only between words, the table scrolls sideways once they don't fit, and a `truncate` column keeps to half the
+     * table's width. Default `'scroll'`.
+     */
     narrow?: 'cards' | 'scroll';
     /** Container width in px below which `narrow` applies. Default 560: about where five columns stop fitting. */
     narrowBelow?: number;
@@ -94,6 +99,9 @@ export function DataTable<Row>(props: DataTableProps<Row>) {
   }, [narrowBelow]);
   const layout = narrow && props.narrow === 'cards' ? 'cards' : 'table';
   const sticky = !!props.stickyFirstColumn || (narrow && props.narrow !== 'cards');
+  // Narrow, with a column that has no width: columns fit their content instead of sharing the box (see the CSS).
+  // The sticky columns' width is then measured by Table.Root, since their <col> widths are only minimums.
+  const fitContent = layout === 'table' && narrow && columns.some((c) => c.width == null);
   React.useLayoutEffect(() => {
     const id = pendingFocus.current;
     pendingFocus.current = null;
@@ -186,7 +194,7 @@ export function DataTable<Row>(props: DataTableProps<Row>) {
   };
 
   return (
-    <div ref={root} className={cn('ld-dt', props.className)} data-layout={layout} onFocus={onFocus}>
+    <div ref={root} className={cn('ld-dt', props.className)} data-layout={layout} data-fit={fitContent ? 'content' : undefined} onFocus={onFocus}>
       <div className="ld-dt-top">
         <p ref={summaryRef} tabIndex={-1} className="ld-dt-summary">{summary}</p>
         {/* The status region is always here, empty and unpainted until a refresh fails, so its text is announced. */}
@@ -251,7 +259,7 @@ export function DataTable<Row>(props: DataTableProps<Row>) {
       ) : (
         <Table.Root {...label} busy={busy} stickyFirstColumn={sticky}>
           <Table.Columns
-            sticky={sticky ? (selectable ? 2 : 1) : 0}
+            sticky={sticky && !fitContent ? (selectable ? 2 : 1) : 0}
             widths={[...(selectable ? ['var(--ld-table-control-w)'] : []), ...columns.map((c) => c.width), ...(rowActions ? ['var(--ld-table-control-w)'] : [])]}
           />
           <Table.Head>

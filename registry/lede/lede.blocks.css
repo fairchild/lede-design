@@ -385,6 +385,13 @@ button.ld-back { background: none; border: 0; font-family: inherit; font-weight:
 .ld-dt-empty { background: var(--card); border-radius: var(--radius-lg); }
 .ld-dt-pager { display: flex; justify-content: center; align-items: center; gap: var(--space-3); flex-wrap: wrap; }
 .ld-dt-page { font-size: var(--text-subheadline-size); line-height: var(--text-subheadline-line-height); color: var(--muted-foreground); font-variant-numeric: tabular-nums; }
+/* Narrow, keeping the table (`narrow="scroll"`), with a column that has no width: a phone-width box can't share out
+   fixed columns without splitting words or cutting short values off. So columns fit their content (a width is a
+   minimum), a cell wraps only between words, and the table scrolls sideways once that doesn't fit. A `truncate`
+   column still keeps to one line, up to half the box. */
+.ld-dt[data-fit="content"] .ld-table { table-layout: auto; min-width: 0; }
+.ld-dt[data-fit="content"] :is(.ld-table-th, .ld-table-td, .ld-table-rowheader) { overflow-wrap: break-word; }
+.ld-dt[data-fit="content"] .ld-table-trunc { max-inline-size: var(--layout-table-truncate-max-width); }
 .ld-dt-cards .ld-table-caption { display: block; padding: 0 var(--space-4) var(--space-2); }
 .ld-dt-cards .ld-row-more { width: var(--ld-table-hit); height: var(--ld-table-hit); margin-right: calc(-1 * var(--space-2)); }
 .ld-dt-card-selected .ld-row { background: color-mix(in srgb, var(--primary) 10%, var(--card)); }
