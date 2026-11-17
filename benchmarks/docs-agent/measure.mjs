@@ -15,7 +15,9 @@ export function readTranscript(text, { docsUrl, forbidden }) {
   const commands = [];
   const inputs = [];
   let toolResultChars = 0;
-  let result = null;
+  // Claude Code ends a turn with a result event, and a background command finishing afterwards starts another turn
+  // with its own. Each result's cost is the running total; its turns, time and tokens are that turn's alone.
+  const results = [];
   const leaks = [];
   for (const line of text.split('\n')) {
     if (!line.trim()) continue;
@@ -46,7 +48,7 @@ export function readTranscript(text, { docsUrl, forbidden }) {
           : (content ?? []).reduce((sum, part) => sum + (part.text?.length ?? 0), 0);
       }
     } else if (event.type === 'result') {
-      result = event;
+      results.push(event);
     }
   }
 
@@ -56,6 +58,8 @@ export function readTranscript(text, { docsUrl, forbidden }) {
   // A run that touched Lede's own checkout, or was handed memory, skills or MCP servers, knew more than the docs said.
   for (const path of forbidden) if (inputs.some((input) => input.includes(path))) leaks.push(`read ${path}`);
   const contaminated = leaks.length > 0;
+  const result = results.at(-1);
+  const sum = (pick) => results.reduce((total, r) => total + (pick(r) ?? 0), 0);
 
   return {
     toolCalls,
@@ -66,15 +70,16 @@ export function readTranscript(text, { docsUrl, forbidden }) {
     leaks,
     finished: result ? !result.is_error : false,
     stop: result?.subtype ?? 'no result',
-    turns: result?.num_turns ?? null,
+    results: results.length,
+    turns: result ? sum((r) => r.num_turns) : null,
     costUsd: result?.total_cost_usd ?? null,
-    durationMs: result?.duration_ms ?? null,
-    usage: result?.usage
+    durationMs: result ? sum((r) => r.duration_ms) : null,
+    usage: result
       ? {
-          input: result.usage.input_tokens ?? 0,
-          cacheRead: result.usage.cache_read_input_tokens ?? 0,
-          cacheWrite: result.usage.cache_creation_input_tokens ?? 0,
-          output: result.usage.output_tokens ?? 0,
+          input: sum((r) => r.usage?.input_tokens),
+          cacheRead: sum((r) => r.usage?.cache_read_input_tokens),
+          cacheWrite: sum((r) => r.usage?.cache_creation_input_tokens),
+          output: sum((r) => r.usage?.output_tokens),
         }
       : null,
     reply: typeof result?.result === 'string' ? result.result.slice(0, 500) : null,
