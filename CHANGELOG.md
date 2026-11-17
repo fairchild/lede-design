@@ -4,6 +4,16 @@
 
 ### Added
 
+- The design system on claude.ai runs Lede's real components. `components/bundle.js` assigns every registry export to
+  `window.Lede`, and the system carries React 19 in `components/lib/`, so a canvas or an HTML artifact mounts Lede's
+  components instead of copying their markup, and each card's preview is the component, working. Its README says how.
+- The design system has a card for every registry item with a docs sample, the hero flows first. New samples for
+  AppShell, WorkbenchShell, useServerRows and SpecView give those items theirs, and MasterDetail's shows SelectionBar.
+  The Blocks page shows the code for AppShell, WorkbenchShell and useServerRows, and the Integrations page SpecView's.
+  The README covers the theme and the shared utilities, which draw nothing.
+- `docs/claude-design-system.md`: why each claude.ai account publishes its own Lede design system, and how.
+  `npm run design-system -- --url <link>` builds it for that artifact, and `npm run design-system:check` loads every
+  preview as the design system page does and fails on an error, a request outside the system or taken focus.
 - `benchmarks/docs-agent/`: a harness that gives a fresh Claude Code agent a new Vite app and one task, an inbox
   screen, with this checkout's built docs as its only source, served from `llms.txt`. It records tool calls, the docs
   files and bytes the agent read, its 404s, cost and time, then builds the app and runs axe on it itself, and appends
@@ -37,6 +47,11 @@
   of its own. Install step 4 says `LinkProvider` comes with `@lede/lede-utils`, so there's no `@lede/link` to add.
   The docs benchmark found both: agents asked the registry for `@lede/link`, and three of six screens built on a flow
   had no gutter.
+
+### Changed
+
+- The Integrations page, `llms.txt` and the `lede-design-system` skill name the maintainers' design system on
+  claude.ai as theirs, which opens only for people it's shared with, and point everyone else to publishing their own.
 
 ### Fixed
 

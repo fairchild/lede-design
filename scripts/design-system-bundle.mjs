@@ -112,6 +112,8 @@ export function compileSample(source, path, exported) {
   });
   let component;
   const body = outputText
+    // A namespace import of React reads the global; one named React is the global already.
+    .replace(/^import \* as (\w+) from 'react';$/gm, (_, as) => (as === 'React' ? '' : `const ${as} = React;`))
     .replace(/^import\s*\{([^}]*)\}\s*from\s*'([^']+)';$/gm, (_, names, from) => {
       const global = from === 'react' ? 'React' : /^@\/components\/lede\//.test(from) ? 'Lede' : null;
       if (!global) throw new Error(`${path}: a preview can't import '${from}'`);

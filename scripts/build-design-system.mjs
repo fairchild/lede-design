@@ -5,6 +5,8 @@
 // Run with `npm run design-system`, which builds the tokens first. To keep the keys the live page added to its index
 // (asset groups, its own sections, a renamed title), save the live project/design-system.json and pass its path:
 // `npm run design-system -- --index path/to/design-system.json`.
+// Publishing to a design system of your own: `npm run design-system -- --url <its claude.ai link>`. Then
+// `npm run design-system:check` loads every preview as the page does before you publish.
 import { execSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -38,9 +40,19 @@ const branch = git('rev-parse --abbrev-ref HEAD', 'unknown');
 const now = new Date().toISOString();
 const VERSION = pkg.version;
 const REGISTRY_URL = `https://lede.cloudcompute.com/r/v${VERSION}/{name}.json`;
-// The design system's own artifact and the canvas of Lede's foundations, named once for the README.
-const DESIGN_SYSTEM_URL = 'https://claude.ai/artifact/Cw9GgaD1zxRk9ewxGMHv4x';
-const CANVAS_URL = 'https://claude.ai/artifact/7eECQYRQWxSkaJhwRtT4rJ';
+// The artifact this build is published to, which the README names for copying its files, and a canvas of the
+// foundations to link from it. Lede's maintainers publish to their own by default; anyone else passes their own with
+// `--url`, and `--canvas` only if they have one. docs/claude-design-system.md says how.
+const arg = (name) => {
+  const at = process.argv.indexOf(name);
+  if (at === -1) return undefined;
+  const value = process.argv[at + 1];
+  if (!/^https:\/\/claude\.ai\/(code\/)?artifact\/[\w-]+$/.test(value ?? '')) throw new Error(`${name}: give a claude.ai artifact link, such as https://claude.ai/artifact/…`);
+  return value;
+};
+const OURS = 'https://claude.ai/artifact/Cw9GgaD1zxRk9ewxGMHv4x';
+const DESIGN_SYSTEM_URL = arg('--url') ?? OURS;
+const CANVAS_URL = arg('--canvas') ?? (DESIGN_SYSTEM_URL === OURS ? 'https://claude.ai/artifact/7eECQYRQWxSkaJhwRtT4rJ' : undefined);
 
 // The live index passed with --index, else an earlier build's, keeps its keys, so a re-publish doesn't drop them.
 const indexArg = process.argv.indexOf('--index');
@@ -176,7 +188,6 @@ const ARGS = {
   },
   onboarding: { onDone: () => {} },
   'app-shell': { current: 'today' },
-  'selection-bar': { picked: ['m1', 'm2'], onArchive: () => {}, onDelete: () => {}, onClear: () => {} },
 };
 // Code a preview runs before its sample, in the sample's scope: a sample that fetches gets a stand-in, as a preview
 // loads nothing.
@@ -190,7 +201,7 @@ const PRELUDE = {
 // A flow is a whole screen, so its card is a tall one.
 const HEIGHT = {
   'daily-brief': 720, inbox: 560, onboarding: 640, profile: 640, settings: 440, 'app-shell': 360, 'workbench-shell': 420,
-  'selection-bar': 120, 'json-render': 280, 'use-server-rows': 280,
+  'json-render': 280, 'use-server-rows': 280,
   'data-table': 360, 'master-detail': 320, list: 260, table: 220, 'accent-picker': 260, 'form-section': 300, 'text-field': 220, checkbox: 180, 'glass-bar': 160, 'theme-provider': 160 };
 // The layout width of a card whose wide layout is the point: the shells' sidebars and the Inbox's two panes. The page
 // scales it down to fit.
@@ -464,7 +475,7 @@ const fill = (text) =>
     .replaceAll('{{SHA}}', sha)
     .replaceAll('{{REGISTRY_URL}}', REGISTRY_URL)
     .replaceAll('{{DESIGN_SYSTEM_URL}}', DESIGN_SYSTEM_URL)
-    .replaceAll('{{CANVAS_URL}}', CANVAS_URL)
+    .replaceAll('{{CANVAS}}', CANVAS_URL ? ` A visual tour of the foundations and components: [the Lede canvas](${CANVAS_URL}).` : '')
     .replaceAll('{{REACT_VERSION}}', reactVersion)
     .replaceAll('{{MOTION}}', source.motion.tokens.map((t) => `| \`--${t.name}\` | \`${t.value}\` | ${t.usage} |`).join('\n'))
     .replaceAll(

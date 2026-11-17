@@ -6,8 +6,7 @@ opening line.
 
 This system is generated from [fairchild/lede-design](https://github.com/fairchild/lede-design) at Lede {{VERSION}}
 (`{{SHA}}`). Its tokens, its stylesheet and every component's markup come from the code, so a page built from it
-matches an app built with the registry. Docs: [lede.cloudcompute.com](https://lede.cloudcompute.com/). A visual tour
-of the foundations and components: [the Lede canvas]({{CANVAS_URL}}).
+matches an app built with the registry. Docs: [lede.cloudcompute.com](https://lede.cloudcompute.com/).{{CANVAS}}
 
 ## Build with it
 

@@ -11,17 +11,20 @@ import { REPO } from './DocsLayout';
 import { EXAMPLE_APPS } from './integration-apps';
 import spec from './examples/json-render-spec.json';
 import SPEC_CODE from './examples/json-render-spec.json?raw';
+import SPEC_VIEW_CODE from './samples/json-render.tsx?raw';
 
 const ITEM = registry.items.find((item) => item.name === 'json-render')!;
 const INSTALL_CODE = `npx shadcn@latest registry add '@lede=https://lede.cloudcompute.com/r/v${version}/{name}.json'
 npx shadcn@latest add @lede/theme-provider @lede/json-render`;
 const folder = (name: string) => `${REPO}/tree/main/integrations/${name}`;
-/** Lede's design system on claude.ai, generated from this repo by `npm run design-system`. */
+/** The maintainers' own design system on claude.ai, generated from this repo by `npm run design-system`. */
 const DESIGN_SYSTEM_URL = 'https://claude.ai/artifact/Cw9GgaD1zxRk9ewxGMHv4x';
 /** A canvas of Lede's foundations and components, drawn with Lede's stylesheet. */
 const CANVAS_URL = 'https://claude.ai/artifact/7eECQYRQWxSkaJhwRtT4rJ#artboard-15dd8cd198dd';
+/** Why each account publishes its own design system, and how. */
+const GUIDE_URL = `${REPO}/blob/main/docs/claude-design-system.md`;
 const ARTIFACT_CODE = `"files": {
-  "lede.css": { "artifact": "${DESIGN_SYSTEM_URL}", "path": "project/components/bundle.css" }
+  "lede.css": { "artifact": "<your design system's link>", "path": "project/components/bundle.css" }
 }
 
 <link rel="stylesheet" href="lede.css">
@@ -39,13 +42,13 @@ export function Integrations() {
       <PageHeader title="Integrations" back={{ href: '/', label: 'Overview' }} summary="Each integration runs Lede beside another project. Claude builds with Lede from its design system, and json-render draws Lede screens from JSON specs, such as a model’s reply." />
       <section aria-labelledby="claude" className="docs-section">
         <h2 id="claude" className="text-title-3">Claude</h2>
-        <p className="docs-intro">Lede’s <a href={DESIGN_SYSTEM_URL}>design system on claude.ai</a> holds its tokens, its whole stylesheet and every component, generated from this repo. Claude reads its README first, then builds with Lede in a chat artifact, a design canvas, a deck or Claude Code. Each component’s card has its React sample and the HTML that sample renders.</p>
+        <p className="docs-intro">On claude.ai, in a chat artifact, a design canvas or a deck, Claude builds with Lede from a design system: an artifact that holds Lede’s tokens, its whole stylesheet and its components, working, generated from this repo. Claude reads its README first. A design system belongs to the account that publishes it, so each account or team publishes its own, in a few minutes.</p>
         <ul className="docs-rules list-disc">
-          <li><a href={DESIGN_SYSTEM_URL}>The Lede design system</a>: name it in a request, or choose it as a canvas’s or a deck’s design system.</li>
-          <li><a href={CANVAS_URL}>The Lede canvas</a>: the foundations and components drawn with Lede’s own CSS, in all four themes.</li>
+          <li><a href={GUIDE_URL}>Lede on claude.ai: a design system of your own</a>: why, how to publish it and how to keep it current.</li>
+          <li><a href={DESIGN_SYSTEM_URL}>The Lede design system</a> and <a href={CANVAS_URL}>the Lede canvas</a>: the maintainers’ own, which open only for people they’re shared with.</li>
           <li>A React app in Claude Code installs from the registry, as <RouterLink href="/#install">Overview → Install</RouterLink> shows. The repo’s <code>lede-design-system</code> skill gives Claude the layers and the rules.</li>
         </ul>
-        <p className="docs-intro">An HTML artifact copies the stylesheet from the design system and wraps the page in <code>ld-theme</code>:</p>
+        <p className="docs-intro">An HTML artifact copies the stylesheet from your design system and wraps the page in <code>ld-theme</code>:</p>
         <CodeExample label="Lede in an HTML artifact" language="html" code={ARTIFACT_CODE} />
       </section>
       <section aria-labelledby="json-render" className="docs-section">
@@ -53,6 +56,7 @@ export function Integrations() {
         <p className="docs-intro">SpecView draws a <a href="https://github.com/vercel-labs/json-render">json-render</a> spec with Lede, so a model’s reply can be a screen. <code>catalog</code> lists the components a model may use and goes into its prompt, <code>registry</code> draws each one and <code>check</code> finds the props a spec gets wrong.</p>
         <ReferenceLinks items={['json-render']}>
           <CodeExample label="Install commands for SpecView" language="shell" code={INSTALL_CODE} defaultOpen />
+          <CodeExample label="Code for SpecView" language="tsx" code={SPEC_VIEW_CODE.trim()} />
         </ReferenceLinks>
         <p className="docs-intro docs-note">The item brings the Lede components it draws and these npm packages, json-render’s at an exact version: {codeList(ITEM.dependencies ?? [])}. Then import Lede’s CSS once, as <RouterLink href="/#install">Overview → Install</RouterLink> shows.</p>
       </section>
