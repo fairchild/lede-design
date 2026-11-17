@@ -20,7 +20,7 @@ node benchmarks/docs-agent/run.mjs --label "after"
 | Option | Default | What it does |
 | --- | --- | --- |
 | `--model` | `claude-fable-5-2` | The model the agent runs on |
-| `--effort` | Claude Code's default | `low` to `max` |
+| `--effort` | Claude Code's default, `medium` in 2.1.326 | `low` to `max`. A Stop hook records the effort Claude Code applied, which the row shows |
 | `--runs` | `1` | Runs in the batch. Use 3 or more for a number you'll quote: one run shows that the harness works, not a result |
 | `--budget` | `8` | US dollars each run may spend before Claude Code stops it |
 | `--minutes` | `30` | Time each run may take before the harness stops it |
