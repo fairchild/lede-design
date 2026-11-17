@@ -5,6 +5,7 @@ import { RouterProvider } from 'react-router/dom';
 import { LinkProvider } from '@lede/link';
 import { RouterLink } from '@/router-link';
 import { AppearanceRoot } from '@/theme';
+import { LookSwitcher } from '@/look-switcher';
 import { ProfileRoot } from '@/profile';
 import { DocsLayout } from '@/pages/docs/DocsLayout';
 import { Overview } from '@/pages/docs/Overview';
@@ -99,6 +100,7 @@ function Root() {
           <ScrollRestoration getKey={(l) => (l.key === 'default' ? l.pathname : l.key)} />
         </LinkProvider>
       </ProfileRoot>
+      <LookSwitcher />
     </AppearanceRoot>
   );
 }

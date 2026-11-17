@@ -1,0 +1,178 @@
+/* SPIKE — looks. One attribute on <html>, `data-look`, re-skins every Lede component without touching its markup,
+   its Base UI behaviour or its React code. Each look has two parts:
+
+   1. TOKENS — values only. These ride the existing variables (color, shadow, radius, font, motion, blur). Selectors
+      are `[data-look=x] .ld-theme[data-theme…]` so they beat both the theme blocks and ThemeProvider's shape/density
+      blocks. Accent: ThemeProvider sets `--primary: var(--preset-<accent>)` inline, so a look sets `--preset-blue`
+      (the site's default accent), not `--primary`.
+   2. BEYOND TOKENS — rules the variables can't reach today: hard-coded 0.5px/1px strokes, gradients, the pressed
+      `scale()`, text-transform, background textures. Every one of these is a candidate for a new token (see
+      docs/spikes/looks.md). Kept short on purpose, so the size of each part *is* the finding. */
+
+/* ═══════════════════════════════════════ SKEUOMORPHIC ("Workshop") ═══════════════════════════════════════
+   Light from above: gradients, bevels, inset wells, embossed text, linen behind it all. */
+
+/* 1. Tokens */
+[data-look="skeuo"], [data-look="skeuo"] .ld-theme[data-theme] {
+  --preset-blue: #2563c9; --primary-foreground: #ffffff;
+  --background: #f4f1ea; --background-grouped: #dcd7cc; --card: #fbf9f4; --muted: #ebe6db;
+  --foreground: #2a2620; --muted-foreground: #5f574b;
+  --fill-control: rgba(90, 75, 50, 0.12); --fill-control-strong: rgba(90, 75, 50, 0.28);
+  --fill-selected: #fffdf8; --fill-knob: #fdfcf9;
+  --border: rgba(60, 45, 20, 0.22); --input: #8a8072;
+  --glass-tint: rgba(236, 232, 223, 0.94); --glass-stroke: rgba(40, 30, 10, 0.35); --glass-highlight: #ffffff;
+  --shadow-raised: 0 1px 0 rgba(255, 255, 255, 0.9) inset, 0 1px 2px rgba(40, 30, 10, 0.35), 0 2px 6px rgba(40, 30, 10, 0.15);
+  --shadow-float: 0 1px 0 rgba(255, 255, 255, 0.8) inset, 0 12px 28px rgba(40, 30, 10, 0.32), 0 2px 4px rgba(40, 30, 10, 0.3);
+  --shadow-knob: 0 0 0 1px #7d7366, 0 2px 4px rgba(40, 30, 10, 0.4), inset 0 1px 0 #ffffff;
+  --radius: 10px; --radius-capsule: 10px; --radius-step: 3px;
+  --font-sans: "Lucida Grande", "Helvetica Neue", "DejaVu Sans", Helvetica, Arial, sans-serif;
+  --blur-regular: 6px;
+}
+[data-look="skeuo"] .ld-theme[data-theme^="dark"] {
+  --preset-blue: #5b9bff; --primary-foreground: #06111f;
+  --background: #2b2722; --background-grouped: #1d1a17; --card: #34302a; --muted: #3d3832;
+  --foreground: #f1ebe0; --muted-foreground: #b8ad9c;
+  --fill-control: rgba(255, 240, 210, 0.08); --fill-control-strong: rgba(255, 240, 210, 0.18);
+  --fill-selected: #4a443c; --fill-knob: #e8e2d6;
+  --border: rgba(0, 0, 0, 0.55); --input: #8c8172;
+  --glass-tint: rgba(48, 44, 38, 0.95); --glass-stroke: rgba(0, 0, 0, 0.7); --glass-highlight: rgba(255, 255, 255, 0.12);
+  --shadow-raised: 0 1px 0 rgba(255, 255, 255, 0.08) inset, 0 1px 3px rgba(0, 0, 0, 0.7);
+  --shadow-float: 0 1px 0 rgba(255, 255, 255, 0.08) inset, 0 14px 30px rgba(0, 0, 0, 0.6);
+}
+
+/* 2. Beyond tokens */
+/* Linen: a texture is an image, and no token holds one. */
+[data-look="skeuo"] .ld-theme[data-surface="grouped"], [data-look="skeuo"] body {
+  background-image: repeating-linear-gradient(45deg, rgba(0, 0, 0, 0.025) 0 2px, transparent 2px 4px),
+                    repeating-linear-gradient(-45deg, rgba(255, 255, 255, 0.05) 0 2px, transparent 2px 4px);
+}
+/* Raised controls: a gradient fill and a bevel. Fills are flat colors in the token set. */
+[data-look="skeuo"] .ld-btn:is(.ld-btn-filled, .ld-btn-gray, .ld-btn-tinted):not(:disabled) {
+  background-image: linear-gradient(to bottom, rgba(255, 255, 255, 0.35), rgba(255, 255, 255, 0) 50%, rgba(0, 0, 0, 0.08));
+  box-shadow: var(--shadow-raised), inset 0 0 0 1px rgba(0, 0, 0, 0.25);
+  text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.25);
+}
+[data-look="skeuo"] .ld-btn:is(.ld-btn-gray, .ld-btn-tinted) { text-shadow: 0 1px 0 rgba(255, 255, 255, 0.7); }
+[data-look="skeuo"] .ld-btn:active:not(:disabled) { transform: none; box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.35); background-image: none; }
+/* Cards and lists sit on the linen like paper: an edge and a drop. The token set has no "surface shadow". */
+[data-look="skeuo"] :is(.ld-card, .ld-list-body, .ld-disc:not(.ld-disc-plain), .ld-summary-card) {
+  box-shadow: var(--shadow-raised), 0 0 0 1px var(--border);
+}
+/* Wells: inputs, segmented controls and switch tracks are pressed in. */
+[data-look="skeuo"] :is(.ld-field-input, .ld-seg, .ld-switch-track:not([data-checked])) {
+  box-shadow: inset 0 2px 3px rgba(0, 0, 0, 0.18), inset 0 0 0 1px var(--input), 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+[data-look="skeuo"] .ld-switch-track[data-checked] { box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.35); background-image: linear-gradient(rgba(0,0,0,.1), rgba(255,255,255,.15)); }
+[data-look="skeuo"] :is(.ld-seg-thumb, .ld-switch-knob) { background-image: linear-gradient(#ffffff, #e2ddd2); }
+[data-look="skeuo"] .ld-theme[data-theme^="dark"] .ld-seg-thumb { background-image: linear-gradient(#5a534a, #3f3a33); }
+[data-look="skeuo"] .ld-theme[data-theme^="dark"] :is(.ld-seg, .ld-field-input, .ld-switch-track:not([data-checked])) { box-shadow: inset 0 2px 3px rgba(0, 0, 0, 0.5), inset 0 0 0 1px rgba(0, 0, 0, 0.6), 0 1px 0 rgba(255, 255, 255, 0.06); }
+/* Brushed-metal bars. */
+[data-look="skeuo"] :is(.ld-glass, .ld-shell-tabbar) {
+  background-image: linear-gradient(to bottom, rgba(255, 255, 255, 0.55), rgba(0, 0, 0, 0.06));
+}
+/* Letterpress headings. */
+[data-look="skeuo"] :is(.ld-page-title, .ld-list-title, h1, h2) { text-shadow: 0 1px 0 rgba(255, 255, 255, 0.75); }
+[data-look="skeuo"] .ld-theme[data-theme^="dark"] :is(.ld-page-title, .ld-list-title, h1, h2) { text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.8); }
+
+/* ═══════════════════════════════════════ NEO-BRUTALIST ("Poster") ═══════════════════════════════════════
+   Thick black outlines, hard offset shadows, flat loud fills, no curves, no blur, snappy motion. */
+
+/* 1. Tokens */
+[data-look="brutal"], [data-look="brutal"] .ld-theme[data-theme] {
+  --preset-blue: #1f3dff; --primary-foreground: #ffffff;
+  --background: #fffdf5; --background-grouped: #fff1c9; --card: #ffffff; --muted: #fbe9b7;
+  --foreground: #000000; --muted-foreground: #3b3b3b;
+  --fill-control: #ffffff; --fill-control-strong: #ffe066; --fill-selected: #ffe066; --fill-knob: #ffffff;
+  --border: #000000; --input: #000000; --ring: #ff3d7f;
+  --destructive: #d10f2f; --success: #0a7a2f; --warning: #8a5a00;
+  --glass-tint: #ffffff; --glass-stroke: #000000; --glass-highlight: transparent;
+  --shadow-raised: 3px 3px 0 #000000; --shadow-float: 6px 6px 0 #000000; --shadow-knob: 0 0 0 2px #000000;
+  --radius: 0px; --radius-capsule: 0px; --radius-step: 0px;
+  --blur-regular: 0px; --blur-thin: 0px; --blur-thick: 0px;
+  --font-sans: "Archivo Black", "Helvetica Neue", "Liberation Sans", Arial, sans-serif;
+  --weight-medium: 600; --weight-semibold: 800; --weight-bold: 900;
+  --duration-standard: 90ms; --easing-spring: steps(3, end); --scale-pressed: 1;
+}
+[data-look="brutal"] .ld-theme[data-theme^="dark"] {
+  --preset-blue: #ffe066; --primary-foreground: #000000;
+  --background: #111111; --background-grouped: #000000; --card: #1c1c1c; --muted: #262626;
+  --foreground: #ffffff; --muted-foreground: #d4d4d4;
+  --fill-control: #000000; --fill-control-strong: #3a3a3a; --fill-selected: #ff3d7f; --fill-knob: #ffffff;
+  --border: #ffffff; --input: #ffffff; --ring: #4dd0ff;
+  --destructive: #ff5c6c; --destructive-foreground: #000000; --success: #4dff8a; --warning: #ffc04d;
+  --glass-tint: #000000; --glass-stroke: #ffffff;
+  --shadow-raised: 3px 3px 0 #ffffff; --shadow-float: 6px 6px 0 #ffffff; --shadow-knob: 0 0 0 2px #ffffff;
+}
+
+/* 2. Beyond tokens */
+/* Strokes are hard-coded 0.5px/1px in components.css. A `--stroke-surface` token would make this one line. */
+[data-look="brutal"] :is(.ld-card, .ld-list-body, .ld-disc:not(.ld-disc-plain), .ld-summary-card, .ld-menu, .ld-dialog, .ld-code-pre, .ld-table-scroll) {
+  box-shadow: 0 0 0 2px var(--border), var(--shadow-raised);
+}
+[data-look="brutal"] .ld-row-wrap + .ld-row-wrap::before { border-top: 2px solid var(--border); left: 0; }
+[data-look="brutal"] :is(.ld-field-input, .ld-seg, .ld-switch-track) { box-shadow: 0 0 0 2px var(--input); }
+[data-look="brutal"] .ld-field-input:focus { box-shadow: 0 0 0 2px var(--input), 4px 4px 0 var(--ring); }
+[data-look="brutal"] .ld-btn:not(.ld-btn-plain, .ld-btn-glass) { box-shadow: 0 0 0 2px var(--border), var(--shadow-raised); text-transform: uppercase; letter-spacing: 0.04em; }
+/* Pressed: the shadow collapses and the button drops into its place, instead of the token's scale(). */
+[data-look="brutal"] .ld-btn:active:not(:disabled, .ld-btn-plain) { transform: translate(3px, 3px); box-shadow: 0 0 0 2px var(--border); }
+[data-look="brutal"] .ld-btn-tinted { background: #ffe066; color: #000000; }
+[data-look="brutal"] .ld-theme[data-theme^="dark"] .ld-btn-tinted { background: #ff3d7f; }
+[data-look="brutal"] .ld-seg-thumb { box-shadow: 0 0 0 2px var(--border); }
+[data-look="brutal"] .ld-glass { box-shadow: 0 0 0 2px var(--glass-stroke), var(--shadow-float); }
+[data-look="brutal"] :is(.ld-page-title, h1) { text-transform: uppercase; letter-spacing: -0.02em; }
+[data-look="brutal"] .ld-list-title { text-transform: uppercase; font-weight: 800; color: var(--foreground); letter-spacing: 0.06em; }
+[data-look="brutal"] .ld-avatar { box-shadow: 0 0 0 2px var(--border); background: #ff3d7f; color: #000; }
+
+/* ═══════════════════════════════════════ BROADSHEET (my pick: editorial, for a system named "Lede") ═══════════
+   Newsprint: serif type, paper and ink, hairline rules instead of boxes, small caps for section heads, no shadows. */
+
+/* 1. Tokens */
+[data-look="broadsheet"], [data-look="broadsheet"] .ld-theme[data-theme] {
+  --preset-blue: #a3141c; --primary-foreground: #ffffff;
+  --background: #fbf8f1; --background-grouped: #f3eee2; --card: #fbf8f1; --muted: #ebe4d3;
+  --foreground: #1b1814; --muted-foreground: #5c554a;
+  --fill-control: rgba(27, 24, 20, 0.06); --fill-control-strong: rgba(27, 24, 20, 0.16);
+  --fill-selected: #fbf8f1; --fill-knob: #fbf8f1;
+  --border: rgba(27, 24, 20, 0.28); --input: #1b1814;
+  --glass-tint: #f3eee2; --glass-stroke: #1b1814; --glass-highlight: transparent;
+  --shadow-raised: none; --shadow-float: 0 0 0 1px #1b1814; --shadow-knob: 0 0 0 1px #1b1814;
+  --radius: 2px; --radius-capsule: 2px; --radius-step: 0px;
+  --blur-regular: 0px;
+  --font-sans: "Iowan Old Style", "Charter", Georgia, "DejaVu Serif", "Times New Roman", serif;
+  --font-rounded: var(--font-sans);
+  --text-large-title-letter-spacing: -0.02em; --text-title-1-letter-spacing: -0.015em;
+  --weight-semibold: 700;
+}
+[data-look="broadsheet"] .ld-theme[data-theme^="dark"] {
+  --preset-blue: #ff7a6b; --primary-foreground: #14110e;
+  --background: #14110e; --background-grouped: #1b1814; --card: #1b1814; --muted: #27221c;
+  --foreground: #eee6d8; --muted-foreground: #b3a893;
+  --fill-control: rgba(238, 230, 216, 0.08); --fill-control-strong: rgba(238, 230, 216, 0.2);
+  --fill-selected: #1b1814; --fill-knob: #eee6d8;
+  --border: rgba(238, 230, 216, 0.3); --input: #eee6d8;
+  --glass-tint: #1b1814; --glass-stroke: #eee6d8;
+  --shadow-float: 0 0 0 1px #eee6d8; --shadow-knob: 0 0 0 1px #14110e;
+}
+
+/* 2. Beyond tokens */
+/* Lists become ruled columns: no box, a heavy rule above, a hairline below. A list "container style" isn't a token. */
+[data-look="broadsheet"] .ld-list-body {
+  background: transparent; border-radius: 0;
+  border-top: 2px solid var(--foreground); border-bottom: 1px solid var(--foreground);
+}
+[data-look="broadsheet"] .ld-row-wrap + .ld-row-wrap::before { left: 0; border-top-style: dotted; border-top-color: var(--muted-foreground); }
+[data-look="broadsheet"] :is(.ld-card, .ld-summary-card) { background: transparent; border-top: 3px double var(--foreground); border-radius: 0; }
+/* Section heads in small caps. Type tokens hold size/weight/leading, not case or variant. */
+[data-look="broadsheet"] :is(.ld-list-title, .ld-field-label, .ld-table-th, .ld-form-legend) {
+  font-variant: small-caps; text-transform: lowercase; letter-spacing: 0.08em; font-weight: 700; color: var(--foreground);
+}
+/* The masthead rule under a page title. */
+[data-look="broadsheet"] .ld-page-header { border-bottom: 1px solid var(--foreground); box-shadow: 0 3px 0 -2px var(--foreground); padding-bottom: var(--space-2); margin-bottom: var(--space-4); }
+[data-look="broadsheet"] .ld-page-title { font-style: italic; }
+/* Buttons: filled stays ink-on-red; the gray ones become outlined type. */
+[data-look="broadsheet"] .ld-btn:is(.ld-btn-gray, .ld-btn-tinted) { background: transparent; box-shadow: inset 0 0 0 1px var(--foreground); color: var(--foreground); }
+[data-look="broadsheet"] .ld-btn:active:not(:disabled) { transform: none; text-decoration: underline; }
+[data-look="broadsheet"] .ld-field-input { background: transparent; box-shadow: inset 0 -1px 0 var(--foreground); border-radius: 0; }
+[data-look="broadsheet"] .ld-field-input:focus { box-shadow: inset 0 -2px 0 var(--primary); }
+[data-look="broadsheet"] .ld-glass { box-shadow: 0 1px 0 var(--glass-stroke); }
+[data-look="broadsheet"] .ld-avatar { background: var(--foreground); color: var(--background); font-style: italic; }

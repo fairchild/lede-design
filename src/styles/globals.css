@@ -15,6 +15,7 @@
 @import "./lede.tokens.css";
 @import "../../registry/lede/lede.components.css";
 @import "../../registry/lede/lede.blocks.css";
+@import "./looks.css";
 
 html, body { margin: 0; background: var(--background-grouped); color: var(--foreground); font-family: var(--font-sans); -webkit-font-smoothing: antialiased; }
 .app-root { min-height: 100dvh; }
