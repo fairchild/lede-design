@@ -124,6 +124,19 @@ write('components/bundle.css', bundleCss);
 // Props for the samples that take some, so each renders with content.
 const ARGS = {
   avatar: { name: 'Sam Rivera' },
+  'status-list': {
+    items: [
+      { id: 'web-01', title: 'web-01', subtitle: 'Deploy failed on the health check', tone: 'critical', status: 'Failed' },
+      { id: 'db-primary', title: 'db-primary', subtitle: 'Disk 86% full', tone: 'caution', status: 'Low disk' },
+    ],
+  },
+  'search-field': {
+    hosts: [
+      { id: 'h1', name: 'web-01' },
+      { id: 'h2', name: 'web-02' },
+      { id: 'h3', name: 'db-primary' },
+    ],
+  },
   'page-header': { unread: 3, total: 12 },
   'glass-bar': { current: 'home', onShare: () => {} },
   'theme-provider': { children: createElement('p', null, 'The page’s own theme, from the reader’s settings.') },
