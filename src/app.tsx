@@ -15,6 +15,7 @@ import { Blocks } from '@/pages/docs/Blocks';
 import { Layouts } from '@/pages/docs/Layouts';
 import { Choose } from '@/pages/docs/Choose';
 import { Decisions } from '@/pages/docs/Decisions';
+import { Looks } from '@/pages/docs/Looks';
 import { DataTablePage } from '@/pages/docs/DataTablePage';
 import { DataTableItemPage } from '@/pages/docs/DataTableItemPage';
 import { SidebarExample } from '@/pages/layouts/SidebarExample';
@@ -130,6 +131,7 @@ const routes = () => createBrowserRouter(
             { path: 'layouts', element: <Layouts />, handle: { markdown: true, title: 'Layouts' } },
             { path: 'choose', element: <Choose />, handle: { markdown: true, title: 'Choose a part' } },
             { path: 'decisions', element: <Decisions />, handle: { markdown: true, title: 'Decisions' } },
+            { path: 'looks', element: <Looks />, handle: { title: 'Looks' } },
             // Lazy, so json-render loads with this page alone.
             { path: 'integrations', lazy: load(() => import('@/pages/docs/Integrations'), 'Integrations'), handle: { markdown: true, title: 'Integrations' } },
             ...(FIXTURES ? [

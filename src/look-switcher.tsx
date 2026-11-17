@@ -1,34 +1,56 @@
 import * as React from 'react';
+// The looks' faces, bundled with the site. A browser fetches a face only when a look's CSS uses it.
+import '@fontsource-variable/space-grotesk';
+import '@fontsource-variable/newsreader/opsz.css';
+import '@fontsource-variable/newsreader/opsz-italic.css';
+import '@fontsource-variable/libre-franklin';
+import '@fontsource/unifrakturmaguntia';
 
-/** SPIKE: picks a look (`data-look` on <html>). `?look=brutal` in the URL wins and is remembered; `?chrome=0` hides the picker. */
+/**
+ * SPIKE: the site's look, `data-look` on <html>. `?look=brutal` in the URL wins and is remembered, `?chrome=0` hides the
+ * floating picker, and the Looks page has its own picker. One store, so every picker shows the same look.
+ */
 export const LOOKS = [
-  { id: 'lede', name: 'Lede (default)' },
+  { id: 'lede', name: 'Lede' },
   { id: 'skeuo', name: 'Skeuomorphic' },
   { id: 'brutal', name: 'Neo-brutalist' },
   { id: 'broadsheet', name: 'Broadsheet' },
 ] as const;
+export type LookId = (typeof LOOKS)[number]['id'];
 const KEY = 'lede:look';
-const valid = (v: string | null) => LOOKS.some((l) => l.id === v);
+const valid = (v: string | null): v is LookId => LOOKS.some((l) => l.id === v);
 
-function initial(): string {
+function initial(): LookId {
   if (typeof window === 'undefined') return 'lede';
   const fromUrl = new URLSearchParams(location.search).get('look');
-  if (valid(fromUrl)) return fromUrl!;
-  try { const s = localStorage.getItem(KEY); if (valid(s)) return s!; } catch { /* no storage */ }
+  if (valid(fromUrl)) return fromUrl;
+  try { const s = localStorage.getItem(KEY); if (valid(s)) return s; } catch { /* no storage */ }
   return 'lede';
 }
 
+let current: LookId = initial();
+const listeners = new Set<() => void>();
+function apply() {
+  if (typeof document === 'undefined') return;
+  if (current === 'lede') delete document.documentElement.dataset.look;
+  else document.documentElement.dataset.look = current;
+}
+apply();
+
+export function setLook(look: LookId) {
+  current = look;
+  apply();
+  try { localStorage.setItem(KEY, look); } catch { /* no storage */ }
+  listeners.forEach((l) => l());
+}
+const subscribe = (l: () => void) => { listeners.add(l); return () => { listeners.delete(l); }; };
+export const useLook = () => React.useSyncExternalStore(subscribe, () => current, () => 'lede' as LookId);
+
+/** The floating picker: in `npm run dev`, or in a build once a look is chosen, so the test suite's pages stay as they were. */
 export function LookSwitcher() {
-  const [look, setLook] = React.useState(initial);
-  // Shown in `npm run dev`, or in a build once a look is chosen with `?look=`, so the test suite's pages stay as they were.
-  const hidden = typeof window === 'undefined' || new URLSearchParams(location.search).get('chrome') === '0'
-    || (!import.meta.env.DEV && look === 'lede' && !new URLSearchParams(location.search).has('look'));
-  React.useEffect(() => {
-    if (look === 'lede') delete document.documentElement.dataset.look;
-    else document.documentElement.dataset.look = look;
-    try { localStorage.setItem(KEY, look); } catch { /* no storage */ }
-  }, [look]);
-  if (hidden) return null;
+  const look = useLook();
+  const params = typeof window === 'undefined' ? null : new URLSearchParams(location.search);
+  if (!params || params.get('chrome') === '0' || (!import.meta.env.DEV && look === 'lede' && !params.has('look'))) return null;
   return (
     <label
       style={{
@@ -37,7 +59,7 @@ export function LookSwitcher() {
       }}
     >
       Look
-      <select value={look} onChange={(e) => setLook(e.target.value)} style={{ font: 'inherit' }}>
+      <select value={look} onChange={(e) => setLook(e.target.value as LookId)} style={{ font: 'inherit' }}>
         {LOOKS.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}
       </select>
     </label>

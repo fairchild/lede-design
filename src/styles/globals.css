@@ -57,6 +57,10 @@ html, body { margin: 0; background: var(--background-grouped); color: var(--fore
 .docs-path { text-decoration: underline; text-underline-offset: 0.15em; }
 .docs-intro { margin: 0 0 var(--space-4); color: var(--muted-foreground); font-size: var(--text-subheadline-size); line-height: var(--text-subheadline-line-height); max-width: 68ch; }
 .docs-note { margin: var(--space-3) 0 0; }
+/* SPIKE: the Looks page's live sample. */
+.docs-looks-about { max-width: 68ch; font-size: var(--text-body-size); line-height: var(--text-body-line-height); }
+.docs-looks-about p { margin: 0 0 var(--space-3); }
+.docs-looks-sampler { display: grid; gap: var(--space-4); margin-top: var(--space-4); max-width: var(--layout-flow-max-width); }
 /* Install steps: the README's numbered steps, each its prose and then its code. */
 .docs-steps { margin: 0; padding-left: 1.4em; list-style: decimal; display: grid; gap: var(--space-6); font-size: var(--text-subheadline-size); line-height: var(--text-callout-line-height); }
 .docs-steps > li { min-width: 0; }
