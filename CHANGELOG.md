@@ -14,11 +14,15 @@
 - `docs/claude-design-system.md`: why each claude.ai account publishes its own Lede design system, and how.
   `npm run design-system -- --url <link>` builds it for that artifact, and `npm run design-system:check` loads every
   preview as the design system page does and fails on an error, a request outside the system or taken focus.
-- `benchmarks/docs-agent/`: a harness that gives a fresh Claude Code agent a new Vite app and one task, an inbox
-  screen, with this checkout's built docs as its only source, served from `llms.txt`. It records tool calls, the docs
-  files and bytes the agent read, its 404s, cost and time, then builds the app and runs axe on it itself, and appends
-  the medians to `results.md`. A run that reads Lede's checkout is marked contaminated and left out. It defaults to
-  Fable and isn't part of CI, since every run costs money. The fairness rules are in its README.
+- `benchmarks/docs-agent/`: a harness that gives a fresh Claude Code agent a new Vite app and a task, with built docs
+  as its only source, served from `llms.txt`. There are four tasks (an inbox, preferences, a server table and a status
+  page, which is held out), each with fixed data and its own checks. A run's score is the share of scripted checks
+  that pass: the task's behaviour on desktop and phone, axe in light, dark, phone and after the task's steps, a gutter
+  and no sideways scroll, and source checks that it uses Lede without hard-coded colors or clickable `div`s. A blind
+  Sonnet grader scores the screenshots against a fixed rubric beside it, never as part of it. It records tool calls,
+  docs read, 404s, cost, time and the effort Claude Code applied, and appends each task's medians to `results.md`. A
+  run that reads Lede's checkout is marked contaminated and left out. It defaults to Haiku, three runs a task, and
+  isn't part of CI, since every run costs money. The README has the fairness and overfitting rules.
 - Each registry item says how settled it is, in `meta.stability`: `experimental` for SearchField, StatusText,
   StatusList, CodeBlock, AlertDialog, Page and SpecView, and `stable` for the rest. A reference page's front matter
   and an experimental item's page and `llms.txt` line say so. The rule is in `CONTRIBUTING.md`.

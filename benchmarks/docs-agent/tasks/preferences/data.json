@@ -1,0 +1,24 @@
+{
+  "account": {
+    "name": "Ada Lovelace",
+    "email": "ada@example.com"
+  },
+  "notifications": [
+    {
+      "id": "digest",
+      "label": "Daily digest",
+      "on": true
+    },
+    {
+      "id": "mentions",
+      "label": "Mentions",
+      "on": false
+    },
+    {
+      "id": "product",
+      "label": "Product news",
+      "on": true
+    }
+  ],
+  "theme": "system"
+}
