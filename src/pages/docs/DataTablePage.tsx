@@ -460,7 +460,7 @@ export function DataTablePage() {
       <Section
         id="dt-narrow"
         title="Narrow containers"
-        summary={<>The table picks its layout from its own width, so it adapts inside a narrow pane on any screen. Below <code>narrowBelow</code> (560px by default), <code>narrow="cards"</code> shows each row as a card with a title, a status and up to three fields, placed by each column’s <code>card</code> option, and <code>narrow="scroll"</code>, the default, keeps the table with a sticky first column.</>}
+        summary={<>The table picks its layout from its own width, so it adapts inside a narrow pane on any screen. Below <code>narrowBelow</code> (560px by default), <code>narrow="cards"</code> shows each row as a card with a title, a status and up to three fields, placed by each column’s <code>card</code> option, and <code>narrow="scroll"</code>, the default, keeps the table with a sticky first column. There, unless every column has a <code>width</code>, columns fit their content, so a word is never split and a short value is never cut off: the table scrolls sideways when they don’t fit, and a <code>truncate</code> column keeps to half the table’s width.</>}
       >
         <Live><NarrowExample /></Live>
         <Code label="Code for a narrow container">{NARROW_CODE}</Code>

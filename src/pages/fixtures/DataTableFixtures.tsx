@@ -6,6 +6,7 @@ import { isSelected, useDataTable, type Column, type DataTableModel, type Select
 import { SegmentedControl } from '@lede/segmented-control';
 import { Button } from '@lede/button';
 import { Table } from '@lede/table';
+import { StatusText } from '@lede/status-text';
 import type { RowAction } from '@lede/list';
 
 /**
@@ -250,6 +251,34 @@ function LongFieldsFixture() {
           selectionMode="multiple"
           narrow="cards"
         />
+      </div>
+    </section>
+  );
+}
+
+/**
+ * `narrow="scroll"` in a phone-width pane, with no column widths: short names and status words show whole, never
+ * split mid-word, and a name too long for the pane keeps to one line with an ellipsis.
+ */
+type Host = { id: string; name: string; region: string; status: 'Healthy' | 'Degraded' | 'Down'; cpu: number };
+const HOSTS: Host[] = [
+  { id: 'h1', name: 'search-iad-1', region: 'IAD', status: 'Degraded', cpu: 9 },
+  { id: 'h2', name: 'web-sfo-1', region: 'SFO', status: 'Healthy', cpu: 22 },
+  { id: 'h3', name: 'reporting-warehouse-replica-eu-central-1', region: 'FRA', status: 'Down', cpu: 53 },
+];
+const hostTone = { Healthy: 'positive', Degraded: 'caution', Down: 'critical' } as const;
+const hostColumns: Column<Host>[] = [
+  { id: 'name', label: 'Name', value: (r) => r.name, sortable: true, truncate: true },
+  { id: 'region', label: 'Region', value: (r) => r.region },
+  { id: 'status', label: 'Status', value: (r) => r.status, cell: (r) => <StatusText tone={hostTone[r.status]}>{r.status}</StatusText> },
+  { id: 'cpu', label: 'CPU', value: (r) => `${r.cpu}%`, align: 'end' },
+];
+function NarrowScrollFixture() {
+  return (
+    <section aria-labelledby="fx-narrow-scroll" className="docs-section">
+      <h2 id="fx-narrow-scroll" className="text-title-3">Narrow scroll</h2>
+      <div className="docs-narrow">
+        <DataTable aria-label="Narrow scroll fixture" noun={{ one: 'host', other: 'hosts' }} columns={hostColumns} rows={HOSTS} getRowId={(r) => r.id} rowHeader="name" />
       </div>
     </section>
   );
@@ -524,6 +553,7 @@ export function DataTableFixtures() {
       <CompareFixture />
       <HeldFilterFixture />
       <LongFieldsFixture />
+      <NarrowScrollFixture />
       <LocaleFixture />
       <RemovalFixture />
       <UncontrolledFixture />

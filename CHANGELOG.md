@@ -59,6 +59,13 @@
 
 ### Fixed
 
+- DataTable on a phone, or in any box narrower than `narrowBelow` with `narrow="scroll"`, no longer splits words such
+  as "Degraded" or cuts short names to "web-sf…". When any column has no `width`, columns fit their content there (a
+  `width` is a minimum), cells wrap only between words, and the table scrolls sideways once that doesn't fit. A
+  `truncate` column keeps to one line, up to half the table's width (new token: `layout-table-truncate-max-width`).
+  Wider boxes, and narrow tables whose every column has a `width`, keep the fixed layout. Table.Columns
+  writes its summed minimum as `--ld-table-min-w`, which `.ld-table` reads as its `min-width`.
+
 - `npx shadcn@latest add @lede/theme-provider @lede/list`, the README's install, no longer prints "Docs for
   ThemeProvider" twice. The shadcn CLI prints an item's line twice when it's named and is also another named item's
   dependency, so `theme-provider` prints no line; its page still installs, and the guide's line points at the list
