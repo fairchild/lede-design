@@ -1,8 +1,8 @@
 // Picks how much of CI a pull request into main needs from the paths it changes, read one per line on stdin. The PR's
 // base branch is the argument.
-// 1: only Markdown the site doesn't render, integrations/ files and the design system's templates in
+// 1: only Markdown the site doesn't render, integrations/ and benchmarks/ files and the design system's templates in
 // scripts/design-system/ that still exist, so the build runs and Playwright doesn't. Nothing the site builds imports
-// integrations/ or reads scripts/design-system/, and the integrations job runs each entry's own build and tests on
+// integrations/ or benchmarks/ or reads scripts/design-system/, and the integrations job runs each entry's own build and tests on
 // every PR. A deleted one isn't tier 1: the Decisions page links paths there, and layouts.spec checks they exist.
 // 2: only .ts files under tests/ that still exist, so the build runs and Playwright runs the specs they touch.
 // 3: anything else, an empty list included, so everything runs. An unrecognized path always lands here, and so does
@@ -13,7 +13,7 @@ import { deepStrictEqual } from 'node:assert';
 
 // src/styles/globals.css keeps Tailwind from scanning what these match, so a path added here is added there too.
 const TEXT = /^(?:(?:CHANGELOG|CONTRIBUTING|CLAUDE|AGENTS)\.md|(?:docs|\.claude)\/.+\.md)$/;
-const INTEGRATION = /^(?:integrations|scripts\/design-system)\/.+/;
+const INTEGRATION = /^(?:integrations|benchmarks|scripts\/design-system)\/.+/;
 const TEST = /^tests\/.+\.ts$/;
 
 /**
@@ -52,6 +52,9 @@ const CASES = [
   [['integrations'], 3],
   [['scripts/design-system/README.md', 'scripts/design-system/cover.html', 'CHANGELOG.md'], 1],
   [['scripts/design-system/deleted.html'], 3],
+  [['benchmarks/docs-agent/run.mjs', 'benchmarks/docs-agent/results.md', 'CHANGELOG.md'], 1],
+  [['benchmarks/docs-agent/deleted.mjs'], 3],
+  [['benchmarks/docs-agent/run.mjs', 'scripts/llms/generate.mjs'], 3],
   [['scripts/build-design-system.mjs'], 3],
   [['integrations/json-render/tests/deleted.test.tsx'], 3],
   [['integrations/json-render/src/App.tsx', 'integrations/json-render/tests/deleted.test.tsx'], 3],
