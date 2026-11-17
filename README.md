@@ -77,7 +77,9 @@ in an app made with create-vite. [Limits](#limits) covers server rendering.
 
 4. Wrap your app in `ThemeProvider` and `LinkProvider`. `surface="grouped"` and `min-h-dvh` make the wrapper paint the
    theme's background over the whole page. `LinkProvider` routes Lede's links through your router, so leave it out if
-   you have none.
+   you have none. It comes with `@lede/lede-utils`, which every item but `lede-theme` installs, so there's no
+   `@lede/link` to add. A hero flow, such as `@lede/inbox`, brings no gutter of its own: put it in `Page` or in
+   AppShell's main region, as its reference page's example does.
 
    ```tsx
    import { LinkProvider } from '@/components/lede/link';
