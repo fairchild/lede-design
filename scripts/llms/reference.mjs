@@ -69,6 +69,9 @@ function otherItemsTypes(lead, keys, item, { types, owners }) {
  * @returns {{ meta: object, body: string, types: string }} the page's front matter, the page without its Types section,
  *   which `llms-full.txt` holds, and that section. The page is the three joined.
  */
+/** What a reference page says of an experimental item, under its description. */
+export const EXPERIMENTAL = 'Experimental: its props can change in a minor release, which the CHANGELOG names. An item is experimental for the release that adds it, and stable once a release ships it unchanged.';
+
 export function referencePage(item, context) {
   const { version, api, exports, declarations, declarationTypes, install, forExample, sample, pages } = context;
   const items = (item.registryDependencies ?? []).map((dep) => dep.replace(/^@lede\//, ''));
@@ -92,6 +95,7 @@ export function referencePage(item, context) {
     `# ${item.title}`,
     `> Every docs page and registry item: ${SITE}/llms.txt`,
     item.description.replace(/\s+/g, ' ').trim(),
+    ...(item.meta?.stability === 'experimental' ? [EXPERIMENTAL] : []),
     '## Install',
     fence(install, 'bash'),
     `The command needs Lede's registry in \`components.json\`, as [Overview → Install](${SITE}/overview.md) shows.${brings.length ? ` It also installs ${brings.join(', and ')}.` : ''}${
@@ -120,6 +124,7 @@ export function referencePage(item, context) {
     description: firstSentence(item.description),
     resource: `${SITE}/r/v${version}/${item.name}.json`,
     tags: [kind.toLowerCase(), item.name],
+    stability: item.meta.stability,
     lede_version: version,
   };
   return { meta, body: `${body}\n`, types: types && `${types}\n` };

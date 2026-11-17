@@ -75,7 +75,7 @@ export async function generate(load) {
     return { title, items };
   });
   const sections = groups.map(({ title, items }) => {
-    const lines = items.map(({ item }) => `- [${item.title}](${SITE}/reference/${item.name}.md): \`@lede/${item.name}\`${imports[item.name] ? `, \`${imports[item.name].replace(/\n/g, ' ')}\`` : ''}. ${firstSentence(item.description)}`);
+    const lines = items.map(({ item }) => `- [${item.title}](${SITE}/reference/${item.name}.md): \`@lede/${item.name}\`${imports[item.name] ? `, \`${imports[item.name].replace(/\n/g, ' ')}\`` : ''}. ${firstSentence(item.description)}${item.meta.stability === 'experimental' ? ' Experimental.' : ''}`);
     return `## ${title}\n\n${lines.join('\n')}`;
   });
   const template = read(TEMPLATE)
