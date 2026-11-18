@@ -33,7 +33,7 @@ const PRINCIPLES: Overlay[] = [
   },
   {
     principle: 'Consistency',
-    keeps: 'Every look follows the person’s light or dark setting, contrast, motion and transparency preferences. Text and controls meet the same contrast floors.',
+    keeps: 'Every look follows the person’s light or dark setting, motion and transparency preferences. With Increase contrast on, Lede’s high-contrast palette replaces the look’s colors.',
     changes: 'The palette in each of those settings.',
   },
   {

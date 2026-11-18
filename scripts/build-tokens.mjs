@@ -80,7 +80,7 @@ for (const { options = [], tokens, emit } of families) {
     }
     if (reducedMotion && typeof value !== 'string') throw new Error(`tokens.json: ${name} is keyed, so it can't take a reducedMotion value`);
     if (emit === false) continue;
-    root.push(`  --${name}: ${typeof value === 'string' ? value : value[options[0]]};`);
+    root.push(`  --${name}: ${typeof value === 'string' ? css(value) : value[options[0]]};`);
     if (reducedMotion) reduced.push(`    --${name}: ${reducedMotion} !important;`);
   }
 }

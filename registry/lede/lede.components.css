@@ -104,6 +104,8 @@
 .ld-btn-critical.ld-btn-plain { color: var(--destructive); }
 /* In -hc a fill alone can't show where a control is, so each one a Button paints has an edge. */
 [data-theme$="-hc"] .ld-btn-gray, [data-theme$="-hc"] .ld-btn-tinted { box-shadow: inset 0 0 0 1px var(--input); }
+/* Pressed, it keeps that edge under the look's pressed shadow. */
+[data-theme$="-hc"] .ld-btn:is(.ld-btn-gray, .ld-btn-tinted):active:not(:disabled, [aria-disabled="true"]) { box-shadow: inset 0 0 0 1px var(--input), var(--look-press-shadow); }
 /* Disabled: a gray fill and a faint label, as HIG draws it, so a disabled Button doesn't show its color or what's behind
    it. A Plain or glass Button keeps its background. `aria-disabled` keeps a Button focusable, and looks the same. */
 .ld-btn:is(:disabled, [aria-disabled="true"]) { color: var(--foreground-disabled); cursor: default; }
