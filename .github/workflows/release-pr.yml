@@ -1,0 +1,94 @@
+name: Open the release pull request
+# When develop gets a version that main doesn't have yet, which happens when a `chore(release): prepare X.Y.Z` pull
+# request merges, this opens `release: X.Y.Z` from develop into main, with the release's CHANGELOG section as its body.
+# Merging it is the one step left to a person; Tag the release does the rest.
+#
+# The pull request comes from the release GitHub App, because one opened with the workflow's own token runs no CI, and
+# `check` is required. Without the app this run says so and stops, and the pull request is opened by hand.
+on:
+  push:
+    branches: [develop]
+    paths: [package.json]
+  workflow_dispatch:
+permissions:
+  contents: read
+  pull-requests: read
+concurrency:
+  group: release-pr
+  cancel-in-progress: false
+defaults:
+  run:
+    shell: bash
+jobs:
+  open:
+    if: github.ref == 'refs/heads/develop'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with: { persist-credentials: false }
+      - name: Decide whether develop holds a new release
+        id: plan
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version=$(jq -r .version package.json)
+          released=$(gh api "repos/$GITHUB_REPOSITORY/contents/package.json?ref=main" --jq .content | base64 -d | jq -r .version)
+          if [ "$version" = "$released" ]; then
+            echo "::notice title=No release::develop and main are both at $version."
+            exit 0
+          fi
+          if gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/v$version" > /dev/null 2>&1; then
+            echo "::notice title=Already released::v$version is already tagged."
+            exit 0
+          fi
+          open=$(gh pr list --repo "$GITHUB_REPOSITORY" --base main --head develop --state open --json number --jq '.[0].number // empty')
+          if [ -n "$open" ]; then
+            echo "::notice title=Already open::#$open already merges develop into main."
+            exit 0
+          fi
+          # The body is the CHANGELOG section from its heading to the next release's.
+          notes=$(awk -v v="$version" '$0 == "## " v {on = 1; next} on && /^## / {exit} on' CHANGELOG.md)
+          if [ -z "$notes" ]; then
+            echo "::error::CHANGELOG.md has no \`## $version\` section. Prepare the release as docs/releasing.md says."
+            exit 1
+          fi
+          {
+            echo "\`develop\` → \`main\` for $version. **Merge it with a merge commit, not a squash**, so the two branches keep one history."
+            echo
+            echo "Once it merges and \`check\` passes on \`main\`, *Tag the release* tags \`v$version\`, which runs Deploy and the mirror. See \`docs/releasing.md\`."
+            echo
+            echo "## $version"
+            echo "$notes"
+          } > "$RUNNER_TEMP/body.md"
+          printf 'version=%s\n' "$version" >> "$GITHUB_OUTPUT"
+      - name: Check for the release app
+        id: app
+        if: steps.plan.outputs.version
+        env:
+          CLIENT_ID: ${{ vars.RELEASE_APP_CLIENT_ID }}
+          PRIVATE_KEY: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+        run: |
+          if [ -n "$CLIENT_ID" ] && [ -n "$PRIVATE_KEY" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice title=Open it by hand::The release app isn't set up (RELEASE_APP_CLIENT_ID and RELEASE_APP_PRIVATE_KEY), so the release pull request wasn't opened."
+          fi
+      - uses: actions/create-github-app-token@f418cff399f7aef4c2f0ad47e25ca7a6abbdd6fc # v3.4.0
+        id: token
+        if: steps.app.outputs.ready == 'true'
+        with:
+          client-id: ${{ vars.RELEASE_APP_CLIENT_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+          permission-contents: read
+          permission-pull-requests: write
+      - name: Open the pull request
+        if: steps.app.outputs.ready == 'true'
+        env:
+          GH_TOKEN: ${{ steps.token.outputs.token }}
+          VERSION: ${{ steps.plan.outputs.version }}
+          OWNER: ${{ github.repository_owner }}
+        run: |
+          url=$(gh pr create --repo "$GITHUB_REPOSITORY" --base main --head develop \
+            --title "release: $VERSION" --body-file "$RUNNER_TEMP/body.md")
+          gh pr edit "$url" --add-assignee "$OWNER" || true
+          echo "Opened $url" >> "$GITHUB_STEP_SUMMARY"

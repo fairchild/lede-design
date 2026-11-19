@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+
+- Releasing needs one person's step: merging the release pull request. *Prepare a release* (from the Actions tab, or
+  `scripts/prepare-release.mjs`) opens the prepare pull request into `develop`; when it merges, *Open the release pull
+  request* opens `develop` → `main`; and when that merges and `check` passes, *Tag the release* creates `vX.Y.Z`, which
+  runs Deploy. The pull request and the tag come from a release GitHub App on the tag ruleset's bypass list;
+  `docs/releasing.md` says how to set it up, and without it each step is done by hand as before.
+
 ## 0.7.0
 
 Looks: a `look` token family lets a theme change edges, depth, sheen, the pressed state and letter case without
