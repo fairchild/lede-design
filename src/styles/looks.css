@@ -1,0 +1,188 @@
+/* SPIKE: looks. One attribute, `data-look` on <html>, re-skins every Lede component. Markup, React code and Base UI
+   behaviour don't change. The Looks page (/looks) explains each one.
+
+   Each look has two parts:
+   1. TOKENS: values only. Colors, shadows, radius, fonts and motion, plus the `look-*` family (tokens.json), which
+      holds what a look changes beyond those: edges, depth, sheen, the pressed state, letter case, the interface's
+      face and texture. Selectors are `[data-look=x] .ld-theme[data-theme…]`, so they beat the theme blocks and
+      ThemeProvider's shape and density blocks, and a value that names a color follows light and dark.
+      ThemeProvider sets `--primary: var(--preset-<accent>)` inline, so a look sets `--preset-blue` (the site's
+      default accent), not `--primary`.
+   2. BEYOND TOKENS: the few rules no token reaches. Short on purpose: each is a candidate for the next token. */
+
+/* ═════════════════════════════ SKEUOMORPHIC ("Workshop") ═════════════════════════════
+   Light from above: gradients, bevels, wells, embossed type and linen behind it all. */
+
+[data-look="skeuo"], [data-look="skeuo"] .ld-theme[data-theme]:not([data-theme$="-hc"]) {
+  --preset-blue: #2563c9; --primary-foreground: #ffffff;
+  --background: #f4f1ea; --background-grouped: #dcd7cc; --card: #fbf9f4; --muted: #ebe6db;
+  --foreground: #2a2620; --muted-foreground: #5f574b;
+  --fill-control: rgba(90, 75, 50, 0.12); --fill-control-strong: rgba(90, 75, 50, 0.28);
+  --fill-selected: #fffdf8; --fill-knob: #fdfcf9;
+  --border: rgba(60, 45, 20, 0.22); --input: #8a8072;
+  --glass-tint: rgba(236, 232, 223, 0.94); --glass-stroke: rgba(40, 30, 10, 0.35); --glass-highlight: #ffffff;
+  --shadow-raised: 0 1px 0 rgba(255, 255, 255, 0.9) inset, 0 1px 2px rgba(40, 30, 10, 0.35), 0 2px 6px rgba(40, 30, 10, 0.15);
+  --shadow-float: 0 1px 0 rgba(255, 255, 255, 0.8) inset, 0 12px 28px rgba(40, 30, 10, 0.32), 0 2px 4px rgba(40, 30, 10, 0.3);
+  --shadow-knob: 0 0 0 1px #7d7366, 0 2px 4px rgba(40, 30, 10, 0.4), inset 0 1px 0 #ffffff;
+  --radius: 10px; --radius-capsule: 10px; --radius-step: 3px;
+  --font-sans: "Lucida Grande", "Helvetica Neue", "DejaVu Sans", Helvetica, Arial, sans-serif;
+  --blur-regular: 6px;
+  /* look-* */
+  --look-surface-edge: 0 0 0 1px var(--border), 0 1px 0 rgba(255, 255, 255, 0.9) inset, 0 1px 2px rgba(40, 30, 10, 0.3), 0 2px 6px rgba(40, 30, 10, 0.12);
+  --look-control-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.25), 0 1px 0 rgba(255, 255, 255, 0.9) inset, 0 1px 2px rgba(40, 30, 10, 0.35);
+  --look-control-sheen: linear-gradient(to bottom, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0) 50%, rgba(0, 0, 0, 0.08));
+  --look-well: inset 0 2px 3px rgba(0, 0, 0, 0.18), 0 1px 0 rgba(255, 255, 255, 0.6);
+  --look-press: none;
+  --look-press-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.35);
+  --look-texture: repeating-linear-gradient(45deg, rgba(0, 0, 0, 0.025) 0 2px, transparent 2px 4px),
+                  repeating-linear-gradient(-45deg, rgba(255, 255, 255, 0.05) 0 2px, transparent 2px 4px);
+}
+[data-look="skeuo"] .ld-theme[data-theme="dark"] {
+  --preset-blue: #5b9bff; --primary-foreground: #06111f;
+  --background: #2b2722; --background-grouped: #1d1a17; --card: #34302a; --muted: #3d3832;
+  --foreground: #f1ebe0; --muted-foreground: #b8ad9c;
+  --fill-control: rgba(255, 240, 210, 0.08); --fill-control-strong: rgba(255, 240, 210, 0.18);
+  --fill-selected: #4a443c; --fill-knob: #e8e2d6;
+  --border: rgba(0, 0, 0, 0.55); --input: #8c8172;
+  --glass-tint: rgba(48, 44, 38, 0.95); --glass-stroke: rgba(0, 0, 0, 0.7); --glass-highlight: rgba(255, 255, 255, 0.12);
+  --shadow-raised: 0 1px 0 rgba(255, 255, 255, 0.08) inset, 0 1px 3px rgba(0, 0, 0, 0.7);
+  --shadow-float: 0 1px 0 rgba(255, 255, 255, 0.08) inset, 0 14px 30px rgba(0, 0, 0, 0.6);
+}
+/* The look's edges in dark, high contrast included: its palette steps aside for -hc, its edges don't. */
+[data-look="skeuo"] .ld-theme[data-theme^="dark"] {
+  --look-surface-edge: 0 0 0 1px rgba(0, 0, 0, 0.6), 0 1px 0 rgba(255, 255, 255, 0.07) inset, 0 2px 6px rgba(0, 0, 0, 0.5);
+  --look-control-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.5), 0 1px 0 rgba(255, 255, 255, 0.12) inset, 0 1px 3px rgba(0, 0, 0, 0.6);
+  --look-control-sheen: linear-gradient(to bottom, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0) 50%, rgba(0, 0, 0, 0.12));
+  --look-well: inset 0 2px 3px rgba(0, 0, 0, 0.5), 0 1px 0 rgba(255, 255, 255, 0.06);
+  --look-texture: repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.015) 0 2px, transparent 2px 4px);
+}
+/* Beyond tokens: embossed type. A text-shadow token would carry it. */
+[data-look="skeuo"] .ld-btn:is(.ld-btn-filled, .ld-btn-critical.ld-btn-filled) { text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.25); }
+[data-look="skeuo"] :is(.ld-page-title, .ld-list-title, .ld-shell-brand) { text-shadow: 0 1px 0 rgba(255, 255, 255, 0.75); }
+[data-look="skeuo"] .ld-theme[data-theme^="dark"] :is(.ld-page-title, .ld-list-title, .ld-shell-brand) { text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.8); }
+
+/* ═════════════════════════════ NEO-BRUTALIST ("Poster") ═════════════════════════════
+   Thick black outlines, hard offset shadows, flat loud fills, no curves, no blur and snappy motion. */
+
+[data-look="brutal"], [data-look="brutal"] .ld-theme[data-theme]:not([data-theme$="-hc"]) {
+  --preset-blue: #1f3dff; --primary-foreground: #ffffff;
+  --background: #fffdf5; --background-grouped: #fff1c9; --card: #ffffff; --muted: #fbe9b7;
+  --foreground: #000000; --muted-foreground: #3b3b3b;
+  --secondary: #ffe066; --fill-control: #ffffff; --fill-control-strong: #ffe066; --fill-selected: #ffe066; --fill-knob: #ffffff;
+  --border: #000000; --input: #000000; --ring: #ff3d7f;
+  --destructive: #d10f2f; --success: #0a7a2f; --warning: #8a5a00;
+  --glass-tint: #ffffff; --glass-stroke: #000000; --glass-highlight: transparent;
+  --shadow-raised: 3px 3px 0 #000000; --shadow-float: 0 0 0 2px #000000, 6px 6px 0 #000000; --shadow-knob: 0 0 0 2px #000000;
+  --radius: 0px; --radius-capsule: 0px; --radius-step: 0px;
+  --blur-regular: 0px; --blur-thin: 0px; --blur-thick: 0px;
+  --font-sans: "Space Grotesk Variable", "Helvetica Neue", Arial, sans-serif;
+  --weight-medium: 600; --weight-semibold: 700; --weight-bold: 800;
+  --duration-standard: 90ms; --easing-spring: steps(3, end);
+  /* look-* */
+  --look-hairline: 2px; --look-control-edge: 2px;
+  --look-surface-edge: 0 0 0 2px #000000, 4px 4px 0 #000000;
+  --look-control-shadow: 0 0 0 2px #000000, 3px 3px 0 #000000;
+  --look-well: 0 0 0 2px #000000;
+  --look-press: translate(3px, 3px);
+  --look-press-shadow: 0 0 0 2px #000000;
+  --look-label-case: uppercase; --look-label-tracking: 0.08em;
+  --look-button-case: uppercase;
+  --look-title-case: uppercase;
+}
+[data-look="brutal"] .ld-theme[data-theme="dark"] {
+  --preset-blue: #ffe066; --primary-foreground: #000000;
+  --background: #111111; --background-grouped: #000000; --card: #1c1c1c; --muted: #262626;
+  --foreground: #ffffff; --muted-foreground: #d4d4d4;
+  --secondary: #ff3d7f; --secondary-foreground: #000000;
+  --fill-control: #000000; --fill-control-strong: #3a3a3a; --fill-selected: #ff3d7f; --fill-knob: #ffffff;
+  --border: #ffffff; --input: #ffffff; --ring: #4dd0ff;
+  --destructive: #ff5c6c; --destructive-foreground: #000000; --success: #4dff8a; --warning: #ffc04d;
+  --glass-tint: #000000; --glass-stroke: #ffffff;
+  --shadow-raised: 3px 3px 0 #ffffff; --shadow-float: 0 0 0 2px #ffffff, 6px 6px 0 #ffffff; --shadow-knob: 0 0 0 2px #ffffff;
+}
+[data-look="brutal"] .ld-theme[data-theme^="dark"] {
+  --look-surface-edge: 0 0 0 2px #ffffff, 4px 4px 0 #ffffff;
+  --look-control-shadow: 0 0 0 2px #ffffff, 3px 3px 0 #ffffff;
+  --look-well: 0 0 0 2px #ffffff;
+  --look-press-shadow: 0 0 0 2px #ffffff;
+}
+/* Beyond tokens: a tinted Button is yellow, not a tint of the accent. A tint-color token would carry it. */
+[data-look="brutal"] .ld-btn-tinted:not(.ld-btn-critical) { background: var(--secondary); color: var(--secondary-foreground); }
+[data-look="brutal"] .ld-row-wrap + .ld-row-wrap::before { left: 0; }
+[data-look="brutal"] .ld-avatar { box-shadow: 0 0 0 2px var(--border); background: #ff3d7f; color: #000000; }
+
+/* ═════════════════════════════ BROADSHEET ═════════════════════════════
+   A newspaper page. Serif text set for reading, a grotesque for the paper's own voice (labels, buttons, navigation),
+   ink on newsprint, rules instead of boxes, one red for what you can act on, and no shadows at all. */
+
+[data-look="broadsheet"], [data-look="broadsheet"] .ld-theme[data-theme]:not([data-theme$="-hc"]) {
+  --preset-blue: #b0161e; --primary-foreground: #ffffff;
+  --background: #f8f4ea; --background-grouped: #f8f4ea; --card: #f8f4ea; --muted: #eee7d6;
+  --foreground: #1a1714; --muted-foreground: #5a5348;
+  --secondary: transparent; --secondary-foreground: #1a1714;
+  --fill-control: rgba(26, 23, 20, 0.06); --fill-control-strong: rgba(26, 23, 20, 0.16);
+  --fill-selected: #f8f4ea; --fill-knob: #f8f4ea;
+  --border: rgba(26, 23, 20, 0.3); --input: #1a1714;
+  --glass-tint: #f8f4ea; --glass-stroke: #1a1714; --glass-highlight: transparent;
+  --shadow-raised: none; --shadow-float: 0 0 0 1px #1a1714; --shadow-knob: 0 0 0 1px #1a1714;
+  --radius: 0px; --radius-capsule: 0px; --radius-step: 0px;
+  --blur-regular: 0px;
+  --font-sans: "Newsreader Variable", "Iowan Old Style", Charter, Georgia, serif;
+  --font-rounded: var(--font-sans);
+  --text-large-title-size: 2.75rem; --text-large-title-line-height: 2.875rem; --text-large-title-weight: 600;
+  --text-large-title-letter-spacing: -0.015em;
+  --text-body-size: 1.125rem; --text-body-line-height: 1.625rem;
+  --weight-semibold: 600;
+  --duration-standard: 160ms;
+  /* look-* */
+  --look-ui-font: "Libre Franklin Variable", "Franklin Gothic Medium", "Helvetica Neue", Arial, sans-serif;
+  --look-surface-edge: inset 0 2px 0 #1a1714;
+  --look-control-shadow: inset 0 0 0 1px #1a1714;
+  --look-press: none;
+  --look-press-shadow: inset 0 0 0 2px #1a1714;
+  --look-label-case: uppercase; --look-label-tracking: 0.12em;
+  /* Newsprint: a faint grain, drawn by an SVG turbulence filter. */
+  --look-texture: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.1 0 0 0 0 0.08 0 0 0 0 0.05 0 0 0 .07 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+[data-look="broadsheet"] .ld-theme[data-theme="dark"] {
+  --preset-blue: #ff7a6b; --primary-foreground: #14110e;
+  --background: #15120f; --background-grouped: #15120f; --card: #15120f; --muted: #241f19;
+  --foreground: #ece4d4; --muted-foreground: #b0a590;
+  --secondary-foreground: #ece4d4;
+  --fill-control: rgba(236, 228, 212, 0.08); --fill-control-strong: rgba(236, 228, 212, 0.2);
+  --fill-selected: #15120f; --fill-knob: #ece4d4;
+  --border: rgba(236, 228, 212, 0.3); --input: #ece4d4;
+  --glass-tint: #15120f; --glass-stroke: #ece4d4;
+  --shadow-float: 0 0 0 1px #ece4d4; --shadow-knob: 0 0 0 1px #15120f;
+}
+[data-look="broadsheet"] .ld-theme[data-theme^="dark"] {
+  --look-surface-edge: inset 0 2px 0 #ece4d4;
+  --look-control-shadow: inset 0 0 0 1px #ece4d4;
+  --look-press-shadow: inset 0 0 0 2px #ece4d4;
+  --look-texture: none;
+}
+/* Beyond tokens. Each is a layout or ornament choice, not a value. */
+/* The nameplate: the app's name set like a masthead, in blackletter. */
+[data-look="broadsheet"] :is(.ld-shell-brand, .ld-wb-brand) { font-family: "UnifrakturMaguntia", var(--font-sans); font-weight: 400; font-size: 1.75rem; letter-spacing: 0; }
+/* Nothing sits in a box: surfaces are the page itself, so the grain runs under them. */
+[data-look="broadsheet"] :is(.ld-list-body, .ld-card:not(.ld-glass), .ld-disc:not(.ld-disc-plain), .ld-summary-card, .ld-message, .ld-row) { background-color: transparent; }
+/* The open story is a column beside the list, set off by a column rule. */
+[data-look="broadsheet"] .ld-message { box-shadow: inset 1px 0 0 var(--border); border-radius: 0; }
+[data-look="broadsheet"] .ld-message-bar { background: transparent; }
+[data-look="broadsheet"] .ld-message-title { font-size: var(--text-title-1-size); line-height: var(--text-title-1-line-height); letter-spacing: -0.01em; }
+/* Lists are ruled columns: a rule above, a thin rule below, dotted rules between. */
+[data-look="broadsheet"] .ld-list-body { border-bottom: 1px solid var(--foreground); }
+[data-look="broadsheet"] .ld-row-wrap + .ld-row-wrap::before { left: 0; border-top-style: dotted; border-top-color: var(--muted-foreground); }
+/* The headline sits over a thick-and-thin rule, the way a section front does. */
+[data-look="broadsheet"] .ld-page-header { padding-bottom: var(--space-3); margin-bottom: var(--space-4); border-bottom: 3px double var(--foreground); }
+/* Links are underlined, as body copy in print would mark them. */
+[data-look="broadsheet"] .ld-prose a, [data-look="broadsheet"] .ld-message-body a { text-decoration-thickness: 1px; text-underline-offset: 0.15em; }
+/* The first paragraph of a story opens with a drop cap. */
+[data-look="broadsheet"] .ld-message-body p:first-of-type:not(.ld-thread p, .ld-quote p)::first-letter { float: left; font-size: 3.4em; line-height: 0.85; padding: 0.04em 0.08em 0 0; font-weight: 600; }
+/* Old-style figures in running text, lining figures where numbers line up. */
+[data-look="broadsheet"] .ld-theme { font-variant-numeric: oldstyle-nums proportional-nums; }
+[data-look="broadsheet"] :is(.ld-table, .ld-summary-figure, .ld-inbox-date, .ld-inbox-count) { font-variant-numeric: lining-nums tabular-nums; }
+/* The current place in the left bar is marked with a rule, not a raised card. */
+[data-look="broadsheet"] .ld-shell-link[aria-current="page"] { background: transparent; box-shadow: inset 3px 0 0 var(--primary); }
+[data-look="broadsheet"] .ld-avatar { background: var(--foreground); color: var(--background); }
+[data-look="broadsheet"] .ld-unread-dot { border-radius: 0; }

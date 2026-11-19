@@ -125,7 +125,7 @@ test('fails a control fill with no -hc edge, a field edged only in -hc, and a li
   expect(css((text) => `${text}${chip} [data-theme$="-hc"] .x-chip { box-shadow: inset 0 0 0 1px var(--input); }`).status).toBe(0);
   expect(css((text) => `${text}${chip} [data-theme$="-hc"] .x-chip:hover { border: 1px solid var(--input); }`).output).toContain('.x-chip: paints secondary');
 
-  const field = 'background: var(--fill-control);\n  box-shadow: inset 0 0 0 1px var(--input); outline: none;';
+  const field = 'background: var(--fill-control);\n  box-shadow: inset 0 0 0 var(--look-control-edge) var(--input), var(--look-well); outline: none;';
   const hcOnly = css((text) => `${text.replace(field, 'background: var(--fill-control);\n  outline: none;')} [data-theme$="-hc"] .ld-field-input { box-shadow: inset 0 0 0 1px var(--input); }`);
   expect(hcOnly.status).toBe(1);
   expect(hcOnly.output).toContain('.ld-field-input: draws no --input edge in light and dark');

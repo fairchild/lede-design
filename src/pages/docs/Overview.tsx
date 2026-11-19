@@ -245,7 +245,7 @@ export function Overview() {
             <ul className="docs-rules">{p.rules.map((r, i) => <li key={i}>{r}</li>)}</ul>
           </Disclosure>
         ))}
-        <p className="docs-actions"><Button variant="tinted" href="/decisions">Decisions: how Lede is built and checked</Button></p>
+        <p className="docs-actions"><Button variant="tinted" href="/decisions">Decisions: how Lede is built and checked</Button> <Button variant="gray" href="/looks">Looks: the same principles in other styles</Button></p>
       </section>
     </div>
   );
