@@ -1,6 +1,12 @@
 # Changelog
 
-## Unreleased
+## 0.7.0
+
+Looks: a `look` token family lets a theme change edges, depth, sheen, the pressed state and letter case without
+restyling components, and the docs site's Looks page shows three looks over the same components. It adds AlertDialog,
+CodeBlock, Page and Stack, ListRow details, a stability label on every registry item, live components in the design
+system on claude.ai, and a docs benchmark. The registry for this release is
+`https://lede.cloudcompute.com/r/v0.7.0/{name}.json`.
 
 ### Added
 
