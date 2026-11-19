@@ -14,7 +14,7 @@
    Light from above: gradients, bevels, wells, embossed type and linen behind it all. */
 
 [data-look="skeuo"], [data-look="skeuo"] .ld-theme[data-theme]:not([data-theme$="-hc"]) {
-  --preset-blue: #2563c9; --primary-foreground: #ffffff;
+  --preset-blue: #1d55ad; --primary-foreground: #ffffff;
   --background: #f4f1ea; --background-grouped: #dcd7cc; --card: #fbf9f4; --muted: #ebe6db;
   --foreground: #2a2620; --muted-foreground: #5f574b;
   --fill-control: rgba(90, 75, 50, 0.12); --fill-control-strong: rgba(90, 75, 50, 0.28);
@@ -37,7 +37,7 @@
   --look-texture: repeating-linear-gradient(45deg, rgba(0, 0, 0, 0.025) 0 2px, transparent 2px 4px),
                   repeating-linear-gradient(-45deg, rgba(255, 255, 255, 0.05) 0 2px, transparent 2px 4px);
 }
-[data-look="skeuo"] .ld-theme[data-theme="dark"] {
+[data-look="skeuo"] .ld-theme[data-theme="dark"]:not([data-theme$="-hc"]) {
   --preset-blue: #5b9bff; --primary-foreground: #06111f;
   --background: #2b2722; --background-grouped: #1d1a17; --card: #34302a; --muted: #3d3832;
   --foreground: #f1ebe0; --muted-foreground: #b8ad9c;
@@ -48,8 +48,9 @@
   --shadow-raised: 0 1px 0 rgba(255, 255, 255, 0.08) inset, 0 1px 3px rgba(0, 0, 0, 0.7);
   --shadow-float: 0 1px 0 rgba(255, 255, 255, 0.08) inset, 0 14px 30px rgba(0, 0, 0, 0.6);
 }
-/* The look's edges in dark, high contrast included: its palette steps aside for -hc, its edges don't. */
-[data-look="skeuo"] .ld-theme[data-theme^="dark"] {
+/* The look's edges in dark, high contrast included: its palette steps aside for -hc, its edges don't. The light
+   block's :not() weighs (0,4,0), so each dark block carries one too and wins by coming after it. */
+[data-look="skeuo"] .ld-theme[data-theme^="dark"]:not([data-theme="light"]) {
   --look-surface-edge: 0 0 0 1px rgba(0, 0, 0, 0.6), 0 1px 0 rgba(255, 255, 255, 0.07) inset, 0 2px 6px rgba(0, 0, 0, 0.5);
   --look-control-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.5), 0 1px 0 rgba(255, 255, 255, 0.12) inset, 0 1px 3px rgba(0, 0, 0, 0.6);
   --look-control-sheen: linear-gradient(to bottom, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0) 50%, rgba(0, 0, 0, 0.12));
@@ -89,25 +90,25 @@
   --look-button-case: uppercase;
   --look-title-case: uppercase;
 }
-[data-look="brutal"] .ld-theme[data-theme="dark"] {
+[data-look="brutal"] .ld-theme[data-theme="dark"]:not([data-theme$="-hc"]) {
   --preset-blue: #ffe066; --primary-foreground: #000000;
   --background: #111111; --background-grouped: #000000; --card: #1c1c1c; --muted: #262626;
   --foreground: #ffffff; --muted-foreground: #d4d4d4;
-  --secondary: #ff3d7f; --secondary-foreground: #000000;
-  --fill-control: #000000; --fill-control-strong: #3a3a3a; --fill-selected: #ff3d7f; --fill-knob: #ffffff;
+  --secondary: #8a003c; --secondary-foreground: #ffffff;
+  --fill-control: #000000; --fill-control-strong: #3a3a3a; --fill-selected: #8a003c; --fill-knob: #ffffff;
   --border: #ffffff; --input: #ffffff; --ring: #4dd0ff;
   --destructive: #ff5c6c; --destructive-foreground: #000000; --success: #4dff8a; --warning: #ffc04d;
   --glass-tint: #000000; --glass-stroke: #ffffff;
   --shadow-raised: 3px 3px 0 #ffffff; --shadow-float: 0 0 0 2px #ffffff, 6px 6px 0 #ffffff; --shadow-knob: 0 0 0 2px #ffffff;
 }
-[data-look="brutal"] .ld-theme[data-theme^="dark"] {
+[data-look="brutal"] .ld-theme[data-theme^="dark"]:not([data-theme="light"]) {
   --look-surface-edge: 0 0 0 2px #ffffff, 4px 4px 0 #ffffff;
   --look-control-shadow: 0 0 0 2px #ffffff, 3px 3px 0 #ffffff;
   --look-well: 0 0 0 2px #ffffff;
   --look-press-shadow: 0 0 0 2px #ffffff;
 }
 /* Beyond tokens: a tinted Button is yellow, not a tint of the accent. A tint-color token would carry it. */
-[data-look="brutal"] .ld-btn-tinted:not(.ld-btn-critical) { background: var(--secondary); color: var(--secondary-foreground); }
+[data-look="brutal"] .ld-btn-tinted:not(.ld-btn-critical) { background-color: var(--secondary); color: var(--secondary-foreground); }
 [data-look="brutal"] .ld-row-wrap + .ld-row-wrap::before { left: 0; }
 [data-look="brutal"] .ld-avatar { box-shadow: 0 0 0 2px var(--border); background: #ff3d7f; color: #000000; }
 
@@ -124,7 +125,7 @@
   --fill-selected: #f8f4ea; --fill-knob: #f8f4ea;
   --border: rgba(26, 23, 20, 0.3); --input: #1a1714;
   --glass-tint: #f8f4ea; --glass-stroke: #1a1714; --glass-highlight: transparent;
-  --shadow-raised: none; --shadow-float: 0 0 0 1px #1a1714; --shadow-knob: 0 0 0 1px #1a1714;
+  --shadow-raised: 0 0 transparent; --shadow-float: 0 0 0 1px #1a1714; --shadow-knob: 0 0 0 1px #1a1714;
   --radius: 0px; --radius-capsule: 0px; --radius-step: 0px;
   --blur-regular: 0px;
   --font-sans: "Newsreader Variable", "Iowan Old Style", Charter, Georgia, serif;
@@ -144,7 +145,7 @@
   /* Newsprint: a faint grain, drawn by an SVG turbulence filter. */
   --look-texture: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.1 0 0 0 0 0.08 0 0 0 0 0.05 0 0 0 .07 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
-[data-look="broadsheet"] .ld-theme[data-theme="dark"] {
+[data-look="broadsheet"] .ld-theme[data-theme="dark"]:not([data-theme$="-hc"]) {
   --preset-blue: #ff7a6b; --primary-foreground: #14110e;
   --background: #15120f; --background-grouped: #15120f; --card: #15120f; --muted: #241f19;
   --foreground: #ece4d4; --muted-foreground: #b0a590;
@@ -155,7 +156,7 @@
   --glass-tint: #15120f; --glass-stroke: #ece4d4;
   --shadow-float: 0 0 0 1px #ece4d4; --shadow-knob: 0 0 0 1px #15120f;
 }
-[data-look="broadsheet"] .ld-theme[data-theme^="dark"] {
+[data-look="broadsheet"] .ld-theme[data-theme^="dark"]:not([data-theme="light"]) {
   --look-surface-edge: inset 0 2px 0 #ece4d4;
   --look-control-shadow: inset 0 0 0 1px #ece4d4;
   --look-press-shadow: inset 0 0 0 2px #ece4d4;

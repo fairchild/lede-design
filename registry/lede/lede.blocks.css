@@ -67,7 +67,7 @@
   border-radius: var(--radius-xs); color: inherit; text-decoration: none;
 }
 .ld-page-header-link:focus-visible { outline: var(--stroke-ring) solid var(--ring); outline-offset: var(--stroke-ring-offset); }
-.ld-page-title { margin: 0; outline: none; text-transform: var(--look-title-case); font-style: var(--look-title-style); }
+.ld-page-title { margin: 0; outline: none; text-transform: var(--look-title-case); }
 .ld-page-title:focus-visible { outline: var(--stroke-ring) solid var(--ring); outline-offset: var(--stroke-ring-offset); border-radius: var(--radius-xs); }
 .ld-page-summary { margin: var(--space-1) 0 0; font-size: var(--text-body-size); line-height: var(--text-body-line-height); color: var(--muted-foreground); }
 .ld-page-actions { display: flex; gap: var(--space-2); align-items: center; }
@@ -177,7 +177,7 @@ button.ld-back { background: none; border: 0; font-family: inherit; font-weight:
 
 /* FormSection */
 .ld-form-section { margin: 0 0 var(--space-6); padding: 0; border: 0; min-width: 0; }
-.ld-form-legend { padding: 0 var(--space-4); margin-bottom: var(--space-1_5); font-size: var(--text-footnote-size); line-height: var(--text-footnote-line-height); color: var(--muted-foreground); font-family: var(--look-ui-font); text-transform: var(--look-label-case); letter-spacing: var(--look-label-tracking); font-variant: var(--look-label-variant); }
+.ld-form-legend { padding: 0 var(--space-4); margin-bottom: var(--space-1_5); font-size: var(--text-footnote-size); line-height: var(--text-footnote-line-height); color: var(--muted-foreground); font-family: var(--look-ui-font); text-transform: var(--look-label-case); letter-spacing: var(--look-label-tracking); }
 .ld-form-description { margin: 0 0 var(--space-2); padding: 0 var(--space-4); font-size: var(--text-footnote-size); line-height: var(--text-footnote-line-height); color: var(--muted-foreground); }
 .ld-form-body { display: grid; gap: var(--space-4); padding: var(--space-4); border-radius: var(--radius-lg); background: var(--card); }
 [data-theme$="-hc"] .ld-form-body { box-shadow: 0 0 0 1px var(--input); }

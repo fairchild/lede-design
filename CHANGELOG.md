@@ -4,6 +4,16 @@
 
 ### Added
 
+- Looks: a `look` token family lets a theme change what color, size and type don't reach. `look-hairline` and
+  `look-control-edge` set the widths of separators and field edges, `look-surface-edge`, `look-control-shadow`,
+  `look-control-sheen`, `look-well`, `look-press` and `look-press-shadow` set edges, depth, sheen and the pressed
+  state, `look-ui-font` the interface's own face, `look-label-case`, `look-label-tracking`, `look-button-case` and
+  `look-title-case` its letter case, and `look-texture` the ground. Each default draws Lede as it was, so nothing
+  changes until a theme sets one. Button's fills set `background-color`, so a sheen stays on hover and on a critical
+  Button. The docs site's new Looks page shows three looks over the same components (Skeuomorphic, Neo-brutalist and
+  Broadsheet) and says how to make one; `?look=brutal` picks one on any page of the site. The three looks are the
+  site's own, in `src/styles/looks.css`, and don't install. `tests/looks.spec.ts` runs axe on five pages in each look
+  and theme, checks that high contrast keeps Lede's -hc colors under a look, and that a phone at 200% text is no wider.
 - The design system on claude.ai runs Lede's real components. `components/bundle.js` assigns every registry export to
   `window.Lede`, and the system carries React 19 in `components/lib/`, so a canvas or an HTML artifact mounts Lede's
   components instead of copying their markup, and each card's preview is the component, working. Its README says how.
