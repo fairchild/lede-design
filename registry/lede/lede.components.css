@@ -76,7 +76,8 @@
 /* With enlarged text on a narrow window a word can be wider than the line, so there a label also breaks inside one. */
 @media (width < 20em) { .ld-btn { overflow-wrap: anywhere; } }
 .ld-btn:active:not(:disabled, [aria-disabled="true"]) { transform: var(--look-press); }
-/* A look's bevel or offset, and its sheen over the fill. A pressed Button takes the look's pressed shadow instead. */
+/* A look's bevel or offset, and its sheen over the fill. A pressed Button takes the look's pressed shadow instead. The
+   fills below set background-color, so hover and critical keep the sheen. */
 .ld-btn:is(.ld-btn-filled, .ld-btn-tinted, .ld-btn-gray) { box-shadow: var(--look-control-shadow); background-image: var(--look-control-sheen); }
 .ld-btn:is(.ld-btn-filled, .ld-btn-tinted, .ld-btn-gray):active:not(:disabled, [aria-disabled="true"]) { box-shadow: var(--look-press-shadow); }
 .ld-btn-sm { --ld-btn-control: var(--size-control-sm); --ld-btn-line: var(--text-footnote-line-height); padding: 0 var(--space-3); font-size: var(--text-footnote-size); line-height: var(--ld-btn-line); }
@@ -88,18 +89,18 @@
 .ld-btn-rounded.ld-btn-sm { border-radius: var(--radius-xs); }
 .ld-btn-rounded.ld-btn-lg { border-radius: var(--radius-md); }
 .ld-btn-block { display: flex; width: 100%; }
-.ld-btn-filled { background: var(--primary); color: var(--primary-foreground); }
-.ld-btn-filled:hover:not(:disabled) { background: color-mix(in srgb, var(--primary) 90%, var(--foreground)); }
-.ld-btn-tinted { background: color-mix(in srgb, var(--primary) 14%, transparent); color: var(--ld-primary-on-tint); }
-.ld-btn-tinted:hover:not(:disabled) { background: color-mix(in srgb, var(--primary) 20%, transparent); }
-.ld-btn-gray { background: var(--secondary); color: var(--secondary-foreground); }
-.ld-btn-gray:hover:not(:disabled) { background: var(--fill-control-strong); }
+.ld-btn-filled { background-color: var(--primary); color: var(--primary-foreground); }
+.ld-btn-filled:hover:not(:disabled) { background-color: color-mix(in srgb, var(--primary) 90%, var(--foreground)); }
+.ld-btn-tinted { background-color: color-mix(in srgb, var(--primary) 14%, transparent); color: var(--ld-primary-on-tint); }
+.ld-btn-tinted:hover:not(:disabled) { background-color: color-mix(in srgb, var(--primary) 20%, transparent); }
+.ld-btn-gray { background-color: var(--secondary); color: var(--secondary-foreground); }
+.ld-btn-gray:hover:not(:disabled) { background-color: var(--fill-control-strong); }
 .ld-btn-plain { background: transparent; color: var(--primary); padding-left: var(--space-2); padding-right: var(--space-2); }
 .ld-btn-glass { color: var(--foreground); }
-.ld-btn-critical.ld-btn-filled { background: var(--destructive); color: var(--destructive-foreground); }
-.ld-btn-critical.ld-btn-tinted { background: color-mix(in srgb, var(--destructive) 14%, transparent); color: var(--ld-destructive-on-tint); }
-.ld-btn-critical.ld-btn-filled:hover:not(:disabled, [aria-disabled="true"]) { background: color-mix(in srgb, var(--destructive) 90%, var(--foreground)); }
-.ld-btn-critical.ld-btn-tinted:hover:not(:disabled, [aria-disabled="true"]) { background: color-mix(in srgb, var(--destructive) 20%, transparent); }
+.ld-btn-critical.ld-btn-filled { background-color: var(--destructive); color: var(--destructive-foreground); }
+.ld-btn-critical.ld-btn-tinted { background-color: color-mix(in srgb, var(--destructive) 14%, transparent); color: var(--ld-destructive-on-tint); }
+.ld-btn-critical.ld-btn-filled:hover:not(:disabled, [aria-disabled="true"]) { background-color: color-mix(in srgb, var(--destructive) 90%, var(--foreground)); }
+.ld-btn-critical.ld-btn-tinted:hover:not(:disabled, [aria-disabled="true"]) { background-color: color-mix(in srgb, var(--destructive) 20%, transparent); }
 .ld-btn-critical.ld-btn-gray, .ld-btn-critical.ld-btn-glass { color: var(--ld-destructive-on-tint); }
 .ld-btn-critical.ld-btn-plain { color: var(--destructive); }
 /* In -hc a fill alone can't show where a control is, so each one a Button paints has an edge. */
@@ -279,7 +280,7 @@
    identifier, breaks, so it can't widen the list. */
 .ld-list-title, .ld-list-summary { overflow-wrap: anywhere; }
 /* Section labels take a look's letter case. */
-.ld-list-title, .ld-field-label, .ld-table-th { font-family: var(--look-ui-font); text-transform: var(--look-label-case); letter-spacing: var(--look-label-tracking); font-variant: var(--look-label-variant); }
+.ld-list-title, .ld-field-label, .ld-table-th { font-family: var(--look-ui-font); text-transform: var(--look-label-case); letter-spacing: var(--look-label-tracking); }
 .ld-list-footer { padding: 0 var(--space-4); margin-top: var(--space-1_5); }
 .ld-list-body { list-style: none; margin: 0; padding: 0; background: var(--card); border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--look-surface-edge); }
 .ld-list-empty { padding: var(--space-3) var(--space-4); font-size: var(--text-subheadline-size); line-height: var(--text-subheadline-line-height); color: var(--muted-foreground); }

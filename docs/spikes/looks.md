@@ -1,6 +1,8 @@
 # Spike: looks (re-theming Lede without changing behaviour)
 
-Status: experiment, not for merge. Draft PR #123.
+Status: merged into `develop` in #123 for 0.7.0. The `look-*` tokens ship in the registry; the three looks stay
+the site's own. The next step is a `look` axis in `tokens.json` (Open questions,
+below).
 
 A *look* is a whole visual style laid over Lede: `data-look` on `<html>`. Three looks live in `src/styles/looks.css`:
 `skeuo` (Skeuomorphic), `brutal` (Neo-brutalist) and `broadsheet` (a newspaper page). The docs page `/looks`
@@ -22,7 +24,7 @@ unchanged.
 | `look-well` | no way to set a field, segmented control or switch track into the surface |
 | `look-press`, `look-press-shadow` | the pressed state fixed to `scale()` |
 | `look-ui-font` | one face for reading and for the interface |
-| `look-label-case`, `-tracking`, `-variant`, `look-button-case`, `look-title-case`, `-style` | type tokens without case or variant |
+| `look-label-case`, `-tracking`, `look-button-case`, `look-title-case` | type tokens without letter case |
 | `look-texture` | no background-image on the ground |
 
 What's left per look ("beyond tokens") is listed on the Looks page. Candidates for the next tokens: a text-shadow, a
