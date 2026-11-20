@@ -4,7 +4,7 @@ Lede is a design system for React, installed from a shadcn registry. Every scree
 takeaway, and detail opens on request. The name is the journalist's word for a story's opening line.
 
 [Docs](https://lede.cloudcompute.com/) · [Daybook, the demo app](https://lede.cloudcompute.com/app) ·
-[Install](#use-it-in-a-shadcn-project) · [Changelog](CHANGELOG.md)
+[Install](#use-it-in-a-shadcn-project) · [Changelog](CHANGELOG.md) · [Releasing](docs/releasing.md)
 
 A coding agent starts at https://lede.cloudcompute.com/llms.txt, the docs index it can read without JavaScript.
 For Claude Code, install the `lede-design-system` skill of this release into the project:
