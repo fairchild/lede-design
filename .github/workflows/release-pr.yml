@@ -1,7 +1,7 @@
 name: Open the release pull request
 # When develop gets a version that main doesn't have yet, which happens when a `chore(release): prepare X.Y.Z` pull
 # request merges, this opens `release: X.Y.Z` from develop into main, with the release's CHANGELOG section as its body.
-# Merging it is the one step left to a person; Tag the release does the rest.
+# When CI passes on it, Approve the release asks Bertram for the one click; Tag the release does the rest.
 #
 # The pull request comes from the release GitHub App, because one opened with the workflow's own token runs no CI, and
 # `check` is required. Without the app this run says so and stops, and the pull request is opened by hand.
@@ -53,7 +53,7 @@ jobs:
             exit 1
           fi
           {
-            echo "\`develop\` → \`main\` for $version. **Merge it with a merge commit, not a squash**, so the two branches keep one history."
+            echo "\`develop\` → \`main\` for $version. When \`check\` passes, *Approve the release* asks for approval in the \`release\` environment, and approving merges this with a merge commit. To merge by hand instead, use a merge commit, not a squash, so the two branches keep one history."
             echo
             echo "Once it merges and \`check\` passes on \`main\`, *Tag the release* tags \`v$version\`, which runs Deploy and the mirror. See \`docs/releasing.md\`."
             echo

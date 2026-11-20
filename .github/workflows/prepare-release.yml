@@ -1,7 +1,8 @@
 name: Prepare a release
-# Run by hand from the Actions tab with the new version and a summary. It runs scripts/prepare-release.mjs on develop
-# and opens `chore(release): prepare X.Y.Z` into develop. Once that merges, Open the release pull request opens
-# develop → main. The pull request comes from the release GitHub App, so CI runs on it.
+# Run from the Actions tab (by a person, or by Claude) with the new version and a summary. It runs
+# scripts/prepare-release.mjs on develop and commits `chore(release): prepare X.Y.Z` straight to develop, as the
+# release GitHub App, which starts Open the release pull request. The bump is mechanical, and the release pull request
+# into main runs CI on it and shows it for approval, so it gets no pull request of its own.
 on:
   workflow_dispatch:
     inputs:
@@ -38,7 +39,6 @@ jobs:
           client-id: ${{ vars.RELEASE_APP_CLIENT_ID }}
           private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
           permission-contents: write
-          permission-pull-requests: write
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: develop
@@ -50,21 +50,15 @@ jobs:
           VERSION: ${{ inputs.version }}
           SUMMARY: ${{ inputs.summary }}
         run: node scripts/prepare-release.mjs "$VERSION" "$SUMMARY"
-      - name: Open the pull request
+      - name: Commit to develop
         env:
           GH_TOKEN: ${{ steps.token.outputs.token }}
           VERSION: ${{ inputs.version }}
           SLUG: ${{ steps.token.outputs.app-slug }}
-          OWNER: ${{ github.repository_owner }}
         run: |
           id=$(gh api "users/$SLUG%5Bbot%5D" --jq .id)
           git config user.name "$SLUG[bot]"
           git config user.email "$id+$SLUG[bot]@users.noreply.github.com"
-          branch="release/prepare-$VERSION"
-          git switch -c "$branch"
           git commit -am "chore(release): prepare $VERSION"
-          git push -u origin "$branch"
-          url=$(gh pr create --base develop --head "$branch" --title "chore(release): prepare $VERSION" --body \
-            "Step 1 of \`docs/releasing.md\`, from *Prepare a release*. Read the README and the docs pages this release changed against Reviewing copy in CONTRIBUTING.md, then merge it once \`check\` is green. *Open the release pull request* then opens \`develop\` → \`main\`.")
-          gh pr edit "$url" --add-assignee "$OWNER" || true
-          echo "Opened $url" >> "$GITHUB_STEP_SUMMARY"
+          git push origin HEAD:develop
+          echo "Committed chore(release): prepare $VERSION to develop. Open the release pull request runs next." >> "$GITHUB_STEP_SUMMARY"

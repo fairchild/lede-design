@@ -5,17 +5,19 @@ merges `develop` into `main` in one pull request, then a `vX.Y.Z` tag on `main`'
 publishes the release's registry and the site, and the mirror, which copies the registry to GitHub. Merging to either
 branch alone doesn't change lede.cloudcompute.com.
 
-With the release app set up (see [Setting up the release app](#setting-up-the-release-app)), one step needs a
-person: merging the release pull request. Without it, the same steps work by hand, and each workflow says in its run
-that it stopped.
+With the release app and the `release` environment set up (see [Setting up](#setting-up)), a release takes one click
+from Bertram: *Approve and deploy* on the approval GitHub sends him when the release pull request passes CI. Claude or
+anyone else starts it with *Prepare a release*. Without the setup, the same steps work by hand, and each workflow says
+in its run that it stopped.
 
 | Step | Who | What happens |
 | --- | --- | --- |
-| 1. Prepare the release | Anyone: *Prepare a release* in Actions, Claude, or by hand | A pull request into `develop` bumps the version and names the release in the CHANGELOG |
-| 2. Release pull request | `release-pr.yml` opens it, Bertram merges it | `develop` → `main`, once `check` is green |
-| 3. Tag | `release-tag.yml` | Waits for `check` on `main`'s new head, then tags `vX.Y.Z` as the release app |
-| 4. Deploy | `deploy.yml` | Waits for `check` on the tagged commit, publishes `r/vX.Y.Z` to R2, deploys the site |
-| 5. Mirror | `mirror-registry.yml` | Waits for `r/vX.Y.Z` on the site, copies it to the `registry` branch |
+| 1. Prepare the release | Anyone: *Prepare a release* in Actions (Claude can run it), or by hand | A commit on `develop` bumps the version and names the release in the CHANGELOG |
+| 2. Release pull request | `release-pr.yml` | Opens `develop` → `main` |
+| 3. Approve | Bertram, one click | `release-approve.yml` asks once `check` is green, and merges with a merge commit when he approves |
+| 4. Tag | `release-tag.yml` | Waits for `check` on `main`'s new head, then tags `vX.Y.Z` as the release app |
+| 5. Deploy | `deploy.yml` | Waits for `check` on the tagged commit, publishes `r/vX.Y.Z` to R2, deploys the site |
+| 6. Mirror | `mirror-registry.yml` | Waits for `r/vX.Y.Z` on the site, copies it to the `registry` branch |
 
 ## 1. Prepare the release
 
@@ -23,8 +25,9 @@ Pick the version: a minor (`0.7.0`) for anything added or changed, a patch (`0.6
 releasing, read the README and the docs pages a release changed against [Reviewing copy](../CONTRIBUTING.md#reviewing-copy).
 
 Run *Prepare a release* from the [Actions tab](https://github.com/fairchild/lede-design/actions/workflows/prepare-release.yml)
-with the version and a sentence or two on what the release is about. It opens `chore(release): prepare $NEW` into
-`develop`. Or, on a branch from `develop`:
+with the version and a sentence or two on what the release is about. It commits `chore(release): prepare $NEW` to
+`develop` as the release app; the release pull request into `main` runs CI on it and shows it before the approval. Or,
+by hand, on a branch from `develop`:
 
 ```bash
 node scripts/prepare-release.mjs 0.8.0 "What the release is about, in a sentence or two."
@@ -34,20 +37,25 @@ git diff --stat      # package.json, package-lock.json, CHANGELOG.md, the README
 The script sets the version, moves every `v$OLD` URL in the README, `integrations/` and `.github/` to `v$NEW`, and
 renames `## Unreleased` in `CHANGELOG.md` to `## $NEW` with the summary and the release's registry URL,
 `https://lede.cloudcompute.com/r/v$NEW/{name}.json`. `llms.txt` takes the version from `package.json`.
-`tests/readme.spec.ts` fails if a README URL still names the old version. Open it into `develop` as
+`tests/readme.spec.ts` fails if a README URL still names the old version. By hand, open it into `develop` as
 `chore(release): prepare $NEW` (see #126) and merge it when `check` is green.
 
 Pull requests branched before it that add CHANGELOG lines will merge them into the release's section; move them to a
 new `## Unreleased` before the release pull request, or in the next release.
 
-## 2. Merge the release pull request
+## 2. Approve the release
 
-When the prepare pull request merges, `develop`'s version is ahead of `main`'s, and *Open the release pull request*
-opens `release: $NEW` from `develop` into `main`, with the release's CHANGELOG section as its body. Without the app,
-open it by hand with that title.
+When `develop`'s version moves ahead of `main`'s, *Open the release pull request* opens `release: $NEW` from `develop`
+into `main`, with the release's CHANGELOG section as its body. Without the app, open it by hand with that title.
 
-This is the human gate. Merge it with a merge commit, not a squash, so `develop` and `main` keep one history. If a
-squash slips through, *Tag the release* warns, and `main` needs merging back into `develop`.
+This is the human gate. When CI passes on the pull request, *Approve the release* waits on the `release` environment:
+GitHub emails Bertram, and the run's page (linked from the pull request's checks) shows *Review deployments*. Tick
+`release` and press *Approve and deploy*, and the job merges the pull request with a merge commit as the release app.
+*Reject* leaves it open. A push to `develop` while the request waits replaces it with a new one once CI passes again,
+and the merge names the commit CI passed on, so an approval never releases a commit CI didn't see.
+
+To merge by hand instead, use a merge commit, not a squash, so `develop` and `main` keep one history. If a squash
+slips through, *Tag the release* warns, and `main` needs merging back into `develop`.
 
 ## 3. The tag
 
@@ -104,6 +112,10 @@ says (`npm run design-system`).
   creates it, or Bertram pushes it.
 - **"Tag it by hand" or "Open it by hand" in a run's notices.** The release app's variable or secret isn't set. Set
   it up as below, then run the workflow again from the Actions tab, or do that step by hand.
+- **No approval request came.** CI hasn't passed on the release pull request's latest commit, or the run of *Approve
+  the release* failed: "no required reviewer" means the `release` environment isn't set up, and the merge was refused.
+- **Approve the release failed at the merge.** `develop` moved after the request (a newer request follows when its CI
+  passes), or a rule on `main` stops the app: add it to that ruleset's bypass list.
 - **Tag the release failed with "Resource not accessible" or a rule violation.** The app isn't installed on the repo,
   lacks Contents: write, or isn't on the tag ruleset's bypass list.
 - **Deploy failed with "Tag … doesn't match package.json version".** The tag is on the wrong commit. Delete it
@@ -119,10 +131,11 @@ says (`npm run design-system`).
 - **Deploy said "Deploy skipped".** The `cloudflare` environment has no `CLOUDFLARE_API_TOKEN`. Add it in the repo's
   Environments settings and re-run the job.
 
-## Setting up the release app
+## Setting up
 
-Once, by a repo admin. A GitHub App opens the release pull request and creates the tag, because the workflows' own
-token can't: a pull request it opens runs no CI, a tag it creates runs no Deploy, and the tag ruleset can't name it.
+Once, by a repo admin. A GitHub App commits the release, opens and merges the release pull request and creates the
+tag, because the workflows' own token can't: a pull request it opens or a push it makes runs no CI, a tag it creates
+runs no Deploy, and the tag ruleset can't name it.
 
 1. Create the app at [New GitHub App](https://github.com/settings/apps/new), signed in as the account that owns the
    repo. Name it (say `lede-release`), give the repo as its homepage, untick *Webhook → Active*, and give it
@@ -138,4 +151,8 @@ token can't: a pull request it opens runs no CI, a tag it creates runs no Deploy
 
    Then delete the `.pem`; a new one can be generated any time.
 4. In the repo's *Settings → Rules → Rulesets*, open the ruleset that restricts tag creation, add the app under
-   *Bypass list* with *Always allow*, and save.
+   *Bypass list* with *Always allow*, and save. If a ruleset or branch protection covers `develop` (requires pull
+   requests) or `main` (requires reviews), add the app to its bypass list too, so it can commit the release to
+   `develop` and merge the release pull request.
+5. In *Settings → Environments*, add an environment named `release`, tick *Required reviewers*, add Bertram, and save.
+   That's the approval.
