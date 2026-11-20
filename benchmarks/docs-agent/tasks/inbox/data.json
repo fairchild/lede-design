@@ -1,0 +1,84 @@
+{
+  "messages": [
+    {
+      "id": "m1",
+      "from": "Priya Raman",
+      "subject": "Launch checklist for Thursday",
+      "body": "Two items still need an owner before we ship. Full message 1: let me know what you think by the end of the week.",
+      "datetime": "2026-11-17T09:41",
+      "unread": true
+    },
+    {
+      "id": "m2",
+      "from": "Marcus Lee",
+      "subject": "Q4 budget: one number to confirm",
+      "body": "The travel line looks high next to last year. Full message 2: let me know what you think by the end of the week.",
+      "datetime": "2026-11-17T08:12",
+      "unread": true
+    },
+    {
+      "id": "m3",
+      "from": "Hana Sato",
+      "subject": "Design review moved to 3 PM",
+      "body": "Same room, same agenda, just later in the day. Full message 3: let me know what you think by the end of the week.",
+      "datetime": "2026-11-16T15:30",
+      "unread": false
+    },
+    {
+      "id": "m4",
+      "from": "Northwind Travel",
+      "subject": "Your itinerary: Lisbon, Dec 2 to Dec 6",
+      "body": "Your booking is confirmed, and the details are below. Full message 4: let me know what you think by the end of the week.",
+      "datetime": "2026-11-16T11:05",
+      "unread": false
+    },
+    {
+      "id": "m5",
+      "from": "Tomás Herrera",
+      "subject": "Notes from the customer call",
+      "body": "They want exports in CSV before the renewal. Full message 5: let me know what you think by the end of the week.",
+      "datetime": "2026-11-15T17:20",
+      "unread": true
+    },
+    {
+      "id": "m6",
+      "from": "Ines Carvalho",
+      "subject": "Offsite venue: two options",
+      "body": "The lake house fits everyone, the barn is cheaper. Full message 6: let me know what you think by the end of the week.",
+      "datetime": "2026-11-14T10:00",
+      "unread": false
+    },
+    {
+      "id": "m7",
+      "from": "Build Bot",
+      "subject": "Nightly build failed on main",
+      "body": "Three tests failed in the payments suite. Full message 7: let me know what you think by the end of the week.",
+      "datetime": "2026-11-14T02:13",
+      "unread": false
+    },
+    {
+      "id": "m8",
+      "from": "Leila Haddad",
+      "subject": "Welcome to the mentoring program",
+      "body": "You're paired with Sam for the next three months. Full message 8: let me know what you think by the end of the week.",
+      "datetime": "2026-11-12T09:00",
+      "unread": false
+    },
+    {
+      "id": "m9",
+      "from": "Kofi Mensah",
+      "subject": "Draft of the hiring plan",
+      "body": "I've added two roles for the spring. Full message 9: let me know what you think by the end of the week.",
+      "datetime": "2026-11-11T16:45",
+      "unread": true
+    },
+    {
+      "id": "m10",
+      "from": "Ana Petrova",
+      "subject": "Contract renewal signed",
+      "body": "Legal signed this morning, so we're set for a year. Full message 10: let me know what you think by the end of the week.",
+      "datetime": "2026-11-10T12:30",
+      "unread": false
+    }
+  ]
+}

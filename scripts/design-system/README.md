@@ -6,8 +6,7 @@ opening line.
 
 This system is generated from [fairchild/lede-design](https://github.com/fairchild/lede-design) at Lede {{VERSION}}
 (`{{SHA}}`). Its tokens, its stylesheet and every component's markup come from the code, so a page built from it
-matches an app built with the registry. Docs: [lede.cloudcompute.com](https://lede.cloudcompute.com/). A visual tour
-of the foundations and components: [the Lede canvas]({{CANVAS_URL}}).
+matches an app built with the registry. Docs: [lede.cloudcompute.com](https://lede.cloudcompute.com/).{{CANVAS}}
 
 ## Build with it
 
@@ -16,8 +15,8 @@ Pick the line for where the work runs. Each one uses the same tokens and class n
 | Where | How |
 | --- | --- |
 | A React app (Claude Code, a repo) | Install from the registry: `npx shadcn@latest registry add '@lede={{REGISTRY_URL}}'`, then `npx shadcn@latest add @lede/theme-provider @lede/<item>`. Each component's card has the command and a working sample. |
-| An HTML artifact (Claude Code or a chat) | Copy this system's stylesheet into the artifact and use Lede's markup. See "An HTML page or artifact" below. |
-| A design canvas or a deck | Choose Lede as the design system. Mirror the markup in each component's card and use the tokens by name. |
+| An HTML artifact (Claude Code or a chat) | Copy this system's stylesheet into the artifact. Mount the real components from `components/bundle.js` (see "Live components"), or use Lede's markup (see "An HTML page or artifact"). |
+| A design canvas or a deck | Choose Lede as the design system. Mount components from `window.Lede`, which the canvas loads, or mirror the markup in each component's card, and use the tokens by name. |
 | Generated UI from a model | `@lede/json-render` draws a json-render spec with Lede's components. |
 
 ### An HTML page or artifact
@@ -83,6 +82,59 @@ A page that follows the reader's light, dark and contrast settings:
 - **Type.** Each type style is a class: `text-large-title`, `text-title-1` … `text-body`, `text-footnote`,
   `text-caption-2`.
 
+### Live components
+
+`components/bundle.js` is every registry export as `window.Lede`: each component, block and flow, with its hooks and
+helpers. It reads `window.React` and `window.ReactDOM`, and Lede needs React 19, which this system carries in
+`components/lib/` ({{REACT_VERSION}}, production builds). Previews here load all three, so each card's preview is the
+real component, working. In a page of your own, load them in order, after the stylesheet:
+
+1. `components/lib/react.production.js`, which assigns `window.React`.
+2. `components/lib/react-dom.production.js`, which assigns `window.ReactDOM`, `createRoot` included.
+3. `components/bundle.js`, which assigns `window.Lede`.
+
+Copy each with `files` as step 1 above copies the stylesheet (`"react.js": {"artifact": "{{DESIGN_SYSTEM_URL}}",
+"path": "project/components/lib/react.production.js"}`), or read it and inline it in a `<script>`. Then mount inside
+the `ld-theme` element:
+
+```html
+<div class="ld-theme" data-surface="grouped"><div id="app"></div></div>
+<script src="react.js"></script>
+<script src="react-dom.js"></script>
+<script src="lede.js"></script>
+<script>
+  const h = React.createElement;
+  const { Disclosure, Switch } = window.Lede;
+  function Alerts() {
+    const [on, setOn] = React.useState(true);
+    return h(Disclosure, { title: 'Alerts', summary: on ? 'Push on' : 'Push off' },
+      h(Switch, { label: 'Push alerts', checked: on, onCheckedChange: setOn }));
+  }
+  ReactDOM.createRoot(document.getElementById('app')).render(h(Alerts));
+</script>
+```
+
+Don't load React 18 beside it: two Reacts on one page break hooks. A card's React sample runs as it is once its imports
+read from `window.React` and `window.Lede`. Every link Lede renders is an `<a>`; give `LinkProvider` a component to
+route them yourself.
+
+### Theme and utilities
+
+Two registry items have no card, because neither draws anything.
+
+- **`@lede/lede-theme`** is the stylesheet: `lede.tokens.css`, `lede.components.css`, `lede.blocks.css` and
+  `lede.index.css`, which imports them in order. Every component installs it. In this system it's
+  `components/bundle.css`, without Tailwind's `@theme` mapping.
+- **`@lede/lede-utils`** is the helpers the components share, all on `window.Lede` too:
+  - `cn(...classes)` joins class names and skips falsy ones.
+  - `LinkProvider` and `useLinkComponent` choose the element every Lede link renders, such as a router's link:
+    `<LinkProvider component={RouterLink}>`. A real `<a href>` always renders.
+  - `focusLanding(el)` focuses where a navigation lands, such as a screen's title, without scrolling and with no focus
+    ring unless the last input was a key. `lastInputWasTouch()` says whether it was a touch, so a step can keep the
+    on-screen keyboard down.
+  - `Tone`, `ToneSubset` and `StatusTone` type the `tone` props: `neutral`, `primary`, `positive`, `caution` and `critical`, and a
+    component takes a subset.
+
 ## Rules
 
 - **Semantic HTML first.** Use the native element when there is one: `<button>`, `<a href>`, `<fieldset>`, `<nav>`,
@@ -127,5 +179,6 @@ card before using its component. `components/index.d.ts` has every module's decl
 
 {{COMPONENTS}}
 
-The hero flows (Daily brief, Inbox, Settings, Onboarding and Profile) are whole screens built from these. They are in
-the registry and in [Daybook](https://lede.cloudcompute.com/app), the demo app.
+Reach for a flow first: the hero flows are whole screens built from the blocks and components, and
+[Daybook](https://lede.cloudcompute.com/app), the demo app, wires each one to a router and data. Then a layout block
+(AppShell, WorkbenchShell) and the blocks inside it, then components.

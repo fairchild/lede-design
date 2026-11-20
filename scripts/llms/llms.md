@@ -4,6 +4,8 @@
 
 Lede renders on the client only, so it suits a Vite app or another client-only React app. Install from a release's registry, `https://lede.cloudcompute.com/r/v{{VERSION}}/{name}.json`, added to `components.json` as `@lede`. Every item's file is at that URL with its name, such as `button` or `data-table`, and the release's index is `https://lede.cloudcompute.com/r/v{{VERSION}}/registry.json`. A release's files never change.
 
+An item marked Experimental below is new in a recent release, and its props can still change in a minor release.
+
 Each docs page has a Markdown version at its address plus `.md`, such as https://lede.cloudcompute.com/components.md, with https://lede.cloudcompute.com/overview.md for the home page, and each registry item has a reference page. The links under Docs and the item sections go to them, and [llms-full.txt](https://lede.cloudcompute.com/llms-full.txt) holds all of them in one file. Together they're an Open Knowledge Format v0.2 bundle, whose index is [index.md](https://lede.cloudcompute.com/index.md).
 
 ## Start here
@@ -39,8 +41,9 @@ Read the smallest file that answers the task. Each size is this build's, in kilo
 
 These two links are readable only inside Claude, such as a claude.ai chat or Claude Code. A fetch from anywhere else gets a script page without their contents.
 
-- [Lede design system on claude.ai](https://claude.ai/artifact/Cw9GgaD1zxRk9ewxGMHv4x): tokens, the whole stylesheet (`project/components/bundle.css`) and each component's React sample and rendered HTML, generated from this repo. Read its `project/README.md` first. An HTML artifact copies the stylesheet with `"files": {"lede.css": {"artifact": "https://claude.ai/artifact/Cw9GgaD1zxRk9ewxGMHv4x", "path": "project/components/bundle.css"}}`
-- [Lede canvas](https://claude.ai/artifact/7eECQYRQWxSkaJhwRtT4rJ#artboard-15dd8cd198dd): the foundations and components drawn with Lede's own CSS, in four themes
+- [Lede design system on claude.ai](https://claude.ai/artifact/Cw9GgaD1zxRk9ewxGMHv4x): the maintainers' own, which opens only for people it's shared with. It holds the tokens, the whole stylesheet (`project/components/bundle.css`), every component as `window.Lede` in `project/components/bundle.js` and a card per component, generated from this repo. Read its `project/README.md` first. An HTML artifact copies the stylesheet with `"files": {"lede.css": {"artifact": "<the design system's link>", "path": "project/components/bundle.css"}}`
+- [Lede canvas](https://claude.ai/artifact/7eECQYRQWxSkaJhwRtT4rJ#artboard-15dd8cd198dd): the maintainers' own, with the foundations and components drawn with Lede's own CSS, in four themes
+- [A design system of your own](https://raw.githubusercontent.com/fairchild/lede-design/main/docs/claude-design-system.md): why each claude.ai account publishes its own Lede design system, and how, with `npm run design-system -- --url <its link>`
 
 ## Source
 

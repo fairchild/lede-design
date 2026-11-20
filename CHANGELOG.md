@@ -1,12 +1,93 @@
 # Changelog
 
-## Unreleased
+## 0.7.0
+
+Looks: a `look` token family lets a theme change edges, depth, sheen, the pressed state and letter case without
+restyling components, and the docs site's Looks page shows three looks over the same components. It adds AlertDialog,
+CodeBlock, Page and Stack, ListRow details, a stability label on every registry item, live components in the design
+system on claude.ai, and a docs benchmark. The registry for this release is
+`https://lede.cloudcompute.com/r/v0.7.0/{name}.json`.
 
 ### Added
 
+- Looks: a `look` token family lets a theme change what color, size and type don't reach. `look-hairline` and
+  `look-control-edge` set the widths of separators and field edges, `look-surface-edge`, `look-control-shadow`,
+  `look-control-sheen`, `look-well`, `look-press` and `look-press-shadow` set edges, depth, sheen and the pressed
+  state, `look-ui-font` the interface's own face, `look-label-case`, `look-label-tracking`, `look-button-case` and
+  `look-title-case` its letter case, and `look-texture` the ground. Each default draws Lede as it was, so nothing
+  changes until a theme sets one. Button's fills set `background-color`, so a sheen stays on hover and on a critical
+  Button. The docs site's new Looks page shows three looks over the same components (Skeuomorphic, Neo-brutalist and
+  Broadsheet) and says how to make one; `?look=brutal` picks one on any page of the site. The three looks are the
+  site's own, in `src/styles/looks.css`, and don't install. `tests/looks.spec.ts` runs axe on five pages in each look
+  and theme, checks that high contrast keeps Lede's -hc colors under a look, and that a phone at 200% text is no wider.
+- The design system on claude.ai runs Lede's real components. `components/bundle.js` assigns every registry export to
+  `window.Lede`, and the system carries React 19 in `components/lib/`, so a canvas or an HTML artifact mounts Lede's
+  components instead of copying their markup, and each card's preview is the component, working. Its README says how.
+- The design system has a card for every registry item with a docs sample, the hero flows first. New samples for
+  AppShell, WorkbenchShell, useServerRows and SpecView give those items theirs, and MasterDetail's shows SelectionBar.
+  The Blocks page shows the code for AppShell, WorkbenchShell and useServerRows, and the Integrations page SpecView's.
+  The README covers the theme and the shared utilities, which draw nothing.
+- `docs/claude-design-system.md`: why each claude.ai account publishes its own Lede design system, and how.
+  `npm run design-system -- --url <link>` builds it for that artifact, and `npm run design-system:check` loads every
+  preview as the design system page does and fails on an error, a request outside the system or taken focus.
+- `benchmarks/docs-agent/`: a harness that gives a fresh Claude Code agent a new Vite app and a task, with built docs
+  as its only source, served from `llms.txt`. There are four tasks (an inbox, preferences, a server table and a status
+  page, which is held out), each with fixed data and its own checks. A run's score is the share of scripted checks
+  that pass: the task's behaviour on desktop and phone, axe in light, dark, phone and after the task's steps, a gutter
+  and no sideways scroll, and source checks that it uses Lede without hard-coded colors or clickable `div`s. A blind
+  Sonnet grader scores the screenshots against a fixed rubric beside it, never as part of it. It records tool calls,
+  docs read, 404s, cost, time and the effort Claude Code applied, and appends each task's medians to `results.md`. A
+  run that reads Lede's checkout is marked contaminated and left out. It defaults to Haiku, three runs a task, and
+  isn't part of CI, since every run costs money. The README has the fairness and overfitting rules.
+- Each registry item says how settled it is, in `meta.stability`: `experimental` for SearchField, StatusText,
+  StatusList, CodeBlock, AlertDialog, Page and SpecView, and `stable` for the rest. A reference page's front matter
+  and an experimental item's page and `llms.txt` line say so. The rule is in `CONTRIBUTING.md`.
+- AlertDialog, `@lede/alert-dialog`: a modal that asks before an action, on Base UI AlertDialog, with Cancel and a
+  confirm Button. Focus opens on the confirm button, or on Cancel when `tone` is `"critical"`, and returns to the
+  control that opened it. Escape cancels, and PageHeader's `backOnEscape` waits for it to close. New tokens:
+  `z-dialog` and `layout-dialog-max-width`.
+- Page and Stack, `@lede/page`: Page is a page's box for an app without AppShell, with a gutter, a widest width
+  (`"flow"`, `"narrow"` or `"full"`) and even space between its sections. Stack puts its children one under another
+  with one gap, `"sm"`, `"md"` or `"lg"`, and their own top and bottom margins give way to it.
+- PageHeader takes `leadingLink`, such as `{ href: '/', label: 'Home' }`: the picture in `leading` becomes a link
+  named by the label, at least a hit target in size, such as an app's mark that goes home.
+- ListRow takes `details`: content the row opens under itself, in the same list item, such as a run's log. The row
+  becomes a `<button aria-expanded>` with a chevron that turns down while they show, find-in-page opens a row whose
+  details hold the text, and `open`, `defaultOpen` and `onOpenChange` control it.
+- CodeBlock, `@lede/code-block`: code or a log in a `<figure>` with an optional caption, in the mono type on
+  `muted`. It grows to `layout-code-max-height` and then scrolls, as a named region a keyboard can scroll. `ansi`
+  reads a terminal's escape codes, showing the eight colors as the tokens in `ANSI_TOKENS` so every app's logs agree,
+  and `follow` keeps a streaming log's end in view until the reader scrolls up. `parseAnsi` is exported too.
 - `tests/agent-names.spec.ts` fails when two visible controls of one role in the same region of a Daybook screen share
   a name, so a screen reader user or an agent can pick each one. Every screen passes today. The rule is in
   `CONTRIBUTING.md` and on the Decisions page.
+- `docs/releasing.md` says how a release goes from merged pull requests to lede.cloudcompute.com: the release pull
+  request, the tag only an admin can push, the `develop` branch every pull request now targets, how to check the release is live and what to do when a step fails.
+- Each hero flow's reference page has an example of a whole screen: the flow in `Page`, since a flow brings no gutter
+  of its own. Install step 4 says `LinkProvider` comes with `@lede/lede-utils`, so there's no `@lede/link` to add.
+  The docs benchmark found both: agents asked the registry for `@lede/link`, and three of six screens built on a flow
+  had no gutter.
+
+### Changed
+
+- The Integrations page, `llms.txt` and the `lede-design-system` skill name the maintainers' design system on
+  claude.ai as theirs, which opens only for people it's shared with, and point everyone else to publishing their own.
+
+### Fixed
+
+- DataTable on a phone, or in any box narrower than `narrowBelow` with `narrow="scroll"`, no longer splits words such
+  as "Degraded" or cuts short names to "web-sf…". When any column has no `width`, columns fit their content there (a
+  `width` is a minimum), cells wrap only between words, and the table scrolls sideways once that doesn't fit. A
+  `truncate` column keeps to one line, up to half the table's width (new token: `layout-table-truncate-max-width`).
+  Wider boxes, and narrow tables whose every column has a `width`, keep the fixed layout. Table.Columns
+  writes its summed minimum as `--ld-table-min-w`, which `.ld-table` reads as its `min-width`.
+
+- `npx shadcn@latest add @lede/theme-provider @lede/list`, the README's install, no longer prints "Docs for
+  ThemeProvider" twice. The shadcn CLI prints an item's line twice when it's named and is also another named item's
+  dependency, so `theme-provider` prints no line; its page still installs, and the guide's line points at the list
+  that names it.
+- Claude review no longer fails every pull request when the Console refuses its sign-in. It checks the sign-in
+  first, and when that's refused it prints the Console's answer and the token's subject, warns and skips the review.
 
 ## 0.6.0
 

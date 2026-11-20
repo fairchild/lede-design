@@ -13,6 +13,8 @@ import { Button } from '../registry/lede/button';
 import { Card } from '../registry/lede/card';
 import { Checkbox } from '../registry/lede/checkbox';
 import { Disclosure } from '../registry/lede/disclosure';
+import { CodeBlock } from '../registry/lede/code-block';
+import { Page, Stack } from '../registry/lede/blocks/page';
 import { GlassBar, GlassToolbar } from '../registry/lede/glass-bar';
 import { SegmentedControl } from '../registry/lede/segmented-control';
 import { Switch } from '../registry/lede/switch';
@@ -236,7 +238,7 @@ test('front matter names each page: a Guide for a docs page, the item’s kind f
   const list = split(await read(request, '/reference/list.md'), '/reference/list.md').meta;
   expect(list).toEqual({
     type: 'Component', title: 'ListGroup, ListRow', description: expect.stringMatching(/^ListGroup is a `<section>`.*\.$/),
-    resource: `${SITE}/r/v${version}/list.json`, tags: ['component', 'list'], lede_version: version,
+    resource: `${SITE}/r/v${version}/list.json`, tags: ['component', 'list'], stability: 'stable', lede_version: version,
   });
   expect(split(await read(request, '/reference/inbox.md'), '/reference/inbox.md').meta).toMatchObject({ type: 'Hero flow', tags: ['hero flow', 'inbox'] });
   // llms-full.txt separates its sections with ---, so it leaves the blocks out.
@@ -355,6 +357,21 @@ const TAKES: Record<string, { sentence: string; component: ComponentType<any>; r
     component: Checkbox,
     renders: [{ props: { 'aria-label': 'Done' }, tag: 'input' }],
   },
+  CodeBlock: {
+    sentence: 'CodeBlock also takes the attributes of `<figure>`, such as `className`.',
+    component: CodeBlock,
+    renders: [{ props: { children: 'npm test' }, tag: 'figure' }],
+  },
+  Page: {
+    sentence: 'Page also takes the attributes of `<div>`, such as `className`, and the `render` prop of `useRender` from `@base-ui/react/use-render`.',
+    component: Page,
+    renders: [{ props: {}, tag: 'div' }, { props: { render: h('main') }, tag: 'main' }],
+  },
+  Stack: {
+    sentence: 'Stack also takes the attributes of `<div>`, such as `className`, and the `render` prop of `useRender` from `@base-ui/react/use-render`.',
+    component: Stack,
+    renders: [{ props: {}, tag: 'div' }, { props: { render: h('section') }, tag: 'section' }],
+  },
   Disclosure: {
     sentence: 'Disclosure also takes the attributes of `<section>`, such as `className`.',
     component: Disclosure,
@@ -441,4 +458,18 @@ test('a fence indented in a list item hides its # lines from the heading check',
   const markdown = '# Install\n\n1. Add it.\n\n   ```bash\n   # a comment, not a heading\n   npx shadcn@latest add @lede/button\n   ```\n';
   expect(withoutCode(markdown).match(/^ {0,3}# /gm)).toHaveLength(1);
   expect(() => checkHeadings(markdown, '/case.md')).not.toThrow();
+});
+
+test('each item is stable or experimental, and its reference page and llms.txt line say which', async ({ request }) => {
+  const { items } = JSON.parse(readFileSync('registry.json', 'utf8')) as { items: { name: string; meta?: { stability?: string } }[] };
+  const llms = await read(request, '/llms.txt');
+  for (const { name, meta } of items) {
+    expect(['stable', 'experimental'], name).toContain(meta?.stability);
+    const page = await read(request, `/reference/${name}.md`);
+    expect(split(page, name).meta.stability, name).toBe(meta!.stability);
+    const line = llms.split('\n').find((l) => l.includes(`(${SITE}/reference/${name}.md)`))!;
+    const experimental = meta!.stability === 'experimental';
+    expect(line.endsWith(' Experimental.'), `${name}: ${line}`).toBe(experimental);
+    expect(page.includes('\nExperimental: its props can change in a minor release'), name).toBe(experimental);
+  }
 });

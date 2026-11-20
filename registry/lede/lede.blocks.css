@@ -9,7 +9,7 @@
 .ld-skip:focus-visible { transform: none; outline: var(--stroke-ring) solid var(--ring); outline-offset: var(--stroke-ring-offset); }
 
 /* AppShell */
-.ld-shell { min-height: 100dvh; display: grid; grid-template-columns: 1fr; background: var(--background-grouped); color: var(--foreground); font-family: var(--font-sans); }
+.ld-shell { min-height: 100dvh; display: grid; grid-template-columns: 1fr; background: var(--background-grouped); background-image: var(--look-texture); color: var(--foreground); font-family: var(--font-sans); }
 .ld-shell-sidebar { display: none; }
 /* A word wider than the page, as a long name can be at enlarged text, breaks to fit the line. */
 .ld-shell-main { min-width: 0; padding: var(--space-4) var(--space-4) calc(var(--size-control-lg) + var(--space-12)); outline: none; overflow-wrap: break-word; }
@@ -32,7 +32,7 @@
   .ld-shell { grid-template-columns: var(--layout-sidebar-width) minmax(0, 1fr); }
   .ld-shell-sidebar {
     display: flex; flex-direction: column; gap: var(--space-4); position: sticky; top: 0; height: 100dvh; box-sizing: border-box; overflow-y: auto;
-    padding: var(--space-6) var(--space-3); border-right: 0.5px solid var(--border); background: var(--background-grouped);
+    padding: var(--space-6) var(--space-3); border-right: var(--look-hairline) solid var(--border); background: var(--background-grouped);
   }
   .ld-shell-tabbar { display: none; }
   .ld-shell-main { padding: var(--space-8) var(--space-8) var(--space-12); }
@@ -42,7 +42,7 @@
 .ld-shell-nav { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-0_5); }
 .ld-shell-link {
   display: flex; align-items: center; gap: var(--space-3); min-height: var(--size-hit-min); padding: 0 var(--space-3);
-  border-radius: var(--radius-sm); color: var(--foreground); text-decoration: none; font-size: var(--text-subheadline-size); line-height: var(--text-subheadline-line-height); font-weight: var(--weight-medium);
+  border-radius: var(--radius-sm); color: var(--foreground); text-decoration: none; font-family: var(--look-ui-font); font-size: var(--text-subheadline-size); line-height: var(--text-subheadline-line-height); font-weight: var(--weight-medium);
 }
 .ld-shell-link:hover { background: var(--accent); color: var(--accent-foreground); }
 .ld-shell-link[aria-current="page"] { background: var(--card); color: var(--primary); font-weight: var(--weight-semibold); box-shadow: var(--shadow-raised); }
@@ -61,7 +61,13 @@
 .ld-page-header-row { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--space-4); flex-wrap: wrap; }
 .ld-page-header-text { min-width: 0; overflow-wrap: break-word; }
 .ld-page-header-lead { min-width: 0; display: flex; align-items: center; gap: var(--space-4); }
-.ld-page-title { margin: 0; outline: none; }
+/* A `leadingLink`: the picture is the link, at least a hit target in size, with its ring around it. */
+.ld-page-header-link {
+  flex: none; display: inline-flex; align-items: center; justify-content: center; min-width: var(--size-hit-min); min-height: var(--size-hit-min);
+  border-radius: var(--radius-xs); color: inherit; text-decoration: none;
+}
+.ld-page-header-link:focus-visible { outline: var(--stroke-ring) solid var(--ring); outline-offset: var(--stroke-ring-offset); }
+.ld-page-title { margin: 0; outline: none; text-transform: var(--look-title-case); }
 .ld-page-title:focus-visible { outline: var(--stroke-ring) solid var(--ring); outline-offset: var(--stroke-ring-offset); border-radius: var(--radius-xs); }
 .ld-page-summary { margin: var(--space-1) 0 0; font-size: var(--text-body-size); line-height: var(--text-body-line-height); color: var(--muted-foreground); }
 .ld-page-actions { display: flex; gap: var(--space-2); align-items: center; }
@@ -79,7 +85,7 @@ button.ld-back { background: none; border: 0; font-family: inherit; font-weight:
 .ld-summary-card {
   position: relative; display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-1); align-content: start; overflow-wrap: break-word;
   padding: var(--space-4) var(--space-8) var(--space-4) var(--space-4); border-radius: var(--radius-lg);
-  background: var(--card); color: var(--card-foreground);
+  background: var(--card); color: var(--card-foreground); box-shadow: var(--look-surface-edge);
 }
 [data-theme$="-hc"] .ld-summary-card { box-shadow: 0 0 0 1px var(--input); }
 .ld-summary-title { margin: 0; font-size: var(--text-subheadline-size); line-height: var(--text-subheadline-line-height); font-weight: var(--weight-semibold); color: var(--muted-foreground); }
@@ -129,7 +135,7 @@ button.ld-back { background: none; border: 0; font-family: inherit; font-weight:
   background: var(--background-grouped); color: var(--foreground); font-family: var(--font-sans);
 }
 @media (any-pointer: coarse) { .ld-wb { --ld-wb-hit: var(--size-hit-min); } }
-.ld-wb-bar { flex: none; display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-2); padding: var(--space-2) var(--space-3); border-bottom: 0.5px solid var(--border); }
+.ld-wb-bar { flex: none; display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-2); padding: var(--space-2) var(--space-3); border-bottom: var(--look-hairline) solid var(--border); }
 /* When the actions don't fit beside the brand, they move to a line of their own, at its end. */
 .ld-wb-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); min-width: 0; min-height: var(--size-control-md); }
 .ld-wb-brand { flex: none; margin-inline-end: var(--space-2); font-size: var(--text-subheadline-size); line-height: var(--text-subheadline-line-height); font-weight: var(--weight-semibold); }
@@ -153,7 +159,7 @@ button.ld-back { background: none; border: 0; font-family: inherit; font-weight:
   .ld-wb-toggle { display: inline-flex; }
   .ld-wb-switch { display: none; }
   .ld-wb-panel { flex: 0 1 var(--ld-wb-width); padding-inline: var(--space-3); }
-  .ld-wb-content { border-inline: 0.5px solid var(--border); }
+  .ld-wb-content { border-inline: var(--look-hairline) solid var(--border); }
   .ld-wb-sep { position: relative; flex: none; display: block; width: var(--ld-wb-hit); cursor: col-resize; touch-action: none; user-select: none; -webkit-user-select: none; outline: none; }
   .ld-wb-sep::after {
     content: ""; position: absolute; left: 50%; top: 50%; width: var(--stroke-marker); height: var(--size-control-md); transform: translate(-50%, -50%);
@@ -171,7 +177,7 @@ button.ld-back { background: none; border: 0; font-family: inherit; font-weight:
 
 /* FormSection */
 .ld-form-section { margin: 0 0 var(--space-6); padding: 0; border: 0; min-width: 0; }
-.ld-form-legend { padding: 0 var(--space-4); margin-bottom: var(--space-1_5); font-size: var(--text-footnote-size); line-height: var(--text-footnote-line-height); color: var(--muted-foreground); }
+.ld-form-legend { padding: 0 var(--space-4); margin-bottom: var(--space-1_5); font-size: var(--text-footnote-size); line-height: var(--text-footnote-line-height); color: var(--muted-foreground); font-family: var(--look-ui-font); text-transform: var(--look-label-case); letter-spacing: var(--look-label-tracking); }
 .ld-form-description { margin: 0 0 var(--space-2); padding: 0 var(--space-4); font-size: var(--text-footnote-size); line-height: var(--text-footnote-line-height); color: var(--muted-foreground); }
 .ld-form-body { display: grid; gap: var(--space-4); padding: var(--space-4); border-radius: var(--radius-lg); background: var(--card); }
 [data-theme$="-hc"] .ld-form-body { box-shadow: 0 0 0 1px var(--input); }
@@ -253,6 +259,25 @@ button.ld-back { background: none; border: 0; font-family: inherit; font-weight:
 /* The stack spaces its children, so a PageHeader in it drops its own margin: beside an inline-level control, such as
    a SegmentedControl, the two margins would add up instead of collapsing. */
 .ld-flow-stack > .ld-page-header { margin-bottom: 0; }
+/* Page and Stack: a gutter, a widest width and even space between children. Each child's own vertical margins give way
+   to the gap, so a PageHeader, a paragraph and a list space alike. */
+.ld-page { box-sizing: border-box; min-width: 0; }
+.ld-page-flow { max-width: var(--layout-flow-max-width); }
+.ld-page-narrow { max-width: var(--layout-flow-narrow-max-width); }
+/* The gutter adds to the widest width, so the content keeps it. */
+.ld-page-inset { padding: var(--space-4); }
+.ld-page-inset.ld-page-flow { max-width: calc(var(--layout-flow-max-width) + 2 * var(--space-4)); }
+.ld-page-inset.ld-page-narrow { max-width: calc(var(--layout-flow-narrow-max-width) + 2 * var(--space-4)); }
+@media (width >= 56.25em) {
+  .ld-page-inset { padding: var(--space-8); }
+  .ld-page-inset.ld-page-flow { max-width: calc(var(--layout-flow-max-width) + 2 * var(--space-8)); }
+  .ld-page-inset.ld-page-narrow { max-width: calc(var(--layout-flow-narrow-max-width) + 2 * var(--space-8)); }
+}
+.ld-stack { min-width: 0; }
+:is(.ld-page, .ld-stack) > * { margin-block: 0; }
+.ld-stack-sm > * + * { margin-top: var(--space-2); }
+.ld-stack-md > * + * { margin-top: var(--space-4); }
+.ld-stack-lg > * + * { margin-top: var(--space-6); }
 .ld-unread-dot { width: var(--size-unread-dot); height: var(--size-unread-dot); border-radius: 999px; background: var(--primary); }
 .ld-inbox-row .ld-row-title { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; overflow-wrap: break-word; }
 /* An inbox row's subtitle previews the message, which holds the full text, so it keeps to one line at any text size. */
@@ -278,7 +303,7 @@ button.ld-back { background: none; border: 0; font-family: inherit; font-weight:
 }
 [data-theme$="-hc"] .ld-inbox-notice { box-shadow: inset 0 0 0 1px var(--input); }
 .ld-inbox-notice .ld-btn-plain { margin-inline-start: calc(-1 * var(--space-2)); color: var(--ld-primary-on-tint); }
-.ld-message { --ld-message-pad: var(--space-6); background: var(--card); color: var(--card-foreground); border-radius: var(--radius-xl); padding: var(--ld-message-pad); overflow: clip; }
+.ld-message { --ld-message-pad: var(--space-6); background: var(--card); color: var(--card-foreground); border-radius: var(--radius-xl); padding: var(--ld-message-pad); overflow: clip; box-shadow: var(--look-surface-edge); }
 [data-theme$="-hc"] .ld-message { box-shadow: 0 0 0 1px var(--input); }
 /* Stacked, the page scrolls, so the way back and the actions stay at the top of the screen. */
 .ld-message-bar {
@@ -287,7 +312,7 @@ button.ld-back { background: none; border: 0; font-family: inherit; font-weight:
   background: var(--card);
 }
 .ld-message-actions { display: flex; gap: var(--space-2); flex-wrap: wrap; margin-left: auto; }
-.ld-message-header { display: grid; gap: var(--space-2); margin-top: var(--space-2); padding-bottom: var(--space-4); border-bottom: 0.5px solid var(--border); }
+.ld-message-header { display: grid; gap: var(--space-2); margin-top: var(--space-2); padding-bottom: var(--space-4); border-bottom: var(--look-hairline) solid var(--border); }
 .ld-message-title { margin: 0; outline: none; overflow-wrap: anywhere; }
 .ld-message-title:focus-visible { outline: var(--stroke-ring) solid var(--ring); outline-offset: var(--stroke-ring-offset); border-radius: var(--radius-xs); }
 .ld-message-meta { margin: 0; font-size: var(--text-subheadline-size); line-height: var(--text-subheadline-line-height); color: var(--muted-foreground); overflow-wrap: anywhere; }
@@ -360,6 +385,13 @@ button.ld-back { background: none; border: 0; font-family: inherit; font-weight:
 .ld-dt-empty { background: var(--card); border-radius: var(--radius-lg); }
 .ld-dt-pager { display: flex; justify-content: center; align-items: center; gap: var(--space-3); flex-wrap: wrap; }
 .ld-dt-page { font-size: var(--text-subheadline-size); line-height: var(--text-subheadline-line-height); color: var(--muted-foreground); font-variant-numeric: tabular-nums; }
+/* Narrow, keeping the table (`narrow="scroll"`), with a column that has no width: a phone-width box can't share out
+   fixed columns without splitting words or cutting short values off. So columns fit their content (a width is a
+   minimum), a cell wraps only between words, and the table scrolls sideways once that doesn't fit. A `truncate`
+   column still keeps to one line, up to half the box. */
+.ld-dt[data-fit="content"] .ld-table { table-layout: auto; min-width: 0; }
+.ld-dt[data-fit="content"] :is(.ld-table-th, .ld-table-td, .ld-table-rowheader) { overflow-wrap: break-word; }
+.ld-dt[data-fit="content"] .ld-table-trunc { max-inline-size: var(--layout-table-truncate-max-width); }
 .ld-dt-cards .ld-table-caption { display: block; padding: 0 var(--space-4) var(--space-2); }
 .ld-dt-cards .ld-row-more { width: var(--ld-table-hit); height: var(--ld-table-hit); margin-right: calc(-1 * var(--space-2)); }
 .ld-dt-card-selected .ld-row { background: color-mix(in srgb, var(--primary) 10%, var(--card)); }

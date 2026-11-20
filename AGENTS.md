@@ -24,21 +24,26 @@ picks what to run.
   To run beside another server, use a free port of your own: `PW_PORT=4571 npm test`. Tests default to port 4300, away
   from `npm run preview` (4173), because outside CI they reuse whatever server is on their port; a first check fails
   if that server has no fixture pages.
+- `node benchmarks/docs-agent/run.mjs` — the docs benchmark: a fresh agent builds a screen from `llms.txt` alone, and
+  the harness records what it read and checks what it built. It spends money, so nothing runs it automatically.
+  `benchmarks/docs-agent/README.md` covers options and fairness.
 - `npm run contrast` — the contrast gate alone; `npm run contrast -- --report` prints every pair.
 - `scripts/preview-pr.sh <N>` — builds pull request N and uploads it as the Worker Preview `pr-<N>` (`--dry-run`,
   `--comment`, `--delete`). `CONTRIBUTING.md` covers credentials.
+- Branches: open pull requests into `develop`; `main` changes only at a release. Releasing is in `docs/releasing.md`.
+  Only a repo admin can push the `vX.Y.Z` tag that deploys the site, so prepare the release and leave the tag to them.
 - `npm run design-system` — writes Lede's design system for claude.ai to `dist-design-system/project/`.
   CONTRIBUTING.md says how to publish it.
-- CI runs what a PR into main can affect, and `check` is the one status to read. `scripts/ci-tier.mjs` sorts the
-  PR's diff against main. A diff of only Markdown the site doesn't render (the root `CHANGELOG.md`, `CONTRIBUTING.md`,
-  `AGENTS.md` and `CLAUDE.md`, plus Markdown in `docs/` and `.claude/`), of files under `integrations/` or `scripts/design-system/`
-  that still exist, or of these together, runs the build. Overview renders the README's install steps, so a README
-  diff runs everything. A diff of only `.ts` files under `tests/`, none of them deleted, runs the build and the specs
-  that change or import a changed helper.
-  Any other diff runs the build and the whole suite in shards, with `perf` on a runner of its own. A PR into another
-  branch, a push to main and a manual run always run everything. The `integrations` job, which `check` needs, runs
-  each `integrations/` entry's own build and tests on every PR. The `@source not` lines in `src/styles/globals.css`
-  keep Tailwind from scanning those Markdown files, `tests/`, `integrations/` and `scripts/design-system/`, so none of
-  those diffs reaches the site's CSS, and they change with the script's lists. If the site starts to render one of
-  those Markdown files, take it out of both. One more, `scripts/llms/`, keeps the Markdown generator's selector
-  strings out of the CSS; it stays out of the script's lists, since its diffs change the built Markdown.
+- CI runs what a PR into main can affect, and `check` is the one status to read. `scripts/ci-tier.mjs` sorts the PR's
+  diff against main. A diff of only Markdown the site doesn't render (the root `CHANGELOG.md`, `CONTRIBUTING.md`,
+  `AGENTS.md` and `CLAUDE.md`, plus Markdown in `docs/` and `.claude/`), of files under `integrations/`, `benchmarks/`
+  or `scripts/design-system/` that still exist, or of these together, runs the build. Overview renders the README's
+  install steps, so a README diff runs everything. A diff of only `.ts` files under `tests/`, none of them deleted,
+  runs the build and the specs that change or import a changed helper. Any other diff runs the build and the whole
+  suite in shards, with `perf` on a runner of its own. A PR into another branch, a push to main and a manual run
+  always run everything. The `integrations` job, which `check` needs, runs each `integrations/` entry's own build and
+  tests on every PR. The `@source not` lines in `src/styles/globals.css` keep Tailwind from scanning those Markdown
+  files, `tests/`, `integrations/`, `benchmarks/` and `scripts/design-system/`, so none of those diffs reaches the
+  site's CSS, and they change with the script's lists. If the site starts to render one of those Markdown files, take
+  it out of both. One more, `scripts/llms/`, keeps the Markdown generator's selector strings out of the CSS; it stays
+  out of the script's lists, since its diffs change the built Markdown.

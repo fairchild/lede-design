@@ -1,0 +1,3 @@
+# Each run's transcript, app and screenshot, and the cached starting app. results.md holds what's kept.
+runs/
+.cache/

@@ -9,7 +9,9 @@ import { Avatar } from '@lede/avatar';
 import { Card } from '@lede/card';
 import { ListGroup, ListRow } from '@lede/list';
 import { StatusText } from '@lede/status-text';
+import { CodeBlock } from '@lede/code-block';
 import { Disclosure } from '@lede/disclosure';
+import { AlertDialog } from '@lede/alert-dialog';
 import { GlassBar, GlassToolbar, GlassToolbarButton, GlassToolbarSeparator } from '@lede/glass-bar';
 import { ThemeProvider } from '@lede/theme-provider';
 import { Checkbox } from '@lede/checkbox';
@@ -37,6 +39,56 @@ function SearchDemo() {
       <ListGroup title="All hosts" summary={query ? `${shown.length} of ${HOSTS.length}` : `${HOSTS.length}`} empty="No host matches." headingLevel={3}>
         {shown.map((h) => <ListRow key={h} title={h} />)}
       </ListGroup>
+    </div>
+  );
+}
+
+const LOG_LINES = [
+  '\x1b[2m9:41:02\x1b[0m Building \x1b[1medge-sfo-2\x1b[0m',
+  '\x1b[2m9:41:05\x1b[0m Pulling base image',
+  '\x1b[2m9:41:07\x1b[0m \x1b[32m✓\x1b[0m Image pushed',
+  '\x1b[2m9:41:08\x1b[0m Rolling out to 3 instances',
+  '\x1b[2m9:41:20\x1b[0m \x1b[33m! Instance 2 is slow to start\x1b[0m',
+  '\x1b[2m9:41:38\x1b[0m \x1b[31m✗ Health check timed out after 30 seconds\x1b[0m',
+  '\x1b[2m9:41:38\x1b[0m Traffic stays on \x1b[36mv41\x1b[0m',
+];
+function LogDemo() {
+  const [count, setCount] = React.useState(3);
+  return (
+    <div className="docs-demo-col">
+      <CodeBlock title="Deploy log" ansi follow style={{ '--ld-code-max-height': '7.5rem' } as React.CSSProperties}>
+        {LOG_LINES.slice(0, count).join('\n')}
+      </CodeBlock>
+      <div className="docs-demo">
+        <Button onClick={() => setCount((c) => Math.min(c + 1, LOG_LINES.length))} disabled={count === LOG_LINES.length}>Add a log line</Button>
+        <Button variant="plain" onClick={() => setCount(3)}>Start over</Button>
+      </div>
+    </div>
+  );
+}
+
+function AlertDialogDemo() {
+  const [said, setSaid] = React.useState('');
+  return (
+    <div className="docs-demo-col">
+      <div className="docs-demo">
+        <AlertDialog
+          trigger={<Button tone="critical">Delete edge-sfo-2</Button>}
+          title="Delete edge-sfo-2?"
+          description="Its 3 deploy runs go too. You can’t undo this."
+          confirmLabel="Delete"
+          tone="critical"
+          onConfirm={() => setSaid('edge-sfo-2 was deleted. In the demo it comes back.')}
+        />
+        <AlertDialog
+          trigger={<Button>Restart api-iad-1</Button>}
+          title="Restart api-iad-1?"
+          description="It stops answering for about 20 seconds."
+          confirmLabel="Restart"
+          onConfirm={() => setSaid('api-iad-1 is restarting.')}
+        />
+      </div>
+      <p className="docs-intro docs-note" role="status">{said}</p>
     </div>
   );
 }
@@ -128,6 +180,15 @@ export function Components() {
           with <code>'all'</code>. A group’s <code>empty</code> text stands in for its rows when there are none, such as
           when a filter leaves nothing.
         </p>
+        <p className="docs-intro docs-note">
+          A row with <code>details</code> opens them under itself, in the same list item: the row is a{' '}
+          <code>{'<button aria-expanded>'}</code>, its chevron turns down while they show, and find-in-page opens a row
+          whose details hold the text. <code>open</code> and <code>onOpenChange</code> control it.
+        </p>
+        <Live><ListGroup title="Runs" summary="2 today" headingLevel={3}>
+          <ListRow title="Deploy edge-sfo-2" subtitle="9:41 AM" value={<StatusText tone="critical">Failed</StatusText>} details={<p className="text-subheadline m-0">The health check timed out after 30 seconds, so traffic stayed on the previous version.</p>} />
+          <ListRow title="Deploy api-iad-1" subtitle="8:02 AM" value={<StatusText tone="positive">Done</StatusText>} details={<p className="text-subheadline m-0">Rolled out to 3 of 3 instances in 2 minutes.</p>} />
+        </ListGroup></Live>
       </Demo>
       <Demo id="c-status" item="status-text" title="StatusText" summary={<>A status word in a <code>{'<span>'}</code>, colored by its <code>tone</code>, with a dot before it. It takes the size of the text around it, so it fits a ListRow’s <code>value</code>, a table cell or a sentence.</>}>
         <Live><ListGroup title="Hosts" summary="1 failed" headingLevel={3}>
@@ -138,6 +199,16 @@ export function Components() {
         </ListGroup></Live>
         <p className="docs-intro docs-note">
           The words carry the status and the tone only adds color, so a status reads the same without color.
+        </p>
+      </Demo>
+      <Demo id="c-code" item="code-block" title="CodeBlock" summary={<>A <code>{'<figure>'}</code> holding a <code>{'<pre>'}</code> of code or a log, with an optional caption. It grows to a set height and then scrolls, and once its text overflows it becomes a named region a keyboard can scroll.</>}>
+        <Live><LogDemo /></Live>
+        <p className="docs-intro docs-note">
+          With <code>ansi</code>, it reads a terminal’s escape codes: each of the eight colors shows as a token, from{' '}
+          <code>ANSI_TOKENS</code>, so every app’s logs agree, and bold, dim, italic and underline keep their look.
+          Other codes are dropped and their text stays. A log’s words carry its meaning, as “✗ Health check timed out”
+          does, and the color only adds to them. <code>follow</code> keeps the end in view as lines arrive, until the
+          reader scrolls up.
         </p>
       </Demo>
       <Demo id="c-table" item="table" title="Table" summary={<>A native <code>{'<table>'}</code> in parts: a caption, header cells, one row header per row and optional sort buttons. DataTable builds on it, and on its own it suits a small static table.</>}>
@@ -165,6 +236,14 @@ export function Components() {
         <Live><Disclosure title="Spending" summary="On track, $420 under budget" headingLevel={3}>
           <p className="m-0">Detail lives here.</p>
         </Disclosure></Live>
+      </Demo>
+      <Demo id="c-alert" item="alert-dialog" title="AlertDialog" summary={<>A Base UI AlertDialog: a modal <code>{'role="alertdialog"'}</code> that asks before an action, named by its question, with Cancel and a confirm button. Escape cancels, and a press outside does nothing.</>}>
+        <Live><AlertDialogDemo /></Live>
+        <p className="docs-intro docs-note">
+          Focus opens on the confirm button, and on Cancel when <code>tone</code> is <code>"critical"</code>, so Enter
+          never destroys anything by itself. It closes back to the control that opened it, or to <code>finalFocus</code>{' '}
+          when that control is gone. Open one from a row action with <code>open</code> and <code>onOpenChange</code>.
+        </p>
       </Demo>
       <Demo id="c-theme" item="theme-provider" title="ThemeProvider" summary={<>ThemeProvider sets the scheme, contrast, accent, shape, density and glass (the translucent, blurred material of bars and toolbars) for a subtree. A nested provider inherits each of those it leaves unset except glass, and ThemeScope carries the theme into an overlay’s portal<Live>: open a row’s ••• menu in each panel to compare</Live>.</>}>
         <div className="docs-demo-col">

@@ -302,7 +302,8 @@ function Columns({ widths, sticky = 0 }: { widths: ReadonlyArray<ColumnWidth | n
     if (!group || !table) return;
     const { cols, minWidth } = columnWidths(widths);
     Array.from(group.children as HTMLCollectionOf<HTMLTableColElement>).forEach((col, i) => { col.style.width = cols[i] ?? ''; });
-    table.style.minWidth = minWidth;
+    // A custom property, not `min-width` itself, so a layout that sizes columns to their content can drop it.
+    table.style.setProperty('--ld-table-min-w', minWidth);
     const stuck = cols.slice(0, sticky);
     // An auto-width sticky column has no width to add up: Table.Root measures them instead.
     if (sticky > 0 && stuck.every(Boolean)) table.style.setProperty('--ld-table-stuck-w', `calc(${stuck.join(' + ')})`);

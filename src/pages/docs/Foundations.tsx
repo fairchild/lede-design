@@ -49,7 +49,7 @@ const PREVIEW: Record<string, { className: string; style: (name: string) => CSSP
 };
 
 /** A table wider than its box scrolls sideways there, as Lede's Table does: a named region the keyboard can reach. */
-function Scroll({ label, children }: { label: string; children: ReactNode }) {
+export function Scroll({ label, children }: { label: string; children: ReactNode }) {
   const ref = useRef<HTMLDivElement>(null);
   const [overflowing, setOverflowing] = useState(false);
   useLayoutEffect(() => {

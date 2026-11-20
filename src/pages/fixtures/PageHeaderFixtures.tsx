@@ -3,6 +3,7 @@ import { Button } from '@lede/button';
 import { Switch } from '@lede/switch';
 import { SearchField } from '@lede/search-field';
 import { PageHeader } from '@lede/blocks/page-header';
+import { AlertDialog } from '@lede/alert-dialog';
 
 /**
  * A screen that replaces itself under a control that stays: the button keeps focus as each new screen's PageHeader
@@ -16,7 +17,7 @@ export function PageHeaderFixtures() {
       <PageHeader key={screen} title={screen === 1 ? 'Page header fixtures' : `Screen ${screen}`} summary="A screen that mounts under a control that keeps focus, for the automated tests." />
       <Button variant="gray" onClick={() => setScreen((n) => n + 1)}>Show the next screen</Button>
       <section className="ld-flow-stack" aria-label="A header in a stack">
-        <PageHeader headingLevel={2} focusOnMount={false} title="A header in a stack" summary="An inline-level control follows it." />
+        <PageHeader headingLevel={2} focusOnMount={false} title="A header in a stack" summary="An inline-level control follows it." leading={<span className="ld-tile">L</span>} leadingLink={{ href: '/app', label: 'Daybook home' }} />
         <Switch label="Show the stack spacing" />
       </section>
       <DetailInPlace />
@@ -26,7 +27,7 @@ export function PageHeaderFixtures() {
 
 /**
  * A detail that opens inside the page. Its back button, or Escape, closes it, and focus returns to the opener. Its
- * SearchField keeps Escape while it holds text.
+ * SearchField keeps Escape while it holds text, and its AlertDialogs take Escape before it.
  */
 function DetailInPlace() {
   const [open, setOpen] = React.useState(false);
@@ -45,10 +46,38 @@ function DetailInPlace() {
         <>
           <PageHeader headingLevel={3} title="Venue for Thursday" summary="It opened in place, under this section’s heading." back={{ label: 'Messages', onSelect: close }} backOnEscape />
           <SearchField label="Filter venues" />
+          <VenueActions />
         </>
       ) : (
         <Button ref={opener} variant="gray" onClick={() => setOpen(true)}>Open the detail</Button>
       )}
     </section>
+  );
+}
+
+/** A critical AlertDialog with a trigger, and a primary one a parent opens, each saying what it last did. */
+function VenueActions() {
+  const [said, setSaid] = React.useState('Nothing yet');
+  const [asking, setAsking] = React.useState(false);
+  return (
+    <div className="ld-flow-stack">
+      <AlertDialog
+        trigger={<Button variant="gray" tone="critical">Delete the venue</Button>}
+        title="Delete Harbor Hall?"
+        description="Thursday’s booking goes too. You can’t undo this."
+        confirmLabel="Delete"
+        tone="critical"
+        onConfirm={() => setSaid('Deleted')}
+      />
+      <Button variant="gray" onClick={() => setAsking(true)}>Book the venue</Button>
+      <AlertDialog
+        open={asking}
+        onOpenChange={setAsking}
+        title="Book Harbor Hall for Thursday?"
+        confirmLabel="Book"
+        onConfirm={() => setSaid('Booked')}
+      />
+      <p>Last action: {said}</p>
+    </div>
   );
 }

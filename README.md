@@ -11,7 +11,7 @@ For Claude Code, install the `lede-design-system` skill of this release into the
 
 ```bash
 mkdir -p .claude/skills/lede-design-system
-curl -fsSL https://raw.githubusercontent.com/fairchild/lede-design/v0.6.0/.claude/skills/lede-design-system/SKILL.md \
+curl -fsSL https://raw.githubusercontent.com/fairchild/lede-design/v0.7.0/.claude/skills/lede-design-system/SKILL.md \
   -o .claude/skills/lede-design-system/SKILL.md
 ```
 
@@ -52,7 +52,7 @@ in an app made with create-vite. [Limits](#limits) covers server rendering.
    don't install it.
 
    ```bash
-   npx shadcn@latest registry add '@lede=https://lede.cloudcompute.com/r/v0.6.0/{name}.json'
+   npx shadcn@latest registry add '@lede=https://lede.cloudcompute.com/r/v0.7.0/{name}.json'
    npx shadcn@latest add @lede/theme-provider @lede/list
    ```
 
@@ -77,7 +77,9 @@ in an app made with create-vite. [Limits](#limits) covers server rendering.
 
 4. Wrap your app in `ThemeProvider` and `LinkProvider`. `surface="grouped"` and `min-h-dvh` make the wrapper paint the
    theme's background over the whole page. `LinkProvider` routes Lede's links through your router, so leave it out if
-   you have none.
+   you have none. It comes with `@lede/lede-utils`, which every item but `lede-theme` installs, so there's no
+   `@lede/link` to add. A hero flow, such as `@lede/inbox`, brings no gutter of its own: put it in `Page` or in
+   AppShell's main region, as its reference page's example does.
 
    ```tsx
    import { LinkProvider } from '@/components/lede/link';
@@ -203,7 +205,7 @@ download from ui.shadcn.com, so write this file by hand where that site is out o
   "rsc": false,
   "tailwind": { "css": "src/index.css", "baseColor": "" },
   "aliases": { "components": "@/components", "utils": "@/lib/utils" },
-  "registries": { "@lede": "https://lede.cloudcompute.com/r/v0.6.0/{name}.json" }
+  "registries": { "@lede": "https://lede.cloudcompute.com/r/v0.7.0/{name}.json" }
 }
 ```
 
@@ -215,7 +217,7 @@ download from ui.shadcn.com, so write this file by hand where that site is out o
   them if you add those.
 - Where lede.cloudcompute.com is out of reach too, point `@lede` at the copy of each release on GitHub, the
   `registry` branch of this repo:
-  `https://raw.githubusercontent.com/fairchild/lede-design/registry/r/v0.6.0/{name}.json`.
+  `https://raw.githubusercontent.com/fairchild/lede-design/registry/r/v0.7.0/{name}.json`.
 
 ## Tailwind and Lede's classes
 

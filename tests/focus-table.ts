@@ -230,9 +230,16 @@ export const ARRIVALS: Arrival[] = [
     escape: { url: /:\d+\/$/, target: link('Decisions: how Lede is built and checked') },
   },
   {
+    route: '/looks', arrival: h1('Looks'),
+    via: { from: '/', link: link('Looks: the same principles in other styles'), back: link('Looks: the same principles in other styles') },
+    tabs: [radio('Lede')],
+    shiftTab: link('Overview', main),
+    escape: { url: /:\d+\/$/, target: link('Looks: the same principles in other styles') },
+  },
+  {
     route: '/integrations', arrival: h1('Integrations'),
     via: { from: '/', link: link('Integrations', main), back: link('Integrations', main) },
-    tabs: [link('design system on claude.ai', main), link('The Lede design system', main)],
+    tabs: [link('Lede on claude.ai: a design system of your own', main), link('The Lede design system', main)],
     shiftTab: link('Overview', main),
     escape: { url: /:\d+\/$/, target: link('Integrations', main) },
   },
@@ -1343,6 +1350,23 @@ export const ACTIONS: Action[] = [
     screen: 'Everywhere', action: 'Disclosure toggle', setup: async ({ page }) => { await page.goto('/app'); },
     act: (d) => d.press(button(/^Meetings/)),
     target: button(/^Meetings/),
+  },
+  {
+    screen: 'Everywhere', action: 'ListRow details toggle', setup: async ({ page }) => { await page.goto('/fixtures/list-row'); },
+    act: (d) => d.press(button(/^Deploy edge-sfo-2/)),
+    target: button(/^Deploy edge-sfo-2/),
+  },
+  {
+    screen: 'Everywhere', action: 'A critical AlertDialog opens',
+    setup: async (d) => { await d.page.goto('/fixtures/page-header'); await d.press(button('Open the detail')); },
+    act: (d) => d.press(button('Delete the venue')),
+    target: button('Cancel', { role: 'alertdialog', name: 'Delete Harbor Hall?' }),
+  },
+  {
+    screen: 'Everywhere', action: 'AlertDialog Cancel',
+    setup: async (d) => { await d.page.goto('/fixtures/page-header'); await d.press(button('Open the detail')); await d.press(button('Delete the venue')); },
+    act: (d) => d.press(button('Cancel', { role: 'alertdialog', name: 'Delete Harbor Hall?' })),
+    target: button('Delete the venue'),
   },
   {
     screen: 'Data table', action: 'Layout switch, table to cards', only: 'desktop',

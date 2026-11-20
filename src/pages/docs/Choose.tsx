@@ -34,8 +34,10 @@ export const CHOICES: Array<{ id: string; title: string; choices: Choice[] }> = 
       { need: 'A number and what it means, linking to more', item: 'summary-card', title: 'SummaryCard', href: '/blocks#b-summary', note: 'A figure, a one-line takeaway and a status in words.' },
       { need: 'Detail that opens when someone asks for it', item: 'disclosure', title: 'Disclosure', href: '/components#c-disc', note: 'Its summary reads while it’s closed, and find-in-page can open it.' },
       { need: 'Related content on one surface', item: 'card', title: 'Card', href: '/components#c-card', note: 'Nested corners stay concentric with the card’s.' },
+      { need: 'A page’s gutter, width and the space between its sections, without AppShell', item: 'page', title: 'Page & Stack', href: '/blocks#b-page', note: 'Stack spaces anything one under another with one gap.' },
       { need: 'A list of things that may need a look, worst first', item: 'status-list', title: 'StatusList', href: '/blocks#b-status', note: 'Each row ends in its status in words, and an empty list says nothing needs a look.' },
       { need: 'A status word in a row or a cell, such as Failed or Done', item: 'status-text', title: 'StatusText', href: '/components#c-status', note: 'Colored by its tone, with a dot, so color never carries it alone.' },
+      { need: 'Code or a log, colors from the terminal included', item: 'code-block', title: 'CodeBlock', href: '/components#c-code', note: 'ANSI colors show as tokens, and a streaming log keeps its end in view.' },
       { need: 'A person, with or without a picture', item: 'avatar', title: 'Avatar', href: '/components#c-avatar', note: 'Falls back to initials.' },
       { need: 'A place with nothing in it yet', item: 'empty-state', title: 'EmptyState', href: '/blocks#b-empty', note: 'A heading, one sentence and at most one action.' },
     ],
@@ -44,6 +46,7 @@ export const CHOICES: Array<{ id: string; title: string; choices: Choice[] }> = 
     id: 'input', title: 'Actions and input',
     choices: [
       { need: 'An action, or a link that looks like one', item: 'button', title: 'Button', href: '/components#c-button', note: 'One filled Button per view, for the main action.' },
+      { need: 'A question before an action that needs a second thought', item: 'alert-dialog', title: 'AlertDialog', href: '/components#c-alert', note: 'Cancel or confirm; focus opens on Cancel when the action destroys something.' },
       { need: 'One choice from two to five, all in view', item: 'segmented-control', title: 'SegmentedControl', href: '/components#c-seg', note: 'Radio inputs. Use it for a view or a mode, such as Wide and Narrow.' },
       { need: 'A setting that turns on or off at once', item: 'switch', title: 'Switch', href: '/components#c-switch', note: 'For a choice that waits for a Save, use Checkbox.' },
       { need: 'A yes or no in a form, or picking rows', item: 'checkbox', title: 'Checkbox', href: '/components#c-check', note: 'Has a mixed state for “some selected”.' },

@@ -73,7 +73,7 @@ const HEADERS = [
 export function ListRowFixtures() {
   return (
     <div className="ld-flow">
-      <PageHeader title="List row fixtures" summary="Revealed swipe actions in narrow boxes, group headers with long summaries, subtitles that wrap and an emptied group, for the automated tests." />
+      <PageHeader title="List row fixtures" summary="Revealed swipe actions in narrow boxes, group headers with long summaries, subtitles that wrap, rows that open and an emptied group, for the automated tests." />
       {CASES.map((c) => (
         <section key={c.title} aria-label={c.title} className="docs-section">
           <div style={{ width: c.width }}>
@@ -107,6 +107,12 @@ export function ListRowFixtures() {
             ))}
           </ListGroup>
         </div>
+      </section>
+      <section aria-label="Rows that open" className="docs-section">
+        <ListGroup title="Runs" summary="2 today">
+          <ListRow rowKey="run-2" title="Deploy edge-sfo-2" subtitle="9:41 AM" value={<StatusText tone="critical">Failed</StatusText>} details={<p>Health check timed out after 30 seconds.</p>} actions={TWO} />
+          <ListRow rowKey="run-1" title="Deploy api-iad-1" subtitle="8:02 AM" value={<StatusText tone="positive">Done</StatusText>} details={<p>Rolled out to 3 of 3 instances.</p>} defaultOpen />
+        </ListGroup>
       </section>
       <section aria-label="An emptied group" className="docs-section">
         <ListGroup title="Hosts" summary="0 of 4" empty="No hosts match “zz”.">{[].map(() => null)}</ListGroup>

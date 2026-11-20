@@ -32,7 +32,9 @@ test('every item installs its reference page, whose links to other pages resolve
     expect(page!.type).toBe('registry:file');
     expect(page!.content).toContain(`lede_version: ${version}`);
     expect(page!.content).toContain(`\n# ${item.title}\n`);
-    expect(built(item.name).docs).toContain(`components/lede/docs/${item.name}.md`);
+    // theme-provider prints no line: the CLI would print it twice on the README's own install command.
+    if (item.name === 'theme-provider') expect(built(item.name).docs).toBeUndefined();
+    else expect(built(item.name).docs).toContain(`components/lede/docs/${item.name}.md`);
     // A relative link names a page installed with this item: its own, an item it brings, or the guide.
     const installed = closure(item.name);
     for (const name of mdLinks(page!.content)) {
