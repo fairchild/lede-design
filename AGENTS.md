@@ -31,8 +31,9 @@ picks what to run.
 - `scripts/preview-pr.sh <N>` — builds pull request N and uploads it as the Worker Preview `pr-<N>` (`--dry-run`,
   `--comment`, `--delete`). `CONTRIBUTING.md` covers credentials.
 - Branches: open pull requests into `develop`; `main` changes only at a release. Releasing is in `docs/releasing.md`.
-  Only a repo admin or the release app can create the `vX.Y.Z` tag that deploys the site. Prepare a release with
-  `scripts/prepare-release.mjs`; once a person merges the release pull request, *Tag the release* creates the tag.
+  Only a repo admin or the release app can create the `vX.Y.Z` tag that deploys the site. Start a release with the
+  *Prepare a release* workflow (or `scripts/prepare-release.mjs`); Bertram approves it in the `release` environment,
+  and the workflows merge, tag and deploy.
 - `npm run design-system` — writes Lede's design system for claude.ai to `dist-design-system/project/`.
   CONTRIBUTING.md says how to publish it.
 - CI runs what a PR into main can affect, and `check` is the one status to read. `scripts/ci-tier.mjs` sorts the PR's
