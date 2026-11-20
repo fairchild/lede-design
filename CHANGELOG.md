@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+
+- The README's links name `docs/releasing.md`, which says how a release goes from `develop` to lede.cloudcompute.com.
+
 ## 0.7.0
 
 Looks: a `look` token family lets a theme change edges, depth, sheen, the pressed state and letter case without
