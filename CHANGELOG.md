@@ -8,22 +8,6 @@ CodeBlock, Page and Stack, ListRow details, a stability label on every registry 
 system on claude.ai, and a docs benchmark. The registry for this release is
 `https://lede.cloudcompute.com/r/v0.7.0/{name}.json`.
 
-### Changed
-
-- Releasing needs one person's step: merging the release pull request. *Prepare a release* (from the Actions tab, or
-  `scripts/prepare-release.mjs`) opens the prepare pull request into `develop`; when it merges, *Open the release pull
-  request* opens `develop` → `main`; and when that merges and `check` passes, *Tag the release* creates `vX.Y.Z`, which
-  runs Deploy. The pull request and the tag come from a release GitHub App on the tag ruleset's bypass list;
-  `docs/releasing.md` says how to set it up, and without it each step is done by hand as before.
-
-## 0.7.0
-
-Looks: a `look` token family lets a theme change edges, depth, sheen, the pressed state and letter case without
-restyling components, and the docs site's Looks page shows three looks over the same components. It adds AlertDialog,
-CodeBlock, Page and Stack, ListRow details, a stability label on every registry item, live components in the design
-system on claude.ai, and a docs benchmark. The registry for this release is
-`https://lede.cloudcompute.com/r/v0.7.0/{name}.json`.
-
 ### Added
 
 - Looks: a `look` token family lets a theme change what color, size and type don't reach. `look-hairline` and
@@ -86,6 +70,11 @@ system on claude.ai, and a docs benchmark. The registry for this release is
 
 ### Changed
 
+- Releasing needs one person's step: merging the release pull request. *Prepare a release* (from the Actions tab, or
+  `scripts/prepare-release.mjs`) opens the prepare pull request into `develop`; when it merges, *Open the release pull
+  request* opens `develop` → `main`; and when that merges and `check` passes, *Tag the release* creates `vX.Y.Z`, which
+  runs Deploy. The pull request and the tag come from a release GitHub App on the tag ruleset's bypass list;
+  `docs/releasing.md` says how to set it up, and without it each step is done by hand as before.
 - The Integrations page, `llms.txt` and the `lede-design-system` skill name the maintainers' design system on
   claude.ai as theirs, which opens only for people it's shared with, and point everyone else to publishing their own.
 
