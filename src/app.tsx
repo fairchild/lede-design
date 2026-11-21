@@ -30,6 +30,7 @@ import { WelcomePage } from '@/pages/app/WelcomePage';
 import { WorkPage, WorkItemPage, server } from '@/pages/app/WorkPage';
 import { AppNotFound, NotFound } from '@/pages/NotFound';
 import { useFocusRestoration } from '@/focus-restoration';
+import { useSiteWideParams } from '@/url-state';
 
 const WELCOME_TITLES: Record<string, string> = { '': 'Create your account', preferences: 'Make it yours', review: 'Review', done: 'You’re all set' };
 
@@ -91,6 +92,8 @@ function Root() {
   useDocumentTitle();
   useCanonical();
   useFocusRestoration();
+  // A navigation's new URL gets the look and the appearance back, so every page's link shows them.
+  useSiteWideParams(useLocation());
   return (
     <AppearanceRoot>
       {/* Above the routes, so onboarding, which sits outside the app shell, edits the same person. */}

@@ -7,6 +7,7 @@ import type { Selection, TableState, TableView, Total } from '@lede/blocks/use-d
 import { Table } from '@lede/table';
 import { Button } from '@lede/button';
 import { SegmentedControl } from '@lede/segmented-control';
+import { useUrlParam } from '@/url-state';
 import { TextField } from '@lede/text-field';
 import type { RowAction } from '@lede/list';
 import { allWorkItems, bigWorkItems, createWorkServer, type WorkItem } from '@/data/work-items';
@@ -156,14 +157,15 @@ const PARTS_CODE = `
 </Table.Root>`;
 
 function ClientExample() {
-  const [size, setSize] = React.useState(left.size);
+  const [size, setKept] = useUrlParam('rows', ['24', '500'], '24', left.size as '24' | '500');
+  const setSize = (v: string) => { left.size = v; setKept(v as typeof size); };
   return (
     <>
       <SegmentedControl
         label="Rows in the example"
         options={[{ value: '24', label: '24 rows' }, { value: '500', label: '500 rows' }]}
         value={size}
-        onValueChange={(v) => { left.size = v; setSize(v); }}
+        onValueChange={setSize}
       />
       <DataTable
         caption="Work items (client mode)"
@@ -340,10 +342,13 @@ function searchCount(total: Total) {
 }
 
 const STATES = ['Ready', 'Loading', 'Empty', 'Error', 'Stale'] as const;
+/** `?table-state=error`: the states example's choice, in the URL. */
+const STATE_PARAMS = STATES.map((s) => s.toLowerCase());
 const SAVED_AT = new Date(2026, 9, 31, 10, 42);
 function StatesExample() {
-  const [pick, setKept] = React.useState(left.pick as (typeof STATES)[number]);
-  const setPick = (v: typeof pick) => { left.pick = v; setKept(v); };
+  const [param, setParam] = useUrlParam('table-state', STATE_PARAMS, 'ready', left.pick.toLowerCase());
+  const pick = STATES.find((s) => s.toLowerCase() === param) ?? 'Ready';
+  const setPick = (v: typeof pick) => { left.pick = v; setParam(v.toLowerCase()); };
   const back = () => setPick('Ready');
   // Three independent parts: whose rows are shown, whether more are on the way, and what failed.
   const state: TableState =

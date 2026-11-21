@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- The docs site's views are shareable by URL. The look (`?look=brutal`) and the appearance (`?scheme=dark`,
+  `contrast=high`, `accent`, `shape`, `density=compact`, `glass=solid`) follow the reader from page to page, and
+  Overview's example (`?example=workbench`) and the data table guide's examples (`?table-state=error`, `rows=500`)
+  stay on their page. Opening a link wins over what the browser remembered, and a param the link leaves out keeps the
+  reader's own setting. A value at its default stays out of the URL, and a change adds no Back step.
+  `src/url-state.ts` holds the helper.
+
 ## 0.7.1
 
 Release housekeeping: a ruleset file keeps develop and main from being deleted, and the README links the release guide. No component changes. The registry for this release is `https://lede.cloudcompute.com/r/v0.7.1/{name}.json`.

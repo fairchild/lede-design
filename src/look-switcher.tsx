@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { readParam, shareSiteWide, writeParams } from '@/url-state';
 // The looks' faces, bundled with the site. A browser fetches a face only when a look's CSS uses it.
 import '@fontsource-variable/space-grotesk';
 import '@fontsource-variable/newsreader/opsz.css';
@@ -7,8 +8,10 @@ import '@fontsource-variable/libre-franklin';
 import '@fontsource/unifrakturmaguntia';
 
 /**
- * SPIKE: the site's look, `data-look` on <html>. `?look=brutal` in the URL wins and is remembered, `?chrome=0` hides the
- * floating picker, and the Looks page has its own picker. One store, so every picker shows the same look.
+ * SPIKE: the site's look, `data-look` on <html>. The URL carries it as `?look=brutal` on every page, so a link shows its
+ * sender's look: opening one wins over the look this browser remembered, and is remembered in turn. The param's name and
+ * values stay as they are when the look becomes a theme axis. `?chrome=0` hides the floating picker, and the Looks page
+ * has its own picker. One store, so every picker shows the same look.
  */
 export const LOOKS = [
   { id: 'lede', name: 'Lede' },
@@ -20,15 +23,19 @@ export type LookId = (typeof LOOKS)[number]['id'];
 const KEY = 'lede:look';
 const valid = (v: string | null): v is LookId => LOOKS.some((l) => l.id === v);
 
+const remember = (look: LookId) => { try { localStorage.setItem(KEY, look); } catch { /* no storage */ } };
+
 function initial(): LookId {
   if (typeof window === 'undefined') return 'lede';
-  const fromUrl = new URLSearchParams(location.search).get('look');
-  if (valid(fromUrl)) return fromUrl;
+  const fromUrl = readParam('look');
+  // Remembered, so a layout preview's frame, which has its own URL, shows the same look.
+  if (valid(fromUrl)) { remember(fromUrl); return fromUrl; }
   try { const s = localStorage.getItem(KEY); if (valid(s)) return s; } catch { /* no storage */ }
   return 'lede';
 }
 
 let current: LookId = initial();
+const toParams = () => ({ look: current === 'lede' ? null : current });
 const listeners = new Set<() => void>();
 function apply() {
   if (typeof document === 'undefined') return;
@@ -36,11 +43,13 @@ function apply() {
   else document.documentElement.dataset.look = current;
 }
 apply();
+shareSiteWide(toParams);
 
 export function setLook(look: LookId) {
   current = look;
   apply();
-  try { localStorage.setItem(KEY, look); } catch { /* no storage */ }
+  remember(look);
+  writeParams(toParams());
   listeners.forEach((l) => l());
 }
 const subscribe = (l: () => void) => { listeners.add(l); return () => { listeners.delete(l); }; };

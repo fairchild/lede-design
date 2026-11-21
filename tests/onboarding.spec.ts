@@ -218,7 +218,8 @@ test('Finish saves the accent with the profile and the brief, and Back from the 
   await page.getByRole('button', { name: 'Finish' }).click();
   await expect(heading(page, 'You’re all set, Ada')).toBeVisible();
   await expect(page.getByRole('link', { name: 'Get started' })).toBeFocused();
-  await expect(page).toHaveURL(/\/app\/welcome\/done$/);
+  // The new accent rides along in the URL from here on, so a link shows it.
+  await expect(page).toHaveURL(/\/app\/welcome\/done\?accent=pink$/);
   expect(await savedAccent(page)).toBe('pink');
   expect(await draft(page)).toBeUndefined();
   // Finished, the flow is done: no Cancel, and Get started is the way on.
@@ -227,17 +228,17 @@ test('Finish saves the accent with the profile and the brief, and Back from the 
   await expect(heading(page, 'Today')).toBeVisible();
 
   await page.goBack();
-  await expect(page).toHaveURL(/\/app\/welcome\/done$/);
+  await expect(page).toHaveURL(/\/app\/welcome\/done\?accent=pink$/);
   await expect(heading(page, 'You’re all set, Ada')).toBeVisible();
   await expect(page.getByText('Your first brief arrives tomorrow evening.')).toBeVisible();
   // The flow was one entry, so the next Back is the page before it.
   await page.goBack();
-  await expect(page).toHaveURL(/\/app\/settings$/);
+  await expect(page).toHaveURL(/\/app\/settings\?accent=pink$/);
   await expect(page.getByText('Each evening at 6:00 PM')).toBeVisible();
   await expect(page.getByRole('link', { name: /^Appearance/ })).toContainText('Pink');
   await expect(page.getByRole('main').getByRole('link', { name: /Ada Lovelace/ })).toBeVisible();
   // Finished, the furthest step is Done.
   await page.goto('/app/welcome/garbage');
-  await expect(page).toHaveURL(/\/app\/welcome\/done$/);
+  await expect(page).toHaveURL(/\/app\/welcome\/done\?accent=pink$/);
   await expect(heading(page, 'You’re all set, Ada')).toBeVisible();
 });
