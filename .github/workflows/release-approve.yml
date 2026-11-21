@@ -4,13 +4,14 @@ name: Approve the release
 # deployments" on this run. Approving merges the pull request with a merge commit, as the release app; Tag the release
 # then tags main and Deploy publishes. Rejecting, or a newer push to develop, leaves the pull request open.
 #
-# It runs from main's copy of this file whenever CI finishes, so it only acts on a passing pull request from develop
-# into main. The merge names the commit CI passed on, so a push after the approval request makes the merge fail
+# It runs from main's copy of this file whenever CI finishes on develop, and only acts on a passing pull request from
+# develop into main. The merge names the commit CI passed on, so a push after the approval request makes the merge fail
 # instead of releasing untested code; the new push's CI asks again.
 on:
   workflow_run:
     workflows: [CI]
     types: [completed]
+    branches: [develop]
 permissions:
   contents: read
   pull-requests: read
