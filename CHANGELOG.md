@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+
+- A release is approved by Michael (`fairchild`), the `release` environment's required reviewer, in place of
+  Bertram, so the agents that prepare a release don't approve it. `docs/releasing.md`, `AGENTS.md` and the release
+  workflows' comments name him.
+
 ## 0.7.1
 
 Release housekeeping: a ruleset file keeps develop and main from being deleted, and the README links the release guide. No component changes. The registry for this release is `https://lede.cloudcompute.com/r/v0.7.1/{name}.json`.

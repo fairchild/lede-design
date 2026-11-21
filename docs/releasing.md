@@ -6,7 +6,7 @@ publishes the release's registry and the site, and the mirror, which copies the 
 branch alone doesn't change lede.cloudcompute.com.
 
 With the release app and the `release` environment set up (see [Setting up](#setting-up)), a release takes one click
-from Bertram: *Approve and deploy* on the approval GitHub sends him when the release pull request passes CI. Claude or
+from Michael: *Approve and deploy* on the approval GitHub sends him when the release pull request passes CI. Claude or
 anyone else starts it with *Prepare a release*. Without the setup, the same steps work by hand, and each workflow says
 in its run that it stopped.
 
@@ -14,7 +14,7 @@ in its run that it stopped.
 | --- | --- | --- |
 | 1. Prepare the release | Anyone: *Prepare a release* in Actions (Claude can run it), or by hand | A commit on `develop` bumps the version and names the release in the CHANGELOG |
 | 2. Release pull request | `release-pr.yml` | Opens `develop` → `main` |
-| 3. Approve | Bertram, one click | `release-approve.yml` asks once `check` is green, and merges with a merge commit when he approves |
+| 3. Approve | Michael, one click | `release-approve.yml` asks once `check` is green, and merges with a merge commit when he approves |
 | 4. Tag | `release-tag.yml` | Waits for `check` on `main`'s new head, then tags `vX.Y.Z` as the release app |
 | 5. Deploy | `deploy.yml` | Waits for `check` on the tagged commit, publishes `r/vX.Y.Z` to R2, deploys the site |
 | 6. Mirror | `mirror-registry.yml` | Waits for `r/vX.Y.Z` on the site, copies it to the `registry` branch |
@@ -49,7 +49,7 @@ When `develop`'s version moves ahead of `main`'s, *Open the release pull request
 into `main`, with the release's CHANGELOG section as its body. Without the app, open it by hand with that title.
 
 This is the human gate. When CI passes on the pull request, *Approve the release* waits on the `release` environment:
-GitHub emails Bertram, and the run's page (linked from the pull request's checks) shows *Review deployments*. Tick
+GitHub emails Michael, and the run's page (linked from the pull request's checks) shows *Review deployments*. Tick
 `release` and press *Approve and deploy*, and the job merges the pull request with a merge commit as the release app.
 *Reject* leaves it open. A push to `develop` while the request waits replaces it with a new one once CI passes again,
 and the merge names the commit CI passed on, so an approval never releases a commit CI didn't see.
@@ -109,7 +109,7 @@ says (`npm run design-system`).
 
 - **The push printed "Bypassed rule violations".** It worked. Check Actions for the Deploy run.
 - **Claude can't push the tag.** Expected: the ruleset allows only admins and the release app. *Tag the release*
-  creates it, or Bertram pushes it.
+  creates it, or Michael pushes it.
 - **"Tag it by hand" or "Open it by hand" in a run's notices.** The release app's variable or secret isn't set. Set
   it up as below, then run the workflow again from the Actions tab, or do that step by hand.
 - **No approval request came.** CI hasn't passed on the release pull request's latest commit, or the run of *Approve
@@ -156,8 +156,9 @@ runs no Deploy, and the tag ruleset can't name it.
    *Bypass list* with *Always allow*, and save. If a ruleset or branch protection covers `develop` (requires pull
    requests) or `main` (requires reviews), add the app to its bypass list too, so it can commit the release to
    `develop` and merge the release pull request.
-5. In *Settings → Environments*, add an environment named `release`, tick *Required reviewers*, add Bertram, and save.
-   That's the approval.
+5. In *Settings → Environments*, add an environment named `release`, tick *Required reviewers*, add `fairchild`,
+   and save. That's the approval. It is the owner's, so the agents that prepare a release, Bertram included, can't
+   approve it.
 6. Keep `develop` and `main` from being deleted. The repo deletes a pull request's head branch when it merges, which
    is right for feature branches but would delete `develop` when the release pull request merges. In *Settings →
    Rules → Rulesets*, choose *New ruleset → Import a ruleset* and pick
