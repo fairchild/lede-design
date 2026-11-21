@@ -4,6 +4,8 @@
 
 ### Changed
 
+- `.github/rulesets/protect-release-branches.json` keeps `develop` and `main` from being deleted when a pull request
+  merges; `docs/releasing.md` says how to import it.
 - The README's links name `docs/releasing.md`, which says how a release goes from `develop` to lede.cloudcompute.com.
 
 ## 0.7.0
