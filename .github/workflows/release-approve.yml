@@ -1,6 +1,6 @@
 name: Approve the release
 # The one click in a release. When CI passes on the open `release: X.Y.Z` pull request (develop → main), this asks for
-# approval through the `release` environment, whose required reviewer is Bertram: GitHub emails him and shows "Review
+# approval through the `release` environment, whose required reviewer is Michael: GitHub emails him and shows "Review
 # deployments" on this run. Approving merges the pull request with a merge commit, as the release app; Tag the release
 # then tags main and Deploy publishes. Rejecting, or a newer push to develop, leaves the pull request open.
 #
