@@ -1,0 +1,33 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "accent-picker",
+  "title": "AccentPicker",
+  "description": "Native radio inputs for ThemeProvider's accent presets, each with a swatch and a visible name.",
+  "registryDependencies": [
+    "@lede/lede-theme",
+    "@lede/lede-utils",
+    "@lede/theme-provider"
+  ],
+  "files": [
+    {
+      "path": "registry/lede/blocks/accent-picker.tsx",
+      "content": "import * as React from 'react';\nimport { presets, type Preset } from '../theme-provider';\nimport { cn } from '../cn';\n\nexport interface AccentPickerProps {\n  value: Preset;\n  onValueChange: (value: Preset) => void;\n  /** Radio group name. Defaults to a generated id. */\n  name?: string;\n  className?: string;\n}\n\n/**\n * Native radio inputs, one per accent preset, each with a visible name, so color is never the only cue.\n * Place it inside a FormSection, whose `<legend>` names the group.\n */\nexport function AccentPicker(props: AccentPickerProps) {\n  const auto = React.useId();\n  return (\n    <div className={cn('ld-accents', props.className)}>\n      {presets.map((p) => (\n        <label key={p} className=\"ld-accent\">\n          <input\n            type=\"radio\"\n            className=\"ld-accent-input\"\n            name={props.name ?? auto}\n            value={p}\n            checked={props.value === p}\n            onChange={() => props.onValueChange(p)}\n          />\n          <span className=\"ld-accent-swatch\" style={{ background: `var(--preset-${p})` }} aria-hidden=\"true\" />\n          <span className=\"ld-accent-name\">{p[0].toUpperCase() + p.slice(1)}</span>\n        </label>\n      ))}\n    </div>\n  );\n}\n",
+      "type": "registry:component",
+      "target": "components/lede/blocks/accent-picker.tsx"
+    },
+    {
+      "path": "registry/lede/docs/accent-picker.md",
+      "content": "---\ntype: Block\ntitle: AccentPicker\ndescription: Native radio inputs for ThemeProvider's accent presets, each with a swatch and a visible name.\nresource: https://lede.cloudcompute.com/r/v0.7.1/accent-picker.json\ntags:\n  - block\n  - accent-picker\nstability: stable\nlede_version: 0.7.1\n---\n\n# AccentPicker\n\n> Lede 0.7.1's docs for AccentPicker, installed with it. Setup, and every item in the release: [README.md](README.md). Online: https://lede.cloudcompute.com/reference/accent-picker.md\n\nNative radio inputs for ThemeProvider's accent presets, each with a swatch and a visible name.\n\n## Install\n\n```bash\nnpx shadcn@latest add @lede/accent-picker @lede/form-section\n```\n\nThe command needs Lede's registry in `components.json`, as [README.md](README.md#use-it-in-a-shadcn-project) shows. It also installs the items [`lede-theme`](lede-theme.md), [`lede-utils`](lede-utils.md) and [`theme-provider`](theme-provider.md). It adds [`form-section`](https://lede.cloudcompute.com/reference/form-section.md) only because the example below imports it. The item's JSON, with each file's source, is https://lede.cloudcompute.com/r/v0.7.1/accent-picker.json.\n\n## Import\n\n```tsx\nimport { AccentPicker } from '@/components/lede/blocks/accent-picker';\n```\n\n## Files and exports\n\n| Installs to | Import from | Exports |\n| --- | --- | --- |\n| `components/lede/blocks/accent-picker.tsx` | `@/components/lede/blocks/accent-picker` | `AccentPicker` (component), `AccentPickerProps` (type) |\n\n## Props\n\nNative radio inputs, one per accent preset, each with a visible name, so color is never the only cue. Place it inside a FormSection, whose `<legend>` names the group.\n\n| Prop | Type | Default | Description |\n| --- | --- | --- | --- |\n| `value` (required) | `Preset` |  |  |\n| `onValueChange` (required) | `(value: Preset) => void` |  |  |\n| `name` | `string` |  | Radio group name. Defaults to a generated id. |\n| `className` | `string` |  |  |\n\nThese props use types from other items:\n\n- `Preset` is `'blue' | 'indigo' | 'teal' | 'green' | 'orange' | 'pink' | 'graphite'`, declared in [`theme-provider`](theme-provider.md#types).\n\n## Example\n\nThe smallest working use, from the docs site:\n\n```tsx\nimport { useState } from 'react';\nimport { AccentPicker } from '@/components/lede/blocks/accent-picker';\nimport { FormSection } from '@/components/lede/blocks/form-section';\nimport { ThemeProvider, type Preset } from '@/components/lede/theme-provider';\n\nexport function AccentSetting() {\n  const [accent, setAccent] = useState<Preset>('blue');\n  return (\n    <ThemeProvider accent={accent}>\n      <FormSection legend=\"Accent\">\n        <AccentPicker value={accent} onValueChange={setAccent} />\n      </FormSection>\n    </ThemeProvider>\n  );\n}\n```\n\nDocs: [Blocks](https://lede.cloudcompute.com/blocks.md).\n\n## Types\n\nThe declarations of each file, with their doc comments:\n\n```ts\n// components/lede/blocks/accent-picker.tsx\nimport * as React from 'react';\nimport { type Preset } from '../theme-provider';\nexport interface AccentPickerProps {\n    value: Preset;\n    onValueChange: (value: Preset) => void;\n    /** Radio group name. Defaults to a generated id. */\n    name?: string;\n    className?: string;\n}\n/**\n * Native radio inputs, one per accent preset, each with a visible name, so color is never the only cue.\n * Place it inside a FormSection, whose `<legend>` names the group.\n */\nexport declare function AccentPicker(props: AccentPickerProps): React.JSX.Element;\n```\n\nThese declarations use types from other items:\n\n- `Preset` is `'blue' | 'indigo' | 'teal' | 'green' | 'orange' | 'pink' | 'graphite'`, declared in [`theme-provider`](theme-provider.md#types).\n",
+      "type": "registry:file",
+      "target": "components/lede/docs/accent-picker.md"
+    }
+  ],
+  "meta": {
+    "stability": "stable"
+  },
+  "categories": [
+    "blocks"
+  ],
+  "type": "registry:block",
+  "docs": "Docs for AccentPicker: components/lede/docs/accent-picker.md"
+}
