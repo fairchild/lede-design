@@ -1,10 +1,9 @@
 import { test, expect, type Page } from '@playwright/test';
 
-// A docs view is shareable by its URL (src/url-state.ts). A choice writes itself to the address without a new history
-// entry; a fresh browser that opens the address sees the same screen, over what it had remembered; and the look and the
-// appearance follow the reader from page to page.
+// A docs view is shareable by its URL (src/url-state.ts), which is the only place view state lives. A choice writes
+// itself to the address without a new history entry; a fresh browser that opens the address sees the same screen; the
+// look and the appearance follow the reader from page to page; and a bare URL is the defaults.
 
-const search = (page: Page) => new URL(page.url()).search;
 const historyLength = (page: Page) => page.evaluate(() => history.length);
 
 test('picking a look writes ?look= and a fresh browser opening the link sees that look', async ({ page, browser }) => {
@@ -20,8 +19,6 @@ test('picking a look writes ?look= and a fresh browser opening the link sees tha
 
   const other = await browser.newContext();
   const fresh = await other.newPage();
-  // This browser remembered another look: the link wins.
-  await fresh.addInitScript(() => localStorage.setItem('lede:look', 'skeuo'));
   await fresh.goto('/looks?look=broadsheet&chrome=0');
   await expect(fresh.locator('html')).toHaveAttribute('data-look', 'broadsheet');
   await expect(fresh.getByRole('group', { name: 'Look' }).getByRole('radio', { name: 'Broadsheet' })).toBeChecked();
@@ -42,12 +39,32 @@ test('the look and the appearance follow the reader to the next page, and a page
   await expect(page.getByRole('group', { name: 'Example' }).getByRole('radio', { name: 'Daily brief' })).toBeChecked();
 });
 
-test('a link’s appearance wins over the stored one, and a param it leaves out keeps the reader’s own', async ({ page }) => {
+test('a bare URL is the defaults: nothing a page chose before is remembered', async ({ page }) => {
   await page.emulateMedia({ colorScheme: 'light' });
-  await page.addInitScript(() => localStorage.setItem('lede:appearance', JSON.stringify({ highContrast: true, scheme: 'light' })));
-  await page.goto('/foundations?scheme=dark');
+  await page.goto('/foundations?scheme=dark&contrast=high&look=brutal&chrome=0');
   await expect(page.locator('.app-root')).toHaveAttribute('data-theme', 'dark-hc');
-  expect(Object.fromEntries(new URL(page.url()).searchParams)).toEqual({ scheme: 'dark', contrast: 'high' });
+  await page.goto('/foundations');
+  await expect(page.locator('.app-root')).toHaveAttribute('data-theme', 'light');
+  await expect(page.locator('html')).not.toHaveAttribute('data-look');
+  expect(new URL(page.url()).search).toBe('');
+});
+
+test('a layout preview’s frame gets the look and the appearance in its own URL', async ({ page, isMobile }) => {
+  test.skip(isMobile, 'The frame’s URL is the same at every width.');
+  await page.goto('/?look=skeuo&contrast=high&chrome=0');
+  const frame = page.locator('iframe.docs-preview-frame');
+  await expect(frame).toHaveAttribute('src', '/app/inbox/m1?look=skeuo&contrast=high');
+  await page.locator('.ld-shell-footer, .docs-page-foot').filter({ visible: true }).getByRole('switch', { name: 'Increase contrast' }).click();
+  await expect(frame).toHaveAttribute('src', '/app/inbox/m1?look=skeuo');
+});
+
+test('Back to a page brings its own choice back', async ({ page }) => {
+  await page.goto('/blocks/data-table');
+  await page.getByRole('group', { name: 'Table state' }).getByRole('radio', { name: 'Empty' }).check();
+  expect(new URL(page.url()).searchParams.get('table-state')).toBe('empty');
+  await page.goto('/components');
+  await page.goBack();
+  await expect(page.getByRole('group', { name: 'Table state' }).getByRole('radio', { name: 'Empty' })).toBeChecked();
 });
 
 test('a page’s own view opens from its link: Overview’s example and the data table’s state', async ({ page }) => {
@@ -56,8 +73,7 @@ test('a page’s own view opens from its link: Overview’s example and the data
   await page.goto('/blocks/data-table?table-state=error&rows=500');
   await expect(page.getByRole('group', { name: 'Table state' }).getByRole('radio', { name: 'Error' })).toBeChecked();
   await expect(page.getByRole('group', { name: 'Rows in the example' }).getByRole('radio', { name: '500 rows' })).toBeChecked();
-  // An unknown value reads as the default and the default stays out of the URL.
+  // An unknown value reads as the default.
   await page.goto('/?example=nope');
   await expect(page.getByRole('group', { name: 'Example' }).getByRole('radio', { name: 'Inbox' })).toBeChecked();
-  expect(search(page)).toBe('?example=nope');
 });

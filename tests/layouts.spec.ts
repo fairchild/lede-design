@@ -1,5 +1,6 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { test, expect, type Page } from '@playwright/test';
+import { withAppearance } from './appearance';
 import { WEEK_END, WORKSPACE_PROJECTS, WORKSPACE_STATS } from '../src/data/workspace';
 
 const SECTIONS = ['Full page with left bar', 'Three panels with top bar', 'List and detail'];
@@ -176,7 +177,7 @@ test.describe('a preview follows the site\'s theme', () => {
 
   test('as it loads', async ({ page }) => {
     await page.emulateMedia({ colorScheme: 'dark' });
-    await page.addInitScript(() => localStorage.setItem('lede:appearance', JSON.stringify({ highContrast: true, accent: 'teal', shape: 'square' })));
+    await withAppearance(page, { highContrast: true, accent: 'teal', shape: 'square' });
     await page.goto('/layouts');
     const frame = await openPreview(page, 'Three panels with top bar');
     await expect(frame.locator('.ld-theme').first()).toHaveAttribute('data-theme', 'dark-hc');
@@ -194,13 +195,12 @@ test.describe('a preview follows the site\'s theme', () => {
     await expect(frame.locator('.ld-theme').first()).toHaveAttribute('data-theme', 'dark');
   });
 
-  test('when the appearance settings change', async ({ page, context }) => {
+  // The appearance is in the page's URL, and the frame gets it in its own.
+  test('when the appearance changes', async ({ page }) => {
     await page.emulateMedia({ colorScheme: 'light' });
     await page.goto('/layouts');
     const frame = await openPreview(page, 'Three panels with top bar');
-    const settings = await context.newPage();
-    await settings.goto('/app/settings/appearance');
-    await settings.getByRole('switch', { name: /contrast/i }).click();
+    await page.locator('.ld-shell-footer, .docs-page-foot').filter({ visible: true }).getByRole('switch', { name: 'Increase contrast' }).click();
     await expect(page.locator('.ld-theme').first()).toHaveAttribute('data-theme', 'light-hc');
     await expect(frame.locator('.ld-theme').first()).toHaveAttribute('data-theme', 'light-hc');
   });

@@ -1,4 +1,5 @@
 import { test, expect, type Locator, type Page } from '@playwright/test';
+import { withAppearance } from './appearance';
 
 // Forced colours remove backgrounds and shadows, so a control drawn with them disappears, and axe doesn't test this mode.
 // Controls are found by role, so any control on these routes is walked; one that appears only on another route isn't.
@@ -221,7 +222,7 @@ for (const theme of EDGE_THEMES) {
       test.skip(isMobile, 'The widths are set here, so one project is enough.');
       await page.setViewportSize({ width, height: 900 });
       await page.emulateMedia({ colorScheme: theme.scheme });
-      await page.addInitScript((hc) => localStorage.setItem('lede:appearance', JSON.stringify({ highContrast: hc })), theme.hc);
+      await withAppearance(page, { highContrast: theme.hc });
       await page.goto(route);
       await expect(page.locator('main').first()).toBeVisible();
       // A 1px spread with no offset or blur is an edge; a soft shadow only lifts.

@@ -1,6 +1,7 @@
 // A card Disclosure's trigger draws its focus ring and pressed fill inside the card's corners: all four while the panel
 // is closed, the top two while it's open and the panel continues below. A plain one stays square.
 import { test, expect, type Locator } from '@playwright/test';
+import { withAppearance } from './appearance';
 
 const corners = (el: Locator) => el.evaluate((e) => {
   const s = getComputedStyle(e);
@@ -10,7 +11,7 @@ const corners = (el: Locator) => el.evaluate((e) => {
 for (const hc of [false, true]) {
   test(`${hc ? 'in high contrast, ' : ''}a card Disclosure's trigger follows the card's corners, closed and open`, async ({ page }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' });
-    await page.addInitScript((hc) => localStorage.setItem('lede:appearance', JSON.stringify({ highContrast: hc })), hc);
+    await withAppearance(page, { highContrast: hc });
     await page.goto('/components');
     const disc = page.getByRole('region', { name: 'Disclosure' }).locator('.ld-disc').first();
     const head = disc.locator('.ld-disc-head');

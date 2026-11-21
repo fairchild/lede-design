@@ -1,4 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
+import { withAppearance } from './appearance';
 import AxeBuilder from '@axe-core/playwright';
 import { allWorkItems, applyView, bigWorkItems, createWorkServer } from '../src/data/work-items';
 
@@ -444,7 +445,7 @@ for (const mode of [
 ]) {
   test(`the failure message passes axe · ${mode.name}`, async ({ page }) => {
     await page.emulateMedia({ colorScheme: mode.scheme });
-    await page.addInitScript((hc) => localStorage.setItem('lede:appearance', JSON.stringify({ highContrast: hc })), mode.hc);
+    await withAppearance(page, { highContrast: mode.hc });
     await open(page);
     for (const id of [ROW_1, ALWAYS, ONCE]) await row(page, id).getByRole('checkbox').check();
     await bar(page).getByRole('button', { name: 'Archive' }).click();

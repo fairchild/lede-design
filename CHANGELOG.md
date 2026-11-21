@@ -4,12 +4,17 @@
 
 ### Added
 
-- The docs site's views are shareable by URL. The look (`?look=brutal`) and the appearance (`?scheme=dark`,
-  `contrast=high`, `accent`, `shape`, `density=compact`, `glass=solid`) follow the reader from page to page, and
-  Overview's example (`?example=workbench`) and the data table guide's examples (`?table-state=error`, `rows=500`)
-  stay on their page. Opening a link wins over what the browser remembered, and a param the link leaves out keeps the
-  reader's own setting. A value at its default stays out of the URL, and a change adds no Back step.
-  `src/url-state.ts` holds the helper.
+- The docs site's and Daybook's views are shareable by URL, which is the only place view state lives. The look
+  (`?look=brutal`) and the appearance (`scheme`, `contrast=high`, `accent`, `shape`, `density=compact`, `glass=solid`,
+  ThemeProvider's own prop names) follow the reader from page to page through `RouterLink`, and Overview's example
+  (`?example=workbench`) and the data table guide's examples (`?table-state=error`, `rows=500`) stay on their page. A
+  value at its default stays out of the URL, an unknown one reads as the default, and a change adds no Back step.
+  `src/view-params.ts` holds the helpers.
+
+### Removed
+
+- The site no longer stores the look (`lede:look`) or the appearance (`lede:appearance`) in `localStorage`. A bare URL
+  shows the defaults, which follow the system's light or dark mode and Increase contrast.
 
 ## 0.7.1
 

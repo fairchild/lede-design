@@ -1,5 +1,6 @@
 import * as React from 'react';
-import { readParam, shareSiteWide, writeParams } from '@/url-state';
+import { useSearchParams } from 'react-router';
+import { readView, useSetViewParams } from '@/view-params';
 // The looks' faces, bundled with the site. A browser fetches a face only when a look's CSS uses it.
 import '@fontsource-variable/space-grotesk';
 import '@fontsource-variable/newsreader/opsz.css';
@@ -8,10 +9,9 @@ import '@fontsource-variable/libre-franklin';
 import '@fontsource/unifrakturmaguntia';
 
 /**
- * SPIKE: the site's look, `data-look` on <html>. The URL carries it as `?look=brutal` on every page, so a link shows its
- * sender's look: opening one wins over the look this browser remembered, and is remembered in turn. The param's name and
- * values stay as they are when the look becomes a theme axis. `?chrome=0` hides the floating picker, and the Looks page
- * has its own picker. One store, so every picker shows the same look.
+ * SPIKE: the site's look, `data-look` on <html>, read from the URL's `?look=brutal` (src/view-params.ts) and carried to
+ * every page with the appearance. A bare URL shows Lede. The param's name and values stay as they are when the look
+ * becomes a theme axis. `?chrome=0` hides the floating picker, and the Looks page has its own picker.
  */
 export const LOOKS = [
   { id: 'lede', name: 'Lede' },
@@ -20,44 +20,30 @@ export const LOOKS = [
   { id: 'broadsheet', name: 'Broadsheet' },
 ] as const;
 export type LookId = (typeof LOOKS)[number]['id'];
-const KEY = 'lede:look';
-const valid = (v: string | null): v is LookId => LOOKS.some((l) => l.id === v);
+const IDS = LOOKS.map((l) => l.id);
 
-const remember = (look: LookId) => { try { localStorage.setItem(KEY, look); } catch { /* no storage */ } };
-
-function initial(): LookId {
-  if (typeof window === 'undefined') return 'lede';
-  const fromUrl = readParam('look');
-  // Remembered, so a layout preview's frame, which has its own URL, shows the same look.
-  if (valid(fromUrl)) { remember(fromUrl); return fromUrl; }
-  try { const s = localStorage.getItem(KEY); if (valid(s)) return s; } catch { /* no storage */ }
-  return 'lede';
+export function useLook(): LookId {
+  return readView(useSearchParams()[0], 'look', IDS, 'lede');
 }
 
-let current: LookId = initial();
-const toParams = () => ({ look: current === 'lede' ? null : current });
-const listeners = new Set<() => void>();
-function apply() {
-  if (typeof document === 'undefined') return;
-  if (current === 'lede') delete document.documentElement.dataset.look;
-  else document.documentElement.dataset.look = current;
+export function useSetLook() {
+  const set = useSetViewParams();
+  return React.useCallback((look: LookId) => set({ look: look === 'lede' ? null : look }), [set]);
 }
-apply();
-shareSiteWide(toParams);
 
-export function setLook(look: LookId) {
-  current = look;
-  apply();
-  remember(look);
-  writeParams(toParams());
-  listeners.forEach((l) => l());
+/** In the router's root: puts the URL's look on <html>, where looks.css reads it. */
+export function useLookAttribute() {
+  const look = useLook();
+  React.useLayoutEffect(() => {
+    if (look === 'lede') delete document.documentElement.dataset.look;
+    else document.documentElement.dataset.look = look;
+  }, [look]);
 }
-const subscribe = (l: () => void) => { listeners.add(l); return () => { listeners.delete(l); }; };
-export const useLook = () => React.useSyncExternalStore(subscribe, () => current, () => 'lede' as LookId);
 
 /** The floating picker: in `npm run dev`, or in a build once a look is chosen, so the test suite's pages stay as they were. */
 export function LookSwitcher() {
   const look = useLook();
+  const setLook = useSetLook();
   const params = typeof window === 'undefined' ? null : new URLSearchParams(location.search);
   if (!params || params.get('chrome') === '0' || (!import.meta.env.DEV && look === 'lede' && !params.has('look'))) return null;
   return (

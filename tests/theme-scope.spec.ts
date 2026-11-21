@@ -2,6 +2,7 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { createElement as h, Fragment, type ReactElement, type ReactNode } from 'react';
 import { renderToString } from 'react-dom/server';
 import { test, expect, type Locator, type Page } from '@playwright/test';
+import { withAppearance, type Prefs } from './appearance';
 import AxeBuilder from '@axe-core/playwright';
 import { Button, Checkbox, ThemeProvider, ThemeScope, type ThemeProviderProps } from '../registry/lede/index';
 
@@ -43,9 +44,9 @@ const MODES = [
   { name: 'dark-hc', dark: true, hc: true },
 ];
 
-async function visit(page: Page, prefs: Record<string, unknown>, dark = false, route = '/components') {
+async function visit(page: Page, prefs: Prefs, dark = false, route = '/components') {
   await page.emulateMedia({ colorScheme: dark ? 'dark' : 'light' });
-  await page.addInitScript((p) => localStorage.setItem('lede:appearance', JSON.stringify(p)), prefs);
+  await withAppearance(page, prefs);
   await page.goto(route);
 }
 
@@ -90,8 +91,8 @@ const asComputed = (page: Page, colour: string) => page.evaluate((c) => {
 }, colour);
 
 test.describe('Portalled overlays', () => {
-  // One page load per surface: the scheme follows the emulated OS, and high contrast follows the stored prefs, which the
-  // site rereads on a storage event as it does for a second tab. A portal's theme doesn't depend on the viewport, and
+  // One page load per surface: the scheme follows the emulated OS, and high contrast follows the docs' own switch, which
+  // writes the URL. A portal's theme doesn't depend on the viewport, and
   // the card surface is a 380px pane at any width, so these run on desktop.
   for (const scope of SCOPES) {
     test(`take their provider's theme in every theme · ${scope.title}${scope.within ? ` in ${scope.within}` : ''}`, async ({ page, isMobile }) => {
@@ -103,10 +104,8 @@ test.describe('Portalled overlays', () => {
         await test.step(mode.name, async () => {
           const theme = `${scope.dark(mode.dark) ? 'dark' : 'light'}${mode.hc ? '-hc' : ''}`;
           await page.emulateMedia({ colorScheme: mode.dark ? 'dark' : 'light' });
-          await page.evaluate((p) => {
-            localStorage.setItem('lede:appearance', JSON.stringify(p));
-            window.dispatchEvent(new StorageEvent('storage', { key: 'lede:appearance' }));
-          }, { ...SITE, highContrast: mode.hc });
+          const contrast = page.locator('.ld-shell-footer, .docs-page-foot').filter({ visible: true }).getByRole('switch', { name: 'Increase contrast' });
+          if ((await contrast.isChecked()) !== mode.hc) await contrast.click();
           const trigger = page.locator(scope.within ?? 'body').getByRole('button', { name: `More actions for ${scope.title}` });
           await expect(trigger.locator('xpath=ancestor::*[@data-theme][1]')).toHaveAttribute('data-theme', theme);
           const { menu, wrapper } = await openMenu(page, scope.title, scope.within);

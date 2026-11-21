@@ -1,5 +1,6 @@
 import * as React from 'react';
-import { useNavigate, useParams } from 'react-router';
+import { useParams } from 'react-router';
+import { useSiteNavigate } from '@/view-params';
 import { formatCount } from '@lede/blocks/selection-bar';
 import { InboxFlow, type InboxFlowProps, type InboxNotice } from '@lede/flows/inbox';
 import { dispatch, getDemo, inboxMessages, useDemo, type DemoState, type Removal } from '@/demo-store';
@@ -18,7 +19,7 @@ function notFound(s: DemoState, id: string): InboxFlowProps['notFound'] {
 
 export function InboxPage() {
   const { id } = useParams();
-  const navigate = useNavigate();
+  const navigate = useSiteNavigate();
   const demo = useDemo();
   const list = inboxMessages(demo);
   const open = list.some((m) => m.id === id);

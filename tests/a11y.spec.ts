@@ -1,4 +1,5 @@
 import { test, expect, type Locator, type Page } from '@playwright/test';
+import { withAppearance } from './appearance';
 import AxeBuilder from '@axe-core/playwright';
 import { NOT_FOUND, ROUTES } from './routes';
 import { openPanels } from './open-panels';
@@ -30,7 +31,7 @@ for (const mode of MODES) {
     test(`${route} · ${mode.name}`, async ({ page, isMobile }) => {
       test.skip(isMobile && !PHONE_MODES.has(mode.name), 'A phone runs light and dark-hc; desktop runs every theme.');
       await page.emulateMedia({ colorScheme: mode.scheme });
-      await page.addInitScript((hc) => localStorage.setItem('lede:appearance', JSON.stringify({ highContrast: hc })), mode.hc);
+      await withAppearance(page, { highContrast: mode.hc });
       await page.goto(route);
       await expect(page.locator('main')).toBeVisible();
       // The not-found pages pass axe too, so a route that has gone missing must fail here.
