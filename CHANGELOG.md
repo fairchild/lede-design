@@ -1,6 +1,8 @@
 # Changelog
 
-## Unreleased
+## 0.7.1
+
+Release housekeeping: a ruleset file keeps develop and main from being deleted, and the README links the release guide. No component changes. The registry for this release is `https://lede.cloudcompute.com/r/v0.7.1/{name}.json`.
 
 ### Changed
 
