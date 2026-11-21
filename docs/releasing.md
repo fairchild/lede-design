@@ -114,6 +114,8 @@ says (`npm run design-system`).
   it up as below, then run the workflow again from the Actions tab, or do that step by hand.
 - **No approval request came.** CI hasn't passed on the release pull request's latest commit, or the run of *Approve
   the release* failed: "no required reviewer" means the `release` environment isn't set up, and the merge was refused.
+- **`develop` disappeared after a release.** The *Protect release branches* ruleset isn't active. Recreate `develop`
+  from `main` and import the ruleset, as in step 6 below.
 - **Approve the release failed at the merge.** `develop` moved after the request (a newer request follows when its CI
   passes), or a rule on `main` stops the app: add it to that ruleset's bypass list.
 - **Tag the release failed with "Resource not accessible" or a rule violation.** The app isn't installed on the repo,
@@ -156,3 +158,12 @@ runs no Deploy, and the tag ruleset can't name it.
    `develop` and merge the release pull request.
 5. In *Settings → Environments*, add an environment named `release`, tick *Required reviewers*, add Bertram, and save.
    That's the approval.
+6. Keep `develop` and `main` from being deleted. The repo deletes a pull request's head branch when it merges, which
+   is right for feature branches but would delete `develop` when the release pull request merges. In *Settings →
+   Rules → Rulesets*, choose *New ruleset → Import a ruleset* and pick
+   [`.github/rulesets/protect-release-branches.json`](../.github/rulesets/protect-release-branches.json). It's a
+   branch ruleset whose only rule is *Restrict deletions* on `develop` and `main`, so pushes and merges work as
+   before, and the automatic delete skips both branches.
+
+The ruleset in `.github/rulesets/` is the record of that setting: change the file and import it again (or edit the
+ruleset to match) so the two don't drift.

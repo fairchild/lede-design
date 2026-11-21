@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.7.1
+
+Release housekeeping: a ruleset file keeps develop and main from being deleted, and the README links the release guide. No component changes. The registry for this release is `https://lede.cloudcompute.com/r/v0.7.1/{name}.json`.
+
+### Changed
+
+- `.github/rulesets/protect-release-branches.json` keeps `develop` and `main` from being deleted when a pull request
+  merges; `docs/releasing.md` says how to import it.
+- The README's links name `docs/releasing.md`, which says how a release goes from `develop` to lede.cloudcompute.com.
+
 ## 0.7.0
 
 Looks: a `look` token family lets a theme change edges, depth, sheen, the pressed state and letter case without
