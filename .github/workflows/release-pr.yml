@@ -1,7 +1,7 @@
 name: Open the release pull request
 # When develop gets a version that main doesn't have yet, which happens when a `chore(release): prepare X.Y.Z` pull
 # request merges, this opens `release: X.Y.Z` from develop into main, with the release's CHANGELOG section as its body.
-# When CI passes on it, Approve the release asks Bertram for the one click; Tag the release does the rest.
+# When CI passes on it, Approve the release asks Michael for the one click; Tag the release does the rest.
 #
 # The pull request comes from the release GitHub App, because one opened with the workflow's own token runs no CI, and
 # `check` is required. Without the app this run says so and stops, and the pull request is opened by hand.
