@@ -46,9 +46,24 @@ for (const file of urls.split('\n').filter(Boolean)) {
   console.log(`${file}: ${from} → ${to}`)
 }
 
+// CHANGELOG.md's prose wraps at 120 columns; a word longer than that, such as the URL, keeps its own line.
+const wrap = (text, width = 120) =>
+  text
+    .split(/\s+/)
+    .reduce((lines, word) => {
+      const last = lines.at(-1)
+      if (last && `${last} ${word}`.length <= width) lines[lines.length - 1] = `${last} ${word}`
+      else lines.push(word)
+      return lines
+    }, [])
+    .join('\n')
+
 const registry = `\`https://lede.cloudcompute.com/r/${to}/{name}.json\``
 writeFileSync(
   'CHANGELOG.md',
-  changelog.replace(/^## Unreleased$/m, `## ${next}\n\n${summary.trim()} The registry for this release is ${registry}.`),
+  changelog.replace(
+    /^## Unreleased$/m,
+    () => `## ${next}\n\n${wrap(`${summary.trim()} The registry for this release is ${registry}.`)}`,
+  ),
 )
 console.log(`CHANGELOG.md: ## Unreleased → ## ${next}`)

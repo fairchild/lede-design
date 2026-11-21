@@ -7,6 +7,10 @@
 - A release is approved by Michael (`fairchild`), the `release` environment's required reviewer, in place of
   Bertram, so the agents that prepare a release don't approve it. `docs/releasing.md`, `AGENTS.md` and the release
   workflows' comments name him.
+- *Approve the release* starts only when CI finishes on `develop`, so the Actions list no longer fills with skipped
+  runs from other branches. It takes effect once the next release brings the workflow to `main`.
+- `scripts/prepare-release.mjs` wraps the release summary in CHANGELOG.md at 120 columns, and a `$` in the summary
+  stays as written.
 
 ## 0.7.1
 
