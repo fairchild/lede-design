@@ -1,0 +1,15 @@
+{
+  "name": "Protect release branches",
+  "target": "branch",
+  "enforcement": "active",
+  "conditions": {
+    "ref_name": {
+      "include": ["refs/heads/develop", "refs/heads/main"],
+      "exclude": []
+    }
+  },
+  "rules": [
+    { "type": "deletion" }
+  ],
+  "bypass_actors": []
+}
