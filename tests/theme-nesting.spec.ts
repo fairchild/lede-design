@@ -1,6 +1,7 @@
 // A ThemeProvider is its own theme root: what's inside it follows the nearest provider, never a further one. The fixture
 // nests light inside dark, high contrast and solid glass, then dark inside that light again, beside a light provider on
 // its own as the reference.
+import { readFileSync } from 'node:fs';
 import { test, expect, type Page } from '@playwright/test';
 
 const PROBES = ['reference', 'outer', 'nested', 'again'] as const;
@@ -40,4 +41,36 @@ test('solid glass follows the nearest provider', async ({ page }) => {
   expect(outer.backdrop).toBe('none');
   expect(nested.backdrop).toBe(reference.backdrop);
   expect(again.backdrop).toBe('none');
+});
+
+// A rule that reaches through a theme root's attribute to a descendant sits in the style query that names that root's
+// value, so it follows the nearest root: `[data-theme$="-hc"] .ld-card` inside `@container style(--ld-contrast: high)`.
+const GUARDS = [
+  { root: /\[data-theme\$="-hc"\]\s/, query: '@container style(--ld-contrast: high)' },
+  { root: /(\[data-theme\^="dark"\]|(?<![\w-])\.dark)\s/, query: '@container style(--ld-scheme: dark)' },
+  { root: /\[data-glass="solid"\]\s/, query: '@container style(--ld-glass: solid)' },
+];
+const SHEETS = ['registry/lede/lede.components.css', 'registry/lede/lede.blocks.css', 'src/styles/globals.css', 'src/styles/looks.css'];
+
+/** Each style rule's selector, with the at-rule preludes around it. */
+function rules(text: string) {
+  const found: Array<{ selector: string; within: string[] }> = [];
+  const stack: string[] = [];
+  let start = 0;
+  for (let i = 0; i < text.length; i++) {
+    if (text[i] === '{') { stack.push(text.slice(start, i).replace(/\/\*[\s\S]*?\*\//g, '').trim()); start = i + 1; }
+    else if (text[i] === '}') {
+      const prelude = stack.pop()!;
+      if (!prelude.startsWith('@')) found.push({ selector: prelude.replace(/\s+/g, ' '), within: [...stack] });
+      start = i + 1;
+    }
+  }
+  return found;
+}
+
+test('every rule that reads a theme root from a descendant asks the nearest root', () => {
+  const unguarded = SHEETS.flatMap((sheet) => rules(readFileSync(sheet, 'utf8'))
+    .filter(({ selector, within }) => GUARDS.some(({ root, query }) => root.test(selector) && !within.includes(query)))
+    .map(({ selector }) => `${sheet}: ${selector}`));
+  expect(unguarded).toEqual([]);
 });
