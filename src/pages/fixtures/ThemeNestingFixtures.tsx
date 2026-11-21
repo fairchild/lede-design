@@ -27,6 +27,9 @@ export function ThemeNestingFixtures() {
       </ThemeProvider>
       <ThemeProvider scheme="dark" contrast="high" glass="solid" surface="grouped">
         <Probes id="outer" title="Dark, high contrast, solid glass" />
+        <ThemeProvider scheme="light" surface="grouped">
+          <Probes id="inherits" title="Light inside dark, glass and contrast unset" />
+        </ThemeProvider>
         <ThemeProvider scheme="light" contrast="standard" glass="regular" surface="grouped" tokens={SLOW}>
           <Probes id="nested" title="Light inside dark, slow motion" />
           <ThemeProvider scheme="dark" contrast="high" glass="solid" surface="grouped">

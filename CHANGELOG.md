@@ -11,6 +11,22 @@
   runs from other branches. It takes effect once the next release brings the workflow to `main`.
 - `scripts/prepare-release.mjs` wraps the release summary in CHANGELOG.md at 120 columns, and a `$` in the summary
   stays as written.
+- ThemeProvider: an unset `glass` inherits the nearest provider's, as `scheme`, `contrast`, `accent`, `shape` and
+  `density` do, and is `'regular'` at the root. A provider inside a `glass="solid"` one draws solid glass unless it sets
+  `glass="regular"`.
+- Lede's CSS needs container style queries on custom properties: Chrome and Edge 111, Safari 18 and Firefox 151 or
+  later. In an older browser, `dark:` utilities, high contrast edges and solid glass don't draw.
+
+### Fixed
+
+- A nested ThemeProvider is its own theme root. Inside a light provider in a dark one, `dark:` utilities no longer
+  match. Inside a `contrast="standard"` provider in a high contrast one, Lede's high contrast edges no longer draw, and
+  inside a `glass="regular"` provider in a solid one, glass is translucent again. A project that relied on a dark
+  ancestor reaching `dark:` utilities inside a light provider sets `scheme="dark"` on that provider, or moves those
+  elements out of it.
+- Motion tokens set through a ThemeProvider's `tokens`, such as `duration-standard`, reach the components inside it,
+  and reduced motion still wins over them. `--ld-dur`, `--ld-dur-quick`, `--ld-ease` and `--ld-spring` resolve again on
+  every theme root, so a project that set one of them on `:root` sets the motion token instead.
 
 ## 0.7.1
 

@@ -30,7 +30,10 @@ export interface ThemeProviderProps extends useRender.ComponentProps<'div'> {
    * Unset inherits the nearest provider's, or `:root`'s.
    */
   density?: 'regular' | 'compact' | 'touch';
-  /** Glass material. Default `'regular'`. Under `prefers-reduced-transparency`, glass draws as `solid`. */
+  /**
+   * Glass material. Unset inherits the nearest provider's, and is `'regular'` at the root. Under
+   * `prefers-reduced-transparency`, glass draws as `solid`.
+   */
   glass?: 'regular' | 'solid';
   /** The wrapper's background. Default `'none'`. */
   surface?: 'none' | 'base' | 'grouped';
@@ -121,7 +124,7 @@ export function ThemeProvider(props: ThemeProviderProps) {
   const unset = nearest ? 'inherit' : 'auto';
   const {
     render, scheme = unset, contrast = unset, accent, accentForeground, shape, density,
-    glass = 'regular', surface = 'none', tokens, className, style, ...rest
+    glass = (nearest?.props['data-glass'] ?? 'regular') as 'regular' | 'solid', surface = 'none', tokens, className, style, ...rest
   } = props;
   const ref = React.useRef<HTMLDivElement>(null);
   const [outer, setOuter] = React.useState('light');

@@ -5,7 +5,7 @@ import { readFileSync } from 'node:fs';
 import { test, expect, type Page } from '@playwright/test';
 
 const PROBES = ['reference', 'outer', 'nested', 'again'] as const;
-type Probe = (typeof PROBES)[number];
+type Probe = (typeof PROBES)[number] | 'inherits';
 
 async function read(page: Page, probe: Probe) {
   return page.locator(`[data-probe="${probe}"]`).evaluate((section) => {
@@ -41,6 +41,14 @@ test('solid glass follows the nearest provider', async ({ page }) => {
   expect(outer.backdrop).toBe('none');
   expect(nested.backdrop).toBe(reference.backdrop);
   expect(again.backdrop).toBe('none');
+});
+
+test('a provider that leaves glass and contrast unset takes the nearest provider\'s', async ({ page }) => {
+  const [outer, inherits] = await Promise.all((['outer', 'inherits'] as const).map((p) => read(page, p)));
+  expect(inherits.backdrop).toBe('none');
+  expect(inherits.edge).toContain('0px 0px 0px 1px');
+  expect(inherits.underline).toBe('none');
+  expect(outer.underline).toBe('underline');
 });
 
 // A rule that reaches through a theme root's attribute to a descendant sits in the style query that names that root's
