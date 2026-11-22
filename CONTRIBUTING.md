@@ -93,6 +93,30 @@ When the pull request closes, delete its preview:
 scripts/preview-pr.sh 84 --delete
 ```
 
+## Preview develop
+
+Each push to `develop` deploys it to the preview site, so the next release can be read before it ships.
+`.github/workflows/deploy-preview.yml` builds the site and deploys `wrangler.jsonc`'s Worker under the name
+`lede-design-preview`, on the custom domain that the repo variable `PREVIEW_HOST` names. The production Worker and its
+versions stay as they were, and the preview reads the same R2 bucket, so it shows the published releases, `r/next/`
+and media. Its canonical links and the addresses in its Markdown name lede.cloudcompute.com, as every copy of the site
+does, because that's where Lede is installed from.
+
+Without `PREVIEW_HOST` the job doesn't run. To set it up, once, as a repo admin:
+
+1. In *Settings → Environments → cloudflare → Deployment branches and tags*, add `develop` beside `main` and `v*`.
+2. Give the `cloudflare` environment's `CLOUDFLARE_API_TOKEN` *Zone → Workers Routes: Edit* on the host's zone, which
+   attaching a custom domain needs, beside the *Workers Scripts: Edit* it has.
+3. Set the host, then push to `develop`. Once the workflow is on `main`, running *Deploy develop to the preview site*
+   from the Actions tab with `develop` as its branch deploys it again without a push:
+
+   ```bash
+   gh variable set PREVIEW_HOST --repo fairchild/lede-design --body lede-preview.cloudcompute.com
+   ```
+
+To move the preview, change the variable. The old host stays attached to the Worker until it's removed under the
+Worker's *Settings → Domains & Routes* in Cloudflare.
+
 ## How the code is organized
 
 Lede has five layers, and dependencies only point down:
