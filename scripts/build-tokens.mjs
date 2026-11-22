@@ -122,7 +122,23 @@ theme.push(
   '}',
 );
 out.push('/* Tailwind v4: `bg-primary`, `text-muted-foreground`, `bg-background-grouped`, `rounded-lg` … */', theme.join('\n'), '');
-out.push('@custom-variant dark (&:is(.dark *, [data-theme^="dark"] *));', '');
+// Each theme root names its scheme and contrast, and every element inherits them from its nearest root, so a style
+// query on them answers for the nearest root. `dark:` keeps shadcn's ancestor selector, for its specificity, and adds
+// the query, so a light root inside a dark one stops it.
+out.push(
+  '/* The nearest theme root\'s scheme and contrast, which every element inherits. `dark:` and the -hc rules query them,',
+  '   so a light ThemeProvider inside a dark one stops `dark:` utilities, and a standard one stops -hc edges. */',
+  '.light, [data-theme^="light"] { --ld-scheme: light; }',
+  '.dark, [data-theme^="dark"] { --ld-scheme: dark; }',
+  '[data-theme] { --ld-contrast: standard; }',
+  '[data-theme$="-hc"] { --ld-contrast: high; }',
+  '@custom-variant dark {',
+  '  &:is(.dark *, [data-theme^="dark"] *) {',
+  '    @container style(--ld-scheme: dark) { @slot; }',
+  '  }',
+  '}',
+  '',
+);
 
 const text = out.join('\n');
 writeFileSync('src/styles/lede.tokens.css', text);

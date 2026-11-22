@@ -63,3 +63,21 @@ for (const reducedMotion of ['no-preference', 'reduce'] as const) {
     }
   });
 }
+
+// A real ThemeProvider's `tokens` reach the components inside it: the fixture's light provider sets duration-standard
+// to 2s and easing-spring to ease-in, and reduced motion still wins over them there.
+for (const { reducedMotion, duration, spring } of [
+  { reducedMotion: 'no-preference', duration: '2s', spring: 'ease-in' },
+  { reducedMotion: 'reduce', duration: '0.001s', spring: 'linear' },
+] as const) {
+  test(`under ${reducedMotion}, a Button inside a ThemeProvider with motion tokens takes ${duration} and a ${spring} spring`, async ({ page }) => {
+    await page.emulateMedia({ reducedMotion });
+    await page.goto('/fixtures/theme-nesting');
+    const { properties, durations, easings } = await transitions(page, '[data-probe="nested"] .ld-btn');
+    expect(properties).toContain('transform');
+    expect(durations).toEqual(properties.map(() => duration));
+    expect(easings[properties.indexOf('transform')]).toBe(spring);
+    const outside = await transitions(page, '[data-probe="reference"] .ld-btn');
+    expect(outside.durations).toEqual(outside.properties.map(() => (reducedMotion === 'reduce' ? '0.001s' : '0.24s')));
+  });
+}

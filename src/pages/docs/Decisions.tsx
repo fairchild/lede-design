@@ -199,6 +199,16 @@ const GROUPS: Group[] = [
           <>The same file opens menus inside the site’s provider and nested ones, in all {THEMES} themes, and checks that each takes its own provider’s theme. Each surface loads once and the page moves through the themes, by the emulated OS scheme and the stored high-contrast pref. It runs on desktop: a portal’s theme doesn’t depend on the viewport, and the data table’s cards are a 380px pane at any width. <Path to="tests/a11y.spec.ts" /> and <Path to="tests/row-menu.spec.ts" /> open row menus by touch on a phone.</>,
         ],
       },
+      {
+        title: 'The nearest provider decides',
+        summary: <>Everything inside a ThemeProvider follows the nearest one: its tokens, motion, high contrast, solid glass and <code>dark:</code> utilities.</>,
+        why: <>Providers nest, so a light panel can sit in a dark app. Each theme root sets <code>--ld-scheme</code>, <code>--ld-contrast</code> and <code>--ld-glass</code>, every element inherits them from its nearest root, and a rule that depends on the theme asks for them with a style query, such as <code>@container style(--ld-contrast: high)</code>. The motion aliases resolve again on every theme root, so motion tokens a provider sets reach its components.</>,
+        cost: <>Style queries on custom properties need Chrome 111, Safari 18 or Firefox 151, and in an older browser the rules inside one don’t apply. <code>@scope</code> runs in Safari 17.4 and Firefox 146, and it can’t carry a Tailwind variant: Tailwind writes a variant inside the utility’s own rule, where a nested <code>@scope</code> styles the scope root.</>,
+        heldBy: [
+          <><Path to="tests/theme-nesting.spec.ts" /> nests light inside dark, high contrast and solid glass, then dark inside that light, and checks a <code>dark:</code> utility, a Card’s edge and a glass Card at each level. It also fails a rule in Lede’s CSS that reaches a descendant through a theme attribute outside its style query.</>,
+          <><Path to="tests/reduced-motion.spec.ts" /> sets motion tokens on a ThemeProvider and checks a Button inside it, with and without reduced motion.</>,
+        ],
+      },
     ],
   },
   {

@@ -46,7 +46,8 @@ icons or assets.*
 You need Node 22.12 or later and a client-rendered React 19 project, such as a Vite app, with Tailwind v4, the `@/*`
 path alias and a `components.json`. `npx shadcn@latest init` creates that file, or write the shorter one in
 [components.json](README.md#componentsjson) by hand. [Start from a new Vite app](#start-from-a-new-vite-app) sets up all of them
-in an app made with create-vite. [Limits](#limits) covers server rendering.
+in an app made with create-vite. Lede's CSS runs in Chrome and Edge 111, Safari 18 and Firefox 151 or later.
+[Limits](#limits) covers server rendering and older browsers.
 
 1. Add the registry and the items you want. Keep `@lede/theme-provider` in the list: step 4 needs it, and most items
    don't install it.
@@ -242,9 +243,9 @@ as `flex gap-2` or `mx-auto max-w-xl p-4`.
   on white.
 - **Install from the registry URL.** The CLI's `owner/repo/item#tag` addresses don't work for Lede: `lede-theme` needs
   a CSS file the build generates, and the `@lede/…` dependencies need a registry.
-- **Nested themes reach stock shadcn utilities.** A light [`ThemeProvider`](https://lede.cloudcompute.com/components#c-theme)
-  inside a dark one sets Lede's tokens, and stock `dark:` utilities, high contrast and `glass="solid"` still match
-  inside it, as under shadcn's own `.dark` class.
+- **Older browsers miss what depends on the theme.** `dark:` utilities, high contrast edges and solid glass ask the
+  nearest [`ThemeProvider`](https://lede.cloudcompute.com/components#c-theme) through a container style query, which
+  Safari before 18 and Firefox before 151 don't run, so there they don't draw.
 
 For a chat whose replies hold Lede screens, on the AI SDK and json-render, follow
 [`integrations/json-render-chat`](integrations/json-render-chat/README.md). Its
