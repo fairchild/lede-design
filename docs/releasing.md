@@ -98,8 +98,9 @@ says (`npm run design-system`).
 
 ## Branches and CI
 
-- Pushes to `develop` run no CI and publish nothing. `r/next` and the preview version follow `main`, so they change
-  only at a release.
+- Pushes to `develop` run no CI. Each one deploys `develop` to the preview site, `PREVIEW_HOST`, as CONTRIBUTING.md's
+  [Preview develop](../CONTRIBUTING.md#preview-develop) says, and publishes nothing else. `r/next` and the Worker
+  preview version that Deploy uploads follow `main`, so they change only at a release.
 - A pull request into `develop` runs the whole suite, because `scripts/ci-tier.mjs` tiers only pull requests into
   `main`. The release pull request into `main` is tiered as usual.
 - `develop` → `main` is the only pull request into `main`, apart from a hotfix: branch from `main`, merge into

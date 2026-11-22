@@ -1,0 +1,64 @@
+name: Deploy develop to the preview site
+# Each push to develop builds the site and deploys it as its own Worker, on the custom domain the repo variable
+# PREVIEW_HOST names (lede-preview.cloudcompute.com today), so the next release can be read before it ships. Without
+# the variable the job doesn't run. Production, r/next and the release registries are deploy.yml's alone: the Worker's
+# code only reads the bucket, and nothing here publishes to it.
+on:
+  push:
+    branches: [develop]
+  workflow_dispatch:
+permissions:
+  contents: read
+# Only develop's newest commit is worth showing, so a newer push replaces a run that hasn't finished.
+concurrency:
+  group: deploy-preview
+  cancel-in-progress: true
+defaults:
+  run:
+    shell: bash
+jobs:
+  deploy:
+    # A job-level skip, so a repo without the variable never asks the environment for its secrets.
+    if: vars.PREVIEW_HOST != '' && github.ref == 'refs/heads/develop'
+    runs-on: ubuntu-latest
+    # The same token and account as production. The environment has to admit develop as well as main and v* tags.
+    environment:
+      name: cloudflare
+      url: https://${{ vars.PREVIEW_HOST }}
+    steps:
+      - name: Check for a Cloudflare token
+        id: credentials
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          if [ -n "$CLOUDFLARE_API_TOKEN" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice title=Preview skipped::CLOUDFLARE_API_TOKEN isn't set, so the preview wasn't deployed."
+          fi
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        if: steps.credentials.outputs.ready == 'true'
+        with: { persist-credentials: false }
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        if: steps.credentials.outputs.ready == 'true'
+        with: { node-version: 22, cache: npm }
+      - if: steps.credentials.outputs.ready == 'true'
+        run: npm ci
+      - if: steps.credentials.outputs.ready == 'true'
+        run: npm run build
+      # The Worker is wrangler.jsonc's under another name, so the production Worker and its versions are never touched.
+      # --domain attaches PREVIEW_HOST as a custom domain, which needs its zone in the same Cloudflare account.
+      - name: Deploy the preview Worker
+        if: steps.credentials.outputs.ready == 'true'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          PREVIEW_HOST: ${{ vars.PREVIEW_HOST }}
+        run: |
+          npx wrangler deploy --name lede-design-preview --domain "$PREVIEW_HOST" \
+            --message "develop ${GITHUB_SHA::7}"
+          {
+            echo "### Preview of develop at ${GITHUB_SHA::7}"
+            echo
+            echo "https://$PREVIEW_HOST/"
+          } >> "$GITHUB_STEP_SUMMARY"
