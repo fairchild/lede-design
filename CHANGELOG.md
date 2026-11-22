@@ -11,6 +11,16 @@
   value at its default stays out of the URL, an unknown one reads as the default, and a change adds no Back step.
   `src/view-params.ts` holds the helpers.
 
+### Changed
+
+- A release is approved by Michael (`fairchild`), the `release` environment's required reviewer, in place of
+  Bertram, so the agents that prepare a release don't approve it. `docs/releasing.md`, `AGENTS.md` and the release
+  workflows' comments name him.
+- *Approve the release* starts only when CI finishes on `develop`, so the Actions list no longer fills with skipped
+  runs from other branches. It takes effect once the next release brings the workflow to `main`.
+- `scripts/prepare-release.mjs` wraps the release summary in CHANGELOG.md at 120 columns, and a `$` in the summary
+  stays as written.
+
 ### Removed
 
 - The site no longer stores the look (`lede:look`) or the appearance (`lede:appearance`) in `localStorage`. A bare URL
