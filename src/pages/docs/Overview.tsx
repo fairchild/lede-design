@@ -5,6 +5,7 @@ import { PageHeader } from '@lede/blocks/page-header';
 import { Disclosure } from '@lede/disclosure';
 import { Button } from '@lede/button';
 import { SegmentedControl } from '@lede/segmented-control';
+import { useViewParam } from '@/view-params';
 import { RouterLink } from '@/router-link';
 import { LAYOUTS, LayoutPreview } from './Layouts';
 import { tokenFamilies } from './Foundations';
@@ -77,6 +78,7 @@ const EXAMPLES = [
     summary: 'The day at a glance: what’s next, what’s due and what changed. It’s the daily brief flow, built from summary cards and lists.',
   },
 ];
+const EXAMPLE_VALUES = EXAMPLES.map((e) => e.value);
 
 const COMPONENTS = registry.items.filter((item) => item.type === 'registry:component').length;
 const BLOCKS = registry.items.filter((item) => item.categories?.includes('blocks')).length;
@@ -170,7 +172,7 @@ function AgentPrompt() {
 
 export function Overview() {
   const twin = useTwin();
-  const [shown, setShown] = useState(EXAMPLES[0].value);
+  const [shown, setShown] = useViewParam('example', EXAMPLE_VALUES, EXAMPLES[0].value);
   // The site sets each link on a line of its own; the Markdown runs them together, so a colon parts them there.
   const sep = twin ? ': ' : ' ';
   const example = EXAMPLES.find((e) => e.value === shown) ?? EXAMPLES[0];

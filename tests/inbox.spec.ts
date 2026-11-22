@@ -1,6 +1,7 @@
 // The demo inbox's long message and thread: the summary leads, the latest message is open, and a long message keeps
 // its subject and actions within reach.
 import { test, expect, type Page } from '@playwright/test';
+import { withAppearance } from './appearance';
 import { listen, spoken } from './spoken';
 
 const THREAD = '/app/inbox/m6';
@@ -271,7 +272,7 @@ for (const width of [320, 390, 412]) {
 }
 
 test('in high contrast, a plain Disclosure has a separator and no outline', async ({ page }) => {
-  await page.addInitScript(() => localStorage.setItem('lede:appearance', JSON.stringify({ highContrast: true })));
+  await withAppearance(page, { highContrast: true });
   await page.goto(THREAD);
   const second = thread(page).locator('.ld-disc').nth(1);
   await expect(second).toHaveCSS('box-shadow', 'none');

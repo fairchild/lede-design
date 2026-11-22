@@ -1,63 +1,51 @@
 import * as React from 'react';
+import { useSearchParams } from 'react-router';
 import { ThemeProvider, presets } from '@lede/theme-provider';
 import type { AppearancePrefs } from '@lede/flows/settings';
+import { readView, useSetViewParams } from '@/view-params';
 
-const KEY = 'lede:appearance';
-const DEFAULTS: AppearancePrefs = { scheme: 'auto', highContrast: false, accent: 'blue', shape: 'soft', compact: false, solidGlass: false };
+/**
+ * The site's appearance is ThemeProvider's props, read from the URL's query by the same names:
+ * `?scheme=dark&contrast=high&accent=teal&shape=square&density=compact&glass=solid`. Each is first in its list by default,
+ * and a default stays out of the URL. A bare URL follows the system: Automatic mode, and contrast that rises with the
+ * system's Increase contrast.
+ */
+const AXES = {
+  scheme: ['auto', 'light', 'dark'],
+  contrast: ['auto', 'high'],
+  accent: presets,
+  shape: ['soft', 'crisp', 'square'],
+  density: ['regular', 'compact'],
+  glass: ['regular', 'solid'],
+} as const;
+type Axes = { [K in keyof typeof AXES]: (typeof AXES)[K][number] };
 
-const oneOf = <T extends string>(values: Record<T, true>) => (v: unknown) => typeof v === 'string' && Object.hasOwn(values, v);
-const isBoolean = (v: unknown) => typeof v === 'boolean';
-
-/** One check per field. The tables are typed, so adding a value to a union in the flow fails the typecheck here. */
-const ALLOWED: { [K in keyof AppearancePrefs]: (v: unknown) => boolean } = {
-  scheme: oneOf<AppearancePrefs['scheme']>({ auto: true, light: true, dark: true }),
-  highContrast: isBoolean,
-  accent: (v) => (presets as readonly unknown[]).includes(v),
-  shape: oneOf<AppearancePrefs['shape']>({ soft: true, crisp: true, square: true }),
-  compact: isBoolean,
-  solidGlass: isBoolean,
-};
-
-/** Storage can hold anything, so each field is kept only when it has the right type and an allowed value. */
-function load(): AppearancePrefs {
-  // The docs' Markdown build renders in Node, which has no window and no stored prefs.
-  if (typeof window === 'undefined') return DEFAULTS;
-  try {
-    const stored: unknown = JSON.parse(localStorage.getItem(KEY) ?? 'null');
-    if (typeof stored !== 'object' || stored === null) return DEFAULTS;
-    return { ...DEFAULTS, ...Object.fromEntries(Object.entries(stored).filter(([k, v]) => Object.hasOwn(ALLOWED, k) && ALLOWED[k as keyof AppearancePrefs](v))) };
-  } catch {
-    return DEFAULTS;
-  }
+function readAxes(params: URLSearchParams): Axes {
+  return Object.fromEntries(Object.entries(AXES).map(([name, values]) => [name, readView(params, name, values, values[0])])) as Axes;
 }
+
+/** The Settings → Appearance flow speaks in prefs; this is the one place they meet the URL's axes. */
+const toPrefs = (a: Axes): AppearancePrefs => ({
+  scheme: a.scheme, highContrast: a.contrast === 'high', accent: a.accent, shape: a.shape, compact: a.density === 'compact', solidGlass: a.glass === 'solid',
+});
+const toAxes = (p: AppearancePrefs): Axes => ({
+  scheme: p.scheme, contrast: p.highContrast ? 'high' : 'auto', accent: p.accent, shape: p.shape, density: p.compact ? 'compact' : 'regular', glass: p.solidGlass ? 'solid' : 'regular',
+});
 
 const Ctx = React.createContext<{ prefs: AppearancePrefs; setPrefs: (p: AppearancePrefs) => void } | null>(null);
 
-/** Site-wide appearance, remembered per browser. The Settings → Appearance flow edits it live. */
+/** Site-wide appearance, derived from the URL on every render. The Settings → Appearance flow edits it live. */
 export function AppearanceRoot({ children }: { children: React.ReactNode }) {
-  const [prefs, setState] = React.useState<AppearancePrefs>(load);
+  const [params] = useSearchParams();
+  const setParams = useSetViewParams();
+  const axes = readAxes(params);
   const setPrefs = React.useCallback((p: AppearancePrefs) => {
-    setState(p);
-    try { localStorage.setItem(KEY, JSON.stringify(p)); } catch { /* storage unavailable: keep in memory */ }
-  }, []);
-  // Another document changed the prefs: a second tab, or the docs page around a layout preview's frame.
-  React.useEffect(() => {
-    const onStorage = (event: StorageEvent) => { if (event.key === KEY || event.key === null) setState(load()); };
-    window.addEventListener('storage', onStorage);
-    return () => window.removeEventListener('storage', onStorage);
-  }, []);
+    const next = toAxes(p);
+    setParams(Object.fromEntries(Object.entries(AXES).map(([name, values]) => [name, next[name as keyof Axes] === values[0] ? null : next[name as keyof Axes]])));
+  }, [setParams]);
   return (
-    <Ctx.Provider value={{ prefs, setPrefs }}>
-      <ThemeProvider
-        className="app-root"
-        surface="grouped"
-        scheme={prefs.scheme}
-        contrast={prefs.highContrast ? 'high' : 'auto'}
-        accent={prefs.accent}
-        shape={prefs.shape}
-        density={prefs.compact ? 'compact' : 'regular'}
-        glass={prefs.solidGlass ? 'solid' : 'regular'}
-      >
+    <Ctx.Provider value={{ prefs: toPrefs(axes), setPrefs }}>
+      <ThemeProvider className="app-root" surface="grouped" {...axes}>
         {children}
       </ThemeProvider>
     </Ctx.Provider>

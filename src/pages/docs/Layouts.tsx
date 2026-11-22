@@ -2,6 +2,7 @@ import * as React from 'react';
 import { PageHeader } from '@lede/blocks/page-header';
 import { RouterLink } from '@/router-link';
 import { SegmentedControl } from '@lede/segmented-control';
+import { useSiteHref } from '@/view-params';
 import { Button } from '@lede/button';
 import { CodeExample } from './CodeExample';
 import { Live, ReferenceLinks } from './twin';
@@ -76,6 +77,8 @@ export function LayoutPreview({ title, route, controls }: { title: string; route
     observer.observe(el);
     return () => observer.disconnect();
   }, []);
+  // The frame has its own URL, so it gets the look and the appearance in it, and reloads when they change.
+  const site = useSiteHref();
   const { width, height } = VIEWS[view];
   const scale = Math.min(1, room / width);
   return (
@@ -87,7 +90,7 @@ export function LayoutPreview({ title, route, controls }: { title: string; route
       <div ref={stage} className="docs-preview-stage" style={{ height: height * scale }}>
         <iframe
           className="docs-preview-frame"
-          src={`${import.meta.env.BASE_URL}${route.slice(1)}`}
+          src={site(`${import.meta.env.BASE_URL}${route.slice(1)}`)}
           title={`${title}: live preview`}
           width={width}
           height={height}

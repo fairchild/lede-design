@@ -1,4 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
+import { withAppearance } from './appearance';
 import AxeBuilder from '@axe-core/playwright';
 
 // The site's looks (src/styles/looks.css), turned on with `?look=`. The rest of the suite runs with no look, so these are
@@ -17,7 +18,7 @@ const HC_COLORS = ['--background', '--background-grouped', '--card', '--foregrou
 
 async function open(page: Page, route: string, look: string, mode: (typeof MODES)[number]) {
   await page.emulateMedia({ colorScheme: mode.scheme });
-  await page.addInitScript((hc) => localStorage.setItem('lede:appearance', JSON.stringify({ highContrast: hc })), mode.hc);
+  await withAppearance(page, { highContrast: mode.hc });
   await page.goto(`${route}?look=${look}&chrome=0`);
   await expect(page.locator('main')).toBeVisible();
   if (look === 'lede') await expect(page.locator('html')).not.toHaveAttribute('data-look');

@@ -92,7 +92,7 @@ test('an offline Finish stays on Review with a message and saves nothing, and Fi
   // The answers are still a draft, so the check that nothing was saved reads storage.
   expect(await page.evaluate(() => {
     const demo = JSON.parse(sessionStorage.getItem('lede:demo') ?? '{}');
-    return [demo.brief, demo.onboarding.finished, localStorage.getItem('lede:profile'), localStorage.getItem('lede:appearance')];
+    return [demo.brief, demo.onboarding.finished, localStorage.getItem('lede:profile'), new URLSearchParams(location.search).get('accent')];
   })).toEqual([{ on: true, delivery: 'morning' }, false, null, null]);
 
   // A second refusal is a new alert, so it is announced again.

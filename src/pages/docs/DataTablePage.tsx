@@ -7,11 +7,12 @@ import type { Selection, TableState, TableView, Total } from '@lede/blocks/use-d
 import { Table } from '@lede/table';
 import { Button } from '@lede/button';
 import { SegmentedControl } from '@lede/segmented-control';
+import { useViewParam } from '@/view-params';
 import { TextField } from '@lede/text-field';
 import type { RowAction } from '@lede/list';
 import { allWorkItems, bigWorkItems, createWorkServer, type WorkItem } from '@/data/work-items';
 import { workColumns, formatMoney, StatusChip } from '@/work-columns';
-import { isExample, itemHref, type Example } from './DataTableItemPage';
+import { isExample, itemHref, leaveGuide, type Example } from './DataTableItemPage';
 import { CodeExample } from './CodeExample';
 import { Live, ReferenceLinks } from './twin';
 import CLIENT_CODE from './samples/data-table.tsx?raw';
@@ -22,11 +23,11 @@ import { restoreFocus } from '@/focus-restoration';
  * What the reader left when they opened a row. The examples unmount on the way to the item page, and the server-backed
  * examples' rows arrive after the guide is back, so the page is shorter than it was when the scroll position comes
  * back. When `useServerRows` keeps its rows or height across a remount, the reserved heights go, and
- * probably the re-scroll after mount. The picks and the heading focus stay: they are this page's own state.
+ * probably the re-scroll after mount. The heading focus stays: it is this page's own state. The examples' picks are in
+ * the URL (`?rows=`, `?table-state=`): Back brings them back with the entry, and the item page's back link with
+ * `leaveGuide`.
  */
-const left: { size: string; pick: string; heights: Map<string, number>; scrolls: Map<string, number> } = {
-  size: '24',
-  pick: 'Ready',
+const left: { heights: Map<string, number>; scrolls: Map<string, number> } = {
   heights: new Map(),
   scrolls: new Map(),
 };
@@ -156,14 +157,14 @@ const PARTS_CODE = `
 </Table.Root>`;
 
 function ClientExample() {
-  const [size, setSize] = React.useState(left.size);
+  const [size, setSize] = useViewParam('rows', ['24', '500'], '24');
   return (
     <>
       <SegmentedControl
         label="Rows in the example"
         options={[{ value: '24', label: '24 rows' }, { value: '500', label: '500 rows' }]}
         value={size}
-        onValueChange={(v) => { left.size = v; setSize(v); }}
+        onValueChange={(v) => setSize(v as typeof size)}
       />
       <DataTable
         caption="Work items (client mode)"
@@ -340,10 +341,13 @@ function searchCount(total: Total) {
 }
 
 const STATES = ['Ready', 'Loading', 'Empty', 'Error', 'Stale'] as const;
+/** `?table-state=error`: the states example's choice, in the URL. */
+const STATE_PARAMS = STATES.map((s) => s.toLowerCase());
 const SAVED_AT = new Date(2026, 9, 31, 10, 42);
 function StatesExample() {
-  const [pick, setKept] = React.useState(left.pick as (typeof STATES)[number]);
-  const setPick = (v: typeof pick) => { left.pick = v; setKept(v); };
+  const [param, setParam] = useViewParam('table-state', STATE_PARAMS, 'ready');
+  const pick = STATES.find((s) => s.toLowerCase() === param) ?? 'Ready';
+  const setPick = (v: typeof pick) => setParam(v.toLowerCase());
   const back = () => setPick('Ready');
   // Three independent parts: whose rows are shown, whether more are on the way, and what failed.
   const state: TableState =
@@ -393,7 +397,8 @@ function NarrowExample() {
 }
 
 export function DataTablePage() {
-  const { hash, key } = useLocation();
+  const { hash, key, search } = useLocation();
+  React.useLayoutEffect(() => leaveGuide(search), [search]);
   const y = useNavigationType() === 'POP' ? left.scrolls.get(key) : undefined;
   const target = y === undefined && isExample(hash.slice(1)) ? hash.slice(1) : undefined;
   // Saved once the reader has left this entry. React Router's `history.state.key` (not public API) tells that apart from

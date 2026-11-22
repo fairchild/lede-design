@@ -1,13 +1,15 @@
 // Onboarding in the Daybook demo: each URL shows the step it names, the answers are a draft that a reload keeps, Cancel
 // and the browser's Back leave without saving anything, and Finish saves everything. Each test is a repro of a lost answer.
 import { test, expect, type Page } from '@playwright/test';
+import { withAppearance } from './appearance';
 
 const heading = (page: Page, name: string | RegExp) => page.getByRole('heading', { level: 1, name });
 const ACCOUNT = 'Create your account';
 const PREFERENCES = 'Make it yours';
 const next = (page: Page) => page.getByRole('button', { name: 'Continue' }).click();
 const cancel = (page: Page) => page.getByRole('link', { name: 'Cancel' }).click();
-const savedAccent = (page: Page) => page.evaluate(() => JSON.parse(localStorage.getItem('lede:appearance') ?? '{}').accent ?? 'blue');
+/** The accent in effect: the appearance lives in the URL. */
+const savedAccent = (page: Page) => new URL(page.url()).searchParams.get('accent') ?? 'blue';
 const draft = (page: Page) => page.evaluate(() => JSON.parse(sessionStorage.getItem('lede:demo') ?? '{}').onboarding?.draft);
 /** What a filled button inside onboarding is painted with, once its color has settled, and what a preset paints there. */
 const fill = (page: Page) => page.getByRole('button', { name: 'Continue' }).evaluate((el) => getComputedStyle(el).backgroundColor);
@@ -165,7 +167,7 @@ test('a page restored from the back-forward cache after Cancel keeps its next dr
 });
 
 test('the accent preview’s scope keeps the reader’s other appearance settings', async ({ page }) => {
-  await page.addInitScript(() => localStorage.setItem('lede:appearance', JSON.stringify({ solidGlass: true, scheme: 'dark' })));
+  await withAppearance(page, { solidGlass: true, scheme: 'dark' });
   await page.goto('/app/welcome');
   const scope = page.locator('main').locator('xpath=..');
   await expect(scope).toHaveAttribute('data-glass', 'solid');
@@ -218,7 +220,8 @@ test('Finish saves the accent with the profile and the brief, and Back from the 
   await page.getByRole('button', { name: 'Finish' }).click();
   await expect(heading(page, 'You’re all set, Ada')).toBeVisible();
   await expect(page.getByRole('link', { name: 'Get started' })).toBeFocused();
-  await expect(page).toHaveURL(/\/app\/welcome\/done$/);
+  // The new accent rides along in the URL from here on, so a link shows it.
+  await expect(page).toHaveURL(/\/app\/welcome\/done\?accent=pink$/);
   expect(await savedAccent(page)).toBe('pink');
   expect(await draft(page)).toBeUndefined();
   // Finished, the flow is done: no Cancel, and Get started is the way on.
@@ -227,14 +230,15 @@ test('Finish saves the accent with the profile and the brief, and Back from the 
   await expect(heading(page, 'Today')).toBeVisible();
 
   await page.goBack();
-  await expect(page).toHaveURL(/\/app\/welcome\/done$/);
+  await expect(page).toHaveURL(/\/app\/welcome\/done\?accent=pink$/);
   await expect(heading(page, 'You’re all set, Ada')).toBeVisible();
   await expect(page.getByText('Your first brief arrives tomorrow evening.')).toBeVisible();
   // The flow was one entry, so the next Back is the page before it.
   await page.goBack();
+  // The profile and the brief are saved; the accent is view state in the URL, so this entry shows it as it was.
   await expect(page).toHaveURL(/\/app\/settings$/);
   await expect(page.getByText('Each evening at 6:00 PM')).toBeVisible();
-  await expect(page.getByRole('link', { name: /^Appearance/ })).toContainText('Pink');
+  await expect(page.getByRole('link', { name: /^Appearance/ })).toContainText('Blue');
   await expect(page.getByRole('main').getByRole('link', { name: /Ada Lovelace/ })).toBeVisible();
   // Finished, the furthest step is Done.
   await page.goto('/app/welcome/garbage');

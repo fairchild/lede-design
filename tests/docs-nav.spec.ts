@@ -52,7 +52,8 @@ test('Mode and Increase contrast theme the docs, keep focus and carry into the d
   await expect(contrast).toBeChecked();
   await expect(contrast).toBeFocused();
   await page.getByRole('link', { name: 'Settings → Appearance' }).first().click();
-  await expect(page).toHaveURL(/\/app\/settings\/appearance$/);
+  // The appearance rides along in the URL, so a link to this page shows it too.
+  await expect(page).toHaveURL(/\/app\/settings\/appearance\?scheme=dark&contrast=high$/);
   await expect(page.getByRole('radio', { name: 'Dark' })).toBeChecked();
   await expect(page.getByRole('switch', { name: 'Increase contrast' })).toBeChecked();
 });

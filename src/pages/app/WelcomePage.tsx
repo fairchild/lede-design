@@ -6,6 +6,7 @@ import { ThemeProvider } from '@lede/theme-provider';
 import { useAppearance } from '@/theme';
 import { useProfile } from '@/profile';
 import { RouterLink } from '@/router-link';
+import { useSiteNavigate } from '@/view-params';
 import { dispatch, useDemo, type OnboardingStep } from '@/demo-store';
 import { lastInputWasTouch } from '@lede/input-modality';
 
@@ -28,6 +29,7 @@ const hasEarlierEntry = () => ((window.history.state as { idx?: number } | null)
 export function WelcomePage() {
   const { step = '' } = useParams();
   const navigate = useNavigate();
+  const siteNavigate = useSiteNavigate();
   const { prefs, setPrefs } = useAppearance();
   const { profile, saveProfile } = useProfile();
   const { brief, onboarding: { draft, finished } } = useDemo();
@@ -42,9 +44,9 @@ export function WelcomePage() {
   const done = finished && !draft;
   const shown = asked >= 0 && (asked <= reached || (asked === DONE && done)) ? asked : done ? DONE : reached;
   React.useEffect(() => {
-    if (shown !== asked) navigate(href(shown), { replace: true });
-  }, [shown, asked, navigate]);
-  const go = (n: number) => navigate(href(n), { replace: true });
+    if (shown !== asked) siteNavigate(href(shown), { replace: true });
+  }, [shown, asked, siteNavigate]);
+  const go = (n: number) => siteNavigate(href(n), { replace: true });
 
   // Only Cancel drops the draft: any other way out, the browser's Back included, keeps it for Forward or a replay. Cancel
   // marks the exit, and the draft goes as the page unmounts, so the flow never shows a step without it on the way out.

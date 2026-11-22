@@ -1,4 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
+import { withAppearance } from './appearance';
 import { NOT_FOUND, ROUTES } from './routes';
 
 // Every target on every route answers a press over at least 24×24px (WCAG 2.5.8), and over 44×44px where its nearest
@@ -12,7 +13,7 @@ type Density = 'regular' | 'compact' | 'touch';
 // The demo stores `compact` and has no setting for `touch`, so touch is set where ThemeProvider renders it, on the
 // app's theme root. Every rule a density keys reads that attribute.
 async function open(page: Page, route: string, density: Density) {
-  await page.addInitScript((compact) => localStorage.setItem('lede:appearance', JSON.stringify({ compact })), density === 'compact');
+  await withAppearance(page, { compact: density === 'compact' });
   await page.goto(route);
   await expect(page.locator('main').first()).toBeVisible();
   if (density === 'touch') await page.locator('.app-root').evaluate((root) => root.setAttribute('data-density', 'touch'));

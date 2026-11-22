@@ -1,4 +1,5 @@
 import { test, expect, type Browser, type Locator, type Page } from '@playwright/test';
+import { withAppearance } from './appearance';
 import AxeBuilder from '@axe-core/playwright';
 import { renderToString } from 'react-dom/server';
 import { HYDRATE_KEY, hydrateSample, type HydrateWindow } from '../src/pages/fixtures/WorkbenchHydrate';
@@ -362,7 +363,7 @@ test.describe('wide', () => {
       });
     };
     expect(await lines()).toEqual(['0.5px', '0.5px', '0.5px']);
-    await page.addInitScript(() => localStorage.setItem('lede:appearance', JSON.stringify({ highContrast: true })));
+    await withAppearance(page, { highContrast: true });
     await page.reload();
     expect(await lines()).toEqual(['1px', '1px', '1px']);
   });
@@ -394,7 +395,7 @@ test.describe('wide', () => {
   });
 
   test('compact density takes the hit area down to the smallest control, 24px', async ({ page }) => {
-    await page.addInitScript(() => localStorage.setItem('lede:appearance', JSON.stringify({ compact: true })));
+    await withAppearance(page, { compact: true });
     await page.reload();
     await expect(splitter(page, 'Files')).toBeVisible();
     expect(await width(splitter(page, 'Files'))).toBe(24);
