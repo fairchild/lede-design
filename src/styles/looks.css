@@ -60,7 +60,9 @@
 /* Beyond tokens: embossed type. A text-shadow token would carry it. */
 [data-look="skeuo"] .ld-btn:is(.ld-btn-filled, .ld-btn-critical.ld-btn-filled) { text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.25); }
 [data-look="skeuo"] :is(.ld-page-title, .ld-list-title, .ld-shell-brand) { text-shadow: 0 1px 0 rgba(255, 255, 255, 0.75); }
-[data-look="skeuo"] .ld-theme[data-theme^="dark"] :is(.ld-page-title, .ld-list-title, .ld-shell-brand) { text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.8); }
+@container style(--ld-scheme: dark) {
+  [data-look="skeuo"] .ld-theme[data-theme^="dark"] :is(.ld-page-title, .ld-list-title, .ld-shell-brand) { text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.8); }
+}
 
 /* ═════════════════════════════ NEO-BRUTALIST ("Poster") ═════════════════════════════
    Thick black outlines, hard offset shadows, flat loud fills, no curves, no blur and snappy motion. */

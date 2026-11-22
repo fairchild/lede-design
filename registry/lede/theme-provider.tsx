@@ -30,7 +30,10 @@ export interface ThemeProviderProps extends useRender.ComponentProps<'div'> {
    * Unset inherits the nearest provider's, or `:root`'s.
    */
   density?: 'regular' | 'compact' | 'touch';
-  /** Glass material. Default `'regular'`. Under `prefers-reduced-transparency`, glass draws as `solid`. */
+  /**
+   * Glass material. Unset inherits the nearest provider's, and is `'regular'` at the root. Under
+   * `prefers-reduced-transparency`, glass draws as `solid`.
+   */
   glass?: 'regular' | 'solid';
   /** The wrapper's background. Default `'none'`. */
   surface?: 'none' | 'base' | 'grouped';
@@ -113,16 +116,15 @@ export function ThemeScope({ children }: { children?: React.ReactNode }) {
 }
 
 /**
- * Sets scheme, contrast, accent, shape, density and glass for its subtree. Providers nest, and Lede's tokens follow the
- * nearest one. Stock shadcn `dark:` utilities match any dark ancestor, as shadcn's own `.dark *` does, so a light
- * provider inside a dark one still gets them, and high contrast and `glass="solid"` reach nested providers the same way.
+ * Sets scheme, contrast, accent, shape, density and glass for its subtree. Providers nest, and everything inside one
+ * follows the nearest: Lede's tokens, motion set through `tokens`, high contrast, `glass="solid"` and `dark:` utilities.
  */
 export function ThemeProvider(props: ThemeProviderProps) {
   const nearest = React.useContext(ScopeContext);
   const unset = nearest ? 'inherit' : 'auto';
   const {
     render, scheme = unset, contrast = unset, accent, accentForeground, shape, density,
-    glass = 'regular', surface = 'none', tokens, className, style, ...rest
+    glass = (nearest?.props['data-glass'] ?? 'regular') as 'regular' | 'solid', surface = 'none', tokens, className, style, ...rest
   } = props;
   const ref = React.useRef<HTMLDivElement>(null);
   const [outer, setOuter] = React.useState('light');

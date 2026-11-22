@@ -37,7 +37,9 @@ html, body { margin: 0; background: var(--background-grouped); color: var(--fore
 /* Its own box is the hit area, so the sidebar footer's overhang, which would reach the link on the line below, goes. */
 .ld-shell-footer .docs-footer-links a::after { content: none; }
 .docs-page-foot { margin-top: var(--space-8); padding-top: var(--space-4); border-top: 0.5px solid var(--border); }
-[data-theme$="-hc"] .docs-page-foot { border-top: 1px solid var(--input); }
+@container style(--ld-contrast: high) {
+  [data-theme$="-hc"] .docs-page-foot { border-top: 1px solid var(--input); }
+}
 @media (width >= 56.25em) { .docs-page-foot { display: none; } }
 
 .docs-section { margin: 0 0 var(--space-8); }
@@ -72,11 +74,15 @@ html, body { margin: 0; background: var(--background-grouped); color: var(--fore
 .docs-footer-links a { color: var(--primary); }
 .docs-steps p code { font-family: var(--font-mono); font-size: var(--text-code-size); }
 .docs-demo { display: flex; flex-wrap: wrap; gap: var(--space-4) var(--space-3); align-items: center; padding: var(--space-4); border-radius: var(--radius-lg); background: var(--card); }
-[data-theme$="-hc"] .docs-demo { box-shadow: 0 0 0 1px var(--input); }
+@container style(--ld-contrast: high) {
+  [data-theme$="-hc"] .docs-demo { box-shadow: 0 0 0 1px var(--input); }
+}
 .docs-usage { margin-top: var(--space-4); }
 /* A spec SpecView draws in the page, set apart from the docs around it. */
 .docs-spec { margin: 0 0 var(--space-4); padding: var(--space-4); border-radius: var(--radius-lg); box-shadow: inset 0 0 0 0.5px var(--border); }
-[data-theme$="-hc"] .docs-spec { box-shadow: inset 0 0 0 1px var(--input); }
+@container style(--ld-contrast: high) {
+  [data-theme$="-hc"] .docs-spec { box-shadow: inset 0 0 0 1px var(--input); }
+}
 .docs-demo-col { display: grid; gap: var(--space-4); align-items: stretch; }
 .docs-page-demo { border: 0.5px solid var(--border); border-radius: var(--radius-lg); background: var(--background-grouped); }
 .docs-theme-panel { display: grid; gap: var(--space-4); padding: var(--space-4); border-radius: var(--radius-lg); }
@@ -133,7 +139,9 @@ html, body { margin: 0; background: var(--background-grouped); color: var(--fore
 .docs-log-title { margin: 0 0 var(--space-1); font-size: var(--text-footnote-size); line-height: var(--text-footnote-line-height); font-weight: 600; color: var(--foreground); }
 .docs-log ol { margin: 0; padding-left: 1.4em; font-family: var(--font-mono); }
 .docs-facts { display: grid; gap: 0; margin: 0; padding: var(--space-2) var(--space-4); border-radius: var(--radius-lg); background: var(--card); }
-[data-theme$="-hc"] .docs-facts { box-shadow: 0 0 0 1px var(--input); }
+@container style(--ld-contrast: high) {
+  [data-theme$="-hc"] .docs-facts { box-shadow: 0 0 0 1px var(--input); }
+}
 /* A value sits at the end of its term's line, and moves under the term when the two don't fit side by side. */
 .docs-facts > div { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0 var(--space-4); padding: var(--space-3) 0; border-top: 0.5px solid var(--border); }
 .docs-facts > div:first-child { border-top: 0; }
@@ -182,7 +190,9 @@ html, body { margin: 0; background: var(--background-grouped); color: var(--fore
 .docs-preview-stage { position: relative; width: 100%; overflow: hidden; border-radius: var(--radius-md); background: var(--muted); }
 /* The frame's edge sits over the frame: its page can share the docs' background, and then only this shows where it ends. */
 .docs-preview-stage::after { content: ""; position: absolute; inset: 0; border: 0.5px solid var(--border); border-radius: inherit; pointer-events: none; }
-[data-theme$="-hc"] .docs-preview-stage::after { border: 1px solid var(--input); }
+@container style(--ld-contrast: high) {
+  [data-theme$="-hc"] .docs-preview-stage::after { border: 1px solid var(--input); }
+}
 .docs-preview-frame { position: absolute; top: 0; border: 0; transform-origin: 0 0; opacity: 0; }
 .docs-preview-frame[data-loaded] { opacity: 1; }
 .docs-anchor { scroll-margin-top: var(--space-8); }
@@ -201,7 +211,9 @@ html[data-embedded] .ld-wb-panel, html[data-embedded] .ld-wb-content { overscrol
 .docs-wb-file:hover { background: var(--accent); }
 .docs-wb-file[aria-current="page"] { background: var(--card); font-weight: 600; box-shadow: var(--shadow-raised); outline: 1px solid transparent; outline-offset: -1px; }
 .docs-wb-file[aria-current="page"]:focus-visible { outline: 2px solid var(--ring); outline-offset: -2px; }
-[data-theme$="-hc"] .docs-wb-file[aria-current="page"] { box-shadow: 0 0 0 1px var(--input); }
+@container style(--ld-contrast: high) {
+  [data-theme$="-hc"] .docs-wb-file[aria-current="page"] { box-shadow: 0 0 0 1px var(--input); }
+}
 .docs-wb-folder { color: var(--muted-foreground); }
 .docs-wb-icon { display: flex; flex: none; width: 16px; height: 16px; }
 .docs-wb-icon svg { width: 100%; height: 100%; }
@@ -216,7 +228,9 @@ html[data-embedded] .ld-wb-panel, html[data-embedded] .ld-wb-content { overscrol
 .docs-wb-assistant [role="log"] { flex: 1; }
 .docs-wb-chat { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-3); font-size: var(--text-subheadline-size); line-height: var(--text-callout-line-height); }
 .docs-wb-message { padding: var(--space-2) var(--space-3); border-radius: var(--radius-sm); background: var(--card); color: var(--card-foreground); }
-[data-theme$="-hc"] .docs-wb-message { box-shadow: 0 0 0 1px var(--input); }
+@container style(--ld-contrast: high) {
+  [data-theme$="-hc"] .docs-wb-message { box-shadow: 0 0 0 1px var(--input); }
+}
 .docs-wb-message p { margin: 0; }
 .docs-wb-message .docs-wb-who { font-size: var(--text-footnote-size); line-height: var(--text-footnote-line-height); font-weight: 600; color: var(--muted-foreground); }
 .docs-wb-composer { position: sticky; bottom: calc(-1 * var(--space-4)); display: grid; justify-items: end; gap: var(--space-2); margin-bottom: calc(-1 * var(--space-4)); padding-block: var(--space-2) var(--space-4); background: var(--background-grouped); }
