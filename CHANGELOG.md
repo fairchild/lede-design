@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- Each push to `develop` deploys the site to the preview host that the repo variable `PREVIEW_HOST` names
+  (lede-preview.cloudcompute.com), as its own Worker, `lede-design-preview`. CONTRIBUTING.md's *Preview develop* says
+  how to set it up; without the variable nothing runs.
+
 ## 0.7.2
 
 Shareable docs views: the look, the appearance and each page's chosen example live in the URL, so a link opens the same
