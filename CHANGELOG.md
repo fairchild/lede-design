@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## 0.7.2
+
+Shareable docs views: the look, the appearance and each page's chosen example live in the URL, so a link opens the same
+screen anywhere. Releases are now approved by Michael. No component or registry changes. The registry for this release
+is `https://lede.cloudcompute.com/r/v0.7.2/{name}.json`.
 
 ### Added
 
