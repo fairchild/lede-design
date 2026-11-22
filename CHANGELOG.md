@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+### Added
+
+- The docs site's and Daybook's views are shareable by URL, which is the only place view state lives. The look
+  (`?look=brutal`) and the appearance (`scheme`, `contrast=high`, `accent`, `shape`, `density=compact`, `glass=solid`,
+  ThemeProvider's own prop names) follow the reader from page to page through `RouterLink`, and Overview's example
+  (`?example=workbench`) and the data table guide's examples (`?table-state=error`, `rows=500`) stay on their page. A
+  value at its default stays out of the URL, an unknown one reads as the default, and a change adds no Back step.
+  `src/view-params.ts` holds the helpers.
+
 ### Changed
 
 - A release is approved by Michael (`fairchild`), the `release` environment's required reviewer, in place of
@@ -11,6 +20,11 @@
   runs from other branches. It takes effect once the next release brings the workflow to `main`.
 - `scripts/prepare-release.mjs` wraps the release summary in CHANGELOG.md at 120 columns, and a `$` in the summary
   stays as written.
+
+### Removed
+
+- The site no longer stores the look (`lede:look`) or the appearance (`lede:appearance`) in `localStorage`. A bare URL
+  shows the defaults, which follow the system's light or dark mode and Increase contrast.
 
 ## 0.7.1
 

@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { useLocation, useNavigate, useNavigationType, useParams } from 'react-router';
+import { useSiteNavigate, withSiteParams } from '@/view-params';
 import { PageHeader } from '@lede/blocks/page-header';
 import { DataTable } from '@lede/blocks/data-table';
 import { useServerRows, type ServerRows } from '@lede/blocks/use-server-rows';
@@ -303,9 +304,10 @@ function useListInUrl(sort: SortItem, page: number, rows: ServerRows<WorkItem>) 
   const navigate = useNavigate();
   const { search } = useLocation();
   // A click renders at once, so a second click on Next finds the page the first one moved to. An effect can't flush.
+  // The list's params sit beside the site's look and appearance, which stay.
   const write = React.useCallback(
-    (s: string, flushSync = true) => navigate({ search: s }, { replace: true, preventScrollReset: true, flushSync }),
-    [navigate],
+    (s: string, flushSync = true) => navigate({ search: withSiteParams(s, search) }, { replace: true, preventScrollReset: true, flushSync }),
+    [navigate, search],
   );
   const p = rows.paging;
   const want = listSearch(sort, page);
@@ -318,7 +320,7 @@ function useListInUrl(sort: SortItem, page: number, rows: ServerRows<WorkItem>) 
   }, [want, asked, p, page]);
   const showing = listSearch(sort, p.kind === 'pages' ? p.page : 0);
   const settled = want === asked && rows.state.rows === 'current' && !rows.state.fetching;
-  React.useEffect(() => { if (settled && showing !== search) write(showing, false); }, [settled, showing, search, write]);
+  React.useEffect(() => { if (settled && withSiteParams(showing, search) !== search) write(showing, false); }, [settled, showing, search, write]);
   React.useEffect(() => { lastList = search; }, [search]);
   const paging = React.useMemo<Paging>(() => (p.kind === 'pages' ? { ...p, onPageChange: (to) => write(listSearch(sort, to)) } : p), [p, sort, write]);
   const onViewChange = React.useCallback((v: TableView) => write(listSearch(v.sort[0] ?? DEFAULT_SORT, 0)), [write]);
@@ -399,7 +401,7 @@ export function WorkItemPage() {
 }
 
 function WorkItemScreen({ id }: { id: string }) {
-  const navigate = useNavigate();
+  const navigate = useSiteNavigate();
   const item = server.get(id);
   const back = { href: `/app/work${lastList}`, label: 'Work' };
   // `tries` keys the alert, so a failure that repeats word for word is announced again.

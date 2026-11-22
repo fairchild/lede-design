@@ -1,4 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
+import { withAppearance } from './appearance';
 import AxeBuilder from '@axe-core/playwright';
 
 const NAME = 'Hana Sato';
@@ -432,7 +433,7 @@ test.describe('A slow save', () => {
   for (const mode of MODES) {
     test(`passes axe · ${mode.name}`, async ({ page }) => {
       await page.emulateMedia({ colorScheme: mode.scheme });
-      await page.addInitScript((hc) => localStorage.setItem('lede:appearance', JSON.stringify({ highContrast: hc })), mode.hc);
+      await withAppearance(page, { highContrast: mode.hc });
       await hold(page);
       await expectNoViolations(page, 'saving');
     });
@@ -497,7 +498,7 @@ test('Two flows on a page keep their fields apart', async ({ page }) => {
 for (const mode of MODES) {
   test(`Every state of the form passes axe · ${mode.name}`, async ({ page, context }) => {
     await page.emulateMedia({ colorScheme: mode.scheme });
-    await page.addInitScript((hc) => localStorage.setItem('lede:appearance', JSON.stringify({ highContrast: hc })), mode.hc);
+    await withAppearance(page, { highContrast: mode.hc });
     await openEditor(page);
     await expectNoViolations(page, 'editing');
 

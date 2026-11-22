@@ -1,4 +1,5 @@
 import { test, expect, type Page, type Locator } from '@playwright/test';
+import { withAppearance, type Prefs } from './appearance';
 import AxeBuilder from '@axe-core/playwright';
 import { listen, spoken } from './spoken';
 import { allWorkItems, dueDate } from '../src/data/work-items';
@@ -11,8 +12,8 @@ const MODES = [
   { name: 'dark-hc', scheme: 'dark' as const, hc: true },
 ];
 
-async function open(page: Page, url = DOCS, prefs: Record<string, unknown> = {}) {
-  await page.addInitScript((p) => localStorage.setItem('lede:appearance', JSON.stringify(p)), prefs);
+async function open(page: Page, url = DOCS, prefs: Prefs = {}) {
+  await withAppearance(page, prefs);
   await page.goto(url);
   await expect(page.locator('main')).toBeVisible();
 }

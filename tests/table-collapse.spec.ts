@@ -2,6 +2,7 @@
 // collapsed table shows only its caption, to sight and to assistive tech. Progressive disclosure: the caption carries
 // the summary, so a collapsed table still says what it holds.
 import { test, expect, type Page } from '@playwright/test';
+import { withAppearance } from './appearance';
 import AxeBuilder from '@axe-core/playwright';
 
 const DOCS = '/blocks/data-table';
@@ -39,7 +40,7 @@ test('the toggle’s corners follow the box: its top ones open, all four collaps
 });
 
 test('in high contrast the box’s edge runs past the sticky header, which doesn’t paint over it', async ({ page }) => {
-  await page.addInitScript(() => localStorage.setItem('lede:appearance', JSON.stringify({ highContrast: true })));
+  await withAppearance(page, { highContrast: true });
   await open(page);
   const box = (await section(page).locator('.ld-table-scroll').boundingBox())!;
   const header = (await table(page).getByRole('columnheader').first().boundingBox())!;

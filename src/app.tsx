@@ -5,7 +5,7 @@ import { RouterProvider } from 'react-router/dom';
 import { LinkProvider } from '@lede/link';
 import { RouterLink } from '@/router-link';
 import { AppearanceRoot } from '@/theme';
-import { LookSwitcher } from '@/look-switcher';
+import { LookSwitcher, useLookAttribute } from '@/look-switcher';
 import { ProfileRoot } from '@/profile';
 import { DocsLayout } from '@/pages/docs/DocsLayout';
 import { Overview } from '@/pages/docs/Overview';
@@ -91,6 +91,7 @@ function Root() {
   useDocumentTitle();
   useCanonical();
   useFocusRestoration();
+  useLookAttribute();
   return (
     <AppearanceRoot>
       {/* Above the routes, so onboarding, which sits outside the app shell, edits the same person. */}

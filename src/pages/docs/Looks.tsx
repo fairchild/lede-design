@@ -6,7 +6,8 @@ import { Switch } from '@lede/switch';
 import { SegmentedControl } from '@lede/segmented-control';
 import { TextField } from '@lede/text-field';
 import { ListGroup, ListRow } from '@lede/list';
-import { LOOKS, setLook, useLook, type LookId } from '@/look-switcher';
+import { LOOKS, useLook, useSetLook, type LookId } from '@/look-switcher';
+import { RouterLink as Link } from '@/router-link';
 import { CodeExample } from './CodeExample';
 import { Scroll } from './Foundations';
 import tokens from '../../../tokens/tokens.json';
@@ -180,6 +181,7 @@ function Sampler() {
 
 export function Looks() {
   const look = useLook();
+  const setLook = useSetLook();
   return (
     <div>
       <PageHeader title="Looks" back={{ href: '/', label: 'Overview' }} summary="A look changes how Lede appears and keeps how it works." />
@@ -191,7 +193,7 @@ export function Looks() {
         <h2 id="sampler" className="text-title-3 docs-target">Try a look</h2>
         <SegmentedControl label="Look" options={LOOKS.map((l) => ({ value: l.id, label: l.name }))} value={look} onValueChange={(v) => setLook(v as LookId)} block />
         <Sampler />
-        <p className="docs-note">The app shows each look on real screens: <a href="/app/inbox/m1">the inbox</a>, <a href="/app/settings/appearance">Appearance</a> and <a href="/layouts/workbench">the workbench</a>.</p>
+        <p className="docs-note">The app shows each look on real screens: <Link href="/app/inbox/m1">the inbox</Link>, <Link href="/app/settings/appearance">Appearance</Link> and <Link href="/layouts/workbench">the workbench</Link>.</p>
       </section>
 
       <section aria-labelledby="principles" className="docs-section">
