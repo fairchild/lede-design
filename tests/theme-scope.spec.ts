@@ -478,6 +478,20 @@ test.describe('Nested providers', () => {
     expect(read['off-shaped']).toEqual({ look: null, radius: '12px', ui: 'none' });
   });
 
+  test('A look\'s rules beyond its tokens stop at a provider with another look or none', async ({ page }) => {
+    const avatar = (name: string) => h('span', { className: 'ld-avatar', 'data-avatar': name }, 'A');
+    await mount(page,
+      h(ThemeProvider, { look: 'brutal' }, avatar('own'), h(ThemeProvider, { scheme: 'dark' }, avatar('nested'))),
+      h(ThemeProvider, { look: 'brutal' }, portal(avatar('overlay'))),
+      h(ThemeProvider, { look: 'brutal' }, h(ThemeProvider, { look: 'lede' }, avatar('off'))),
+      h(ThemeProvider, { look: 'brutal' }, h(ThemeProvider, { look: 'skeuo' }, avatar('other'))),
+    );
+    const pink = 'rgb(255, 61, 127)';
+    const read = await page.locator('[data-avatar]').evaluateAll((els) => Object.fromEntries(els.map((el) => [(el as HTMLElement).dataset.avatar, getComputedStyle(el).backgroundColor])));
+    for (const name of ['own', 'nested', 'overlay']) expect(read[name], name).toBe(pink);
+    for (const name of ['off', 'other']) expect(read[name], name).not.toBe(pink);
+  });
+
   test('A plain data-shape or data-density with no data-theme does nothing', async ({ page }) => {
     await mount(page, h('div', { 'data-shape': 'square', 'data-density': 'compact' }, controls('plain')));
     expect((await measure(page)).plain).toEqual(Object.assign({}, ...defaults));

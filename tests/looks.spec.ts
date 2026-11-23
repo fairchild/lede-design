@@ -100,3 +100,31 @@ test('brutal · high contrast keeps its 2px separators', async ({ page, isMobile
   expect(await width('.ld-row-wrap + .ld-row-wrap', 'top')).toBe('2px');
   expect(await width('.ld-message-header', 'bottom')).toBe('2px');
 });
+
+// A look restyles edges and depth, so its focus ring has to stay visible: one of each kind of control draws a ring
+// that changes its picture, in a standard theme and in high contrast.
+const ROLES = ['button', 'link', 'textbox', 'combobox', 'checkbox', 'radio', 'switch'] as const;
+for (const look of LOOKS) {
+  for (const mode of [MODES[0], MODES[3]]) {
+    test(`${look} · ${mode.name} · every kind of control shows its focus`, async ({ page, isMobile }) => {
+      test.skip(isMobile, 'The rings are the same at every viewport.');
+      await open(page, '/components', look, mode);
+      await page.keyboard.press('Tab');
+      for (const role of ROLES) {
+        const controls = page.locator('main').getByRole(role, { disabled: false });
+        // An inert control, such as a preview, can't take focus. One of each class stands for its kind.
+        const kinds = await controls.evaluateAll((els) => els.map((el) => (el.closest('[inert]') ? null : el.className)));
+        for (const i of new Set(kinds.flatMap((kind) => (kind === null ? [] : [kinds.indexOf(kind)])))) {
+          const control = controls.nth(i);
+          await control.evaluate((el: HTMLInputElement) => { el.readOnly = true; el.scrollIntoView({ block: 'center' }); });
+          await control.focus();
+          const box = (await control.boundingBox())!;
+          const clip = { x: box.x - 6, y: box.y - 6, width: box.width + 12, height: box.height + 12 };
+          const focused = await page.screenshot({ clip });
+          await control.blur();
+          expect.soft(focused.equals(await page.screenshot({ clip })), await control.evaluate((el) => el.outerHTML.slice(0, 100))).toBe(false);
+        }
+      }
+    });
+  }
+}
