@@ -13,7 +13,8 @@
   accent a person picks still replaces it. A nested provider with another look or none gets none of this look's tokens,
   and starts from Lede's values, its own shape and density included unless it sets them. The looks are on the docs
   site for now; the registry gains them in a later release. The few rules no token reaches yet, in the site's
-  `looks.css`, still match inside a nested provider.
+  `looks.css`, sit in an `@scope` per look that stops at a theme root with another look or none, so they don't leak
+  either.
 
 - **Every look passes the gates Lede does.** The contrast gate measures each look's colors over every pair, theme and
   accent, so a look that sets a color below its floor fails the build. The forced-colours walk runs under each look on
