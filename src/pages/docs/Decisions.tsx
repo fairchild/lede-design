@@ -363,7 +363,7 @@ const GROUPS: Group[] = [
         heldBy: [
           <><Path to=".github/workflows/deploy.yml" /> reads the tagged commit’s <code>check</code> run from GitHub Actions and stops before publishing unless it passed.</>,
           <><Path to=".github/workflows/mirror-registry.yml" /> copies a release to the <code>registry</code> branch only once the site serves it, byte for byte, and leaves a release already there as it was.</>,
-          <><Path to="scripts/publish-r2.mjs" /> refuses a release that’s already in R2, with exit code 3, and uploads the release marker last. <Path to="tests/publish-r2.spec.ts" /> runs it against a stand-in for wrangler.</>,
+          <><Path to="scripts/publish-r2.mjs" /> refuses a release that’s already in R2, with exit code 3, and uploads the release marker last. <Path to="tests/publish-r2.spec.ts" /> runs it against stand-ins for wrangler and R2’s S3 API.</>,
           <>The Worker, <Path to="worker/index.ts" />, answers 404 for a release item until its marker exists, sends the CORS header on errors and preflights, and serves media typed by extension in a sandbox. <Path to="tests/worker.spec.ts" /> calls it in Node with an in-memory bucket.</>,
         ],
       },
