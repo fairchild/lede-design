@@ -21,8 +21,8 @@ async function open(page: Page, route: string, look: string, mode: (typeof MODES
   await withAppearance(page, { highContrast: mode.hc });
   await page.goto(`${route}?look=${look}&chrome=0`);
   await expect(page.locator('main')).toBeVisible();
-  if (look === 'lede') await expect(page.locator('html')).not.toHaveAttribute('data-look');
-  else await expect(page.locator('html')).toHaveAttribute('data-look', look);
+  if (look === 'lede') await expect(page.locator('.app-root')).not.toHaveAttribute('data-look');
+  else await expect(page.locator('.app-root')).toHaveAttribute('data-look', look);
 }
 
 for (const look of LOOKS) {

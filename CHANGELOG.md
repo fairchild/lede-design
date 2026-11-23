@@ -4,6 +4,14 @@
 
 ### Added
 
+- **Looks are a theme setting.** `<ThemeProvider look="brutal">` sets a look, and nested providers and their overlays
+  inherit it. `look="lede"` turns it off, and plain HTML uses `data-look` on a theme root. Each look's values live in
+  `looks` in `tokens/tokens.json` (`all`, `light`, `dark`, optional `light-hc` and `dark-hc`). The token build writes
+  them as `[data-theme][data-look]` blocks, like the shape and density axes, and fails a look that names a token no
+  family has. A look's colors and shadows apply in the standard themes only, so high contrast keeps Lede's -hc palette.
+  Its corners, type, edges and depth apply in all four. A look sets `primary` for its accent, and an accent a person
+  picks still replaces it. Nothing of a look leaks into a nested provider with another look or none.
+
 - Each push to `develop` deploys the site to the preview host that the repo variable `PREVIEW_HOST` names
   (lede-preview.cloudcompute.com), as its own Worker, `lede-design-preview`. CONTRIBUTING.md's *Preview develop* says
   how to set it up; without the variable nothing runs.
@@ -36,6 +44,9 @@
   `--scale-pressed` that a nested ThemeProvider sets now reaches the Buttons, labels and left-bar links inside it, and
   a value set for the token itself still reaches providers nested below. Foundations shows such a default as CSS,
   `var(--font-sans)`, not `{font-sans}`.
+- On the docs site, a look now sits on the root ThemeProvider instead of `<html>`. In -hc themes it keeps its corners,
+  type and edges, where before some of them dropped back to Lede's. `src/styles/looks.css` holds only the rules no
+  token reaches.
 - High-contrast separators draw at `--stroke-hairline` when it's thicker than 1px, so a look's heavier rules stay
   heavy in -hc. A FormSection's body takes `--edge-surface` like the other surfaces do.
 - The deploy workflow publishes the registries to R2 with an R2 API token limited to the `lede-design` bucket

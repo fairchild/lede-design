@@ -35,6 +35,12 @@ export interface ThemeProviderProps extends useRender.ComponentProps<'div'> {
    * `prefers-reduced-transparency`, glass draws as `solid`.
    */
   glass?: 'regular' | 'solid';
+  /**
+   * A whole visual style over the same components, such as `'brutal'`: a look from the registry, whose CSS the project
+   * imports. It sets its own colors, corners, type, edges and depth; an accent picked here still replaces its accent,
+   * and high contrast keeps Lede's -hc palette. Unset inherits the nearest provider's. `'lede'` turns a look off.
+   */
+  look?: 'lede' | (string & {});
   /** The wrapper's background. Default `'none'`. */
   surface?: 'none' | 'base' | 'grouped';
   /** Token values by name, such as `{ radius: '18px' }`, set on the wrapper and carried into its portals. */
@@ -89,7 +95,7 @@ function accentVars(accent?: string, foreground?: string) {
 interface Scope {
   /** The theme on a ThemeProvider's wrapper, without what paints or sizes that wrapper. */
   props: {
-    className: string; 'data-theme': string; 'data-glass': string; 'data-shape'?: string; 'data-density'?: string;
+    className: string; 'data-theme': string; 'data-glass': string; 'data-shape'?: string; 'data-density'?: string; 'data-look'?: string;
     style: React.CSSProperties;
   };
   accent?: string;
@@ -116,7 +122,7 @@ export function ThemeScope({ children }: { children?: React.ReactNode }) {
 }
 
 /**
- * Sets scheme, contrast, accent, shape, density and glass for its subtree. Providers nest, and everything inside one
+ * Sets scheme, contrast, accent, shape, density, glass and look for its subtree. Providers nest, and everything inside one
  * follows the nearest: Lede's tokens, motion set through `tokens`, high contrast, `glass="solid"` and `dark:` utilities.
  */
 export function ThemeProvider(props: ThemeProviderProps) {
@@ -124,7 +130,8 @@ export function ThemeProvider(props: ThemeProviderProps) {
   const unset = nearest ? 'inherit' : 'auto';
   const {
     render, scheme = unset, contrast = unset, accent, accentForeground, shape, density,
-    glass = (nearest?.props['data-glass'] ?? 'regular') as 'regular' | 'solid', surface = 'none', tokens, className, style, ...rest
+    glass = (nearest?.props['data-glass'] ?? 'regular') as 'regular' | 'solid', look = nearest?.props['data-look'], surface = 'none', tokens,
+    className, style, ...rest
   } = props;
   const ref = React.useRef<HTMLDivElement>(null);
   const [outer, setOuter] = React.useState('light');
@@ -151,6 +158,7 @@ export function ThemeProvider(props: ThemeProviderProps) {
   const scope: Scope = {
     props: {
       className: cn('ld-theme', dark && 'dark'), 'data-theme': theme, 'data-glass': glass, 'data-shape': shape, 'data-density': density,
+      'data-look': look === 'lede' ? undefined : look,
       style: vars as React.CSSProperties,
     },
     ...brand,

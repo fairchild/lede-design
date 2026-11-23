@@ -1,6 +1,7 @@
 // tokens/tokens.json is the single source. This writes src/styles/lede.tokens.css (used by the site)
-// and registry/lede/lede.tokens.css (shipped by the lede-theme registry item). Never edit either by hand.
-import { readFileSync, writeFileSync } from 'node:fs';
+// and registry/lede/lede.tokens.css (shipped by the lede-theme registry item), and one file per look in
+// src/styles/looks/. Never edit any of them by hand.
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 
 const t = JSON.parse(readFileSync('tokens/tokens.json', 'utf8'));
 const themes = t.color.themes.map((x) => x.id);
@@ -54,6 +55,7 @@ const families = [
   type,
 ];
 for (const [name, fam] of Object.entries(t)) {
+  if (name === 'looks') continue;
   if ((fam.attribute || fam.options) && !(fam.attribute && fam.options?.length && families.some((f) => f.name === name))) {
     throw new Error(`tokens.json: ${name} needs attribute, options and tokens together`);
   }
@@ -152,4 +154,57 @@ out.push(
 const text = out.join('\n');
 writeFileSync('src/styles/lede.tokens.css', text);
 writeFileSync('registry/lede/lede.tokens.css', text);
-console.log(`tokens: ${t.color.tokens.length} colors × ${themes.length} themes`);
+
+// Looks: a theme root's `data-look` (ThemeProvider's `look`) sets token values, one block per theme it reaches, each
+// [data-theme][data-look] like the shape and density axes, so a look beats the theme blocks and, coming after them in
+// the page, the axes. A color or shadow applies in its scheme's standard theme only: high contrast keeps Lede's -hc
+// palette unless the look gives `light-hc` or `dark-hc`. Every other value applies in both of its scheme's themes.
+const { looks } = t;
+const PALETTE = new Set(THEMED.flatMap((fam) => t[fam].tokens.map((tk) => tk.name)));
+const KNOWN = new Set([
+  ...PALETTE,
+  ...families.flatMap((fam) => fam.tokens.map((tk) => tk.name)),
+  ...Object.keys(t.type.families).map((k) => `font-${k}`),
+]);
+// Each token's own value, for the reset below: what `:root` declares, or `initial` for one that isn't declared, so a
+// read falls back to its default.
+const ROOT_VALUE = new Map([
+  ...families.flatMap((fam) => fam.tokens.map((tk) => [tk.name, typeof tk.value !== 'string' ? tk.value[fam.options[0]] : namesToken(tk.value) ? 'initial' : css(tk.value)])),
+  ...Object.entries(t.type.families).map(([k, v]) => [`font-${k}`, v]),
+]);
+const LOOK_THEMES = { all: null, light: 'light', dark: 'dark', 'light-hc': 'light-hc', 'dark-hc': 'dark-hc' };
+mkdirSync('src/styles/looks', { recursive: true });
+for (const [id, look] of Object.entries(looks?.options ?? {})) {
+  if (!/^[a-z][a-z0-9-]*$/.test(id) || id === 'lede') throw new Error(`tokens.json: looks.${id} needs a lowercase name other than lede`);
+  const blocks = [];
+  const line = ([name, value]) => `  --${name}: ${value === 'initial' ? value : css(value)};`;
+  for (const [key, values] of Object.entries(look.values)) {
+    if (!(key in LOOK_THEMES)) throw new Error(`tokens.json: looks.${id}.values.${key} isn't one of ${Object.keys(LOOK_THEMES).join(', ')}`);
+    for (const name of Object.keys(values)) {
+      if (!KNOWN.has(name)) throw new Error(`tokens.json: looks.${id}.values.${key} sets ${name}, which no token family names`);
+    }
+    const entries = Object.entries(values);
+    const at = (theme) => `[data-theme${theme ? `="${theme}"` : ''}][data-look="${id}"]`;
+    const scheme = LOOK_THEMES[key];
+    if (!scheme) blocks.push([at(null), entries]);
+    else if (scheme.endsWith('-hc')) blocks.push([at(scheme), entries]);
+    else {
+      blocks.push([`[data-theme^="${scheme}"][data-look="${id}"]`, entries.filter(([name]) => !PALETTE.has(name))]);
+      blocks.push([at(scheme), entries.filter(([name]) => PALETTE.has(name))]);
+    }
+  }
+  // A theme root inside this look that has another look, or none, puts back Lede's value for each token this look sets
+  // and the theme blocks don't reset (colors and shadows they do), so nothing of this look leaks into it. :where()
+  // weighs nothing, so the root's own look, shape and density still win; it beats only the inherited value.
+  const leaks = [...new Set(Object.values(look.values).flatMap((values) => Object.keys(values)).filter((name) => !PALETTE.has(name)))];
+  if (leaks.length) blocks.unshift([`:where([data-look="${id}"] [data-theme]:not([data-look="${id}"]))`, leaks.map((name) => [name, ROOT_VALUE.get(name)])]);
+  const body = blocks.filter(([, entries]) => entries.length).map(([selector, entries]) => `${selector} {\n${entries.map(line).join('\n')}\n}`);
+  writeFileSync(`src/styles/looks/${id}.css`, [
+    `/* Lede look "${id}" (${look.name}) — GENERATED from tokens/tokens.json by scripts/build-tokens.mjs. Do not edit. */`,
+    ...(look.fonts.length ? [`/* Faces from ${look.fonts.join(', ')}, which a project installs and imports itself. */`] : []),
+    '',
+    body.join('\n\n'),
+    '',
+  ].join('\n'));
+}
+console.log(`tokens: ${t.color.tokens.length} colors × ${themes.length} themes, ${Object.keys(looks?.options ?? {}).length} looks`);

@@ -130,25 +130,20 @@ const LOOK_TOKENS = [
   ...tokens.slot.tokens,
   ...tokens.lettering.tokens,
 ];
-const RECIPE = `/* 1. Colors and the other theme tokens, light and dark. */
-[data-look="mine"] .ld-theme[data-theme] {
-  --preset-blue: #b0161e;           /* the default accent */
-  --background-grouped: #f8f4ea;
+const RECIPE = `/* Generated from tokens.json's \`looks\`, one block per theme the values reach. */
+[data-theme][data-look="mine"] {
   --radius: 0px;
   --font-sans: "Newsreader Variable", Georgia, serif;
-
-  /* 2. Slot, lettering and stroke tokens: what changes beyond color and size. */
   --font-ui: "Libre Franklin Variable", sans-serif;
-  --edge-surface: inset 0 2px 0 var(--foreground);
   --press-transform: none;
   --case-label: uppercase;
 }
-[data-look="mine"] .ld-theme[data-theme^="dark"] {
-  --preset-blue: #ff7a6b;
-  --background-grouped: #15120f;
-}
+[data-theme^="light"][data-look="mine"] { --edge-surface: inset 0 2px 0 #1a1714; }
+[data-theme="light"][data-look="mine"] { --primary: #b0161e; --background-grouped: #f8f4ea; }
+[data-theme^="dark"][data-look="mine"] { --edge-surface: inset 0 2px 0 #ece4d4; }
+[data-theme="dark"][data-look="mine"] { --primary: #ff7a6b; --background-grouped: #15120f; }
 
-/* 3. Only what no token reaches. Each rule here is a request for a token. */`;
+/* Then, in the app: <ThemeProvider look="mine">. */`;
 
 const Usage = ({ text }: { text: string }) => <>{text.split(/`([^`]+)`/).map((part, i) => (i % 2 ? <code key={i}>{part}</code> : part))}</>;
 
@@ -219,12 +214,13 @@ export function Looks() {
       <section aria-labelledby="make" className="docs-section">
         <h2 id="make" className="text-title-3 docs-target">Make a look</h2>
         <ol className="docs-steps">
-          <li><p>Set <code>data-look</code> on <code>{'<html>'}</code>, or on any ancestor of your ThemeProvider.</p></li>
-          <li><p>Set the theme tokens under <code>[data-look] .ld-theme[data-theme]</code>, once for light and again for dark. ThemeProvider sets <code>--primary</code> from the accent preset, so set the preset, such as <code>--preset-blue</code>.</p></li>
-          <li><p>Set the slot, lettering and stroke tokens for edges, depth, sheen, the pressed state, letter case, the interface’s face and texture. A value that names a color goes in the same block as the colors, so it follows light and dark.</p></li>
+          <li><p>Add the look to <code>looks</code> in <code>tokens.json</code>: values under <code>all</code> for every theme, and under <code>light</code> and <code>dark</code> for each scheme. A color or shadow there applies in the standard theme only, so high contrast keeps Lede’s -hc palette unless the look gives <code>light-hc</code> or <code>dark-hc</code>.</p></li>
+          <li><p>Set <code>primary</code> for the look’s accent. An accent a person picks still replaces it.</p></li>
+          <li><p>Use the slot, lettering and stroke tokens for edges, depth, sheen, the pressed state, letter case, the interface’s face and texture.</p></li>
+          <li><p>Turn it on with <code>{'<ThemeProvider look="mine">'}</code>, or <code>data-look</code> on a theme root in plain HTML. Nested providers and their overlays inherit it, and <code>look="lede"</code> turns it off.</p></li>
           <li><p>Write CSS for anything left, and keep it short. Each rule is a gap in the tokens.</p></li>
         </ol>
-        <CodeExample label="A look’s CSS" language="css" code={RECIPE} />
+        <CodeExample label="What the token build writes for a look" language="css" code={RECIPE} />
         <Scroll label="Tokens a look sets">
           <table className="docs-table">
             <caption>Tokens a look sets beyond color, size and type. Each default draws Lede’s own look.</caption>

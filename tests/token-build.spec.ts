@@ -105,3 +105,36 @@ test('leaves a token built from another undeclared, and every read of it carries
     for (const read of reads) expect(read, name).toContain(`var(--${name}, ${named(value)})`);
   }
 });
+
+test('writes each look as [data-theme][data-look] blocks, a color only in its standard theme', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'token-build-'));
+  cpSync('tokens', join(dir, 'tokens'), { recursive: true });
+  for (const out of ['src/styles', 'registry/lede']) mkdirSync(join(dir, out), { recursive: true });
+  const path = join(dir, 'tokens/tokens.json');
+  const tokens = JSON.parse(readFileSync(path, 'utf8'));
+  tokens.looks.options = { probe: { name: 'Probe', summary: '', fonts: [], values: {
+    all: { radius: '0px' }, light: { primary: '#123456', 'edge-surface': '0 0 0 2px #000' }, dark: { primary: '#abcdef' }, 'dark-hc': { primary: '#ffffff' },
+  } } };
+  writeFileSync(path, JSON.stringify(tokens));
+  const { status, stderr } = spawnSync(process.execPath, [SCRIPT], { cwd: dir, encoding: 'utf8' });
+  const css = status === 0 ? readFileSync(join(dir, 'src/styles/looks/probe.css'), 'utf8') : '';
+  rmSync(dir, { recursive: true });
+  expect(status, stderr).toBe(0);
+  const block = (selector: string) => css.match(new RegExp(`${selector.replace(/[[\]^$*"]/g, '\\$&')} \\{([^}]*)\\}`))?.[1];
+  expect(block('[data-theme][data-look="probe"]')).toContain('--radius: 0px;');
+  expect(block('[data-theme^="light"][data-look="probe"]')).toContain('--edge-surface: 0 0 0 2px #000;');
+  expect(block('[data-theme^="light"][data-look="probe"]')).not.toContain('--primary');
+  expect(block('[data-theme="light"][data-look="probe"]')).toContain('--primary: #123456;');
+  expect(block('[data-theme="dark"][data-look="probe"]')).toContain('--primary: #abcdef;');
+  expect(block('[data-theme="dark-hc"][data-look="probe"]')).toContain('--primary: #ffffff;');
+  expect(css).not.toContain('[data-theme="light-hc"]');
+});
+
+test('fails a look that sets a token no family names, or a theme that isn\'t one', () => {
+  const typo = build((t) => { t.looks.options.brutal.values.all['radius-big'] = '0px'; });
+  expect(typo.status).toBe(1);
+  expect(typo.output).toContain('looks.brutal.values.all sets radius-big, which no token family names');
+  const theme = build((t) => { t.looks.options.brutal.values.sepia = {}; });
+  expect(theme.status).toBe(1);
+  expect(theme.output).toContain("looks.brutal.values.sepia isn't one of all, light, dark, light-hc, dark-hc");
+});
