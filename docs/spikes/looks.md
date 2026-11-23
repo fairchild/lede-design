@@ -1,5 +1,7 @@
 # Spike: looks (re-theming Lede without changing behaviour)
 
+> **0.8.0:** the `look-*` tokens named below were renamed into the `stroke`, `slot` and `lettering` families. CHANGELOG.md has the table of old and new names.
+
 Status: merged into `develop` in #123 for 0.7.0. The `look-*` tokens ship in the registry; the three looks stay
 the site's own. The next step is a `look` axis in `tokens.json` (Open questions,
 below).

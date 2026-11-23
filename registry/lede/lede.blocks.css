@@ -42,7 +42,7 @@
 .ld-shell-nav { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-0_5); }
 .ld-shell-link {
   display: flex; align-items: center; gap: var(--space-3); min-height: var(--size-hit-min); padding: 0 var(--space-3);
-  border-radius: var(--radius-sm); color: var(--foreground); text-decoration: none; font-family: var(--font-ui); font-size: var(--text-subheadline-size); line-height: var(--text-subheadline-line-height); font-weight: var(--weight-medium);
+  border-radius: var(--radius-sm); color: var(--foreground); text-decoration: none; font-family: var(--font-ui, var(--font-sans)); font-size: var(--text-subheadline-size); line-height: var(--text-subheadline-line-height); font-weight: var(--weight-medium);
 }
 .ld-shell-link:hover { background: var(--accent); color: var(--accent-foreground); }
 .ld-shell-link[aria-current="page"] { background: var(--card); color: var(--primary); font-weight: var(--weight-semibold); box-shadow: var(--shadow-raised); }
@@ -189,7 +189,7 @@ button.ld-back { background: none; border: 0; font-family: inherit; font-weight:
 
 /* FormSection */
 .ld-form-section { margin: 0 0 var(--space-6); padding: 0; border: 0; min-width: 0; }
-.ld-form-legend { padding: 0 var(--space-4); margin-bottom: var(--space-1_5); font-size: var(--text-footnote-size); line-height: var(--text-footnote-line-height); color: var(--muted-foreground); font-family: var(--font-ui); text-transform: var(--case-label); letter-spacing: var(--tracking-label); }
+.ld-form-legend { padding: 0 var(--space-4); margin-bottom: var(--space-1_5); font-size: var(--text-footnote-size); line-height: var(--text-footnote-line-height); color: var(--muted-foreground); font-family: var(--font-ui, var(--font-sans)); text-transform: var(--case-label); letter-spacing: var(--tracking-label); }
 .ld-form-description { margin: 0 0 var(--space-2); padding: 0 var(--space-4); font-size: var(--text-footnote-size); line-height: var(--text-footnote-line-height); color: var(--muted-foreground); }
 .ld-form-body { display: grid; gap: var(--space-4); padding: var(--space-4); border-radius: var(--radius-lg); background: var(--card); box-shadow: var(--edge-surface); }
 @container style(--ld-contrast: high) {

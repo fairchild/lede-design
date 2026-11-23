@@ -85,3 +85,23 @@ test('fails a colour whose group color.groups does not list, so it cannot drop o
   expect(status).toBe(1);
   expect(output).toContain(`${SOURCE.color.tokens[0].name} has group "unlisted", which color.groups doesn't list`);
 });
+
+// A token whose default names another token isn't declared, so its default resolves where it's read. Every read in the
+// shipped CSS therefore carries that default as its fallback, written out the way the token build would.
+test('leaves a token built from another undeclared, and every read of it carries its default', () => {
+  const { status, css } = build();
+  expect(status).toBe(0);
+  const named = (v: string) => (/^\{.+\}$/.test(v) ? `var(--${v.slice(1, -1)})` : v);
+  // Color and shadow are set per theme, where an alias is declared on each theme block, so only the other families.
+  const derived = Object.entries(SOURCE).filter(([family]) => !['color', 'shadow'].includes(family)).flatMap(([, f]: [string, Json]) => f.tokens ?? [])
+    .filter((t: Json) => typeof t.value === 'string' && (/^\{.+\}$/.test(t.value) || t.value.includes('var(--')));
+  expect(derived.map((t: Json) => t.name)).toEqual(expect.arrayContaining(['font-ui', 'press-transform']));
+  const shipped = ['registry/lede/lede.components.css', 'registry/lede/lede.blocks.css', 'src/styles/looks.css']
+    .map((path) => readFileSync(path, 'utf8')).join('\n');
+  for (const { name, value } of derived) {
+    expect(css, name).not.toMatch(new RegExp(`--${name}:`));
+    const reads = [...shipped.matchAll(new RegExp(`var\\(--${name}\\b[^;]*`, 'g'))].map((m) => m[0]);
+    expect(reads.length, name).toBeGreaterThan(0);
+    for (const read of reads) expect(read, name).toContain(`var(--${name}, ${named(value)})`);
+  }
+});
