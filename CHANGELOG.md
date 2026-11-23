@@ -10,6 +10,32 @@
 
 ### Changed
 
+- **Breaking:** the `look` token family is gone. Its tokens are now in the families they belong to, under new names:
+
+  | Was | Now |
+  | --- | --- |
+  | `--look-hairline` | `--stroke-hairline` |
+  | `--look-control-edge` | `--stroke-input` |
+  | `--look-surface-edge` | `--edge-surface` |
+  | `--look-control-shadow` | `--depth-control` |
+  | `--look-well` | `--depth-well` |
+  | `--look-press-shadow` | `--depth-pressed` |
+  | `--look-control-sheen` | `--sheen-control` |
+  | `--look-press` | `--press-transform` |
+  | `--look-texture` | `--texture-ground` |
+  | `--look-ui-font` | `--font-ui` |
+  | `--look-label-case` | `--case-label` |
+  | `--look-label-tracking` | `--tracking-label` |
+  | `--look-button-case` | `--case-button` |
+  | `--look-title-case` | `--case-title` |
+
+  The edge, depth, sheen, press and texture tokens are the new `slot` family. The face, case and tracking tokens are
+  the new `lettering` family. Each default still draws Lede as before.
+- A token whose value names another token, such as `--font-ui` and `--press-transform`, is also computed on every
+  theme root. So a `--font-sans` or `--scale-pressed` that a ThemeProvider sets now reaches the Buttons, labels and
+  left-bar links inside it.
+- High-contrast separators draw at `--stroke-hairline` when it's thicker than 1px, so a look's heavier rules stay
+  heavy in -hc. A FormSection's body takes `--edge-surface` like the other surfaces do.
 - The deploy workflow publishes the registries to R2 with an R2 API token limited to the `lede-design` bucket
   (`R2_ACCESS_KEY_ID` and `R2_SECRET_ACCESS_KEY` in the `cloudflare` environment), through R2's S3 API, so
   `CLOUDFLARE_API_TOKEN` no longer needs account-wide R2 access. `scripts/publish-r2.mjs --remote` reads those keys;

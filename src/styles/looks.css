@@ -2,7 +2,7 @@
    behaviour don't change. The Looks page (/looks) explains each one.
 
    Each look has two parts:
-   1. TOKENS: values only. Colors, shadows, radius, fonts and motion, plus the `look-*` family (tokens.json), which
+   1. TOKENS: values only. Colors, shadows, radius, fonts and motion, plus the `slot`, `lettering` and two `stroke` tokens (tokens.json), which
       holds what a look changes beyond those: edges, depth, sheen, the pressed state, letter case, the interface's
       face and texture. Selectors are `[data-look=x] .ld-theme[data-theme…]`, so they beat the theme blocks and
       ThemeProvider's shape and density blocks, and a value that names a color follows light and dark.
@@ -27,14 +27,14 @@
   --radius: 10px; --radius-capsule: 10px; --radius-step: 3px;
   --font-sans: "Lucida Grande", "Helvetica Neue", "DejaVu Sans", Helvetica, Arial, sans-serif;
   --blur-regular: 6px;
-  /* look-* */
-  --look-surface-edge: 0 0 0 1px var(--border), 0 1px 0 rgba(255, 255, 255, 0.9) inset, 0 1px 2px rgba(40, 30, 10, 0.3), 0 2px 6px rgba(40, 30, 10, 0.12);
-  --look-control-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.25), 0 1px 0 rgba(255, 255, 255, 0.9) inset, 0 1px 2px rgba(40, 30, 10, 0.35);
-  --look-control-sheen: linear-gradient(to bottom, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0) 50%, rgba(0, 0, 0, 0.08));
-  --look-well: inset 0 2px 3px rgba(0, 0, 0, 0.18), 0 1px 0 rgba(255, 255, 255, 0.6);
-  --look-press: none;
-  --look-press-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.35);
-  --look-texture: repeating-linear-gradient(45deg, rgba(0, 0, 0, 0.025) 0 2px, transparent 2px 4px),
+  /* slot, lettering and stroke tokens */
+  --edge-surface: 0 0 0 1px var(--border), 0 1px 0 rgba(255, 255, 255, 0.9) inset, 0 1px 2px rgba(40, 30, 10, 0.3), 0 2px 6px rgba(40, 30, 10, 0.12);
+  --depth-control: inset 0 0 0 1px rgba(0, 0, 0, 0.25), 0 1px 0 rgba(255, 255, 255, 0.9) inset, 0 1px 2px rgba(40, 30, 10, 0.35);
+  --sheen-control: linear-gradient(to bottom, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0) 50%, rgba(0, 0, 0, 0.08));
+  --depth-well: inset 0 2px 3px rgba(0, 0, 0, 0.18), 0 1px 0 rgba(255, 255, 255, 0.6);
+  --press-transform: none;
+  --depth-pressed: inset 0 2px 4px rgba(0, 0, 0, 0.35);
+  --texture-ground: repeating-linear-gradient(45deg, rgba(0, 0, 0, 0.025) 0 2px, transparent 2px 4px),
                   repeating-linear-gradient(-45deg, rgba(255, 255, 255, 0.05) 0 2px, transparent 2px 4px);
 }
 [data-look="skeuo"] .ld-theme[data-theme="dark"]:not([data-theme$="-hc"]) {
@@ -51,11 +51,11 @@
 /* The look's edges in dark, high contrast included: its palette steps aside for -hc, its edges don't. The light
    block's :not() weighs (0,4,0), so each dark block carries one too and wins by coming after it. */
 [data-look="skeuo"] .ld-theme[data-theme^="dark"]:not([data-theme="light"]) {
-  --look-surface-edge: 0 0 0 1px rgba(0, 0, 0, 0.6), 0 1px 0 rgba(255, 255, 255, 0.07) inset, 0 2px 6px rgba(0, 0, 0, 0.5);
-  --look-control-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.5), 0 1px 0 rgba(255, 255, 255, 0.12) inset, 0 1px 3px rgba(0, 0, 0, 0.6);
-  --look-control-sheen: linear-gradient(to bottom, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0) 50%, rgba(0, 0, 0, 0.12));
-  --look-well: inset 0 2px 3px rgba(0, 0, 0, 0.5), 0 1px 0 rgba(255, 255, 255, 0.06);
-  --look-texture: repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.015) 0 2px, transparent 2px 4px);
+  --edge-surface: 0 0 0 1px rgba(0, 0, 0, 0.6), 0 1px 0 rgba(255, 255, 255, 0.07) inset, 0 2px 6px rgba(0, 0, 0, 0.5);
+  --depth-control: inset 0 0 0 1px rgba(0, 0, 0, 0.5), 0 1px 0 rgba(255, 255, 255, 0.12) inset, 0 1px 3px rgba(0, 0, 0, 0.6);
+  --sheen-control: linear-gradient(to bottom, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0) 50%, rgba(0, 0, 0, 0.12));
+  --depth-well: inset 0 2px 3px rgba(0, 0, 0, 0.5), 0 1px 0 rgba(255, 255, 255, 0.06);
+  --texture-ground: repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.015) 0 2px, transparent 2px 4px);
 }
 /* Beyond tokens: embossed type. A text-shadow token would carry it. */
 [data-look="skeuo"] .ld-btn:is(.ld-btn-filled, .ld-btn-critical.ld-btn-filled) { text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.25); }
@@ -81,16 +81,16 @@
   --font-sans: "Space Grotesk Variable", "Helvetica Neue", Arial, sans-serif;
   --weight-medium: 600; --weight-semibold: 700; --weight-bold: 800;
   --duration-standard: 90ms; --easing-spring: steps(3, end);
-  /* look-* */
-  --look-hairline: 2px; --look-control-edge: 2px;
-  --look-surface-edge: 0 0 0 2px #000000, 4px 4px 0 #000000;
-  --look-control-shadow: 0 0 0 2px #000000, 3px 3px 0 #000000;
-  --look-well: 0 0 0 2px #000000;
-  --look-press: translate(3px, 3px);
-  --look-press-shadow: 0 0 0 2px #000000;
-  --look-label-case: uppercase; --look-label-tracking: 0.08em;
-  --look-button-case: uppercase;
-  --look-title-case: uppercase;
+  /* slot, lettering and stroke tokens */
+  --stroke-hairline: 2px; --stroke-input: 2px;
+  --edge-surface: 0 0 0 2px #000000, 4px 4px 0 #000000;
+  --depth-control: 0 0 0 2px #000000, 3px 3px 0 #000000;
+  --depth-well: 0 0 0 2px #000000;
+  --press-transform: translate(3px, 3px);
+  --depth-pressed: 0 0 0 2px #000000;
+  --case-label: uppercase; --tracking-label: 0.08em;
+  --case-button: uppercase;
+  --case-title: uppercase;
 }
 [data-look="brutal"] .ld-theme[data-theme="dark"]:not([data-theme$="-hc"]) {
   --preset-blue: #ffe066; --primary-foreground: #000000;
@@ -104,10 +104,10 @@
   --shadow-raised: 3px 3px 0 #ffffff; --shadow-float: 0 0 0 2px #ffffff, 6px 6px 0 #ffffff; --shadow-knob: 0 0 0 2px #ffffff;
 }
 [data-look="brutal"] .ld-theme[data-theme^="dark"]:not([data-theme="light"]) {
-  --look-surface-edge: 0 0 0 2px #ffffff, 4px 4px 0 #ffffff;
-  --look-control-shadow: 0 0 0 2px #ffffff, 3px 3px 0 #ffffff;
-  --look-well: 0 0 0 2px #ffffff;
-  --look-press-shadow: 0 0 0 2px #ffffff;
+  --edge-surface: 0 0 0 2px #ffffff, 4px 4px 0 #ffffff;
+  --depth-control: 0 0 0 2px #ffffff, 3px 3px 0 #ffffff;
+  --depth-well: 0 0 0 2px #ffffff;
+  --depth-pressed: 0 0 0 2px #ffffff;
 }
 /* Beyond tokens: a tinted Button is yellow, not a tint of the accent. A tint-color token would carry it. */
 [data-look="brutal"] .ld-btn-tinted:not(.ld-btn-critical) { background-color: var(--secondary); color: var(--secondary-foreground); }
@@ -137,15 +137,15 @@
   --text-body-size: 1.125rem; --text-body-line-height: 1.625rem;
   --weight-semibold: 600;
   --duration-standard: 160ms;
-  /* look-* */
-  --look-ui-font: "Libre Franklin Variable", "Franklin Gothic Medium", "Helvetica Neue", Arial, sans-serif;
-  --look-surface-edge: inset 0 2px 0 #1a1714;
-  --look-control-shadow: inset 0 0 0 1px #1a1714;
-  --look-press: none;
-  --look-press-shadow: inset 0 0 0 2px #1a1714;
-  --look-label-case: uppercase; --look-label-tracking: 0.12em;
+  /* slot, lettering and stroke tokens */
+  --font-ui: "Libre Franklin Variable", "Franklin Gothic Medium", "Helvetica Neue", Arial, sans-serif;
+  --edge-surface: inset 0 2px 0 #1a1714;
+  --depth-control: inset 0 0 0 1px #1a1714;
+  --press-transform: none;
+  --depth-pressed: inset 0 0 0 2px #1a1714;
+  --case-label: uppercase; --tracking-label: 0.12em;
   /* Newsprint: a faint grain, drawn by an SVG turbulence filter. */
-  --look-texture: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.1 0 0 0 0 0.08 0 0 0 0 0.05 0 0 0 .07 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  --texture-ground: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.1 0 0 0 0 0.08 0 0 0 0 0.05 0 0 0 .07 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 [data-look="broadsheet"] .ld-theme[data-theme="dark"]:not([data-theme$="-hc"]) {
   --preset-blue: #ff7a6b; --primary-foreground: #14110e;
@@ -159,10 +159,10 @@
   --shadow-float: 0 0 0 1px #ece4d4; --shadow-knob: 0 0 0 1px #15120f;
 }
 [data-look="broadsheet"] .ld-theme[data-theme^="dark"]:not([data-theme="light"]) {
-  --look-surface-edge: inset 0 2px 0 #ece4d4;
-  --look-control-shadow: inset 0 0 0 1px #ece4d4;
-  --look-press-shadow: inset 0 0 0 2px #ece4d4;
-  --look-texture: none;
+  --edge-surface: inset 0 2px 0 #ece4d4;
+  --depth-control: inset 0 0 0 1px #ece4d4;
+  --depth-pressed: inset 0 0 0 2px #ece4d4;
+  --texture-ground: none;
 }
 /* Beyond tokens. Each is a layout or ornament choice, not a value. */
 /* The nameplate: the app's name set like a masthead, in blackletter. */

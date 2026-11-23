@@ -426,6 +426,23 @@ test.describe('Nested providers', () => {
     }
   });
 
+  test('A token built from another follows the value a provider sets, nested and in overlays', async ({ page }) => {
+    const own = { tokens: { 'font-sans': 'Georgia, serif', 'scale-pressed': '0.5' } } as const;
+    await mount(page,
+      h(ThemeProvider, own, controls('own')),
+      h(ThemeProvider, own, portal(controls('own overlay'))),
+      h(ThemeProvider, null, h(ThemeProvider, own, controls('nested'))),
+      h(ThemeProvider, null, controls('default')),
+    );
+    const read = await page.locator('[data-case]').evaluateAll((els) => Object.fromEntries(els.map((el) => {
+      const style = getComputedStyle(el.querySelector('.ld-btn')!);
+      return [(el as HTMLElement).dataset.case, { font: style.fontFamily, press: style.getPropertyValue('--press-transform').trim() }];
+    })));
+    for (const name of ['own', 'own overlay', 'nested']) expect(read[name], name).toEqual({ font: 'Georgia, serif', press: 'scale(0.5)' });
+    expect(read.default.font).not.toContain('Georgia');
+    expect(read.default.press).toMatch(/^scale\(0?\.96\)$/);
+  });
+
   test('A plain data-shape or data-density with no data-theme does nothing', async ({ page }) => {
     await mount(page, h('div', { 'data-shape': 'square', 'data-density': 'compact' }, controls('plain')));
     expect((await measure(page)).plain).toEqual(Object.assign({}, ...defaults));

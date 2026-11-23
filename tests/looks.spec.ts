@@ -91,3 +91,12 @@ test('broadsheet · a selected segment keeps its edge', async ({ page, isMobile 
   const selected = page.locator('main .ld-seg-thumb').first();
   expect(await selected.evaluate((el) => getComputedStyle(el).boxShadow)).not.toBe('none');
 });
+
+// Brutal's separators are 2px. High contrast draws separators at least 1px, so it keeps them at 2px, not thinner.
+test('brutal · high contrast keeps its 2px separators', async ({ page, isMobile }) => {
+  test.skip(isMobile, 'The rule is the same at every viewport.');
+  await open(page, '/app/inbox/m1', 'brutal', MODES[2]);
+  const width = (selector: string, side: string) => page.locator(selector).first().evaluate((el, s) => getComputedStyle(el, s === 'top' ? '::before' : null).getPropertyValue(`border-${s}-width`), side);
+  expect(await width('.ld-row-wrap + .ld-row-wrap', 'top')).toBe('2px');
+  expect(await width('.ld-message-header', 'bottom')).toBe('2px');
+});

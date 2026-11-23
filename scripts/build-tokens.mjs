@@ -73,6 +73,10 @@ for (const fam of families.filter((f) => f.attribute)) {
 
 const root = [];
 const reduced = [];
+// A value that names another token recomputes at every theme root too, so a nested ThemeProvider's `font-sans` or
+// `scale-pressed` reaches the tokens built from it. Declared on `:root` alone, it would resolve once, at the top.
+const derived = [];
+const namesToken = (v) => typeof v === 'string' && (isAlias(v) || v.includes('var(--'));
 for (const { options = [], tokens, emit } of families) {
   for (const { name, value, reducedMotion } of tokens) {
     if (typeof value !== 'string' && (!options.length || String(Object.keys(value)) !== String(options))) {
@@ -81,11 +85,13 @@ for (const { options = [], tokens, emit } of families) {
     if (reducedMotion && typeof value !== 'string') throw new Error(`tokens.json: ${name} is keyed, so it can't take a reducedMotion value`);
     if (emit === false) continue;
     root.push(`  --${name}: ${typeof value === 'string' ? css(value) : value[options[0]]};`);
+    if (namesToken(value)) derived.push(`  --${name}: ${css(value)};`);
     if (reducedMotion) reduced.push(`    --${name}: ${reducedMotion} !important;`);
   }
 }
 for (const [k, v] of Object.entries(t.type.families)) root.push(`  --font-${k}: ${v};`);
 out.push(`:root {\n${root.join('\n')}\n}`, '');
+if (derived.length) out.push(`[data-theme] {\n${derived.join('\n')}\n}`, '');
 // !important on :root and on every theme root, so a value a project sets on either for a motion token, ThemeProvider's
 // inline `tokens` included, doesn't switch reduced motion off.
 if (reduced.length) out.push(`@media (prefers-reduced-motion: reduce) {\n  :root, [data-theme] {\n${reduced.join('\n')}\n  }\n}`, '');
