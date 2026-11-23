@@ -1,4 +1,5 @@
 import { Outlet, useLocation } from 'react-router';
+import { RouterLink } from '@/router-link';
 import { AppShell } from '@lede/blocks/app-shell';
 import { SegmentedControl } from '@lede/segmented-control';
 import { Switch } from '@lede/switch';
@@ -23,10 +24,11 @@ const SCHEMES = [{ value: 'auto', label: 'Automatic' }, { value: 'light', label:
 /**
  * The site's appearance and its three links out: GitHub, the version's changelog and `llms.txt`, the docs index for
  * agents. The sidebar holds it on wide screens and the page's foot on narrow ones, where the tab bar has room for five
- * places at 320px. The demo app and Decisions are reached from Overview.
+ * places at 320px, so Looks, a sixth place, is a link here. The demo app and Decisions are reached from Overview.
  */
 function DocsFooter() {
   const { prefs, setPrefs } = useAppearance();
+  const { pathname } = useLocation();
   return (
     <div className="docs-footer">
       <SegmentedControl
@@ -43,6 +45,7 @@ function DocsFooter() {
         <li><a href={`${REPO}/blob/main/CHANGELOG.md`}>Version {version}</a></li>
         {/* A plain link, so the browser loads the file: the router would render it as a route. */}
         <li><a href="/llms.txt"><code>llms.txt</code></a></li>
+        <li><RouterLink href="/looks" aria-current={pathname === '/looks' ? 'page' : undefined}>Looks</RouterLink></li>
       </ul>
     </div>
   );

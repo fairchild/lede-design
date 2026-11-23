@@ -1,8 +1,8 @@
 import { test, expect, type Page } from '@playwright/test';
 
 // The docs keep their way out on every page and at every width: the sidebar's foot on wide screens, the page's foot on
-// narrow ones. It holds GitHub, with its mark, the version's changelog and llms.txt, the docs index for agents; the demo
-// app and Decisions live on Overview.
+// narrow ones. It holds GitHub, with its mark, the version's changelog, llms.txt, the docs index for agents, and Looks,
+// which the five-place tab bar has no room for; the demo app and Decisions live on Overview.
 // The Mode and contrast controls there edit the same appearance as the demo's Settings → Appearance.
 const DOCS = ['/', '/foundations', '/components', '/blocks', '/layouts', '/decisions', '/integrations'];
 const VERSION = /^Version \d+\.\d+\.\d+$/;
@@ -10,11 +10,11 @@ const VERSION = /^Version \d+\.\d+\.\d+$/;
 const footer = (page: Page) => page.locator('.ld-shell-footer, .docs-page-foot').filter({ visible: true });
 
 for (const route of DOCS) {
-  test(`${route} · links to GitHub, the changelog and llms.txt, and nothing else, at every width`, async ({ page }) => {
+  test(`${route} · links to GitHub, the changelog, llms.txt and Looks, and nothing else, at every width`, async ({ page }) => {
     await page.goto(route);
     await expect(footer(page)).toHaveCount(1);
     const links = footer(page).getByRole('link');
-    await expect(links).toHaveCount(3);
+    await expect(links).toHaveCount(4);
     const github = links.nth(0);
     await expect(github).toHaveAccessibleName('GitHub');
     await expect(github).toHaveAttribute('href', 'https://github.com/fairchild/lede-design');
@@ -25,6 +25,8 @@ for (const route of DOCS) {
     await expect(links.nth(1)).toHaveAttribute('href', /\/blob\/main\/CHANGELOG\.md$/);
     await expect(links.nth(2)).toHaveAccessibleName('llms.txt');
     await expect(links.nth(2)).toHaveAttribute('href', '/llms.txt');
+    await expect(links.nth(3)).toHaveAccessibleName('Looks');
+    await expect(links.nth(3)).toHaveAttribute('href', /^\/looks(\?|$)/);
   });
 }
 

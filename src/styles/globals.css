@@ -15,10 +15,9 @@
 @import "./lede.tokens.css";
 @import "../../registry/lede/lede.components.css";
 @import "../../registry/lede/lede.blocks.css";
-@import "./looks/skeuo.css";
-@import "./looks/brutal.css";
-@import "./looks/broadsheet.css";
-@import "./looks.css";
+@import "../../registry/lede/looks/skeuo.css";
+@import "../../registry/lede/looks/brutal.css";
+@import "../../registry/lede/looks/broadsheet.css";
 
 html, body { margin: 0; background: var(--background-grouped); color: var(--foreground); font-family: var(--font-sans); -webkit-font-smoothing: antialiased; }
 .app-root { min-height: 100dvh; }

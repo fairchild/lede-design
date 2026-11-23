@@ -12,9 +12,8 @@
   Lede's -hc palette. Its corners, type, edges and depth apply in all four. A look sets `primary` for its accent, and an
   accent a person picks still replaces it. A nested provider with another look or none gets none of this look's tokens,
   and starts from Lede's values, its own shape and density included unless it sets them. The looks are on the docs
-  site for now; the registry gains them in a later release. The few rules no token reaches yet, in the site's
-  `looks.css`, sit in an `@scope` per look that stops at a theme root with another look or none, so they don't leak
-  either.
+  site and in the registry (below). The few rules no token reaches yet sit in an `@scope` per look that stops at a
+  theme root with another look or none, so they don't leak either.
 
 - **Every look passes the gates Lede does.** The contrast gate measures each look's colors over every pair, theme and
   accent, so a look that sets a color below its floor fails the build. The forced-colours walk runs under each look on
@@ -26,6 +25,12 @@
   open row pressed in as a well, a stronger card edge and a softer knob highlight in dark. These stay out of high
   contrast, which keeps its own edges. Neo-brutalist fills the open row with its selection colour instead of marking it
   only in bold. Broadsheet sets tables on the page, with no panel behind them and a rule under the header.
+
+- **Looks ship in the registry**, as experimental items: `@lede/look-skeuo`, `@lede/look-brutal` and
+  `@lede/look-broadsheet`. Each brings `styles/lede/looks/<id>.css`, which imports the look's tokens (written by the
+  token build) and its faces from Fontsource, pinned, and holds the few rules no token reaches. Import it after Lede's
+  `index.css` and set `<ThemeProvider look>`. Those rules pass the literal gate, under two entries for a look's
+  ornament. The docs site links Looks from its sidebar foot, and `/looks` says how to install one.
 
 - Each push to `develop` deploys the site to the preview host that the repo variable `PREVIEW_HOST` names
   (lede-preview.cloudcompute.com), as its own Worker, `lede-design-preview`. CONTRIBUTING.md's *Preview develop* says

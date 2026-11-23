@@ -92,5 +92,18 @@
     "values": ["-200%"],
     "selectors": [".ld-skip"],
     "functions": ["translateY"]
+  },
+  {
+    "reason": "A look's ornament, in registry/lede/looks/<id>.css: Skeuomorphic's embossed type, lit panel and glossy beads, Neo-brutalist's black-on-colour avatar, and Broadsheet's masthead, rules and drop cap. Each is the look's own drawing, not a value a project tunes, and none is a colour that text or a control boundary depends on. Every look rule sits under :scope, so this takes nothing in Lede's own stylesheets. Each is a candidate for a token once a second look wants the same thing.",
+    "values": [
+      "rgba(255, 255, 255, 0)", "rgba(255, 255, 255, 0.04)", "rgba(255, 255, 255, 0.05)", "rgba(255, 255, 255, 0.08)",
+      "rgba(255, 255, 255, 0.22)", "rgba(255, 255, 255, 0.35)", "rgba(255, 255, 255, 0.55)", "rgba(255, 255, 255, 0.6)",
+      "rgba(255, 255, 255, 0.75)", "rgba(0, 0, 0, 0.25)", "rgba(0, 0, 0, 0.3)", "rgba(0, 0, 0, 0.45)", "rgba(0, 0, 0, 0.8)", "#000000"
+    ],
+    "selectors": [":scope"]
+  },
+  {
+    "reason": "A look's ornament sizes, under :scope as above: the masthead's size, the drop cap's size, lift and gap, the section rule's weight, a link's underline, and a bead's highlight and shade. They belong to the look's drawing, so they stay with it instead of joining Lede's scales.",
+    "selectors": [":scope"]
   }
 ]

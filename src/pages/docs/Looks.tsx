@@ -211,6 +211,17 @@ export function Looks() {
         </Disclosure>
       </section>
 
+      <section aria-labelledby="install" className="docs-section">
+        <h2 id="install" className="text-title-3 docs-target">Install a look</h2>
+        <p className="docs-intro">Each look is a registry item that brings its tokens, its few rules of its own and its faces. Looks are new in this release, and their values may still change.</p>
+        <CodeExample label="Add Neo-brutalist" language="shell" code={'npx shadcn@latest add @lede/look-brutal'} />
+        <ol className="docs-steps">
+          <li><p>Import <code>styles/lede/looks/brutal.css</code> after Lede’s <code>index.css</code>. It imports its faces from Fontsource, and a browser downloads a face only once a page draws text in it.</p></li>
+          <li><p>Set <code>{'<ThemeProvider look="brutal">'}</code> where the look applies, often the root.</p></li>
+        </ol>
+        <p className="docs-note">The items are <code>@lede/look-skeuo</code>, <code>@lede/look-brutal</code> and <code>@lede/look-broadsheet</code>.</p>
+      </section>
+
       <section aria-labelledby="make" className="docs-section">
         <h2 id="make" className="text-title-3 docs-target">Make a look</h2>
         <ol className="docs-steps">
@@ -218,7 +229,7 @@ export function Looks() {
           <li><p>Set <code>primary</code> for the look’s accent. An accent a person picks still replaces it.</p></li>
           <li><p>Use the slot, lettering and stroke tokens for edges, depth, sheen, the pressed state, letter case, the interface’s face and texture.</p></li>
           <li><p>Turn it on with <code>{'<ThemeProvider look="mine">'}</code>, or <code>data-look</code> on a theme root in plain HTML. Nested providers and their overlays inherit it, and <code>look="lede"</code> turns it off.</p></li>
-          <li><p>Write CSS for anything left, and keep it short. Each rule is a gap in the tokens.</p></li>
+          <li><p>Write CSS for anything left in an <code>{'@scope ([data-look="mine"]) to ([data-theme]:not([data-look="mine"]))'}</code>, so it stops at a provider with another look, and keep it short. Each rule is a gap in the tokens.</p></li>
         </ol>
         <CodeExample label="What the token build writes for a look" language="css" code={RECIPE} />
         <Scroll label="Tokens a look sets">

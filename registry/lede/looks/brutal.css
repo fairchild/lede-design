@@ -1,0 +1,22 @@
+/* Lede look "brutal" (Neo-brutalist): the rules no token reaches. Its token values are in ./brutal.tokens.css, which the token build
+   writes from `looks` in tokens/tokens.json. Turn it on with <ThemeProvider look="brutal">, or data-look="brutal" on a theme root.
+
+   The rules sit in an @scope that stops at a theme root with another look or none, so they reach only what the look's own
+   provider holds, as its tokens do. `:scope` stands for the look's root. Each rule is a candidate for the next token. */
+/* The look's faces, from Fontsource. A browser downloads a face only once a page draws text in it. */
+@import "@fontsource-variable/space-grotesk";
+@import "./brutal.tokens.css";
+
+/* ═════════════════════════════ NEO-BRUTALIST ("Poster") ═════════════════════════════
+   Thick black outlines, hard offset shadows, flat loud fills, no curves, no blur and snappy motion. */
+@scope ([data-look="brutal"]) to ([data-theme]:not([data-look="brutal"])) {
+  /* Beyond tokens: a tinted Button is yellow, not a tint of the accent. A tint-color token would carry it. */
+  :scope .ld-btn-tinted:not(.ld-btn-critical) { background-color: var(--secondary); color: var(--secondary-foreground); }
+  :scope .ld-row-wrap + .ld-row-wrap::before { left: 0; }
+  /* The avatar is a loud chip. High contrast keeps Lede's own, whose colours its palette sets. */
+  @container style(--ld-contrast: standard) {
+    :scope .ld-avatar { box-shadow: 0 0 0 2px var(--border); background: var(--ring); color: #000000; }
+  }
+  /* The open row is marked the way a selected segment is: filled, not only bold. */
+  :scope .ld-row:has(.ld-row-target[aria-current="page"]) { background-image: linear-gradient(var(--fill-selected), var(--fill-selected)); }
+}

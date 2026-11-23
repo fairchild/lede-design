@@ -1,6 +1,6 @@
 // tokens/tokens.json is the single source. This writes src/styles/lede.tokens.css (used by the site)
 // and registry/lede/lede.tokens.css (shipped by the lede-theme registry item), and one file per look in
-// src/styles/looks/. Never edit any of them by hand.
+// registry/lede/looks/<id>.tokens.css (each imported by that look's registry file). Never edit any of them by hand.
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 
 const t = JSON.parse(readFileSync('tokens/tokens.json', 'utf8'));
@@ -175,7 +175,7 @@ const ROOT_VALUE = new Map([
 // High contrast drops a look's colors, shadows and ground texture, the way Lede's -hc themes keep a plain ground.
 const STANDARD_ONLY = new Set([...PALETTE, 'texture-ground']);
 const LOOK_THEMES = { all: null, light: 'light', dark: 'dark', 'light-hc': 'light-hc', 'dark-hc': 'dark-hc' };
-mkdirSync('src/styles/looks', { recursive: true });
+mkdirSync('registry/lede/looks', { recursive: true });
 for (const [id, look] of Object.entries(looks?.options ?? {})) {
   if (!/^[a-z][a-z0-9-]*$/.test(id) || id === 'lede') throw new Error(`tokens.json: looks.${id} needs a lowercase name other than lede`);
   const blocks = [];
@@ -205,9 +205,8 @@ for (const [id, look] of Object.entries(looks?.options ?? {})) {
   const leaks = [...new Set(Object.values(look.values).flatMap((values) => Object.keys(values)).filter((name) => !PALETTE.has(name)))];
   if (leaks.length) blocks.unshift([`:where([data-look="${id}"] [data-theme]:not([data-look="${id}"]))`, leaks.map((name) => [name, ROOT_VALUE.get(name)])]);
   const body = blocks.filter(([, entries]) => entries.length).map(([selector, entries]) => `${selector} {\n${entries.map(line).join('\n')}\n}`);
-  writeFileSync(`src/styles/looks/${id}.css`, [
+  writeFileSync(`registry/lede/looks/${id}.tokens.css`, [
     `/* Lede look "${id}" (${look.name}) — GENERATED from tokens/tokens.json by scripts/build-tokens.mjs. Do not edit. */`,
-    ...(look.fonts.length ? [`/* Faces from ${look.fonts.join(', ')}, which a project installs and imports itself. */`] : []),
     '',
     body.join('\n\n'),
     '',
