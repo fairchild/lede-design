@@ -47,8 +47,8 @@ export function AppearanceRoot({ children }: { children: React.ReactNode }) {
   }, [setParams]);
   return (
     <Ctx.Provider value={{ prefs: toPrefs(axes), setPrefs }}>
-      {/* A default accent stays unset, so a look's own accent shows until one is picked. */}
-      <ThemeProvider className="app-root" surface="grouped" {...axes} accent={params.has('accent') ? axes.accent : undefined} look={look}>
+      {/* An accent not in the URL stays unset, so a look's own accent shows until one is picked. */}
+      <ThemeProvider className="app-root" surface="grouped" {...axes} accent={(presets as readonly string[]).includes(params.get('accent') ?? '') ? axes.accent : undefined} look={look}>
         {children}
       </ThemeProvider>
     </Ctx.Provider>

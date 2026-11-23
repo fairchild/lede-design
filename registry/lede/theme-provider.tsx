@@ -22,12 +22,17 @@ export interface ThemeProviderProps extends useRender.ComponentProps<'div'> {
   accent?: Preset | (string & {});
   /** Text color on primary fills, for a custom accent when the automatic pick is wrong. Inherited along with `accent`. */
   accentForeground?: string;
-  /** Corners, from roundest to squarest. `square` has no capsules. Unset inherits the nearest provider's, or `:root`'s. */
+  /**
+   * Corners, from roundest to squarest. `square` has no capsules. Unset inherits the nearest provider's, or `:root`'s
+   * when no provider sets one. A provider that turns a look off (`look="lede"`) starts from Lede's corners: give it a
+   * shape of its own to keep one.
+   */
   shape?: 'soft' | 'crisp' | 'square';
   /**
    * Control heights, for buttons, fields and table hit targets. `'touch'` is for screens used with a finger: no control is
    * shorter than `--size-hit-min`, 44px. List rows and bar items keep `--size-hit-min` in every density.
-   * Unset inherits the nearest provider's, or `:root`'s.
+   * Unset inherits the nearest provider's, or `:root`'s when no provider sets one. A provider that turns a look off starts
+   * from Lede's density: give it one of its own to keep one.
    */
   density?: 'regular' | 'compact' | 'touch';
   /**
@@ -36,9 +41,11 @@ export interface ThemeProviderProps extends useRender.ComponentProps<'div'> {
    */
   glass?: 'regular' | 'solid';
   /**
-   * A whole visual style over the same components, such as `'brutal'`: a look from the registry, whose CSS the project
-   * imports. It sets its own colors, corners, type, edges and depth; an accent picked here still replaces its accent,
-   * and high contrast keeps Lede's -hc palette. Unset inherits the nearest provider's. `'lede'` turns a look off.
+   * A whole visual style over the same components, such as `'brutal'`, keyed on `data-look`: it applies once the look's
+   * CSS is on the page (the docs site's looks for now; the registry gains them in a later release). It sets its own
+   * colors, corners, type, edges and depth; an accent picked here still replaces its accent, and high contrast keeps
+   * Lede's -hc palette. Unset inherits the nearest provider's. `'lede'` turns a look off, and Lede's tokens apply again
+   * inside it.
    */
   look?: 'lede' | (string & {});
   /** The wrapper's background. Default `'none'`. */

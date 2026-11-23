@@ -157,7 +157,7 @@ writeFileSync('registry/lede/lede.tokens.css', text);
 
 // Looks: a theme root's `data-look` (ThemeProvider's `look`) sets token values, one block per theme it reaches, each
 // [data-theme][data-look] like the shape and density axes, so a look beats the theme blocks and, coming after them in
-// the page, the axes. A color or shadow applies in its scheme's standard theme only: high contrast keeps Lede's -hc
+// the page, the axes. A color, shadow or ground texture applies in its scheme's standard theme only: high contrast keeps Lede's -hc
 // palette unless the look gives `light-hc` or `dark-hc`. Every other value applies in both of its scheme's themes.
 const { looks } = t;
 const PALETTE = new Set(THEMED.flatMap((fam) => t[fam].tokens.map((tk) => tk.name)));
@@ -172,14 +172,20 @@ const ROOT_VALUE = new Map([
   ...families.flatMap((fam) => fam.tokens.map((tk) => [tk.name, typeof tk.value !== 'string' ? tk.value[fam.options[0]] : namesToken(tk.value) ? 'initial' : css(tk.value)])),
   ...Object.entries(t.type.families).map(([k, v]) => [`font-${k}`, v]),
 ]);
+// High contrast drops a look's colors, shadows and ground texture, the way Lede's -hc themes keep a plain ground.
+const STANDARD_ONLY = new Set([...PALETTE, 'texture-ground']);
 const LOOK_THEMES = { all: null, light: 'light', dark: 'dark', 'light-hc': 'light-hc', 'dark-hc': 'dark-hc' };
 mkdirSync('src/styles/looks', { recursive: true });
 for (const [id, look] of Object.entries(looks?.options ?? {})) {
   if (!/^[a-z][a-z0-9-]*$/.test(id) || id === 'lede') throw new Error(`tokens.json: looks.${id} needs a lowercase name other than lede`);
   const blocks = [];
   const line = ([name, value]) => `  --${name}: ${value === 'initial' ? value : css(value)};`;
-  for (const [key, values] of Object.entries(look.values)) {
+  for (const key of Object.keys(look.values)) {
     if (!(key in LOOK_THEMES)) throw new Error(`tokens.json: looks.${id}.values.${key} isn't one of ${Object.keys(LOOK_THEMES).join(', ')}`);
+  }
+  // Blocks go out in LOOK_THEMES order, whatever order tokens.json lists them in, so a later theme wins a tie.
+  for (const key of Object.keys(LOOK_THEMES).filter((k) => k in look.values)) {
+    const values = look.values[key];
     for (const name of Object.keys(values)) {
       if (!KNOWN.has(name)) throw new Error(`tokens.json: looks.${id}.values.${key} sets ${name}, which no token family names`);
     }
@@ -189,8 +195,8 @@ for (const [id, look] of Object.entries(looks?.options ?? {})) {
     if (!scheme) blocks.push([at(null), entries]);
     else if (scheme.endsWith('-hc')) blocks.push([at(scheme), entries]);
     else {
-      blocks.push([`[data-theme^="${scheme}"][data-look="${id}"]`, entries.filter(([name]) => !PALETTE.has(name))]);
-      blocks.push([at(scheme), entries.filter(([name]) => PALETTE.has(name))]);
+      blocks.push([`[data-theme^="${scheme}"][data-look="${id}"]`, entries.filter(([name]) => !STANDARD_ONLY.has(name))]);
+      blocks.push([at(scheme), entries.filter(([name]) => STANDARD_ONLY.has(name))]);
     }
   }
   // A theme root inside this look that has another look, or none, puts back Lede's value for each token this look sets

@@ -8,9 +8,12 @@
   inherit it. `look="lede"` turns it off, and plain HTML uses `data-look` on a theme root. Each look's values live in
   `looks` in `tokens/tokens.json` (`all`, `light`, `dark`, optional `light-hc` and `dark-hc`). The token build writes
   them as `[data-theme][data-look]` blocks, like the shape and density axes, and fails a look that names a token no
-  family has. A look's colors and shadows apply in the standard themes only, so high contrast keeps Lede's -hc palette.
-  Its corners, type, edges and depth apply in all four. A look sets `primary` for its accent, and an accent a person
-  picks still replaces it. Nothing of a look leaks into a nested provider with another look or none.
+  family has. A look's colors, shadows and ground texture apply in the standard themes only, so high contrast keeps
+  Lede's -hc palette. Its corners, type, edges and depth apply in all four. A look sets `primary` for its accent, and an
+  accent a person picks still replaces it. A nested provider with another look or none gets none of this look's tokens,
+  and starts from Lede's values, its own shape and density included unless it sets them. The looks are on the docs site for now; the
+  registry gains them in a later release. The few rules no token reaches yet, in the site's `looks.css`, still match
+  inside a nested provider.
 
 - Each push to `develop` deploys the site to the preview host that the repo variable `PREVIEW_HOST` names
   (lede-preview.cloudcompute.com), as its own Worker, `lede-design-preview`. CONTRIBUTING.md's *Preview develop* says
