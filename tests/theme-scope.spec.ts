@@ -455,6 +455,29 @@ test.describe('Nested providers', () => {
     expect(read.default.press).toBe('matrix(0.96, 0, 0, 0.96, 0, 0)');
   });
 
+  test('A look inherits when unset, nested and in overlays, `lede` turns it off, and none leaks into another', async ({ page }) => {
+    await mount(page,
+      h(ThemeProvider, { look: 'brutal' }, controls('own')),
+      h(ThemeProvider, { look: 'brutal' }, h(ThemeProvider, { scheme: 'dark' }, controls('nested'))),
+      h(ThemeProvider, { look: 'brutal' }, portal(controls('overlay'))),
+      h(ThemeProvider, { look: 'brutal' }, h(ThemeProvider, { look: 'lede' }, controls('off'))),
+      h(ThemeProvider, { look: 'brutal' }, h(ThemeProvider, { look: 'skeuo' }, controls('other'))),
+      h(ThemeProvider, { look: 'brutal', shape: 'crisp' }, h(ThemeProvider, { look: 'lede', shape: 'crisp' }, controls('off-shaped'))),
+      h(ThemeProvider, null, controls('none')),
+    );
+    const read = await page.locator('[data-case]').evaluateAll((els) => Object.fromEntries(els.map((el) => {
+      const root = el.closest('[data-theme]')!;
+      return [(el as HTMLElement).dataset.case, { look: root.getAttribute('data-look'), radius: getComputedStyle(el).getPropertyValue('--radius').trim(), ui: getComputedStyle(el.querySelector('.ld-btn')!).textTransform }];
+    })));
+    for (const name of ['own', 'nested', 'overlay']) expect(read[name], name).toEqual({ look: 'brutal', radius: '0px', ui: 'uppercase' });
+    for (const name of ['off', 'none']) expect(read[name], name).toMatchObject({ look: null, ui: 'none' });
+    expect(read.off.radius).not.toBe('0px');
+    // Nothing of the outer look leaks into an inner one that doesn't set the same token: skeuo's labels aren't uppercase.
+    expect(read.other).toEqual({ look: 'skeuo', radius: '10px', ui: 'none' });
+    // A provider that turns a look off and sets a shape gets that shape, not the look's corners or Lede's default.
+    expect(read['off-shaped']).toEqual({ look: null, radius: '12px', ui: 'none' });
+  });
+
   test('A plain data-shape or data-density with no data-theme does nothing', async ({ page }) => {
     await mount(page, h('div', { 'data-shape': 'square', 'data-density': 'compact' }, controls('plain')));
     expect((await measure(page)).plain).toEqual(Object.assign({}, ...defaults));

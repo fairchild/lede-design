@@ -88,8 +88,9 @@ export function WelcomePage() {
       () => { throw new Error('You’re offline. Your answers are still here, so finish again once you’re back online.'); },
     );
   return (
-    // The accent being picked shows on this page only, until Finish saves it.
-    <ThemeProvider accent={data.accent} glass={prefs.solidGlass ? 'solid' : 'regular'}>
+    // The accent being picked shows on this page only, until Finish saves it. The saved one is the site's already, and
+    // leaving it unset keeps a look's own accent.
+    <ThemeProvider accent={data.accent === prefs.accent ? undefined : data.accent} glass={prefs.solidGlass ? 'solid' : 'regular'}>
       <main id="main" className="onboarding-main" tabIndex={-1}>
         {shown < DONE ? (
           <div className="docs-onboarding-cancel">

@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router';
 import { ThemeProvider, presets } from '@lede/theme-provider';
 import type { AppearancePrefs } from '@lede/flows/settings';
 import { readView, useSetViewParams } from '@/view-params';
+import { useLook } from '@/look-switcher';
 
 /**
  * The site's appearance is ThemeProvider's props, read from the URL's query by the same names:
@@ -39,13 +40,15 @@ export function AppearanceRoot({ children }: { children: React.ReactNode }) {
   const [params] = useSearchParams();
   const setParams = useSetViewParams();
   const axes = readAxes(params);
+  const look = useLook();
   const setPrefs = React.useCallback((p: AppearancePrefs) => {
     const next = toAxes(p);
     setParams(Object.fromEntries(Object.entries(AXES).map(([name, values]) => [name, next[name as keyof Axes] === values[0] ? null : next[name as keyof Axes]])));
   }, [setParams]);
   return (
     <Ctx.Provider value={{ prefs: toPrefs(axes), setPrefs }}>
-      <ThemeProvider className="app-root" surface="grouped" {...axes}>
+      {/* An accent not in the URL stays unset, so a look's own accent shows until one is picked. */}
+      <ThemeProvider className="app-root" surface="grouped" {...axes} accent={(presets as readonly string[]).includes(params.get('accent') ?? '') ? axes.accent : undefined} look={look}>
         {children}
       </ThemeProvider>
     </Ctx.Provider>

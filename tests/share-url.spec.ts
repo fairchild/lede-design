@@ -10,7 +10,7 @@ test('picking a look writes ?look= and a fresh browser opening the link sees tha
   await page.goto('/looks?chrome=0');
   const before = await historyLength(page);
   await page.getByRole('group', { name: 'Look' }).getByRole('radio', { name: 'Neo-brutalist' }).check();
-  await expect(page.locator('html')).toHaveAttribute('data-look', 'brutal');
+  await expect(page.locator('.app-root')).toHaveAttribute('data-look', 'brutal');
   expect(new URL(page.url()).searchParams.get('look')).toBe('brutal');
   expect(await historyLength(page), 'a change of view adds no Back step').toBe(before);
   // Back to Lede takes the param out again.
@@ -20,7 +20,7 @@ test('picking a look writes ?look= and a fresh browser opening the link sees tha
   const other = await browser.newContext();
   const fresh = await other.newPage();
   await fresh.goto('/looks?look=broadsheet&chrome=0');
-  await expect(fresh.locator('html')).toHaveAttribute('data-look', 'broadsheet');
+  await expect(fresh.locator('.app-root')).toHaveAttribute('data-look', 'broadsheet');
   await expect(fresh.getByRole('group', { name: 'Look' }).getByRole('radio', { name: 'Broadsheet' })).toBeChecked();
   await other.close();
 });
@@ -45,7 +45,7 @@ test('a bare URL is the defaults: nothing a page chose before is remembered', as
   await expect(page.locator('.app-root')).toHaveAttribute('data-theme', 'dark-hc');
   await page.goto('/foundations');
   await expect(page.locator('.app-root')).toHaveAttribute('data-theme', 'light');
-  await expect(page.locator('html')).not.toHaveAttribute('data-look');
+  await expect(page.locator('.app-root')).not.toHaveAttribute('data-look');
   expect(new URL(page.url()).search).toBe('');
 });
 
