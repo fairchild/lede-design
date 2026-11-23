@@ -124,7 +124,12 @@ const LOOK_DETAILS: Look[] = [
   },
 ];
 
-const LOOK_TOKENS = tokens.look.tokens;
+// What a look sets beyond color, size and type: the two strokes it can thicken, the slot tokens and the lettering.
+const LOOK_TOKENS = [
+  ...tokens.stroke.tokens.filter((t) => t.name === 'stroke-hairline' || t.name === 'stroke-input'),
+  ...tokens.slot.tokens,
+  ...tokens.lettering.tokens,
+];
 const RECIPE = `/* 1. Colors and the other theme tokens, light and dark. */
 [data-look="mine"] .ld-theme[data-theme] {
   --preset-blue: #b0161e;           /* the default accent */
@@ -132,11 +137,11 @@ const RECIPE = `/* 1. Colors and the other theme tokens, light and dark. */
   --radius: 0px;
   --font-sans: "Newsreader Variable", Georgia, serif;
 
-  /* 2. The look-* tokens: what changes beyond color and size. */
-  --look-ui-font: "Libre Franklin Variable", sans-serif;
-  --look-surface-edge: inset 0 2px 0 var(--foreground);
-  --look-press: none;
-  --look-label-case: uppercase;
+  /* 2. Slot, lettering and stroke tokens: what changes beyond color and size. */
+  --font-ui: "Libre Franklin Variable", sans-serif;
+  --edge-surface: inset 0 2px 0 var(--foreground);
+  --press-transform: none;
+  --case-label: uppercase;
 }
 [data-look="mine"] .ld-theme[data-theme^="dark"] {
   --preset-blue: #ff7a6b;
@@ -216,13 +221,13 @@ export function Looks() {
         <ol className="docs-steps">
           <li><p>Set <code>data-look</code> on <code>{'<html>'}</code>, or on any ancestor of your ThemeProvider.</p></li>
           <li><p>Set the theme tokens under <code>[data-look] .ld-theme[data-theme]</code>, once for light and again for dark. ThemeProvider sets <code>--primary</code> from the accent preset, so set the preset, such as <code>--preset-blue</code>.</p></li>
-          <li><p>Set the <code>look-*</code> tokens for edges, depth, sheen, the pressed state, letter case, the interface’s face and texture. A value that names a color goes in the same block as the colors, so it follows light and dark.</p></li>
+          <li><p>Set the slot, lettering and stroke tokens for edges, depth, sheen, the pressed state, letter case, the interface’s face and texture. A value that names a color goes in the same block as the colors, so it follows light and dark.</p></li>
           <li><p>Write CSS for anything left, and keep it short. Each rule is a gap in the tokens.</p></li>
         </ol>
         <CodeExample label="A look’s CSS" language="css" code={RECIPE} />
-        <Scroll label="The look tokens">
+        <Scroll label="Tokens a look sets">
           <table className="docs-table">
-            <caption>The <code>look-*</code> tokens. Each default draws Lede’s own look.</caption>
+            <caption>Tokens a look sets beyond color, size and type. Each default draws Lede’s own look.</caption>
             <thead><tr><th scope="col">Token</th><th scope="col">Default</th><th scope="col">What it changes</th></tr></thead>
             <tbody>{LOOK_TOKENS.map((t) => <tr key={t.name}><th scope="row"><code>--{t.name}</code></th><td><code>{/^\{.+\}$/.test(t.value) ? `var(--${t.value.slice(1, -1)})` : t.value}</code></td><td><Usage text={t.usage} /></td></tr>)}</tbody>
           </table>
