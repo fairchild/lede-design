@@ -5,7 +5,7 @@ Each folder under `r/` is a release of Lede's shadcn registry, copied byte for b
 files never change. Use it where Lede's site is out of reach but GitHub isn't, such as in a sandbox:
 
 ```bash
-npx shadcn@latest registry add '@lede=https://raw.githubusercontent.com/fairchild/lede-design/registry/r/v0.7.1/{name}.json'
+npx shadcn@latest registry add '@lede=https://raw.githubusercontent.com/fairchild/lede-design/registry/r/v0.7.2/{name}.json'
 ```
 
 Change the release in the URL to the one you want. The install steps are in the README on `main`.
