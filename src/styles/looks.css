@@ -15,6 +15,19 @@
   @container style(--ld-scheme: dark) {
     :scope :is(.ld-page-title, .ld-list-title, .ld-shell-brand) { text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.8); }
   }
+  /* Depth that high contrast trades for its own edges, so these stay out of -hc. */
+  @container style(--ld-contrast: standard) {
+    /* The open row sits pressed into the list, as a well, not only tinted. */
+    :scope .ld-row:has(.ld-row-target[aria-current="page"]) { box-shadow: var(--depth-well); }
+    /* The sidebar is a panel of its own, lit from above and bevelled where it meets the page. */
+    :scope .ld-shell-sidebar { background-image: linear-gradient(to bottom, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0) 40%); box-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.35); }
+    /* Unread marks and avatars are glossy beads: a highlight up top, a shade below. */
+    :scope :is(.ld-unread-dot, .ld-avatar) { background-image: radial-gradient(circle at 35% 25%, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0) 60%); box-shadow: inset 0 -1px 2px rgba(0, 0, 0, 0.3), 0 1px 0 rgba(255, 255, 255, 0.6); }
+  }
+  @container style(--ld-contrast: standard) and style(--ld-scheme: dark) {
+    :scope .ld-shell-sidebar { background-image: linear-gradient(to bottom, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0) 40%); box-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.05); }
+    :scope :is(.ld-unread-dot, .ld-avatar) { box-shadow: inset 0 -1px 2px rgba(0, 0, 0, 0.45), 0 1px 0 rgba(255, 255, 255, 0.08); }
+  }
 }
 
 /* ═════════════════════════════ NEO-BRUTALIST ("Poster") ═════════════════════════════
@@ -24,6 +37,8 @@
   :scope .ld-btn-tinted:not(.ld-btn-critical) { background-color: var(--secondary); color: var(--secondary-foreground); }
   :scope .ld-row-wrap + .ld-row-wrap::before { left: 0; }
   :scope .ld-avatar { box-shadow: 0 0 0 2px var(--border); background: #ff3d7f; color: #000000; }
+  /* The open row is marked the way a selected segment is: filled, not only bold. */
+  :scope .ld-row:has(.ld-row-target[aria-current="page"]) { background-image: linear-gradient(var(--fill-selected), var(--fill-selected)); }
 }
 
 /* ═════════════════════════════ BROADSHEET ═════════════════════════════
@@ -55,4 +70,7 @@
   :scope .ld-shell-link[aria-current="page"] { background: transparent; box-shadow: inset 3px 0 0 var(--primary); }
   :scope .ld-avatar { background: var(--foreground); color: var(--background); }
   :scope .ld-unread-dot { border-radius: 0; }
+  /* A table is set on the page, like the lists: no panel behind it, and a rule under its header. */
+  :scope .ld-table-scroll { background-color: transparent; }
+  :scope .ld-table-th { box-shadow: inset 0 -1px 0 var(--foreground); }
 }

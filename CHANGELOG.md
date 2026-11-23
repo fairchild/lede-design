@@ -22,6 +22,11 @@
   colors, muted text and input edges moved a step darker in light and lighter in dark, Skeuo and Broadsheet tune the
   accent presets that fell short on their grounds, and the Switch knob's edge is dark under Skeuo dark and Brutal dark.
 
+- **Design pass on the looks.** Skeuomorphic gets the most: a lit sidebar panel, glossy unread marks and avatars, the
+  open row pressed in as a well, a stronger card edge and a softer knob highlight in dark. These stay out of high
+  contrast, which keeps its own edges. Neo-brutalist fills the open row with its selection colour instead of marking it
+  only in bold. Broadsheet sets tables on the page, with no panel behind them and a rule under the header.
+
 - Each push to `develop` deploys the site to the preview host that the repo variable `PREVIEW_HOST` names
   (lede-preview.cloudcompute.com), as its own Worker, `lede-design-preview`. CONTRIBUTING.md's *Preview develop* says
   how to set it up; without the variable nothing runs.
