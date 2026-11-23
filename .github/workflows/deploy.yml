@@ -22,8 +22,8 @@ defaults:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    # The secrets are the environment's. It admits main, v* tags and develop, whose deploy-preview.yml reads only the
-    # API token and the account ID.
+    # The secrets are the environment's. It admits main, v* tags and develop, whose deploy-preview.yml deploys the
+    # preview Worker and checks the R2 keys by writing ci/credentials-check.
     environment: cloudflare
     # Two credentials, each with only what its steps need. CLOUDFLARE_API_TOKEN deploys the Worker and uploads preview
     # versions, through wrangler, and needs no R2 access. R2_ACCESS_KEY_ID and R2_SECRET_ACCESS_KEY are an R2 API

@@ -13,7 +13,8 @@
 - The deploy workflow publishes the registries to R2 with an R2 API token limited to the `lede-design` bucket
   (`R2_ACCESS_KEY_ID` and `R2_SECRET_ACCESS_KEY` in the `cloudflare` environment), through R2's S3 API, so
   `CLOUDFLARE_API_TOKEN` no longer needs account-wide R2 access. `scripts/publish-r2.mjs --remote` reads those keys;
-  `--local` still goes through wrangler. `docs/releasing.md`'s *Cloudflare credentials* says how to set it up.
+  `--local` still goes through wrangler. `docs/releasing.md`'s *Cloudflare credentials* says how to set it up. Each
+  push to `develop` checks those keys by writing `ci/credentials-check`, so a bad R2 token shows up before a release.
 
 ## 0.7.2
 
