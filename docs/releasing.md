@@ -195,6 +195,9 @@ gh secret set R2_SECRET_ACCESS_KEY --repo fairchild/lede-design --env cloudflare
 
 Each command asks for the value, so it stays out of the shell's history.
 
+Each push to `develop` checks the keys: `deploy-preview.yml` writes one small object, `ci/credentials-check`, with
+them, so a missing or misscoped R2 token fails the preview, well before a release needs it.
+
 Wrangler doesn't need R2 access to deploy a Worker that binds the bucket: it checks whether a bound bucket exists, and
 when the token can't look it says so and deploys anyway. If a deploy ever fails on the `BUCKET` binding, add *Workers
 R2 Storage: Read* to `CLOUDFLARE_API_TOKEN`, never Edit.
