@@ -31,9 +31,11 @@
 
   The edge, depth, sheen, press and texture tokens are the new `slot` family. The face, case and tracking tokens are
   the new `lettering` family. Each default still draws Lede as before.
-- A token whose value names another token, such as `--font-ui` and `--press-transform`, is also computed on every
-  theme root. So a `--font-sans` or `--scale-pressed` that a ThemeProvider sets now reaches the Buttons, labels and
-  left-bar links inside it.
+- A token whose default names another token, `--font-ui` and `--press-transform`, is no longer declared. Components
+  read it with its default as the fallback, such as `var(--font-ui, var(--font-sans))`. So a `--font-sans` or
+  `--scale-pressed` that a nested ThemeProvider sets now reaches the Buttons, labels and left-bar links inside it, and
+  a value set for the token itself still reaches providers nested below. Foundations shows such a default as CSS,
+  `var(--font-sans)`, not `{font-sans}`.
 - High-contrast separators draw at `--stroke-hairline` when it's thicker than 1px, so a look's heavier rules stay
   heavy in -hc. A FormSection's body takes `--edge-surface` like the other surfaces do.
 - The deploy workflow publishes the registries to R2 with an R2 API token limited to the `lede-design` bucket

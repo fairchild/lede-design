@@ -428,19 +428,31 @@ test.describe('Nested providers', () => {
 
   test('A token built from another follows the value a provider sets, nested and in overlays', async ({ page }) => {
     const own = { tokens: { 'font-sans': 'Georgia, serif', 'scale-pressed': '0.5' } } as const;
+    // A value set for the derived token itself, on an outer provider, still reaches a provider nested inside it.
+    const outer = { tokens: { 'font-ui': 'Courier, monospace', 'press-transform': 'none' } } as const;
     await mount(page,
       h(ThemeProvider, own, controls('own')),
       h(ThemeProvider, own, portal(controls('own overlay'))),
       h(ThemeProvider, null, h(ThemeProvider, own, controls('nested'))),
+      h(ThemeProvider, outer, h(ThemeProvider, null, controls('set outside'))),
+      h(ThemeProvider, outer, h(ThemeProvider, null, portal(controls('set outside, overlay')))),
       h(ThemeProvider, null, controls('default')),
     );
     const read = await page.locator('[data-case]').evaluateAll((els) => Object.fromEntries(els.map((el) => {
-      const style = getComputedStyle(el.querySelector('.ld-btn')!);
-      return [(el as HTMLElement).dataset.case, { font: style.fontFamily, press: style.getPropertyValue('--press-transform').trim() }];
+      const button = el.querySelector('.ld-btn')!;
+      const style = getComputedStyle(button);
+      // The pressed transform, read off a probe that sets transform from the same variable the Button reads.
+      const probe = button.appendChild(document.createElement('i'));
+      probe.style.cssText = 'display: block; transform: var(--press-transform, scale(var(--scale-pressed)))';
+      const press = getComputedStyle(probe).transform;
+      probe.remove();
+      return [(el as HTMLElement).dataset.case, { font: style.fontFamily, press }];
     })));
-    for (const name of ['own', 'own overlay', 'nested']) expect(read[name], name).toEqual({ font: 'Georgia, serif', press: 'scale(0.5)' });
-    expect(read.default.font).not.toContain('Georgia');
-    expect(read.default.press).toMatch(/^scale\(0?\.96\)$/);
+    const half = 'matrix(0.5, 0, 0, 0.5, 0, 0)';
+    for (const name of ['own', 'own overlay', 'nested']) expect(read[name], name).toEqual({ font: 'Georgia, serif', press: half });
+    for (const name of ['set outside', 'set outside, overlay']) expect(read[name], name).toEqual({ font: 'Courier, monospace', press: 'none' });
+    expect(read.default.font).not.toMatch(/Georgia|Courier/);
+    expect(read.default.press).toBe('matrix(0.96, 0, 0, 0.96, 0, 0)');
   });
 
   test('A plain data-shape or data-density with no data-theme does nothing', async ({ page }) => {

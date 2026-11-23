@@ -70,7 +70,7 @@
    A one-line Button is a capsule: its corners are at least half of one line's height, the control or the line box,
    whichever is taller. Past that they stop at `--radius-xl`, so a wrapped label makes a rounded rectangle. */
 .ld-btn {
-  appearance: none; border: 0; margin: 0; font: inherit; font-family: var(--font-ui); text-decoration: none;
+  appearance: none; border: 0; margin: 0; font: inherit; font-family: var(--font-ui, var(--font-sans)); text-decoration: none;
   display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2); box-sizing: border-box;
   --ld-btn-control: var(--size-control-md); --ld-btn-line: var(--text-subheadline-line-height); min-height: var(--ld-btn-control); padding: 0 var(--space-4);
   font-size: var(--text-subheadline-size); line-height: var(--ld-btn-line); font-weight: var(--weight-semibold); letter-spacing: normal; text-transform: var(--case-button);
@@ -80,7 +80,7 @@
 }
 /* With enlarged text on a narrow window a word can be wider than the line, so there a label also breaks inside one. */
 @media (width < 20em) { .ld-btn { overflow-wrap: anywhere; } }
-.ld-btn:active:not(:disabled, [aria-disabled="true"]) { transform: var(--press-transform); }
+.ld-btn:active:not(:disabled, [aria-disabled="true"]) { transform: var(--press-transform, scale(var(--scale-pressed))); }
 /* A look's bevel or offset, and its sheen over the fill. A pressed Button takes the look's pressed shadow instead. The
    fills below set background-color, so hover and critical keep the sheen. */
 .ld-btn:is(.ld-btn-filled, .ld-btn-tinted, .ld-btn-gray) { box-shadow: var(--depth-control); background-image: var(--sheen-control); }
@@ -142,7 +142,7 @@
   --ld-seg-row: max(var(--ld-seg-control), var(--text-footnote-line-height) + 2 * var(--space-0_5));
   display: inline-grid; grid-auto-flow: column; grid-auto-columns: 1fr; position: relative;
   margin: 0; min-width: 0; max-width: 100%; border: 0; padding: var(--space-0_5); border-radius: var(--radius-capsule);
-  background: var(--fill-control); height: var(--ld-seg-row); box-sizing: border-box; font-family: var(--font-ui);
+  background: var(--fill-control); height: var(--ld-seg-row); box-sizing: border-box; font-family: var(--font-ui, var(--font-sans));
   box-shadow: var(--depth-well);
 }
 @container style(--ld-contrast: high) {
@@ -299,7 +299,7 @@
    identifier, breaks, so it can't widen the list. */
 .ld-list-title, .ld-list-summary { overflow-wrap: anywhere; }
 /* Section labels take a look's letter case. */
-.ld-list-title, .ld-field-label, .ld-table-th { font-family: var(--font-ui); text-transform: var(--case-label); letter-spacing: var(--tracking-label); }
+.ld-list-title, .ld-field-label, .ld-table-th { font-family: var(--font-ui, var(--font-sans)); text-transform: var(--case-label); letter-spacing: var(--tracking-label); }
 .ld-list-footer { padding: 0 var(--space-4); margin-top: var(--space-1_5); }
 .ld-list-body { list-style: none; margin: 0; padding: 0; background: var(--card); border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--edge-surface); }
 .ld-list-empty { padding: var(--space-3) var(--space-4); font-size: var(--text-subheadline-size); line-height: var(--text-subheadline-line-height); color: var(--muted-foreground); }
