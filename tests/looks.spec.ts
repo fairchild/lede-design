@@ -2,7 +2,7 @@ import { test, expect, type Page } from '@playwright/test';
 import { withAppearance } from './appearance';
 import AxeBuilder from '@axe-core/playwright';
 
-// The site's looks (src/styles/looks.css), turned on with `?look=`. The rest of the suite runs with no look, so these are
+// The looks (registry/lede/looks/), turned on with `?look=`. The rest of the suite runs with no look, so these are
 // the only tests that see one. Each look passes axe in every theme on the pages that show most of the components, high
 // contrast keeps Lede's own -hc palette under a look, and a phone at 200% text is no wider than at 100%.
 const LOOKS = ['skeuo', 'brutal', 'broadsheet'] as const;
@@ -128,3 +128,16 @@ for (const look of LOOKS) {
     });
   }
 }
+
+// Under a look, no accent in the URL shows the look's own. Picking one, Blue included, keeps it in the URL, so Blue
+// replaces the look's accent as any other preset does.
+test('brutal · picking Blue replaces the look\'s accent', async ({ page, isMobile }) => {
+  test.skip(isMobile, 'The URL is the same at every viewport.');
+  await page.emulateMedia({ colorScheme: 'light' });
+  await page.goto('/app/settings/appearance?look=brutal&accent=teal&chrome=0');
+  await page.getByRole('radio', { name: 'Blue' }).check();
+  await expect(page).toHaveURL(/[?&]accent=blue(&|$)/);
+  const primary = await page.locator('.app-root').evaluate((el) => getComputedStyle(el).getPropertyValue('--primary').trim());
+  const blue = await page.locator('.app-root').evaluate((el) => getComputedStyle(el).getPropertyValue('--preset-blue').trim());
+  expect(primary).toBe(blue);
+});

@@ -96,7 +96,7 @@ test('leaves a token built from another undeclared, and every read of it carries
   const derived = Object.entries(SOURCE).filter(([family]) => !['color', 'shadow'].includes(family)).flatMap(([, f]: [string, Json]) => f.tokens ?? [])
     .filter((t: Json) => typeof t.value === 'string' && (/^\{.+\}$/.test(t.value) || t.value.includes('var(--')));
   expect(derived.map((t: Json) => t.name)).toEqual(expect.arrayContaining(['font-ui', 'press-transform']));
-  const shipped = ['registry/lede/lede.components.css', 'registry/lede/lede.blocks.css', 'src/styles/looks.css']
+  const shipped = ['registry/lede/lede.components.css', 'registry/lede/lede.blocks.css', 'registry/lede/looks/skeuo.css', 'registry/lede/looks/brutal.css', 'registry/lede/looks/broadsheet.css']
     .map((path) => readFileSync(path, 'utf8')).join('\n');
   for (const { name, value } of derived) {
     expect(css, name).not.toMatch(new RegExp(`--${name}:`));
@@ -117,7 +117,7 @@ test('writes each look as [data-theme][data-look] blocks, a color only in its st
   } } };
   writeFileSync(path, JSON.stringify(tokens));
   const { status, stderr } = spawnSync(process.execPath, [SCRIPT], { cwd: dir, encoding: 'utf8' });
-  const css = status === 0 ? readFileSync(join(dir, 'src/styles/looks/probe.css'), 'utf8') : '';
+  const css = status === 0 ? readFileSync(join(dir, 'registry/lede/looks/probe.tokens.css'), 'utf8') : '';
   rmSync(dir, { recursive: true });
   expect(status, stderr).toBe(0);
   const block = (selector: string) => css.match(new RegExp(`${selector.replace(/[[\]^$*"]/g, '\\$&')} \\{([^}]*)\\}`))?.[1];

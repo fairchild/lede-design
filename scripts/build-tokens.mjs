@@ -1,6 +1,6 @@
 // tokens/tokens.json is the single source. This writes src/styles/lede.tokens.css (used by the site)
 // and registry/lede/lede.tokens.css (shipped by the lede-theme registry item), and one file per look in
-// src/styles/looks/. Never edit any of them by hand.
+// registry/lede/looks/<id>.tokens.css (each imported by that look's registry file). Never edit any of them by hand.
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 
 const t = JSON.parse(readFileSync('tokens/tokens.json', 'utf8'));
@@ -175,7 +175,7 @@ const ROOT_VALUE = new Map([
 // High contrast drops a look's colors, shadows and ground texture, the way Lede's -hc themes keep a plain ground.
 const STANDARD_ONLY = new Set([...PALETTE, 'texture-ground']);
 const LOOK_THEMES = { all: null, light: 'light', dark: 'dark', 'light-hc': 'light-hc', 'dark-hc': 'dark-hc' };
-mkdirSync('src/styles/looks', { recursive: true });
+mkdirSync('registry/lede/looks', { recursive: true });
 for (const [id, look] of Object.entries(looks?.options ?? {})) {
   if (!/^[a-z][a-z0-9-]*$/.test(id) || id === 'lede') throw new Error(`tokens.json: looks.${id} needs a lowercase name other than lede`);
   const blocks = [];
@@ -199,15 +199,24 @@ for (const [id, look] of Object.entries(looks?.options ?? {})) {
       blocks.push([at(scheme), entries.filter(([name]) => STANDARD_ONLY.has(name))]);
     }
   }
-  // A theme root inside this look that has another look, or none, puts back Lede's value for each token this look sets
-  // and the theme blocks don't reset (colors and shadows they do), so nothing of this look leaks into it. :where()
-  // weighs nothing, so the root's own look, shape and density still win; it beats only the inherited value.
+  // High contrast drops a look's ground texture as it drops its colors, but no -hc block declares the texture again, so
+  // an -hc root inside a standard one with this look puts back Lede's.
+  const standardOnly = [...new Set(['light', 'dark'].flatMap((key) => Object.keys(look.values[key] ?? {})).filter((name) => STANDARD_ONLY.has(name) && !PALETTE.has(name)))];
+  for (const scheme of ['light-hc', 'dark-hc']) {
+    const own = look.values[scheme] ?? {};
+    blocks.push([`[data-theme="${scheme}"][data-look="${id}"]`, standardOnly.filter((name) => !(name in own) && !(name in (look.values.all ?? {}))).map((name) => [name, ROOT_VALUE.get(name)])]);
+  }
+  // The theme root that turns this look off, with another look or `lede`, puts back Lede's value for each token this look
+  // sets and the theme blocks don't reset (colors and shadows they do), so nothing of this look leaks into it. The
+  // @scope stops below that root, so a provider further in inherits from it as usual. :where() weighs nothing, so the
+  // root's own shape, density and `tokens` still win; it beats only the inherited value.
   const leaks = [...new Set(Object.values(look.values).flatMap((values) => Object.keys(values)).filter((name) => !PALETTE.has(name)))];
-  if (leaks.length) blocks.unshift([`:where([data-look="${id}"] [data-theme]:not([data-look="${id}"]))`, leaks.map((name) => [name, ROOT_VALUE.get(name)])]);
-  const body = blocks.filter(([, entries]) => entries.length).map(([selector, entries]) => `${selector} {\n${entries.map(line).join('\n')}\n}`);
-  writeFileSync(`src/styles/looks/${id}.css`, [
+  const reset = leaks.length ? [
+    `@scope ([data-look="${id}"]) to ([data-look]:not([data-look="${id}"]) [data-theme]) {\n  :where([data-theme][data-look]:not([data-look="${id}"])) {\n${leaks.map((name) => `  ${line([name, ROOT_VALUE.get(name)])}`).join('\n')}\n  }\n}`,
+  ] : [];
+  const body = [...reset, ...blocks.filter(([, entries]) => entries.length).map(([selector, entries]) => `${selector} {\n${entries.map(line).join('\n')}\n}`)];
+  writeFileSync(`registry/lede/looks/${id}.tokens.css`, [
     `/* Lede look "${id}" (${look.name}) — GENERATED from tokens/tokens.json by scripts/build-tokens.mjs. Do not edit. */`,
-    ...(look.fonts.length ? [`/* Faces from ${look.fonts.join(', ')}, which a project installs and imports itself. */`] : []),
     '',
     body.join('\n\n'),
     '',

@@ -1,12 +1,6 @@
 import * as React from 'react';
 import { useSearchParams } from 'react-router';
 import { readView, useSetViewParams } from '@/view-params';
-// The looks' faces, bundled with the site. A browser fetches a face only when a look's CSS uses it.
-import '@fontsource-variable/space-grotesk';
-import '@fontsource-variable/newsreader/opsz.css';
-import '@fontsource-variable/newsreader/opsz-italic.css';
-import '@fontsource-variable/libre-franklin';
-import '@fontsource/unifrakturmaguntia';
 
 /**
  * The site's look, read from the URL's `?look=brutal` (src/view-params.ts), carried to every page with the appearance

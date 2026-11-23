@@ -1,30 +1,14 @@
-/* The looks' rules that no token reaches. Each look's token values live in tokens/tokens.json (`looks`), which the token
-   build writes to src/styles/looks/<id>.css, keyed on `data-look` on a theme root (ThemeProvider's `look`). What's
-   left here is short on purpose: each rule is a candidate for the next token.
+/* Lede look "broadsheet" (Broadsheet): the rules no token reaches. Its token values are in ./broadsheet.tokens.css, which the token build
+   writes from `looks` in tokens/tokens.json. Turn it on with <ThemeProvider look="broadsheet">, or data-look="broadsheet" on a theme root.
 
-   Each look's rules sit in an @scope that stops at a theme root with another look or none, so they reach only what the
-   look's own provider holds, as its tokens do. `:scope` stands where `[data-look="…"]` did, so each rule weighs what
-   it weighed before. */
-
-/* ═════════════════════════════ SKEUOMORPHIC ("Workshop") ═════════════════════════════
-   Light from above: gradients, bevels, wells, embossed type and linen behind it all. */
-@scope ([data-look="skeuo"]) to ([data-theme]:not([data-look="skeuo"])) {
-  /* Beyond tokens: embossed type. A text-shadow token would carry it. */
-  :scope .ld-btn:is(.ld-btn-filled, .ld-btn-critical.ld-btn-filled) { text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.25); }
-  :scope :is(.ld-page-title, .ld-list-title, .ld-shell-brand) { text-shadow: 0 1px 0 rgba(255, 255, 255, 0.75); }
-  @container style(--ld-scheme: dark) {
-    :scope :is(.ld-page-title, .ld-list-title, .ld-shell-brand) { text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.8); }
-  }
-}
-
-/* ═════════════════════════════ NEO-BRUTALIST ("Poster") ═════════════════════════════
-   Thick black outlines, hard offset shadows, flat loud fills, no curves, no blur and snappy motion. */
-@scope ([data-look="brutal"]) to ([data-theme]:not([data-look="brutal"])) {
-  /* Beyond tokens: a tinted Button is yellow, not a tint of the accent. A tint-color token would carry it. */
-  :scope .ld-btn-tinted:not(.ld-btn-critical) { background-color: var(--secondary); color: var(--secondary-foreground); }
-  :scope .ld-row-wrap + .ld-row-wrap::before { left: 0; }
-  :scope .ld-avatar { box-shadow: 0 0 0 2px var(--border); background: #ff3d7f; color: #000000; }
-}
+   The rules sit in an @scope that stops at a theme root with another look or none, so they reach only what the look's own
+   provider holds, as its tokens do. `:scope` stands for the look's root. Each rule is a candidate for the next token. */
+/* The look's faces, from Fontsource. A browser downloads a face only once a page draws text in it. */
+@import "@fontsource-variable/newsreader/opsz.css";
+@import "@fontsource-variable/newsreader/opsz-italic.css";
+@import "@fontsource-variable/libre-franklin";
+@import "@fontsource/unifrakturmaguntia";
+@import "./broadsheet.tokens.css";
 
 /* ═════════════════════════════ BROADSHEET ═════════════════════════════
    A newspaper page. Serif text set for reading, a grotesque for the paper's own voice (labels, buttons, navigation),
@@ -32,7 +16,7 @@
 @scope ([data-look="broadsheet"]) to ([data-theme]:not([data-look="broadsheet"])) {
   /* Beyond tokens. Each is a layout or ornament choice, not a value. */
   /* The nameplate: the app's name set like a masthead, in blackletter. */
-  :scope :is(.ld-shell-brand, .ld-wb-brand) { font-family: "UnifrakturMaguntia", var(--font-sans); font-weight: 400; font-size: 1.75rem; letter-spacing: 0; }
+  :scope :is(.ld-shell-brand, .ld-wb-brand) { font-family: "UnifrakturMaguntia", var(--font-sans); font-weight: var(--weight-regular); font-size: 1.75rem; letter-spacing: 0; }
   /* Nothing sits in a box: surfaces are the page itself, so the grain runs under them. */
   :scope :is(.ld-list-body, .ld-card:not(.ld-glass), .ld-disc:not(.ld-disc-plain), .ld-summary-card, .ld-message, .ld-row) { background-color: transparent; }
   /* The open story is a column beside the list, set off by a column rule. */
@@ -47,7 +31,7 @@
   /* Links are underlined, as body copy in print would mark them. */
   :scope .ld-prose a, :scope .ld-message-body a { text-decoration-thickness: 1px; text-underline-offset: 0.15em; }
   /* The first paragraph of a story opens with a drop cap. */
-  :scope .ld-message-body p:first-of-type:not(.ld-thread p, .ld-quote p)::first-letter { float: left; font-size: 3.4em; line-height: 0.85; padding: 0.04em 0.08em 0 0; font-weight: 600; }
+  :scope .ld-message-body p:first-of-type:not(.ld-thread p, .ld-quote p)::first-letter { float: left; font-size: 3.4em; line-height: 0.85; padding: 0.04em 0.08em 0 0; font-weight: var(--weight-semibold); }
   /* Old-style figures in running text, lining figures where numbers line up. */
   :scope { font-variant-numeric: oldstyle-nums proportional-nums; }
   :scope :is(.ld-table, .ld-summary-figure, .ld-inbox-date, .ld-inbox-count) { font-variant-numeric: lining-nums tabular-nums; }
@@ -55,4 +39,7 @@
   :scope .ld-shell-link[aria-current="page"] { background: transparent; box-shadow: inset 3px 0 0 var(--primary); }
   :scope .ld-avatar { background: var(--foreground); color: var(--background); }
   :scope .ld-unread-dot { border-radius: 0; }
+  /* A table is set on the page, like the lists: no panel behind it, and a rule under its header. */
+  :scope .ld-table-scroll { background-color: transparent; }
+  :scope .ld-table-th { box-shadow: inset 0 -1px 0 var(--foreground); }
 }

@@ -309,6 +309,7 @@ test('reads statement at-rules such as @apply and @custom-media, and skips @impo
 test('prints what each entry and breakpoint takes with --report', () => {
   const { status, output } = gate((dir) => {
     write(dir, 'registry/lede/lede.components.css', '');
+    rmSync(join(dir, 'registry/lede/looks'), { recursive: true, force: true });
     write(dir, BLOCKS, '.ld-x { margin: 0; gap: 1px; border-top: 1px solid; }\n@media (width >= 56.25em) { .ld-x { gap: 0; } }\n');
     writeFileSync(join(dir, LIST), JSON.stringify([{ reason: 'Zero.', values: ['0'] }, { reason: 'Hairlines.', values: ['1px'] }]));
   }, '--report');

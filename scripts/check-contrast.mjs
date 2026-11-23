@@ -29,8 +29,21 @@ const mixes = [...sources.matchAll(/(?:--(ld-[\w-]+): )?color-mix\(in srgb, var\
 if (mixes.length !== sources.toLowerCase().split('color-mix(').length - 1) problems.push('registry/ has a color-mix() this script can\'t read');
 for (const name of named.keys()) if (sources.match(new RegExp(`--${name}\\s*:`, 'g')).length > 1) problems.push(`--${name}: declared more than once, and the script measures one`);
 
+// Each look in tokens.json's `looks` is measured too, over the same pairs, accents and themes. A look's value for a
+// colour or shadow replaces Lede's where the token build applies it: `all` in every theme, `light` and `dark` in their
+// standard theme only, and `light-hc` or `dark-hc` in theirs, a theme's own over `all`. `look` is the one being measured.
+let look = null;
+const lookIds = [null, ...Object.keys(looks?.options ?? {})];
+function lookValue(name, theme) {
+  if (!look) return undefined;
+  const values = looks.options[look].values;
+  return values[theme]?.[name] ?? values.all?.[name];
+}
+/** Whether the look being measured sets a token in any theme. A token it sets is its own colour, not Lede's alias. */
+const lookSets = (name) => Boolean(look && Object.values(looks.options[look].values).some((values) => name in values));
+
 const aliasOf = (value) => (typeof value === 'string' && /^\{.+\}$/.test(value) ? value.slice(1, -1) : null);
-const canonical = (name) => (aliasOf(tokens.get(name)) ? canonical(aliasOf(tokens.get(name))) : name);
+const canonical = (name) => (!lookSets(name) && aliasOf(tokens.get(name)) ? canonical(aliasOf(tokens.get(name))) : name);
 
 // The -hc fill walk. In -hc a control's fill shows at 3:1, and the fills in `fills.colors` don't on their own, so every
 // rule in registry/ that paints one draws an --input edge in -hc: in the rule itself, or in a `[data-theme$="-hc"]` twin
@@ -114,17 +127,6 @@ for (const selector of spec.fills.everyTheme) {
   }
 }
 
-
-// Each look in tokens.json's `looks` is measured too, over the same pairs, accents and themes. A look's value for a
-// colour or shadow replaces Lede's where the token build applies it: `all` in every theme, `light` and `dark` in their
-// standard theme only, and `light-hc` or `dark-hc` in theirs, a theme's own over `all`. `look` is the one being measured.
-let look = null;
-const lookIds = [null, ...Object.keys(looks?.options ?? {})];
-function lookValue(name, theme) {
-  if (!look) return undefined;
-  const values = looks.options[look].values;
-  return values[theme]?.[name] ?? values.all?.[name];
-}
 
 function parse(value) {
   if (value === 'transparent') return [0, 0, 0, 0];
