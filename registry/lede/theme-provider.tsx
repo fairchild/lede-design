@@ -42,9 +42,9 @@ export interface ThemeProviderProps extends useRender.ComponentProps<'div'> {
   glass?: 'regular' | 'solid';
   /**
    * A whole visual style over the same components, such as `'brutal'`, keyed on `data-look`: it applies once the look's
-   * CSS is on the page (the docs site's looks for now; the registry gains them in a later release). It sets its own
-   * colors, corners, type, edges and depth; an accent picked here still replaces its accent, and high contrast keeps
-   * Lede's -hc palette. Unset inherits the nearest provider's. `'lede'` turns a look off, and Lede's tokens apply again
+   * CSS is on the page, from the `@lede/look-skeuo`, `@lede/look-brutal` or `@lede/look-broadsheet` registry item. It
+   * sets its own colors, corners, type, edges and depth; an accent picked here still replaces its accent, and high
+   * contrast keeps Lede's -hc palette. Unset inherits the nearest provider's. `'lede'` turns a look off, and Lede's tokens apply again
    * inside it.
    */
   look?: 'lede' | (string & {});
@@ -165,7 +165,8 @@ export function ThemeProvider(props: ThemeProviderProps) {
   const scope: Scope = {
     props: {
       className: cn('ld-theme', dark && 'dark'), 'data-theme': theme, 'data-glass': glass, 'data-shape': shape, 'data-density': density,
-      'data-look': look === 'lede' ? undefined : look,
+      // `lede` is written only under a provider with a look, where it marks the root that turns that look off.
+      'data-look': look === 'lede' && !nearest?.props['data-look'] ? undefined : look,
       style: vars as React.CSSProperties,
     },
     ...brand,

@@ -11,7 +11,8 @@
   family has. A look's colors, shadows and ground texture apply in the standard themes only, so high contrast keeps
   Lede's -hc palette. Its corners, type, edges and depth apply in all four. A look sets `primary` for its accent, and an
   accent a person picks still replaces it. A nested provider with another look or none gets none of this look's tokens,
-  and starts from Lede's values, its own shape and density included unless it sets them. The looks are on the docs
+  and starts from Lede's values, its own shape and density included unless it sets them. Inside a look, `look="lede"`
+  writes `data-look="lede"` to mark that root, and providers further in inherit from it as usual. The looks are on the docs
   site and in the registry (below). The few rules no token reaches yet sit in an `@scope` per look that stops at a
   theme root with another look or none, so they don't leak either.
 

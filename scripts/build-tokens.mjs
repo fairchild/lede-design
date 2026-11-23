@@ -199,12 +199,22 @@ for (const [id, look] of Object.entries(looks?.options ?? {})) {
       blocks.push([at(scheme), entries.filter(([name]) => STANDARD_ONLY.has(name))]);
     }
   }
-  // A theme root inside this look that has another look, or none, puts back Lede's value for each token this look sets
-  // and the theme blocks don't reset (colors and shadows they do), so nothing of this look leaks into it. :where()
-  // weighs nothing, so the root's own look, shape and density still win; it beats only the inherited value.
+  // High contrast drops a look's ground texture as it drops its colors, but no -hc block declares the texture again, so
+  // an -hc root inside a standard one with this look puts back Lede's.
+  const standardOnly = [...new Set(['light', 'dark'].flatMap((key) => Object.keys(look.values[key] ?? {})).filter((name) => STANDARD_ONLY.has(name) && !PALETTE.has(name)))];
+  for (const scheme of ['light-hc', 'dark-hc']) {
+    const own = look.values[scheme] ?? {};
+    blocks.push([`[data-theme="${scheme}"][data-look="${id}"]`, standardOnly.filter((name) => !(name in own) && !(name in (look.values.all ?? {}))).map((name) => [name, ROOT_VALUE.get(name)])]);
+  }
+  // The theme root that turns this look off, with another look or `lede`, puts back Lede's value for each token this look
+  // sets and the theme blocks don't reset (colors and shadows they do), so nothing of this look leaks into it. The
+  // @scope stops below that root, so a provider further in inherits from it as usual. :where() weighs nothing, so the
+  // root's own shape, density and `tokens` still win; it beats only the inherited value.
   const leaks = [...new Set(Object.values(look.values).flatMap((values) => Object.keys(values)).filter((name) => !PALETTE.has(name)))];
-  if (leaks.length) blocks.unshift([`:where([data-look="${id}"] [data-theme]:not([data-look="${id}"]))`, leaks.map((name) => [name, ROOT_VALUE.get(name)])]);
-  const body = blocks.filter(([, entries]) => entries.length).map(([selector, entries]) => `${selector} {\n${entries.map(line).join('\n')}\n}`);
+  const reset = leaks.length ? [
+    `@scope ([data-look="${id}"]) to ([data-look]:not([data-look="${id}"]) [data-theme]) {\n  :where([data-theme][data-look]:not([data-look="${id}"])) {\n${leaks.map((name) => `  ${line([name, ROOT_VALUE.get(name)])}`).join('\n')}\n  }\n}`,
+  ] : [];
+  const body = [...reset, ...blocks.filter(([, entries]) => entries.length).map(([selector, entries]) => `${selector} {\n${entries.map(line).join('\n')}\n}`)];
   writeFileSync(`registry/lede/looks/${id}.tokens.css`, [
     `/* Lede look "${id}" (${look.name}) — GENERATED from tokens/tokens.json by scripts/build-tokens.mjs. Do not edit. */`,
     '',
