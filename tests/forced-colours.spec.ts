@@ -48,25 +48,32 @@ function greyed(controls: Element[]) {
 const describe = (control: Locator) => control.evaluate((el) => el.outerHTML.slice(0, 100));
 const look = (control: Locator) => control.screenshot();
 
-async function open(page: Page, route: string, scheme: 'light' | 'dark') {
+async function open(page: Page, route: string, scheme: 'light' | 'dark', lookId?: string) {
   await page.emulateMedia({ colorScheme: scheme });
   // A later onboarding step opens only once Continue has reached it.
   if (route === '/app/welcome/preferences') {
     await page.goto('/app/welcome');
     await page.getByRole('button', { name: 'Continue' }).click();
     await expect(page.getByRole('heading', { level: 1, name: 'Make it yours' })).toBeVisible();
-  } else await page.goto(route);
-  await expect(page).toHaveURL(new RegExp(`${route}$`));
+  } else await page.goto(lookId ? `${route}?look=${lookId}&chrome=0` : route);
+  await expect(page).toHaveURL(new RegExp(`${route}(\\?.*)?$`));
+  if (lookId) await expect(page.locator('.app-root')).toHaveAttribute('data-look', lookId);
   await expect(page.locator('main')).toBeVisible();
   // A row's link is named by its ID in the table, and by its title and then its ID on a card.
   if (route === '/app/work') await expect(page.getByRole('link', { name: /\bWI-\d+/ }).first()).toBeVisible();
 }
 
-for (const scheme of ['light', 'dark'] as const) {
-  for (const route of ROUTES) {
-    test(`forced colours: ${route} · ${scheme}: every control keeps a boundary, a focus ring, and a state beyond font weight`, async ({ page }) => {
+// Each look runs the same walk on the pages with the most controls: a look's edges, depth and texture are drawn with
+// shadows and backgrounds, which forced colours remove, so its controls have to keep Lede's forced-colours rules.
+const CASES = [
+  ...(['light', 'dark'] as const).flatMap((scheme) => ROUTES.map((route) => ({ scheme, route, lookId: undefined as string | undefined }))),
+  ...['skeuo', 'brutal', 'broadsheet'].flatMap((lookId) => ['/components', '/app/inbox/m1'].map((route) => ({ scheme: 'light' as const, route, lookId }))),
+];
+for (const { scheme, route, lookId } of CASES) {
+  {
+    test(`forced colours: ${lookId ? `${lookId} · ` : ''}${route} · ${scheme}: every control keeps a boundary, a focus ring, and a state beyond font weight`, async ({ page }) => {
       test.slow(); // Pictures of a full page, for each kind of control.
-      await open(page, route, scheme);
+      await open(page, route, scheme, lookId);
       const painted = async () => (await Promise.all(ROLES.map((role) => page.getByRole(role).evaluateAll(paint)))).flat();
       // A control with no shape of its own in normal colours is identified by its text, which forced colours keep
       // (WCAG 1.4.11). Anything drawn as a shape has to stay one.
