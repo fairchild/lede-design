@@ -12,6 +12,8 @@
 @source not "../../scripts/design-system";
 @source not "../../scripts/llms";
 @source not "../../tests";
+/* The smoke tests for a deployed site, which read it as a visitor does and add nothing to its CSS. */
+@source not "../../smoke";
 @import "./lede.tokens.css";
 @import "../../registry/lede/lede.components.css";
 @import "../../registry/lede/lede.blocks.css";
