@@ -69,14 +69,7 @@ jobs:
       - name: Record what this build serves
         id: built
         if: steps.credentials.outputs.ready == 'true'
-        run: |
-          entry=$(grep -o 'src="/assets/[^"]*\.js"' dist/index.html | head -n1 | sed 's/^src="//; s/"$//') || true
-          if [ -z "$entry" ]; then echo "::error::dist/index.html names no entry script under /assets/."; exit 1; fi
-          {
-            echo "entry=$entry"
-            echo "registry=$(sha256sum dist/r/registry.json | cut -d' ' -f1)"
-            echo "llms=$(sha256sum dist/llms.txt | cut -d' ' -f1)"
-          } | tee -a "$GITHUB_OUTPUT"
+        run: bash smoke/build-facts.sh | tee -a "$GITHUB_OUTPUT"
       # The Worker is wrangler.jsonc's under another name, so the production Worker and its versions are never touched.
       # --domain attaches PREVIEW_HOST as a custom domain, which needs its zone in the same Cloudflare account.
       - name: Deploy the preview Worker
@@ -98,8 +91,10 @@ jobs:
 
   # The deploy checks it could write and upload; this reads the site back, as a browser and a fetcher do, once it
   # serves the build above: key pages render without errors, every registry item and the llms files are there, and
-  # the Worker's 404s and Markdown answers hold (smoke/). Approve the release waits for this job, by its name, to pass
-  # on the release's commit. It needs no secrets, so "Re-run failed jobs" retries it without deploying again.
+  # the Worker's 404s and Markdown answers hold (smoke/). It also records screenshots of key pages, which Deploy's
+  # production smoke test compares against once this commit is released. Approve the release waits for this job, by
+  # its name, to pass on the release's commit. It needs no secrets, so "Re-run failed jobs" retries it without
+  # deploying again.
   smoke:
     name: Smoke-test the preview
     needs: deploy
@@ -124,4 +119,17 @@ jobs:
           SMOKE_ENTRY: ${{ needs.deploy.outputs.entry }}
           SMOKE_REGISTRY_SHA256: ${{ needs.deploy.outputs.registry }}
           SMOKE_LLMS_SHA256: ${{ needs.deploy.outputs.llms }}
+          SMOKE_SCREENSHOTS: record
         run: npx playwright test -c playwright.smoke.config.ts
+      # Deploy finds these by this name on the run for the commit it releases; 90 days covers a slow release.
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: preview-screenshots
+          path: smoke-screenshots
+          retention-days: 90
+      - if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: smoke-results
+          path: test-results
+          retention-days: 14

@@ -18,3 +18,4 @@ dist-strict
 *.tsbuildinfo
 dist-design-system
 registry/lede/looks/*.tokens.css
+smoke-screenshots

@@ -30,7 +30,9 @@ picks what to run.
 - `SMOKE_URL=https://lede-preview.cloudcompute.com npx playwright test -c playwright.smoke.config.ts` — the smoke
   tests in `smoke/`, which read a deployed site: key pages render, every registry item and the llms files are served,
   and the Worker's 404s and Markdown answers hold. `deploy-preview.yml` runs them after each deploy to develop, against
-  the build it just made, and *Approve the release* waits for them to pass on the release's commit.
+  the build it just made, and *Approve the release* waits for them to pass on the release's commit. The preview run
+  also records screenshots of key pages (`SMOKE_SCREENSHOTS=record`), and `deploy.yml` runs the same tests on production
+  after a release and compares its pages with them (`compare`).
 - `npm run contrast` — the contrast gate alone; `npm run contrast -- --report` prints every pair.
 - `scripts/preview-pr.sh <N>` — builds pull request N and uploads it as the Worker Preview `pr-<N>` (`--dry-run`,
   `--comment`, `--delete`). `CONTRIBUTING.md` covers credentials.

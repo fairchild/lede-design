@@ -17,7 +17,7 @@ in its run that it stopped.
 | 2. Release pull request | `release-pr.yml` | Opens `develop` → `main` |
 | 3. Approve | Michael, one click | `release-approve.yml` asks once `check` is green and the preview's smoke test passed on the same commit, and merges with a merge commit when he approves |
 | 4. Tag | `release-tag.yml` | Waits for `check` on `main`'s new head, then tags `vX.Y.Z` as the release app |
-| 5. Deploy | `deploy.yml` | Waits for `check` on the tagged commit, publishes `r/vX.Y.Z` to R2, deploys the site |
+| 5. Deploy | `deploy.yml` | Waits for `check` on the tagged commit, publishes `r/vX.Y.Z` to R2, deploys the site, then smoke-tests it and compares its key pages with the preview's screenshots |
 | 6. Mirror | `mirror-registry.yml` | Waits for `r/vX.Y.Z` on the site, copies it to the `registry` branch |
 
 ## 1. Prepare the release
@@ -124,6 +124,10 @@ says (`npm run design-system`).
   in the run; once it's fixed on the site, *Re-run failed jobs* runs the smoke test alone, without deploying again.
 - **`develop` disappeared after a release.** The *Protect release branches* ruleset isn't active. Recreate `develop`
   from `main` and import the ruleset, as in step 6 below.
+- **Smoke-test production failed.** The site is deployed, but differs from what the preview showed or doesn't serve a
+  page or file. The run names what failed, and its `smoke-results` artifact holds each screenshot diff. A screenshot
+  difference after a Chromium or runner update, with no change to the site, clears on the next release; anything else
+  is a fix on `develop` and a patch release (or `npx wrangler rollback` to go back first).
 - **Approve the release failed at the merge.** `develop` moved after the request (a newer request follows when its CI
   passes), or a rule on `main` stops the app: add it to that ruleset's bypass list.
 - **Tag the release failed with "Resource not accessible" or a rule violation.** The app isn't installed on the repo,
