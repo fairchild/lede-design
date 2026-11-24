@@ -1,0 +1,32 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "card",
+  "title": "Card",
+  "description": "A surface for grouped content, rendered as a `<div>` or the element you pass to `render`. A child with the `ld-concentric` class keeps its corners concentric with the card's.",
+  "dependencies": [
+    "@base-ui/react@^1.9.0"
+  ],
+  "registryDependencies": [
+    "@lede/lede-theme",
+    "@lede/lede-utils"
+  ],
+  "files": [
+    {
+      "path": "registry/lede/card.tsx",
+      "content": "import { useRender } from '@base-ui/react/use-render';\nimport { mergeProps } from '@base-ui/react/merge-props';\nimport { cn } from './cn';\n\nexport interface CardProps extends useRender.ComponentProps<'div'> {\n  /** Outer radius: `'md'` is `--radius-lg`, `'xl'` is `--radius-xl`. Default `'md'`. */\n  size?: 'md' | 'xl';\n  /** Inner padding: `'sm'` is `--space-2`, `'md'` is `--space-4`, `'lg'` is `--space-6`. Default `'sm'`. A child with the `ld-concentric` class gets the card's radius less its padding. */\n  padding?: 'sm' | 'md' | 'lg';\n  surface?: 'card' | 'muted' | 'glass';\n}\n\n/** A neutral `<div>` by default. Pass `render={<article />}` for a self-contained item, or `render={<section />}` for a titled region. */\nexport function Card(props: CardProps) {\n  const { render, size, padding, surface, className, ...rest } = props;\n  return useRender({\n    defaultTagName: 'div',\n    render,\n    props: mergeProps<'div'>(\n      {\n        className: cn(\n          'ld-card', size === 'xl' && 'ld-card-xl', padding && padding !== 'sm' && `ld-card-pad-${padding}`,\n          surface === 'muted' && 'ld-card-muted', surface === 'glass' && 'ld-card-glass ld-glass', className as string,\n        ),\n      },\n      rest,\n    ),\n  });\n}\n",
+      "type": "registry:component",
+      "target": "components/lede/card.tsx"
+    },
+    {
+      "path": "registry/lede/docs/card.md",
+      "content": "---\ntype: Component\ntitle: Card\ndescription: A surface for grouped content, rendered as a `<div>` or the element you pass to `render`.\nresource: https://lede.cloudcompute.com/r/v0.8.0/card.json\ntags:\n  - component\n  - card\nstability: stable\nlede_version: 0.8.0\n---\n\n# Card\n\n> Lede 0.8.0's docs for Card, installed with it. Setup, and every item in the release: [README.md](README.md). Online: https://lede.cloudcompute.com/reference/card.md\n\nA surface for grouped content, rendered as a `<div>` or the element you pass to `render`. A child with the `ld-concentric` class keeps its corners concentric with the card's.\n\n## Install\n\n```bash\nnpx shadcn@latest add @lede/card\n```\n\nThe command needs Lede's registry in `components.json`, as [README.md](README.md#use-it-in-a-shadcn-project) shows. It also installs the items [`lede-theme`](lede-theme.md) and [`lede-utils`](lede-utils.md), and the npm packages `@base-ui/react@^1.9.0`. The item's JSON, with each file's source, is https://lede.cloudcompute.com/r/v0.8.0/card.json.\n\n## Import\n\n```tsx\nimport { Card } from '@/components/lede/card';\n```\n\n## Files and exports\n\n| Installs to | Import from | Exports |\n| --- | --- | --- |\n| `components/lede/card.tsx` | `@/components/lede/card` | `Card` (component), `CardProps` (type) |\n\n## Props\n\nA neutral `<div>` by default. Pass `render={<article />}` for a self-contained item, or `render={<section />}` for a titled region.\n\n| Prop | Type | Default | Description |\n| --- | --- | --- | --- |\n| `size` | `'md' \\| 'xl'` | `md` | Outer radius: `'md'` is `--radius-lg`, `'xl'` is `--radius-xl`. Default `'md'`. |\n| `padding` | `'sm' \\| 'md' \\| 'lg'` | `sm` | Inner padding: `'sm'` is `--space-2`, `'md'` is `--space-4`, `'lg'` is `--space-6`. Default `'sm'`. A child with the `ld-concentric` class gets the card's radius less its padding. |\n| `surface` | `'card' \\| 'muted' \\| 'glass'` |  |  |\n\nCard also takes the attributes of `<div>`, such as `className`, and the `render` prop of `useRender` from `@base-ui/react/use-render`.\n\n## Example\n\nThe smallest working use, from the docs site:\n\n```tsx\nimport { Card } from '@/components/lede/card';\n\nexport function StorageCard({ available }: { available: number }) {\n  return (\n    <Card render={<article />} padding=\"md\">\n      <h3>Storage</h3>\n      <p>{available} GB available</p>\n    </Card>\n  );\n}\n```\n\nDocs: [Components](https://lede.cloudcompute.com/components.md).\n\n## Types\n\nThe declarations of each file, with their doc comments:\n\n```ts\n// components/lede/card.tsx\nimport { useRender } from '@base-ui/react/use-render';\nexport interface CardProps extends useRender.ComponentProps<'div'> {\n    /** Outer radius: `'md'` is `--radius-lg`, `'xl'` is `--radius-xl`. Default `'md'`. */\n    size?: 'md' | 'xl';\n    /** Inner padding: `'sm'` is `--space-2`, `'md'` is `--space-4`, `'lg'` is `--space-6`. Default `'sm'`. A child with the `ld-concentric` class gets the card's radius less its padding. */\n    padding?: 'sm' | 'md' | 'lg';\n    surface?: 'card' | 'muted' | 'glass';\n}\n/** A neutral `<div>` by default. Pass `render={<article />}` for a self-contained item, or `render={<section />}` for a titled region. */\nexport declare function Card(props: CardProps): import(\"react\").ReactElement<unknown, string | import(\"react\").JSXElementConstructor<any>>;\n```\n",
+      "type": "registry:file",
+      "target": "components/lede/docs/card.md"
+    }
+  ],
+  "meta": {
+    "stability": "stable"
+  },
+  "type": "registry:component",
+  "docs": "Docs for Card: components/lede/docs/card.md"
+}
