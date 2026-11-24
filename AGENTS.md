@@ -27,6 +27,10 @@ picks what to run.
 - `node benchmarks/docs-agent/run.mjs` — the docs benchmark: a fresh agent builds a screen from `llms.txt` alone, and
   the harness records what it read and checks what it built. It spends money, so nothing runs it automatically.
   `benchmarks/docs-agent/README.md` covers options and fairness.
+- `SMOKE_URL=https://lede-preview.cloudcompute.com npx playwright test -c playwright.smoke.config.ts` — the smoke
+  tests in `smoke/`, which read a deployed site: key pages render, every registry item and the llms files are served,
+  and the Worker's 404s and Markdown answers hold. `deploy-preview.yml` runs them after each deploy to develop, against
+  the build it just made, and *Approve the release* waits for them to pass on the release's commit.
 - `npm run contrast` — the contrast gate alone; `npm run contrast -- --report` prints every pair.
 - `scripts/preview-pr.sh <N>` — builds pull request N and uploads it as the Worker Preview `pr-<N>` (`--dry-run`,
   `--comment`, `--delete`). `CONTRIBUTING.md` covers credentials.
@@ -48,4 +52,5 @@ picks what to run.
   files, `tests/`, `integrations/`, `benchmarks/` and `scripts/design-system/`, so none of those diffs reaches the
   site's CSS, and they change with the script's lists. If the site starts to render one of those Markdown files, take
   it out of both. One more, `scripts/llms/`, keeps the Markdown generator's selector strings out of the CSS; it stays
-  out of the script's lists, since its diffs change the built Markdown.
+  out of the script's lists, since its diffs change the built Markdown. So does `smoke/`, the deployed-site checks above,
+  which CI doesn't run: a diff there runs everything.

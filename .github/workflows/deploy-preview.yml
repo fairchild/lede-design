@@ -26,6 +26,13 @@ jobs:
     environment:
       name: cloudflare
       url: https://${{ vars.PREVIEW_HOST }}
+    # What smoke checks the live site against. `deployed` stays empty when the token is missing, so smoke is skipped
+    # and Approve the release, which needs smoke to have passed, doesn't count a run that deployed nothing.
+    outputs:
+      deployed: ${{ steps.deploy.outputs.deployed }}
+      entry: ${{ steps.built.outputs.entry }}
+      registry: ${{ steps.built.outputs.registry }}
+      llms: ${{ steps.built.outputs.llms }}
     steps:
       - name: Check for a Cloudflare token
         id: credentials
@@ -59,9 +66,21 @@ jobs:
         run: npm ci
       - if: steps.credentials.outputs.ready == 'true'
         run: npm run build
+      - name: Record what this build serves
+        id: built
+        if: steps.credentials.outputs.ready == 'true'
+        run: |
+          entry=$(grep -o 'src="/assets/[^"]*\.js"' dist/index.html | head -n1 | sed 's/^src="//; s/"$//') || true
+          if [ -z "$entry" ]; then echo "::error::dist/index.html names no entry script under /assets/."; exit 1; fi
+          {
+            echo "entry=$entry"
+            echo "registry=$(sha256sum dist/r/registry.json | cut -d' ' -f1)"
+            echo "llms=$(sha256sum dist/llms.txt | cut -d' ' -f1)"
+          } | tee -a "$GITHUB_OUTPUT"
       # The Worker is wrangler.jsonc's under another name, so the production Worker and its versions are never touched.
       # --domain attaches PREVIEW_HOST as a custom domain, which needs its zone in the same Cloudflare account.
       - name: Deploy the preview Worker
+        id: deploy
         if: steps.credentials.outputs.ready == 'true'
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -70,8 +89,39 @@ jobs:
         run: |
           npx wrangler deploy --name lede-design-preview --domain "$PREVIEW_HOST" \
             --message "develop ${GITHUB_SHA::7}"
+          echo "deployed=true" >> "$GITHUB_OUTPUT"
           {
             echo "### Preview of develop at ${GITHUB_SHA::7}"
             echo
             echo "https://$PREVIEW_HOST/"
           } >> "$GITHUB_STEP_SUMMARY"
+
+  # The deploy checks it could write and upload; this reads the site back, as a browser and a fetcher do, once it
+  # serves the build above: key pages render without errors, every registry item and the llms files are there, and
+  # the Worker's 404s and Markdown answers hold (smoke/). Approve the release waits for this job, by its name, to pass
+  # on the release's commit. It needs no secrets, so "Re-run failed jobs" retries it without deploying again.
+  smoke:
+    name: Smoke-test the preview
+    needs: deploy
+    if: needs.deploy.outputs.deployed == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with: { persist-credentials: false }
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - id: playwright
+        run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-chromium-${{ runner.os }}-${{ steps.playwright.outputs.version }}
+      - run: npx playwright install --with-deps chromium
+      - name: Smoke-test the preview
+        env:
+          SMOKE_URL: https://${{ vars.PREVIEW_HOST }}
+          SMOKE_ENTRY: ${{ needs.deploy.outputs.entry }}
+          SMOKE_REGISTRY_SHA256: ${{ needs.deploy.outputs.registry }}
+          SMOKE_LLMS_SHA256: ${{ needs.deploy.outputs.llms }}
+        run: npx playwright test -c playwright.smoke.config.ts

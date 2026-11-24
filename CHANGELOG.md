@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+
+- **Releases wait for the preview to pass smoke tests.** Each deploy of `develop` to the preview site now reads the site
+  back with Playwright (`smoke/`): key pages render without errors, every registry item and `llms.txt` are served, and
+  the Worker's 404s and Markdown answers hold, against the build it just deployed. *Approve the release* asks only
+  once both CI and that smoke test have passed on the release's commit.
+
 ## 0.8.0
 
 Looks ship: a whole visual style over the same components, set with <ThemeProvider look>. Skeuomorphic, Neo-brutalist

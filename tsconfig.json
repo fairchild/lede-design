@@ -17,5 +17,5 @@
     "baseUrl": ".",
     "paths": { "@lede/*": ["registry/lede/*"], "@/components/lede/*": ["registry/lede/*"], "@/*": ["src/*"] }
   },
-  "include": ["src", "registry", "tests", "vite.config.ts", "playwright.config.ts"]
+  "include": ["src", "registry", "tests", "smoke", "vite.config.ts", "playwright.config.ts", "playwright.smoke.config.ts"]
 }
