@@ -426,6 +426,83 @@ test.describe('Nested providers', () => {
     }
   });
 
+  test('A token built from another follows the value a provider sets, nested and in overlays', async ({ page }) => {
+    const own = { tokens: { 'font-sans': 'Georgia, serif', 'scale-pressed': '0.5' } } as const;
+    // A value set for the derived token itself, on an outer provider, still reaches a provider nested inside it.
+    const outer = { tokens: { 'font-ui': 'Courier, monospace', 'press-transform': 'none' } } as const;
+    await mount(page,
+      h(ThemeProvider, own, controls('own')),
+      h(ThemeProvider, own, portal(controls('own overlay'))),
+      h(ThemeProvider, null, h(ThemeProvider, own, controls('nested'))),
+      h(ThemeProvider, outer, h(ThemeProvider, null, controls('set outside'))),
+      h(ThemeProvider, outer, h(ThemeProvider, null, portal(controls('set outside, overlay')))),
+      h(ThemeProvider, null, controls('default')),
+    );
+    const read = await page.locator('[data-case]').evaluateAll((els) => Object.fromEntries(els.map((el) => {
+      const button = el.querySelector('.ld-btn')!;
+      const style = getComputedStyle(button);
+      // The pressed transform, read off a probe that sets transform from the same variable the Button reads.
+      const probe = button.appendChild(document.createElement('i'));
+      probe.style.cssText = 'display: block; transform: var(--press-transform, scale(var(--scale-pressed)))';
+      const press = getComputedStyle(probe).transform;
+      probe.remove();
+      return [(el as HTMLElement).dataset.case, { font: style.fontFamily, press }];
+    })));
+    const half = 'matrix(0.5, 0, 0, 0.5, 0, 0)';
+    for (const name of ['own', 'own overlay', 'nested']) expect(read[name], name).toEqual({ font: 'Georgia, serif', press: half });
+    for (const name of ['set outside', 'set outside, overlay']) expect(read[name], name).toEqual({ font: 'Courier, monospace', press: 'none' });
+    expect(read.default.font).not.toMatch(/Georgia|Courier/);
+    expect(read.default.press).toBe('matrix(0.96, 0, 0, 0.96, 0, 0)');
+  });
+
+  test('A look inherits when unset, nested and in overlays, `lede` turns it off, and none leaks into another', async ({ page }) => {
+    await mount(page,
+      h(ThemeProvider, { look: 'brutal' }, controls('own')),
+      h(ThemeProvider, { look: 'brutal' }, h(ThemeProvider, { scheme: 'dark' }, controls('nested'))),
+      h(ThemeProvider, { look: 'brutal' }, portal(controls('overlay'))),
+      h(ThemeProvider, { look: 'brutal' }, h(ThemeProvider, { look: 'lede' }, controls('off'))),
+      h(ThemeProvider, { look: 'brutal' }, h(ThemeProvider, { look: 'skeuo' }, controls('other'))),
+      h(ThemeProvider, { look: 'brutal', shape: 'crisp' }, h(ThemeProvider, { look: 'lede', shape: 'crisp' }, controls('off-shaped'))),
+      h(ThemeProvider, { look: 'brutal' }, h(ThemeProvider, { look: 'lede', shape: 'crisp', tokens: { 'case-button': 'lowercase' } }, h(ThemeProvider, { scheme: 'dark' }, controls('under off')))),
+      h(ThemeProvider, null, controls('none')),
+    );
+    const read = await page.locator('[data-case]').evaluateAll((els) => Object.fromEntries(els.map((el) => {
+      const root = el.closest('[data-theme]')!;
+      return [(el as HTMLElement).dataset.case, { look: root.getAttribute('data-look'), radius: getComputedStyle(el).getPropertyValue('--radius').trim(), ui: getComputedStyle(el.querySelector('.ld-btn')!).textTransform }];
+    })));
+    for (const name of ['own', 'nested', 'overlay']) expect(read[name], name).toEqual({ look: 'brutal', radius: '0px', ui: 'uppercase' });
+    // A provider that turns a look off is marked `lede`, so the look's reset finds it; with no look above, nothing is.
+    expect(read.off).toMatchObject({ look: 'lede', ui: 'none' });
+    expect(read.none).toMatchObject({ look: null, ui: 'none' });
+    expect(read.off.radius).not.toBe('0px');
+    // Nothing of the outer look leaks into an inner one that doesn't set the same token: skeuo's labels aren't uppercase.
+    expect(read.other).toEqual({ look: 'skeuo', radius: '10px', ui: 'none' });
+    // A provider that turns a look off and sets a shape gets that shape, not the look's corners or Lede's default.
+    expect(read['off-shaped']).toEqual({ look: 'lede', radius: '12px', ui: 'none' });
+    // A provider further in inherits from the one that turned the look off: its shape and its tokens, not Lede's again.
+    expect(read['under off']).toEqual({ look: 'lede', radius: '12px', ui: 'lowercase' });
+  });
+
+  test('A look\'s rules beyond its tokens stop at a provider with another look or none', async ({ page }) => {
+    const avatar = (name: string) => h('span', { className: 'ld-avatar', 'data-avatar': name }, 'A');
+    await mount(page,
+      h(ThemeProvider, { look: 'brutal' }, avatar('own'), h(ThemeProvider, { scheme: 'dark' }, avatar('nested'))),
+      h(ThemeProvider, { look: 'brutal' }, portal(avatar('overlay'))),
+      h(ThemeProvider, { look: 'brutal' }, h(ThemeProvider, { look: 'lede' }, avatar('off'))),
+      h(ThemeProvider, { look: 'brutal' }, h(ThemeProvider, { look: 'skeuo' }, avatar('other'))),
+    );
+    // Brutal paints its avatar with its own --ring, read from the look's root.
+    const read = await page.locator('[data-avatar]').evaluateAll((els) => Object.fromEntries(els.map((el) => {
+      const probe = el.closest('[data-look="brutal"]')!.appendChild(document.createElement('i'));
+      probe.style.color = 'var(--ring)';
+      const ring = getComputedStyle(probe).color;
+      probe.remove();
+      return [(el as HTMLElement).dataset.avatar, { background: getComputedStyle(el).backgroundColor, ring }];
+    })));
+    for (const name of ['own', 'nested', 'overlay']) expect(read[name].background, name).toBe(read[name].ring);
+    for (const name of ['off', 'other']) expect(read[name].background, name).not.toBe(read[name].ring);
+  });
+
   test('A plain data-shape or data-density with no data-theme does nothing', async ({ page }) => {
     await mount(page, h('div', { 'data-shape': 'square', 'data-density': 'compact' }, controls('plain')));
     expect((await measure(page)).plain).toEqual(Object.assign({}, ...defaults));

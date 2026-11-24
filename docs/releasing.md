@@ -133,6 +133,9 @@ says (`npm run design-system`).
   the tag, such as `v0.7.0`.
 - **Deploy said "Deploy skipped".** The `cloudflare` environment has no `CLOUDFLARE_API_TOKEN`. Add it in the repo's
   Environments settings and re-run the job.
+- **Deploy failed with "R2_ACCESS_KEY_ID or R2_SECRET_ACCESS_KEY isn't set", or publishing to R2 failed with HTTP 403.** The `cloudflare` environment is
+  missing the R2 token's keys, or the token can't write the `lede-design` bucket. Set them up as in *Cloudflare
+  credentials* below and re-run the job.
 
 ## Setting up
 
@@ -169,3 +172,32 @@ runs no Deploy, and the tag ruleset can't name it.
 
 The ruleset in `.github/rulesets/` is the record of that setting: change the file and import it again (or edit the
 ruleset to match) so the two don't drift.
+
+### Cloudflare credentials
+
+`deploy.yml` reads four secrets from the `cloudflare` environment, and each credential can do only what its steps
+need:
+
+| Secret | What it is | Used for |
+| --- | --- | --- |
+| `CLOUDFLARE_API_TOKEN` | An API token with *Account → Workers Scripts: Edit* (and *Zone → Workers Routes: Edit* on the preview host's zone, for `deploy-preview.yml`). No R2 permission. | Deploying the Worker and uploading preview versions, through wrangler |
+| `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY` | An R2 API token with *Object Read & Write* on the `lede-design` bucket only | Publishing `r/vX.Y.Z` and `r/next`, through R2's S3 API, in `scripts/publish-r2.mjs` |
+| `CLOUDFLARE_ACCOUNT_ID` | The account's ID | Both; it also names the R2 endpoint |
+
+To make the R2 token, in the Cloudflare dashboard open *R2 Object Storage → Manage API tokens → Create API token*,
+choose *Object Read & Write*, apply it to *Specific buckets only* with `lede-design`, and create it. The page shows the
+*Access Key ID* and *Secret Access Key* once. Store them:
+
+```bash
+gh secret set R2_ACCESS_KEY_ID --repo fairchild/lede-design --env cloudflare
+gh secret set R2_SECRET_ACCESS_KEY --repo fairchild/lede-design --env cloudflare
+```
+
+Each command asks for the value, so it stays out of the shell's history.
+
+Each push to `develop` checks the keys: `deploy-preview.yml` writes one small object, `ci/credentials-check`, with
+them, so a missing or misscoped R2 token fails the preview, well before a release needs it.
+
+Wrangler doesn't need R2 access to deploy a Worker that binds the bucket: it checks whether a bound bucket exists, and
+when the token can't look it says so and deploys anyway. If a deploy ever fails on the `BUCKET` binding, add *Workers
+R2 Storage: Read* to `CLOUDFLARE_API_TOKEN`, never Edit.

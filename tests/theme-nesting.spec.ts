@@ -58,7 +58,7 @@ const GUARDS = [
   { root: /(\[data-theme\^="dark"\]|(?<![\w-])\.dark)\s/, query: '@container style(--ld-scheme: dark)' },
   { root: /\[data-glass="solid"\]\s/, query: '@container style(--ld-glass: solid)' },
 ];
-const SHEETS = ['registry/lede/lede.components.css', 'registry/lede/lede.blocks.css', 'src/styles/globals.css', 'src/styles/looks.css'];
+const SHEETS = ['registry/lede/lede.components.css', 'registry/lede/lede.blocks.css', 'src/styles/globals.css', 'registry/lede/looks/skeuo.css', 'registry/lede/looks/brutal.css', 'registry/lede/looks/broadsheet.css'];
 
 /** Each style rule's selector, with the at-rule preludes around it. */
 function rules(text: string) {

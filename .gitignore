@@ -17,3 +17,4 @@ worker/worker-configuration.d.ts
 dist-strict
 *.tsbuildinfo
 dist-design-system
+registry/lede/looks/*.tokens.css

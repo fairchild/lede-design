@@ -22,12 +22,17 @@ export interface ThemeProviderProps extends useRender.ComponentProps<'div'> {
   accent?: Preset | (string & {});
   /** Text color on primary fills, for a custom accent when the automatic pick is wrong. Inherited along with `accent`. */
   accentForeground?: string;
-  /** Corners, from roundest to squarest. `square` has no capsules. Unset inherits the nearest provider's, or `:root`'s. */
+  /**
+   * Corners, from roundest to squarest. `square` has no capsules. Unset inherits the nearest provider's, or `:root`'s
+   * when no provider sets one. A provider that turns a look off (`look="lede"`) starts from Lede's corners: give it a
+   * shape of its own to keep one.
+   */
   shape?: 'soft' | 'crisp' | 'square';
   /**
    * Control heights, for buttons, fields and table hit targets. `'touch'` is for screens used with a finger: no control is
    * shorter than `--size-hit-min`, 44px. List rows and bar items keep `--size-hit-min` in every density.
-   * Unset inherits the nearest provider's, or `:root`'s.
+   * Unset inherits the nearest provider's, or `:root`'s when no provider sets one. A provider that turns a look off starts
+   * from Lede's density: give it one of its own to keep one.
    */
   density?: 'regular' | 'compact' | 'touch';
   /**
@@ -35,6 +40,14 @@ export interface ThemeProviderProps extends useRender.ComponentProps<'div'> {
    * `prefers-reduced-transparency`, glass draws as `solid`.
    */
   glass?: 'regular' | 'solid';
+  /**
+   * A whole visual style over the same components, such as `'brutal'`, keyed on `data-look`: it applies once the look's
+   * CSS is on the page, from the `@lede/look-skeuo`, `@lede/look-brutal` or `@lede/look-broadsheet` registry item. It
+   * sets its own colors, corners, type, edges and depth; an accent picked here still replaces its accent, and high
+   * contrast keeps Lede's -hc palette. Unset inherits the nearest provider's. `'lede'` turns a look off, and Lede's tokens apply again
+   * inside it.
+   */
+  look?: 'lede' | (string & {});
   /** The wrapper's background. Default `'none'`. */
   surface?: 'none' | 'base' | 'grouped';
   /** Token values by name, such as `{ radius: '18px' }`, set on the wrapper and carried into its portals. */
@@ -89,7 +102,7 @@ function accentVars(accent?: string, foreground?: string) {
 interface Scope {
   /** The theme on a ThemeProvider's wrapper, without what paints or sizes that wrapper. */
   props: {
-    className: string; 'data-theme': string; 'data-glass': string; 'data-shape'?: string; 'data-density'?: string;
+    className: string; 'data-theme': string; 'data-glass': string; 'data-shape'?: string; 'data-density'?: string; 'data-look'?: string;
     style: React.CSSProperties;
   };
   accent?: string;
@@ -116,7 +129,7 @@ export function ThemeScope({ children }: { children?: React.ReactNode }) {
 }
 
 /**
- * Sets scheme, contrast, accent, shape, density and glass for its subtree. Providers nest, and everything inside one
+ * Sets scheme, contrast, accent, shape, density, glass and look for its subtree. Providers nest, and everything inside one
  * follows the nearest: Lede's tokens, motion set through `tokens`, high contrast, `glass="solid"` and `dark:` utilities.
  */
 export function ThemeProvider(props: ThemeProviderProps) {
@@ -124,7 +137,8 @@ export function ThemeProvider(props: ThemeProviderProps) {
   const unset = nearest ? 'inherit' : 'auto';
   const {
     render, scheme = unset, contrast = unset, accent, accentForeground, shape, density,
-    glass = (nearest?.props['data-glass'] ?? 'regular') as 'regular' | 'solid', surface = 'none', tokens, className, style, ...rest
+    glass = (nearest?.props['data-glass'] ?? 'regular') as 'regular' | 'solid', look = nearest?.props['data-look'], surface = 'none', tokens,
+    className, style, ...rest
   } = props;
   const ref = React.useRef<HTMLDivElement>(null);
   const [outer, setOuter] = React.useState('light');
@@ -151,6 +165,8 @@ export function ThemeProvider(props: ThemeProviderProps) {
   const scope: Scope = {
     props: {
       className: cn('ld-theme', dark && 'dark'), 'data-theme': theme, 'data-glass': glass, 'data-shape': shape, 'data-density': density,
+      // `lede` is written only under a provider with a look, where it marks the root that turns that look off.
+      'data-look': look === 'lede' && !nearest?.props['data-look'] ? undefined : look,
       style: vars as React.CSSProperties,
     },
     ...brand,

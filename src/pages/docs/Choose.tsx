@@ -63,6 +63,9 @@ export const CHOICES: Array<{ id: string; title: string; choices: Choice[] }> = 
     choices: [
       { need: 'Light, dark, high contrast, accent or density for the app or one part of it', item: 'theme-provider', title: 'ThemeProvider', href: '/components#c-theme', note: 'Wrap the app in one. Every install needs it.' },
       { need: 'Letting people pick an accent color', item: 'accent-picker', title: 'AccentPicker', href: '/blocks#b-accent', note: 'Each swatch has its name beside it.' },
+      { need: 'Objects with depth, lit from above', item: 'look-skeuo', title: 'Look: Skeuomorphic', href: '/looks#look-skeuo', note: 'A whole style over the same components: bevels, wells and a linen ground.' },
+      { need: 'Raw, loud and square', item: 'look-brutal', title: 'Look: Neo-brutalist', href: '/looks#look-brutal', note: 'Thick outlines, hard offset shadows and flat fills.' },
+      { need: 'Reading first, set like a newspaper', item: 'look-broadsheet', title: 'Look: Broadsheet', href: '/looks#look-broadsheet', note: 'A reading serif, rules instead of boxes and ink on newsprint.' },
     ],
   },
   {

@@ -4,7 +4,7 @@
 // one fails here until a pair names it. Every pair meets its floor. `npm run contrast -- --report` prints every pair.
 import { readdirSync, readFileSync } from 'node:fs';
 
-const { color, shadow } = JSON.parse(readFileSync('tokens/tokens.json', 'utf8'));
+const { color, shadow, looks } = JSON.parse(readFileSync('tokens/tokens.json', 'utf8'));
 const spec = JSON.parse(readFileSync('tokens/contrast.json', 'utf8'));
 
 const themes = color.themes.map((theme) => theme.id);
@@ -29,8 +29,21 @@ const mixes = [...sources.matchAll(/(?:--(ld-[\w-]+): )?color-mix\(in srgb, var\
 if (mixes.length !== sources.toLowerCase().split('color-mix(').length - 1) problems.push('registry/ has a color-mix() this script can\'t read');
 for (const name of named.keys()) if (sources.match(new RegExp(`--${name}\\s*:`, 'g')).length > 1) problems.push(`--${name}: declared more than once, and the script measures one`);
 
+// Each look in tokens.json's `looks` is measured too, over the same pairs, accents and themes. A look's value for a
+// colour or shadow replaces Lede's where the token build applies it: `all` in every theme, `light` and `dark` in their
+// standard theme only, and `light-hc` or `dark-hc` in theirs, a theme's own over `all`. `look` is the one being measured.
+let look = null;
+const lookIds = [null, ...Object.keys(looks?.options ?? {})];
+function lookValue(name, theme) {
+  if (!look) return undefined;
+  const values = looks.options[look].values;
+  return values[theme]?.[name] ?? values.all?.[name];
+}
+/** Whether the look being measured sets a token in any theme. A token it sets is its own colour, not Lede's alias. */
+const lookSets = (name) => Boolean(look && Object.values(looks.options[look].values).some((values) => name in values));
+
 const aliasOf = (value) => (typeof value === 'string' && /^\{.+\}$/.test(value) ? value.slice(1, -1) : null);
-const canonical = (name) => (aliasOf(tokens.get(name)) ? canonical(aliasOf(tokens.get(name))) : name);
+const canonical = (name) => (!lookSets(name) && aliasOf(tokens.get(name)) ? canonical(aliasOf(tokens.get(name))) : name);
 
 // The -hc fill walk. In -hc a control's fill shows at 3:1, and the fills in `fills.colors` don't on their own, so every
 // rule in registry/ that paints one draws an --input edge in -hc: in the rule itself, or in a `[data-theme$="-hc"]` twin
@@ -116,6 +129,7 @@ for (const selector of spec.fills.everyTheme) {
 
 
 function parse(value) {
+  if (value === 'transparent') return [0, 0, 0, 0];
   const hex = /^#([\da-f]{2})([\da-f]{2})([\da-f]{2})([\da-f]{2})?$/i.exec(value);
   if (hex) return [...hex.slice(1, 4).map((part) => parseInt(part, 16)), hex[4] ? parseInt(hex[4], 16) / 255 : 1];
   const rgb = /^rgba?\((\d+), (\d+), (\d+)(?:, ([\d.]+))?\)$/.exec(value);
@@ -136,7 +150,7 @@ function paint(name, theme, accent) {
   if (name === 'primary' && accent) return paint(accent, theme);
   if (!tokens.has(name)) throw new Error(`tokens/contrast.json: no colour named ${name}`);
   const value = tokens.get(name);
-  const own = typeof value === 'string' ? value : value[theme] ?? value[themes[0]];
+  const own = lookValue(name, theme) ?? (typeof value === 'string' ? value : value[theme] ?? value[themes[0]]);
   return aliasOf(own) ? paint(aliasOf(own), theme, accent) : parse(own);
 }
 
@@ -174,7 +188,7 @@ function measure(name, layers, theme, accent, top = paint(name, theme, accent)) 
 const shadows = new Map(shadow.tokens.map((token) => [token.name, token.value]));
 function edgeOf(name, theme) {
   if (!shadows.has(name)) throw new Error(`tokens/contrast.json: no shadow named ${name}`);
-  const value = shadows.get(name);
+  const value = lookValue(name, theme) ?? shadows.get(name);
   const first = topLevel(typeof value === 'string' ? value : value[theme], ',')[0];
   const edge = /^0 0 0 [\d.]+px (.+)$/.exec(first ?? '');
   return edge ? parse(edge[1]) : null;
@@ -197,10 +211,10 @@ const exemptInHc = ({ colors, on }) => pairs.some((other) => other.role === 'exe
   && colors.every((name) => other.colors.includes(name)) && on.every((surface) => other.on.includes(surface)));
 
 const results = new Map();
-for (const pair of pairs) {
+for (look of lookIds) for (const pair of pairs) {
   if (!spec.floors[pair.role]) throw new Error(`tokens/contrast.json: no floor for the role ${pair.role}`);
-  if (pair.in && !['standard', 'hc'].includes(pair.in)) problems.push(`${pair.colors}: \`in\` is standard or hc, not ${pair.in}`);
-  if (pair.in === 'standard' && pair.role !== 'exempt' && !exemptInHc(pair)) problems.push(`${pair.colors}: a pair that leaves out -hc needs an exempt -hc pair for the same colours and surfaces`);
+  if (!look && pair.in && !['standard', 'hc'].includes(pair.in)) problems.push(`${pair.colors}: \`in\` is standard or hc, not ${pair.in}`);
+  if (!look && pair.in === 'standard' && pair.role !== 'exempt' && !exemptInHc(pair)) problems.push(`${pair.colors}: a pair that leaves out -hc needs an exempt -hc pair for the same colours and surfaces`);
   for (const theme of themes) {
     const hc = theme.endsWith('-hc');
     if (pair.in && pair.in !== (hc ? 'hc' : 'standard')) continue;
@@ -212,11 +226,11 @@ for (const pair of pairs) {
           const edge = pair.edge && edgeOf(pair.edge, theme);
           const ratio = Math.max(measure(name, layers, theme, accent), edge ? measure(name, layers, theme, accent, edge) : 0);
           const shown = layers.join(' over ');
-          const same = `${theme} ${pair.role} ${canonical(name)} ${shown}`;
+          const same = `${look ?? 'lede'} ${theme} ${pair.role} ${canonical(name)} ${shown}`;
           if (accent && results.get(same)?.ratio === ratio) continue;
           const id = same + (accent ?? '');
           if (results.has(id)) continue;
-          const key = `${theme}${accent ? `/${accent.replace('preset-', '')}` : ''} ${pair.role}: ${name} on ${shown}`;
+          const key = `${look ? `${look} ` : ''}${theme}${accent ? `/${accent.replace('preset-', '')}` : ''} ${pair.role}: ${name} on ${shown}`;
           results.set(id, { key, ratio, floor });
         }
       }
@@ -245,4 +259,4 @@ if (problems.length) {
   console.error(`check-contrast: ${problems.length} problem(s)\n${problems.map((problem) => `  ${problem}`).join('\n')}`);
   process.exit(1);
 }
-console.log(`check-contrast: ${results.size} pairs across ${themes.length} themes and ${presets.length} accents, every one at its floor`);
+console.log(`check-contrast: ${results.size} pairs across ${themes.length} themes, ${presets.length} accents and ${lookIds.length - 1} looks, every one at its floor`);

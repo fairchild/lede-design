@@ -1,17 +1,11 @@
 import * as React from 'react';
 import { useSearchParams } from 'react-router';
 import { readView, useSetViewParams } from '@/view-params';
-// The looks' faces, bundled with the site. A browser fetches a face only when a look's CSS uses it.
-import '@fontsource-variable/space-grotesk';
-import '@fontsource-variable/newsreader/opsz.css';
-import '@fontsource-variable/newsreader/opsz-italic.css';
-import '@fontsource-variable/libre-franklin';
-import '@fontsource/unifrakturmaguntia';
 
 /**
- * SPIKE: the site's look, `data-look` on <html>, read from the URL's `?look=brutal` (src/view-params.ts) and carried to
- * every page with the appearance. A bare URL shows Lede. The param's name and values stay as they are when the look
- * becomes a theme axis. `?chrome=0` hides the floating picker, and the Looks page has its own picker.
+ * The site's look, read from the URL's `?look=brutal` (src/view-params.ts), carried to every page with the appearance
+ * and passed to the root ThemeProvider as `look`. A bare URL shows Lede. `?chrome=0` hides the floating picker, and the
+ * Looks page has its own picker.
  */
 export const LOOKS = [
   { id: 'lede', name: 'Lede' },
@@ -29,15 +23,6 @@ export function useLook(): LookId {
 export function useSetLook() {
   const set = useSetViewParams();
   return React.useCallback((look: LookId) => set({ look: look === 'lede' ? null : look }), [set]);
-}
-
-/** In the router's root: puts the URL's look on <html>, where looks.css reads it. */
-export function useLookAttribute() {
-  const look = useLook();
-  React.useLayoutEffect(() => {
-    if (look === 'lede') delete document.documentElement.dataset.look;
-    else document.documentElement.dataset.look = look;
-  }, [look]);
 }
 
 /** The floating picker: in `npm run dev`, or in a build once a look is chosen, so the test suite's pages stay as they were. */

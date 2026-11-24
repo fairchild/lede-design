@@ -85,3 +85,56 @@ test('fails a colour whose group color.groups does not list, so it cannot drop o
   expect(status).toBe(1);
   expect(output).toContain(`${SOURCE.color.tokens[0].name} has group "unlisted", which color.groups doesn't list`);
 });
+
+// A token whose default names another token isn't declared, so its default resolves where it's read. Every read in the
+// shipped CSS therefore carries that default as its fallback, written out the way the token build would.
+test('leaves a token built from another undeclared, and every read of it carries its default', () => {
+  const { status, css } = build();
+  expect(status).toBe(0);
+  const named = (v: string) => (/^\{.+\}$/.test(v) ? `var(--${v.slice(1, -1)})` : v);
+  // Color and shadow are set per theme, where an alias is declared on each theme block, so only the other families.
+  const derived = Object.entries(SOURCE).filter(([family]) => !['color', 'shadow'].includes(family)).flatMap(([, f]: [string, Json]) => f.tokens ?? [])
+    .filter((t: Json) => typeof t.value === 'string' && (/^\{.+\}$/.test(t.value) || t.value.includes('var(--')));
+  expect(derived.map((t: Json) => t.name)).toEqual(expect.arrayContaining(['font-ui', 'press-transform']));
+  const shipped = ['registry/lede/lede.components.css', 'registry/lede/lede.blocks.css', 'registry/lede/looks/skeuo.css', 'registry/lede/looks/brutal.css', 'registry/lede/looks/broadsheet.css']
+    .map((path) => readFileSync(path, 'utf8')).join('\n');
+  for (const { name, value } of derived) {
+    expect(css, name).not.toMatch(new RegExp(`--${name}:`));
+    const reads = [...shipped.matchAll(new RegExp(`var\\(--${name}\\b[^;]*`, 'g'))].map((m) => m[0]);
+    expect(reads.length, name).toBeGreaterThan(0);
+    for (const read of reads) expect(read, name).toContain(`var(--${name}, ${named(value)})`);
+  }
+});
+
+test('writes each look as [data-theme][data-look] blocks, a color only in its standard theme', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'token-build-'));
+  cpSync('tokens', join(dir, 'tokens'), { recursive: true });
+  for (const out of ['src/styles', 'registry/lede']) mkdirSync(join(dir, out), { recursive: true });
+  const path = join(dir, 'tokens/tokens.json');
+  const tokens = JSON.parse(readFileSync(path, 'utf8'));
+  tokens.looks.options = { probe: { name: 'Probe', summary: '', fonts: [], values: {
+    all: { radius: '0px' }, light: { primary: '#123456', 'edge-surface': '0 0 0 2px #000' }, dark: { primary: '#abcdef' }, 'dark-hc': { primary: '#ffffff' },
+  } } };
+  writeFileSync(path, JSON.stringify(tokens));
+  const { status, stderr } = spawnSync(process.execPath, [SCRIPT], { cwd: dir, encoding: 'utf8' });
+  const css = status === 0 ? readFileSync(join(dir, 'registry/lede/looks/probe.tokens.css'), 'utf8') : '';
+  rmSync(dir, { recursive: true });
+  expect(status, stderr).toBe(0);
+  const block = (selector: string) => css.match(new RegExp(`${selector.replace(/[[\]^$*"]/g, '\\$&')} \\{([^}]*)\\}`))?.[1];
+  expect(block('[data-theme][data-look="probe"]')).toContain('--radius: 0px;');
+  expect(block('[data-theme^="light"][data-look="probe"]')).toContain('--edge-surface: 0 0 0 2px #000;');
+  expect(block('[data-theme^="light"][data-look="probe"]')).not.toContain('--primary');
+  expect(block('[data-theme="light"][data-look="probe"]')).toContain('--primary: #123456;');
+  expect(block('[data-theme="dark"][data-look="probe"]')).toContain('--primary: #abcdef;');
+  expect(block('[data-theme="dark-hc"][data-look="probe"]')).toContain('--primary: #ffffff;');
+  expect(css).not.toContain('[data-theme="light-hc"]');
+});
+
+test('fails a look that sets a token no family names, or a theme that isn\'t one', () => {
+  const typo = build((t) => { t.looks.options.brutal.values.all['radius-big'] = '0px'; });
+  expect(typo.status).toBe(1);
+  expect(typo.output).toContain('looks.brutal.values.all sets radius-big, which no token family names');
+  const theme = build((t) => { t.looks.options.brutal.values.sepia = {}; });
+  expect(theme.status).toBe(1);
+  expect(theme.output).toContain("looks.brutal.values.sepia isn't one of all, light, dark, light-hc, dark-hc");
+});

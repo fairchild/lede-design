@@ -1,5 +1,10 @@
 # Spike: looks (re-theming Lede without changing behaviour)
 
+> **0.8.0:** the `look-*` tokens named below were renamed into the `stroke`, `slot` and `lettering` families. CHANGELOG.md has the table of old and new names.
+> A look is now a theme setting: its values live in `looks` in `tokens/tokens.json`, the token build writes them to
+> `registry/lede/looks/<id>.tokens.css`, and `<ThemeProvider look="brutal">` (or `data-look` on a theme root) applies one.
+> `registry/lede/looks/<id>.css` holds the rules no token reaches and ships as `@lede/look-<id>`. The `<html>` mechanism described below is history.
+
 Status: merged into `develop` in #123 for 0.7.0. The `look-*` tokens ship in the registry; the three looks stay
 the site's own. The next step is a `look` axis in `tokens.json` (Open questions,
 below).

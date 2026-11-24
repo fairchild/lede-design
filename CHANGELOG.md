@@ -1,12 +1,84 @@
 # Changelog
 
-## Unreleased
+## 0.8.0
+
+Looks ship: a whole visual style over the same components, set with <ThemeProvider look>. Skeuomorphic, Neo-brutalist
+and Broadsheet come as @lede/look-* registry items and pass the same contrast, forced-colours and focus gates as Lede.
+The registry for this release is `https://lede.cloudcompute.com/r/v0.8.0/{name}.json`.
 
 ### Added
+
+- **Looks are a theme setting.** `<ThemeProvider look="brutal">` sets a look, and nested providers and their overlays
+  inherit it. `look="lede"` turns it off, and plain HTML uses `data-look` on a theme root. Each look's values live in
+  `looks` in `tokens/tokens.json` (`all`, `light`, `dark`, optional `light-hc` and `dark-hc`). The token build writes
+  them as `[data-theme][data-look]` blocks, like the shape and density axes, and fails a look that names a token no
+  family has. A look's colors, shadows and ground texture apply in the standard themes only, so high contrast keeps
+  Lede's -hc palette. Its corners, type, edges and depth apply in all four. A look sets `primary` for its accent, and an
+  accent a person picks still replaces it. A nested provider with another look or none gets none of this look's tokens,
+  and starts from Lede's values, its own shape and density included unless it sets them. Inside a look, `look="lede"`
+  writes `data-look="lede"` to mark that root, and providers further in inherit from it as usual. The looks are on the docs
+  site and in the registry (below). The few rules no token reaches yet sit in an `@scope` per look that stops at a
+  theme root with another look or none, so they don't leak either.
+
+- **Every look passes the gates Lede does.** The contrast gate measures each look's colors over every pair, theme and
+  accent, so a look that sets a color below its floor fails the build. The forced-colours walk runs under each look on
+  Components and the inbox, and each look's controls show a focus ring in light and dark-hc. To pass, the looks' status
+  colors, muted text and input edges moved a step darker in light and lighter in dark, Skeuo and Broadsheet tune the
+  accent presets that fell short on their grounds, and the Switch knob's edge is dark under Skeuo dark and Brutal dark.
+
+- **Design pass on the looks.** Skeuomorphic gets the most: a lit sidebar panel, glossy unread marks and avatars, the
+  open row pressed in as a well, a stronger card edge and a softer knob highlight in dark. These stay out of high
+  contrast, which keeps its own edges. Neo-brutalist fills the open row with its selection colour instead of marking it
+  only in bold. Broadsheet sets tables on the page, with no panel behind them and a rule under the header.
+
+- **Looks ship in the registry**, as experimental items: `@lede/look-skeuo`, `@lede/look-brutal` and
+  `@lede/look-broadsheet`. Each brings `styles/lede/looks/<id>.css`, which imports the look's tokens (written by the
+  token build) and its faces from Fontsource, pinned, and holds the few rules no token reaches. Import it after Lede's
+  `index.css` and set `<ThemeProvider look>`. Those rules pass the literal gate, under two entries for a look's
+  ornament. The docs site links Looks from its sidebar foot, and `/looks` says how to install one.
 
 - Each push to `develop` deploys the site to the preview host that the repo variable `PREVIEW_HOST` names
   (lede-preview.cloudcompute.com), as its own Worker, `lede-design-preview`. CONTRIBUTING.md's *Preview develop* says
   how to set it up; without the variable nothing runs.
+
+### Changed
+
+- **Breaking:** the `look` token family is gone. Its tokens are now in the families they belong to, under new names:
+
+  | Was | Now |
+  | --- | --- |
+  | `--look-hairline` | `--stroke-hairline` |
+  | `--look-control-edge` | `--stroke-input` |
+  | `--look-surface-edge` | `--edge-surface` |
+  | `--look-control-shadow` | `--depth-control` |
+  | `--look-well` | `--depth-well` |
+  | `--look-press-shadow` | `--depth-pressed` |
+  | `--look-control-sheen` | `--sheen-control` |
+  | `--look-press` | `--press-transform` |
+  | `--look-texture` | `--texture-ground` |
+  | `--look-ui-font` | `--font-ui` |
+  | `--look-label-case` | `--case-label` |
+  | `--look-label-tracking` | `--tracking-label` |
+  | `--look-button-case` | `--case-button` |
+  | `--look-title-case` | `--case-title` |
+
+  The edge, depth, sheen, press and texture tokens are the new `slot` family. The face, case and tracking tokens are
+  the new `lettering` family. Each default still draws Lede as before.
+- A token whose default names another token, `--font-ui` and `--press-transform`, is no longer declared. Components
+  read it with its default as the fallback, such as `var(--font-ui, var(--font-sans))`. So a `--font-sans` or
+  `--scale-pressed` that a nested ThemeProvider sets now reaches the Buttons, labels and left-bar links inside it, and
+  a value set for the token itself still reaches providers nested below. Foundations shows such a default as CSS,
+  `var(--font-sans)`, not `{font-sans}`.
+- On the docs site, a look now sits on the root ThemeProvider instead of `<html>`. In -hc themes it keeps its corners,
+  type and edges, where before some of them dropped back to Lede's. `src/styles/looks.css` holds only the rules no
+  token reaches.
+- High-contrast separators draw at `--stroke-hairline` when it's thicker than 1px, so a look's heavier rules stay
+  heavy in -hc. A FormSection's body takes `--edge-surface` like the other surfaces do.
+- The deploy workflow publishes the registries to R2 with an R2 API token limited to the `lede-design` bucket
+  (`R2_ACCESS_KEY_ID` and `R2_SECRET_ACCESS_KEY` in the `cloudflare` environment), through R2's S3 API, so
+  `CLOUDFLARE_API_TOKEN` no longer needs account-wide R2 access. `scripts/publish-r2.mjs --remote` reads those keys;
+  `--local` still goes through wrangler. `docs/releasing.md`'s *Cloudflare credentials* says how to set it up. Each
+  push to `develop` checks those keys by writing `ci/credentials-check`, so a bad R2 token shows up before a release.
 
 ## 0.7.2
 

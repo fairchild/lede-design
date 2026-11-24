@@ -2,7 +2,7 @@ import { test, expect, type Page } from '@playwright/test';
 import { withAppearance } from './appearance';
 import AxeBuilder from '@axe-core/playwright';
 
-// The site's looks (src/styles/looks.css), turned on with `?look=`. The rest of the suite runs with no look, so these are
+// The looks (registry/lede/looks/), turned on with `?look=`. The rest of the suite runs with no look, so these are
 // the only tests that see one. Each look passes axe in every theme on the pages that show most of the components, high
 // contrast keeps Lede's own -hc palette under a look, and a phone at 200% text is no wider than at 100%.
 const LOOKS = ['skeuo', 'brutal', 'broadsheet'] as const;
@@ -21,8 +21,8 @@ async function open(page: Page, route: string, look: string, mode: (typeof MODES
   await withAppearance(page, { highContrast: mode.hc });
   await page.goto(`${route}?look=${look}&chrome=0`);
   await expect(page.locator('main')).toBeVisible();
-  if (look === 'lede') await expect(page.locator('html')).not.toHaveAttribute('data-look');
-  else await expect(page.locator('html')).toHaveAttribute('data-look', look);
+  if (look === 'lede') await expect(page.locator('.app-root')).not.toHaveAttribute('data-look');
+  else await expect(page.locator('.app-root')).toHaveAttribute('data-look', look);
 }
 
 for (const look of LOOKS) {
@@ -90,4 +90,54 @@ test('broadsheet · a selected segment keeps its edge', async ({ page, isMobile 
   await open(page, '/components', 'broadsheet', MODES[0]);
   const selected = page.locator('main .ld-seg-thumb').first();
   expect(await selected.evaluate((el) => getComputedStyle(el).boxShadow)).not.toBe('none');
+});
+
+// Brutal's separators are 2px. High contrast draws separators at least 1px, so it keeps them at 2px, not thinner.
+test('brutal · high contrast keeps its 2px separators', async ({ page, isMobile }) => {
+  test.skip(isMobile, 'The rule is the same at every viewport.');
+  await open(page, '/app/inbox/m1', 'brutal', MODES[2]);
+  const width = (selector: string, side: string) => page.locator(selector).first().evaluate((el, s) => getComputedStyle(el, s === 'top' ? '::before' : null).getPropertyValue(`border-${s}-width`), side);
+  expect(await width('.ld-row-wrap + .ld-row-wrap', 'top')).toBe('2px');
+  expect(await width('.ld-message-header', 'bottom')).toBe('2px');
+});
+
+// A look restyles edges and depth, so its focus ring has to stay visible: one of each kind of control draws a ring
+// that changes its picture, in a standard theme and in high contrast.
+const ROLES = ['button', 'link', 'textbox', 'combobox', 'checkbox', 'radio', 'switch'] as const;
+for (const look of LOOKS) {
+  for (const mode of [MODES[0], MODES[3]]) {
+    test(`${look} · ${mode.name} · every kind of control shows its focus`, async ({ page, isMobile }) => {
+      test.skip(isMobile, 'The rings are the same at every viewport.');
+      await open(page, '/components', look, mode);
+      await page.keyboard.press('Tab');
+      for (const role of ROLES) {
+        const controls = page.locator('main').getByRole(role, { disabled: false });
+        // An inert control, such as a preview, can't take focus. One of each class stands for its kind.
+        const kinds = await controls.evaluateAll((els) => els.map((el) => (el.closest('[inert]') ? null : el.className)));
+        for (const i of new Set(kinds.flatMap((kind) => (kind === null ? [] : [kinds.indexOf(kind)])))) {
+          const control = controls.nth(i);
+          await control.evaluate((el: HTMLInputElement) => { el.readOnly = true; el.scrollIntoView({ block: 'center' }); });
+          await control.focus();
+          const box = (await control.boundingBox())!;
+          const clip = { x: box.x - 6, y: box.y - 6, width: box.width + 12, height: box.height + 12 };
+          const focused = await page.screenshot({ clip });
+          await control.blur();
+          expect.soft(focused.equals(await page.screenshot({ clip })), await control.evaluate((el) => el.outerHTML.slice(0, 100))).toBe(false);
+        }
+      }
+    });
+  }
+}
+
+// Under a look, no accent in the URL shows the look's own. Picking one, Blue included, keeps it in the URL, so Blue
+// replaces the look's accent as any other preset does.
+test('brutal · picking Blue replaces the look\'s accent', async ({ page, isMobile }) => {
+  test.skip(isMobile, 'The URL is the same at every viewport.');
+  await page.emulateMedia({ colorScheme: 'light' });
+  await page.goto('/app/settings/appearance?look=brutal&accent=teal&chrome=0');
+  await page.getByRole('radio', { name: 'Blue' }).check();
+  await expect(page).toHaveURL(/[?&]accent=blue(&|$)/);
+  const primary = await page.locator('.app-root').evaluate((el) => getComputedStyle(el).getPropertyValue('--primary').trim());
+  const blue = await page.locator('.app-root').evaluate((el) => getComputedStyle(el).getPropertyValue('--preset-blue').trim());
+  expect(primary).toBe(blue);
 });

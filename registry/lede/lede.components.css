@@ -17,8 +17,6 @@
      sits on gray, glass and a highlighted menu item. */
   --ld-primary-on-tint: color-mix(in srgb, var(--primary) 60%, var(--foreground));
   --ld-destructive-on-tint: color-mix(in srgb, var(--destructive) 60%, var(--foreground));
-  /* Follows a `font-sans` that a theme or a look sets below the root. */
-  --look-ui-font: var(--font-sans);
 }
 /* Motion, from the tokens, which take their reduced-motion values in `tokens.css`. Re-declared on every theme root, so
    motion tokens a ThemeProvider sets through `tokens` reach the components inside it. */
@@ -39,7 +37,7 @@
 .light, [data-theme^="light"] { color-scheme: light; }
 .ld-theme { color: var(--foreground); font-family: var(--font-sans); -webkit-font-smoothing: antialiased; }
 .ld-theme[data-surface="base"] { background: var(--background); }
-.ld-theme[data-surface="grouped"] { background: var(--background-grouped); background-image: var(--look-texture); }
+.ld-theme[data-surface="grouped"] { background: var(--background-grouped); background-image: var(--texture-ground); }
 
 /* Glass material — controls float above content */
 .ld-glass {
@@ -72,21 +70,21 @@
    A one-line Button is a capsule: its corners are at least half of one line's height, the control or the line box,
    whichever is taller. Past that they stop at `--radius-xl`, so a wrapped label makes a rounded rectangle. */
 .ld-btn {
-  appearance: none; border: 0; margin: 0; font: inherit; font-family: var(--look-ui-font); text-decoration: none;
+  appearance: none; border: 0; margin: 0; font: inherit; font-family: var(--font-ui, var(--font-sans)); text-decoration: none;
   display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2); box-sizing: border-box;
   --ld-btn-control: var(--size-control-md); --ld-btn-line: var(--text-subheadline-line-height); min-height: var(--ld-btn-control); padding: 0 var(--space-4);
-  font-size: var(--text-subheadline-size); line-height: var(--ld-btn-line); font-weight: var(--weight-semibold); letter-spacing: normal; text-transform: var(--look-button-case);
+  font-size: var(--text-subheadline-size); line-height: var(--ld-btn-line); font-weight: var(--weight-semibold); letter-spacing: normal; text-transform: var(--case-button);
   border-radius: min(var(--radius-capsule), max(var(--radius-xl), calc(max(var(--ld-btn-control), var(--ld-btn-line)) / 2))); cursor: pointer; flex-shrink: 0; max-width: 100%; text-align: center;
   -webkit-tap-highlight-color: transparent;
   transition: transform var(--ld-dur) var(--ld-spring), background-color var(--ld-dur) var(--ld-ease), opacity var(--ld-dur) var(--ld-ease);
 }
 /* With enlarged text on a narrow window a word can be wider than the line, so there a label also breaks inside one. */
 @media (width < 20em) { .ld-btn { overflow-wrap: anywhere; } }
-.ld-btn:active:not(:disabled, [aria-disabled="true"]) { transform: var(--look-press); }
+.ld-btn:active:not(:disabled, [aria-disabled="true"]) { transform: var(--press-transform, scale(var(--scale-pressed))); }
 /* A look's bevel or offset, and its sheen over the fill. A pressed Button takes the look's pressed shadow instead. The
    fills below set background-color, so hover and critical keep the sheen. */
-.ld-btn:is(.ld-btn-filled, .ld-btn-tinted, .ld-btn-gray) { box-shadow: var(--look-control-shadow); background-image: var(--look-control-sheen); }
-.ld-btn:is(.ld-btn-filled, .ld-btn-tinted, .ld-btn-gray):active:not(:disabled, [aria-disabled="true"]) { box-shadow: var(--look-press-shadow); }
+.ld-btn:is(.ld-btn-filled, .ld-btn-tinted, .ld-btn-gray) { box-shadow: var(--depth-control); background-image: var(--sheen-control); }
+.ld-btn:is(.ld-btn-filled, .ld-btn-tinted, .ld-btn-gray):active:not(:disabled, [aria-disabled="true"]) { box-shadow: var(--depth-pressed); }
 .ld-btn-sm { --ld-btn-control: var(--size-control-sm); --ld-btn-line: var(--text-footnote-line-height); padding: 0 var(--space-3); font-size: var(--text-footnote-size); line-height: var(--ld-btn-line); }
 /* A small Button answers a press over `--size-hit-absolute-min` where its height falls short of it, as in `touch`. */
 .ld-btn-sm { position: relative; }
@@ -116,7 +114,7 @@
 }
 /* Pressed, it keeps that edge under the look's pressed shadow. */
 @container style(--ld-contrast: high) {
-  [data-theme$="-hc"] .ld-btn:is(.ld-btn-gray, .ld-btn-tinted):active:not(:disabled, [aria-disabled="true"]) { box-shadow: inset 0 0 0 1px var(--input), var(--look-press-shadow); }
+  [data-theme$="-hc"] .ld-btn:is(.ld-btn-gray, .ld-btn-tinted):active:not(:disabled, [aria-disabled="true"]) { box-shadow: inset 0 0 0 1px var(--input), var(--depth-pressed); }
 }
 /* Disabled: a gray fill and a faint label, as HIG draws it, so a disabled Button doesn't show its color or what's behind
    it. A Plain or glass Button keeps its background. `aria-disabled` keeps a Button focusable, and looks the same. */
@@ -144,8 +142,8 @@
   --ld-seg-row: max(var(--ld-seg-control), var(--text-footnote-line-height) + 2 * var(--space-0_5));
   display: inline-grid; grid-auto-flow: column; grid-auto-columns: 1fr; position: relative;
   margin: 0; min-width: 0; max-width: 100%; border: 0; padding: var(--space-0_5); border-radius: var(--radius-capsule);
-  background: var(--fill-control); height: var(--ld-seg-row); box-sizing: border-box; font-family: var(--look-ui-font);
-  box-shadow: var(--look-well);
+  background: var(--fill-control); height: var(--ld-seg-row); box-sizing: border-box; font-family: var(--font-ui, var(--font-sans));
+  box-shadow: var(--depth-well);
 }
 @container style(--ld-contrast: high) {
   [data-theme$="-hc"] .ld-seg { box-shadow: inset 0 0 0 1px var(--input); }
@@ -157,7 +155,7 @@
   position: absolute; top: var(--space-0_5); bottom: var(--space-0_5); left: var(--space-0_5); border-radius: var(--radius-capsule);
   width: var(--ld-seg-w, calc((100% - 2 * var(--space-0_5)) / var(--ld-seg-n)));
   transform: translate(var(--ld-seg-x, calc(var(--ld-seg-i) * 100%)), var(--ld-seg-y, 0px));
-  background: var(--fill-selected); background-image: var(--look-control-sheen); box-shadow: inset 0 0 0 var(--look-control-edge) var(--input), var(--shadow-raised);
+  background: var(--fill-selected); background-image: var(--sheen-control); box-shadow: inset 0 0 0 var(--stroke-input) var(--input), var(--shadow-raised);
   transition: transform var(--ld-dur) var(--ld-spring), width var(--ld-dur) var(--ld-spring);
 }
 /* `shadow-raised` is `none` in -hc, which a list of shadows can't hold. */
@@ -195,7 +193,7 @@
   --ld-switch-knob: calc(var(--size-switch-height) - 2 * var(--size-switch-inset));
   position: relative; flex: none; display: inline-block; box-sizing: border-box;
   width: var(--size-switch-width); height: var(--size-switch-height); border-radius: var(--radius-capsule); background: var(--fill-control-strong); cursor: inherit;
-  box-shadow: inset 0 0 0 var(--look-control-edge) var(--input), var(--look-well); transition: background-color var(--ld-dur) var(--ld-ease);
+  box-shadow: inset 0 0 0 var(--stroke-input) var(--input), var(--depth-well); transition: background-color var(--ld-dur) var(--ld-ease);
 }
 /* The track is drawn shorter than a finger, so a press reaches it over `size-hit-min`, as on a small Button. */
 .ld-switch-track::after { content: ""; position: absolute; inset: min(0px, calc((var(--size-switch-height) - var(--size-hit-min)) / 2)) 0; }
@@ -204,7 +202,7 @@
 .ld-switch-knob {
   position: absolute; top: var(--size-switch-inset); left: var(--size-switch-inset); width: var(--ld-switch-knob); height: var(--ld-switch-knob);
   border-radius: var(--radius-capsule);
-  background: var(--fill-knob); background-image: var(--look-control-sheen); box-shadow: var(--shadow-knob);
+  background: var(--fill-knob); background-image: var(--sheen-control); box-shadow: var(--shadow-knob);
   transition: left var(--ld-dur) var(--ld-spring), width var(--ld-dur) var(--ld-spring);
 }
 /* Pressed, the knob stretches as wide as the track is tall. Checked, its right edge is an inset from the track's end,
@@ -222,7 +220,7 @@
   appearance: none; margin: 0; font: inherit; font-size: var(--text-callout-size); line-height: var(--text-callout-line-height); color: var(--foreground);
   min-height: var(--size-control-md); padding: 0 var(--space-3); box-sizing: border-box; width: 100%;
   border: 0; border-radius: var(--radius-sm); background: var(--fill-control);
-  box-shadow: inset 0 0 0 var(--look-control-edge) var(--input), var(--look-well); outline: none;
+  box-shadow: inset 0 0 0 var(--stroke-input) var(--input), var(--depth-well); outline: none;
   transition: box-shadow var(--ld-dur) var(--ld-ease);
 }
 .ld-field-lg .ld-field-input { min-height: var(--size-control-lg); font-size: var(--text-body-size); }
@@ -277,7 +275,7 @@
   padding: var(--ld-pad); font-family: var(--font-sans); box-sizing: border-box;
 }
 /* A look's edge or offset on a surface. Glass keeps its own stroke and shadow. */
-.ld-card:not(.ld-glass) { box-shadow: var(--look-surface-edge); }
+.ld-card:not(.ld-glass) { box-shadow: var(--edge-surface); }
 .ld-card-xl { --ld-outer: var(--radius-xl); }
 .ld-card-pad-md { --ld-pad: var(--space-4); }
 .ld-card-pad-lg { --ld-pad: var(--space-6); }
@@ -301,9 +299,9 @@
    identifier, breaks, so it can't widen the list. */
 .ld-list-title, .ld-list-summary { overflow-wrap: anywhere; }
 /* Section labels take a look's letter case. */
-.ld-list-title, .ld-field-label, .ld-table-th { font-family: var(--look-ui-font); text-transform: var(--look-label-case); letter-spacing: var(--look-label-tracking); }
+.ld-list-title, .ld-field-label, .ld-table-th { font-family: var(--font-ui, var(--font-sans)); text-transform: var(--case-label); letter-spacing: var(--tracking-label); }
 .ld-list-footer { padding: 0 var(--space-4); margin-top: var(--space-1_5); }
-.ld-list-body { list-style: none; margin: 0; padding: 0; background: var(--card); border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--look-surface-edge); }
+.ld-list-body { list-style: none; margin: 0; padding: 0; background: var(--card); border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--edge-surface); }
 .ld-list-empty { padding: var(--space-3) var(--space-4); font-size: var(--text-subheadline-size); line-height: var(--text-subheadline-line-height); color: var(--muted-foreground); }
 @container style(--ld-contrast: high) {
   [data-theme$="-hc"] .ld-list-body { box-shadow: 0 0 0 1px var(--input); }
@@ -311,10 +309,10 @@
 .ld-row-wrap { position: relative; overflow: hidden; }
 .ld-row-wrap + .ld-row-wrap::before {
   content: ""; position: absolute; z-index: 3; top: 0; right: 0; left: var(--ld-row-inset, var(--space-4));
-  border-top: var(--look-hairline) solid var(--border);
+  border-top: var(--stroke-hairline) solid var(--border);
 }
 @container style(--ld-contrast: high) {
-  [data-theme$="-hc"] .ld-row-wrap + .ld-row-wrap::before { border-top-width: 1px; }
+  [data-theme$="-hc"] .ld-row-wrap + .ld-row-wrap::before { border-top-width: max(1px, var(--stroke-hairline)); }
 }
 /* Beside a leading slot or a Checkbox, the line between rows starts where the title does. */
 .ld-row-lead { --ld-row-inset: calc(var(--space-4) + var(--size-leading) + var(--space-3)); }
@@ -500,7 +498,7 @@
 .ld-menu-item-critical[data-highlighted] { color: var(--ld-destructive-on-tint); }
 
 /* Disclosure — Base UI Collapsible: a `<section>`, `heading > <button aria-expanded>` and a `hidden="until-found"` panel */
-.ld-disc { background: var(--card); color: var(--card-foreground); border-radius: var(--radius-lg); font-family: var(--font-sans); box-shadow: var(--look-surface-edge); }
+.ld-disc { background: var(--card); color: var(--card-foreground); border-radius: var(--radius-lg); font-family: var(--font-sans); box-shadow: var(--edge-surface); }
 @container style(--ld-contrast: high) {
   [data-theme$="-hc"] .ld-disc { box-shadow: 0 0 0 1px var(--input); }
 }
@@ -544,9 +542,9 @@
 .ld-disc-panel[data-starting-style], .ld-disc-panel[data-ending-style] { height: 0; }
 .ld-disc-body { padding: 0 var(--space-4) var(--space-4); }
 .ld-disc + .ld-disc { margin-top: var(--space-2); }
-.ld-disc-plain + .ld-disc-plain { margin-top: 0; border-top: var(--look-hairline) solid var(--border); }
+.ld-disc-plain + .ld-disc-plain { margin-top: 0; border-top: var(--stroke-hairline) solid var(--border); }
 @container style(--ld-contrast: high) {
-  [data-theme$="-hc"] .ld-disc-plain + .ld-disc-plain { border-top-width: 1px; }
+  [data-theme$="-hc"] .ld-disc-plain + .ld-disc-plain { border-top-width: max(1px, var(--stroke-hairline)); }
 }
 .ld-disc .ld-disc { background: var(--muted); }
 /* Concentric: a list inside a Disclosure sits `--space-2` from the edge, so `--radius-lg` − `--space-2` = `--radius-md`. */
@@ -707,12 +705,12 @@
 .ld-table-toggle[aria-expanded="false"] .ld-table-toggle-chevron { transform: none; }
 .ld-table-th, .ld-table-td, .ld-table-rowheader {
   height: var(--ld-table-hit); padding: 0 var(--space-3); box-sizing: border-box; text-align: start; vertical-align: middle;
-  border-bottom: var(--look-hairline) solid var(--border); overflow-wrap: anywhere; background-clip: padding-box;
+  border-bottom: var(--stroke-hairline) solid var(--border); overflow-wrap: anywhere; background-clip: padding-box;
 }
 .ld-table-row > :first-child { padding-left: var(--space-4); }
 .ld-table-row > :last-child { padding-right: var(--space-4); }
 @container style(--ld-contrast: high) {
-  [data-theme$="-hc"] .ld-table-th, [data-theme$="-hc"] .ld-table-td, [data-theme$="-hc"] .ld-table-rowheader { border-bottom: 1px solid var(--input); }
+  [data-theme$="-hc"] .ld-table-th, [data-theme$="-hc"] .ld-table-td, [data-theme$="-hc"] .ld-table-rowheader { border-bottom: max(1px, var(--stroke-hairline)) solid var(--input); }
 }
 .ld-table-body .ld-table-row:last-child > * { border-bottom: 0; }
 .ld-table-th {

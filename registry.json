@@ -35,6 +35,89 @@
       ]
     },
     {
+      "name": "look-skeuo",
+      "type": "registry:style",
+      "title": "Look: Skeuomorphic",
+      "description": "Things that look like the objects they stand for: light from above, bevels, wells and a linen ground. A look over Lede's components: import `styles/lede/looks/skeuo.css` after Lede's index.css, then set `<ThemeProvider look=\"skeuo\">` (or `data-look=\"skeuo\"` on a theme root). High contrast keeps Lede's -hc palette, and an accent picked on a provider still replaces the look's.",
+      "meta": {
+        "stability": "experimental"
+      },
+      "registryDependencies": [
+        "@lede/lede-theme",
+        "@lede/theme-provider"
+      ],
+      "files": [
+        {
+          "path": "registry/lede/looks/skeuo.css",
+          "type": "registry:file",
+          "target": "styles/lede/looks/skeuo.css"
+        },
+        {
+          "path": "registry/lede/looks/skeuo.tokens.css",
+          "type": "registry:file",
+          "target": "styles/lede/looks/skeuo.tokens.css"
+        }
+      ]
+    },
+    {
+      "name": "look-brutal",
+      "type": "registry:style",
+      "title": "Look: Neo-brutalist",
+      "description": "Raw structure, shown on purpose: thick outlines, hard offset shadows, flat loud fills and no curves. A look over Lede's components: import `styles/lede/looks/brutal.css` after Lede's index.css, then set `<ThemeProvider look=\"brutal\">` (or `data-look=\"brutal\"` on a theme root). High contrast keeps Lede's -hc palette, and an accent picked on a provider still replaces the look's.",
+      "meta": {
+        "stability": "experimental"
+      },
+      "registryDependencies": [
+        "@lede/lede-theme",
+        "@lede/theme-provider"
+      ],
+      "files": [
+        {
+          "path": "registry/lede/looks/brutal.css",
+          "type": "registry:file",
+          "target": "styles/lede/looks/brutal.css"
+        },
+        {
+          "path": "registry/lede/looks/brutal.tokens.css",
+          "type": "registry:file",
+          "target": "styles/lede/looks/brutal.tokens.css"
+        }
+      ],
+      "dependencies": [
+        "@fontsource-variable/space-grotesk@5.3.0"
+      ]
+    },
+    {
+      "name": "look-broadsheet",
+      "type": "registry:style",
+      "title": "Look: Broadsheet",
+      "description": "A newspaper page: a reading serif, a grotesque for the paper\u2019s own voice, ink on newsprint and rules instead of boxes. A look over Lede's components: import `styles/lede/looks/broadsheet.css` after Lede's index.css, then set `<ThemeProvider look=\"broadsheet\">` (or `data-look=\"broadsheet\"` on a theme root). High contrast keeps Lede's -hc palette, and an accent picked on a provider still replaces the look's.",
+      "meta": {
+        "stability": "experimental"
+      },
+      "registryDependencies": [
+        "@lede/lede-theme",
+        "@lede/theme-provider"
+      ],
+      "files": [
+        {
+          "path": "registry/lede/looks/broadsheet.css",
+          "type": "registry:file",
+          "target": "styles/lede/looks/broadsheet.css"
+        },
+        {
+          "path": "registry/lede/looks/broadsheet.tokens.css",
+          "type": "registry:file",
+          "target": "styles/lede/looks/broadsheet.tokens.css"
+        }
+      ],
+      "dependencies": [
+        "@fontsource-variable/newsreader@5.3.0",
+        "@fontsource-variable/libre-franklin@5.3.0",
+        "@fontsource/unifrakturmaguntia@5.3.0"
+      ]
+    },
+    {
       "name": "lede-utils",
       "type": "registry:lib",
       "title": "Lede utils",

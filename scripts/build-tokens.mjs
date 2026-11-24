@@ -1,6 +1,7 @@
 // tokens/tokens.json is the single source. This writes src/styles/lede.tokens.css (used by the site)
-// and registry/lede/lede.tokens.css (shipped by the lede-theme registry item). Never edit either by hand.
-import { readFileSync, writeFileSync } from 'node:fs';
+// and registry/lede/lede.tokens.css (shipped by the lede-theme registry item), and one file per look in
+// registry/lede/looks/<id>.tokens.css (each imported by that look's registry file). Never edit any of them by hand.
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 
 const t = JSON.parse(readFileSync('tokens/tokens.json', 'utf8'));
 const themes = t.color.themes.map((x) => x.id);
@@ -54,6 +55,7 @@ const families = [
   type,
 ];
 for (const [name, fam] of Object.entries(t)) {
+  if (name === 'looks') continue;
   if ((fam.attribute || fam.options) && !(fam.attribute && fam.options?.length && families.some((f) => f.name === name))) {
     throw new Error(`tokens.json: ${name} needs attribute, options and tokens together`);
   }
@@ -73,6 +75,11 @@ for (const fam of families.filter((f) => f.attribute)) {
 
 const root = [];
 const reduced = [];
+// A token whose default names another token isn't declared. Components read it as `var(--font-ui, var(--font-sans))`,
+// so the default resolves where it's used and follows a nested ThemeProvider's `font-sans`, while a value someone sets
+// for the token itself, on :root or on any provider, still inherits. A declaration would do one or the other: on
+// `:root` alone it resolves once, at the top, and on every theme root it would undo a value set further up.
+const namesToken = (v) => typeof v === 'string' && (isAlias(v) || v.includes('var(--'));
 for (const { options = [], tokens, emit } of families) {
   for (const { name, value, reducedMotion } of tokens) {
     if (typeof value !== 'string' && (!options.length || String(Object.keys(value)) !== String(options))) {
@@ -80,6 +87,10 @@ for (const { options = [], tokens, emit } of families) {
     }
     if (reducedMotion && typeof value !== 'string') throw new Error(`tokens.json: ${name} is keyed, so it can't take a reducedMotion value`);
     if (emit === false) continue;
+    if (namesToken(value)) {
+      if (reducedMotion) throw new Error(`tokens.json: ${name} names another token, so it isn't declared and can't take a reducedMotion value`);
+      continue;
+    }
     root.push(`  --${name}: ${typeof value === 'string' ? css(value) : value[options[0]]};`);
     if (reducedMotion) reduced.push(`    --${name}: ${reducedMotion} !important;`);
   }
@@ -143,4 +154,72 @@ out.push(
 const text = out.join('\n');
 writeFileSync('src/styles/lede.tokens.css', text);
 writeFileSync('registry/lede/lede.tokens.css', text);
-console.log(`tokens: ${t.color.tokens.length} colors × ${themes.length} themes`);
+
+// Looks: a theme root's `data-look` (ThemeProvider's `look`) sets token values, one block per theme it reaches, each
+// [data-theme][data-look] like the shape and density axes, so a look beats the theme blocks and, coming after them in
+// the page, the axes. A color, shadow or ground texture applies in its scheme's standard theme only: high contrast keeps Lede's -hc
+// palette unless the look gives `light-hc` or `dark-hc`. Every other value applies in both of its scheme's themes.
+const { looks } = t;
+const PALETTE = new Set(THEMED.flatMap((fam) => t[fam].tokens.map((tk) => tk.name)));
+const KNOWN = new Set([
+  ...PALETTE,
+  ...families.flatMap((fam) => fam.tokens.map((tk) => tk.name)),
+  ...Object.keys(t.type.families).map((k) => `font-${k}`),
+]);
+// Each token's own value, for the reset below: what `:root` declares, or `initial` for one that isn't declared, so a
+// read falls back to its default.
+const ROOT_VALUE = new Map([
+  ...families.flatMap((fam) => fam.tokens.map((tk) => [tk.name, typeof tk.value !== 'string' ? tk.value[fam.options[0]] : namesToken(tk.value) ? 'initial' : css(tk.value)])),
+  ...Object.entries(t.type.families).map(([k, v]) => [`font-${k}`, v]),
+]);
+// High contrast drops a look's colors, shadows and ground texture, the way Lede's -hc themes keep a plain ground.
+const STANDARD_ONLY = new Set([...PALETTE, 'texture-ground']);
+const LOOK_THEMES = { all: null, light: 'light', dark: 'dark', 'light-hc': 'light-hc', 'dark-hc': 'dark-hc' };
+mkdirSync('registry/lede/looks', { recursive: true });
+for (const [id, look] of Object.entries(looks?.options ?? {})) {
+  if (!/^[a-z][a-z0-9-]*$/.test(id) || id === 'lede') throw new Error(`tokens.json: looks.${id} needs a lowercase name other than lede`);
+  const blocks = [];
+  const line = ([name, value]) => `  --${name}: ${value === 'initial' ? value : css(value)};`;
+  for (const key of Object.keys(look.values)) {
+    if (!(key in LOOK_THEMES)) throw new Error(`tokens.json: looks.${id}.values.${key} isn't one of ${Object.keys(LOOK_THEMES).join(', ')}`);
+  }
+  // Blocks go out in LOOK_THEMES order, whatever order tokens.json lists them in, so a later theme wins a tie.
+  for (const key of Object.keys(LOOK_THEMES).filter((k) => k in look.values)) {
+    const values = look.values[key];
+    for (const name of Object.keys(values)) {
+      if (!KNOWN.has(name)) throw new Error(`tokens.json: looks.${id}.values.${key} sets ${name}, which no token family names`);
+    }
+    const entries = Object.entries(values);
+    const at = (theme) => `[data-theme${theme ? `="${theme}"` : ''}][data-look="${id}"]`;
+    const scheme = LOOK_THEMES[key];
+    if (!scheme) blocks.push([at(null), entries]);
+    else if (scheme.endsWith('-hc')) blocks.push([at(scheme), entries]);
+    else {
+      blocks.push([`[data-theme^="${scheme}"][data-look="${id}"]`, entries.filter(([name]) => !STANDARD_ONLY.has(name))]);
+      blocks.push([at(scheme), entries.filter(([name]) => STANDARD_ONLY.has(name))]);
+    }
+  }
+  // High contrast drops a look's ground texture as it drops its colors, but no -hc block declares the texture again, so
+  // an -hc root inside a standard one with this look puts back Lede's.
+  const standardOnly = [...new Set(['light', 'dark'].flatMap((key) => Object.keys(look.values[key] ?? {})).filter((name) => STANDARD_ONLY.has(name) && !PALETTE.has(name)))];
+  for (const scheme of ['light-hc', 'dark-hc']) {
+    const own = look.values[scheme] ?? {};
+    blocks.push([`[data-theme="${scheme}"][data-look="${id}"]`, standardOnly.filter((name) => !(name in own) && !(name in (look.values.all ?? {}))).map((name) => [name, ROOT_VALUE.get(name)])]);
+  }
+  // The theme root that turns this look off, with another look or `lede`, puts back Lede's value for each token this look
+  // sets and the theme blocks don't reset (colors and shadows they do), so nothing of this look leaks into it. The
+  // @scope stops below that root, so a provider further in inherits from it as usual. :where() weighs nothing, so the
+  // root's own shape, density and `tokens` still win; it beats only the inherited value.
+  const leaks = [...new Set(Object.values(look.values).flatMap((values) => Object.keys(values)).filter((name) => !PALETTE.has(name)))];
+  const reset = leaks.length ? [
+    `@scope ([data-look="${id}"]) to ([data-look]:not([data-look="${id}"]) [data-theme]) {\n  :where([data-theme][data-look]:not([data-look="${id}"])) {\n${leaks.map((name) => `  ${line([name, ROOT_VALUE.get(name)])}`).join('\n')}\n  }\n}`,
+  ] : [];
+  const body = [...reset, ...blocks.filter(([, entries]) => entries.length).map(([selector, entries]) => `${selector} {\n${entries.map(line).join('\n')}\n}`)];
+  writeFileSync(`registry/lede/looks/${id}.tokens.css`, [
+    `/* Lede look "${id}" (${look.name}) — GENERATED from tokens/tokens.json by scripts/build-tokens.mjs. Do not edit. */`,
+    '',
+    body.join('\n\n'),
+    '',
+  ].join('\n'));
+}
+console.log(`tokens: ${t.color.tokens.length} colors × ${themes.length} themes, ${Object.keys(looks?.options ?? {}).length} looks`);

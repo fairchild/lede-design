@@ -87,7 +87,7 @@ function FamilyTable({ name, family }: { name: string; family: Family }) {
             <tr key={t.name}>
               <th scope="row"><code>--{t.name}</code></th>
               {(columns ?? [undefined]).map((option) => (
-                <td key={option ?? 'value'}>{option || typeof t.value === 'string' ? <code>{twin ? cssValue(String(valueIn(t.value, option))) : valueIn(t.value, option)}</code> : 'Per theme'}</td>
+                <td key={option ?? 'value'}>{option || typeof t.value === 'string' ? <code>{cssValue(String(valueIn(t.value, option)))}</code> : 'Per theme'}</td>
               ))}
               {reduced ? <td>{t.reducedMotion ? <code>{t.reducedMotion}</code> : null}</td> : null}
               {preview ? <td><span className={preview.className} style={preview.style(t.name)} /></td> : null}

@@ -124,26 +124,26 @@ const LOOK_DETAILS: Look[] = [
   },
 ];
 
-const LOOK_TOKENS = tokens.look.tokens;
-const RECIPE = `/* 1. Colors and the other theme tokens, light and dark. */
-[data-look="mine"] .ld-theme[data-theme] {
-  --preset-blue: #b0161e;           /* the default accent */
-  --background-grouped: #f8f4ea;
+// What a look sets beyond color, size and type: the two strokes it can thicken, the slot tokens and the lettering.
+const LOOK_TOKENS = [
+  ...tokens.stroke.tokens.filter((t) => t.name === 'stroke-hairline' || t.name === 'stroke-input'),
+  ...tokens.slot.tokens,
+  ...tokens.lettering.tokens,
+];
+const RECIPE = `/* Generated from tokens.json's \`looks\`, one block per theme the values reach. */
+[data-theme][data-look="mine"] {
   --radius: 0px;
   --font-sans: "Newsreader Variable", Georgia, serif;
-
-  /* 2. The look-* tokens: what changes beyond color and size. */
-  --look-ui-font: "Libre Franklin Variable", sans-serif;
-  --look-surface-edge: inset 0 2px 0 var(--foreground);
-  --look-press: none;
-  --look-label-case: uppercase;
+  --font-ui: "Libre Franklin Variable", sans-serif;
+  --press-transform: none;
+  --case-label: uppercase;
 }
-[data-look="mine"] .ld-theme[data-theme^="dark"] {
-  --preset-blue: #ff7a6b;
-  --background-grouped: #15120f;
-}
+[data-theme^="light"][data-look="mine"] { --edge-surface: inset 0 2px 0 #1a1714; }
+[data-theme="light"][data-look="mine"] { --primary: #b0161e; --background-grouped: #f8f4ea; }
+[data-theme^="dark"][data-look="mine"] { --edge-surface: inset 0 2px 0 #ece4d4; }
+[data-theme="dark"][data-look="mine"] { --primary: #ff7a6b; --background-grouped: #15120f; }
 
-/* 3. Only what no token reaches. Each rule here is a request for a token. */`;
+/* Then, in the app: <ThemeProvider look="mine">. */`;
 
 const Usage = ({ text }: { text: string }) => <>{text.split(/`([^`]+)`/).map((part, i) => (i % 2 ? <code key={i}>{part}</code> : part))}</>;
 
@@ -211,18 +211,30 @@ export function Looks() {
         </Disclosure>
       </section>
 
+      <section aria-labelledby="install" className="docs-section">
+        <h2 id="install" className="text-title-3 docs-target">Install a look</h2>
+        <p className="docs-intro">Each look is a registry item that brings its tokens, its few rules of its own and its faces. Looks are new in this release, and their values may still change.</p>
+        <CodeExample label="Add Neo-brutalist" language="shell" code={'npx shadcn@latest add @lede/look-brutal'} />
+        <ol className="docs-steps">
+          <li><p>Import <code>styles/lede/looks/brutal.css</code> after Lede’s <code>index.css</code>. It imports its faces from Fontsource, and a browser downloads a face only once a page draws text in it.</p></li>
+          <li><p>Set <code>{'<ThemeProvider look="brutal">'}</code> where the look applies, often the root.</p></li>
+        </ol>
+        <p className="docs-note">The items are <code>@lede/look-skeuo</code>, <code>@lede/look-brutal</code> and <code>@lede/look-broadsheet</code>.</p>
+      </section>
+
       <section aria-labelledby="make" className="docs-section">
         <h2 id="make" className="text-title-3 docs-target">Make a look</h2>
         <ol className="docs-steps">
-          <li><p>Set <code>data-look</code> on <code>{'<html>'}</code>, or on any ancestor of your ThemeProvider.</p></li>
-          <li><p>Set the theme tokens under <code>[data-look] .ld-theme[data-theme]</code>, once for light and again for dark. ThemeProvider sets <code>--primary</code> from the accent preset, so set the preset, such as <code>--preset-blue</code>.</p></li>
-          <li><p>Set the <code>look-*</code> tokens for edges, depth, sheen, the pressed state, letter case, the interface’s face and texture. A value that names a color goes in the same block as the colors, so it follows light and dark.</p></li>
-          <li><p>Write CSS for anything left, and keep it short. Each rule is a gap in the tokens.</p></li>
+          <li><p>Add the look to <code>looks</code> in <code>tokens.json</code>: values under <code>all</code> for every theme, and under <code>light</code> and <code>dark</code> for each scheme. A color or shadow there applies in the standard theme only, so high contrast keeps Lede’s -hc palette unless the look gives <code>light-hc</code> or <code>dark-hc</code>.</p></li>
+          <li><p>Set <code>primary</code> for the look’s accent. An accent a person picks still replaces it.</p></li>
+          <li><p>Use the slot, lettering and stroke tokens for edges, depth, sheen, the pressed state, letter case, the interface’s face and texture.</p></li>
+          <li><p>Turn it on with <code>{'<ThemeProvider look="mine">'}</code>, or <code>data-look</code> on a theme root in plain HTML. Nested providers and their overlays inherit it, and <code>look="lede"</code> turns it off.</p></li>
+          <li><p>Write CSS for anything left in an <code>{'@scope ([data-look="mine"]) to ([data-theme]:not([data-look="mine"]))'}</code>, so it stops at a provider with another look, and keep it short. Each rule is a gap in the tokens.</p></li>
         </ol>
-        <CodeExample label="A look’s CSS" language="css" code={RECIPE} />
-        <Scroll label="The look tokens">
+        <CodeExample label="What the token build writes for a look" language="css" code={RECIPE} />
+        <Scroll label="Tokens a look sets">
           <table className="docs-table">
-            <caption>The <code>look-*</code> tokens. Each default draws Lede’s own look.</caption>
+            <caption>Tokens a look sets beyond color, size and type. Each default draws Lede’s own look.</caption>
             <thead><tr><th scope="col">Token</th><th scope="col">Default</th><th scope="col">What it changes</th></tr></thead>
             <tbody>{LOOK_TOKENS.map((t) => <tr key={t.name}><th scope="row"><code>--{t.name}</code></th><td><code>{/^\{.+\}$/.test(t.value) ? `var(--${t.value.slice(1, -1)})` : t.value}</code></td><td><Usage text={t.usage} /></td></tr>)}</tbody>
           </table>
