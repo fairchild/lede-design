@@ -11,7 +11,7 @@ For Claude Code, install the `lede-design-system` skill of this release into the
 
 ```bash
 mkdir -p .claude/skills/lede-design-system
-curl -fsSL https://raw.githubusercontent.com/fairchild/lede-design/v0.7.2/.claude/skills/lede-design-system/SKILL.md \
+curl -fsSL https://raw.githubusercontent.com/fairchild/lede-design/v0.8.0/.claude/skills/lede-design-system/SKILL.md \
   -o .claude/skills/lede-design-system/SKILL.md
 ```
 
@@ -53,7 +53,7 @@ in an app made with create-vite. Lede's CSS runs in Chrome and Edge 111, Safari 
    don't install it.
 
    ```bash
-   npx shadcn@latest registry add '@lede=https://lede.cloudcompute.com/r/v0.7.2/{name}.json'
+   npx shadcn@latest registry add '@lede=https://lede.cloudcompute.com/r/v0.8.0/{name}.json'
    npx shadcn@latest add @lede/theme-provider @lede/list
    ```
 
@@ -206,7 +206,7 @@ download from ui.shadcn.com, so write this file by hand where that site is out o
   "rsc": false,
   "tailwind": { "css": "src/index.css", "baseColor": "" },
   "aliases": { "components": "@/components", "utils": "@/lib/utils" },
-  "registries": { "@lede": "https://lede.cloudcompute.com/r/v0.7.2/{name}.json" }
+  "registries": { "@lede": "https://lede.cloudcompute.com/r/v0.8.0/{name}.json" }
 }
 ```
 
@@ -218,7 +218,7 @@ download from ui.shadcn.com, so write this file by hand where that site is out o
   them if you add those.
 - Where lede.cloudcompute.com is out of reach too, point `@lede` at the copy of each release on GitHub, the
   `registry` branch of this repo:
-  `https://raw.githubusercontent.com/fairchild/lede-design/registry/r/v0.7.2/{name}.json`.
+  `https://raw.githubusercontent.com/fairchild/lede-design/registry/r/v0.8.0/{name}.json`.
 
 ## Tailwind and Lede's classes
 

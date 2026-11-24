@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## 0.8.0
+
+Looks ship: a whole visual style over the same components, set with <ThemeProvider look>. Skeuomorphic, Neo-brutalist
+and Broadsheet come as @lede/look-* registry items and pass the same contrast, forced-colours and focus gates as Lede.
+The registry for this release is `https://lede.cloudcompute.com/r/v0.8.0/{name}.json`.
 
 ### Added
 
