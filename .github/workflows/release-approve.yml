@@ -66,7 +66,7 @@ jobs:
           if [ -z "$PREVIEW_HOST" ]; then
             echo "::warning title=No preview::PREVIEW_HOST isn't set, so no smoke test gates this release."
           else
-            read -r pv_id pv_status _ pv_at < <(gh api \
+            read -r pv_id pv_status pv_conclusion pv_at < <(gh api \
               "repos/$GITHUB_REPOSITORY/actions/workflows/deploy-preview.yml/runs?branch=develop&head_sha=$SHA" \
               --jq ".workflow_runs[0] // empty | $fields") || true
             smoke=none
@@ -74,6 +74,8 @@ jobs:
               smoke=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$pv_id/jobs" \
                 --jq '[.jobs[] | select(.name == "Smoke-test the preview")][0] // {} | .conclusion // .status // "none"')
             fi
+            # A deploy that failed skips smoke too, so its own failure is reported as the preview's.
+            case ${pv_conclusion:-none} in failure|cancelled|timed_out) smoke=$pv_conclusion ;; esac
             case $smoke in
               success) ;;
               skipped)
@@ -82,7 +84,7 @@ jobs:
                 echo "::error title=The preview wasn't deployed::The preview at ${SHA::7} was skipped, so its smoke test never ran. Fix the deploy (docs/releasing.md, No approval request came) and re-run Deploy develop to the preview site."
                 exit 1 ;;
               failure|cancelled|timed_out)
-                echo "::notice title=The preview failed::The preview's smoke test at ${SHA::7} is $smoke. Re-run its failed jobs, or push a fix to develop; a run that passes asks."
+                echo "::notice title=The preview failed::The preview at ${SHA::7} is $smoke. Re-run its failed jobs, or push a fix to develop; a run that passes asks."
                 exit 0 ;;
               *)
                 echo "::notice title=Waiting for the preview::The preview's smoke test at ${SHA::7} is $smoke${pv_status:+ (run $pv_status)}; it asks once it passes."
