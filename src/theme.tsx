@@ -25,12 +25,15 @@ function readAxes(params: URLSearchParams): Axes {
   return Object.fromEntries(Object.entries(AXES).map(([name, values]) => [name, readView(params, name, values, values[0])])) as Axes;
 }
 
-/** The Settings → Appearance flow speaks in prefs; this is the one place they meet the URL's axes. */
-const toPrefs = (a: Axes): AppearancePrefs => ({
-  scheme: a.scheme, highContrast: a.contrast === 'high', accent: a.accent, shape: a.shape, compact: a.density === 'compact', solidGlass: a.glass === 'solid',
+/**
+ * The Settings → Appearance flow speaks in prefs; this is the one place they meet the URL's axes. Under a look, an
+ * accent not in the URL is unset, so the look's own accent shows and the picker checks none. Without a look, it's Blue.
+ */
+const toPrefs = (a: Axes, accent: Axes['accent'] | undefined): AppearancePrefs => ({
+  scheme: a.scheme, highContrast: a.contrast === 'high', accent, shape: a.shape, compact: a.density === 'compact', solidGlass: a.glass === 'solid',
 });
-const toAxes = (p: AppearancePrefs): Axes => ({
-  scheme: p.scheme, contrast: p.highContrast ? 'high' : 'auto', accent: p.accent, shape: p.shape, density: p.compact ? 'compact' : 'regular', glass: p.solidGlass ? 'solid' : 'regular',
+const toAxes = (p: AppearancePrefs): Omit<Axes, 'accent'> => ({
+  scheme: p.scheme, contrast: p.highContrast ? 'high' : 'auto', shape: p.shape, density: p.compact ? 'compact' : 'regular', glass: p.solidGlass ? 'solid' : 'regular',
 });
 
 const Ctx = React.createContext<{ prefs: AppearancePrefs; setPrefs: (p: AppearancePrefs) => void } | null>(null);
@@ -41,21 +44,21 @@ export function AppearanceRoot({ children }: { children: React.ReactNode }) {
   const setParams = useSetViewParams();
   const axes = readAxes(params);
   const look = useLook();
+  // The accent the URL picks, if any. An unknown one reads as none.
+  const picked = (presets as readonly string[]).includes(params.get('accent') ?? '') ? axes.accent : undefined;
+  const accent = look === 'lede' ? axes.accent : picked;
   const setPrefs = React.useCallback((p: AppearancePrefs) => {
-    const next = toAxes(p);
-    const shown = readAxes(params);
-    setParams(Object.fromEntries(Object.entries(AXES).map(([name, values]) => {
-      const value = next[name as keyof Axes];
-      // Under a look, an accent that's picked stays in the URL even when it's Blue, the default, since leaving it out
-      // shows the look's own accent. One that didn't change stays as it was.
-      if (name === 'accent' && look !== 'lede') return [name, value === shown.accent && !params.has('accent') ? null : value];
-      return [name, value === values[0] ? null : value];
-    })));
-  }, [setParams, params, look]);
+    const next: Record<string, string | null> = Object.fromEntries(Object.entries(toAxes(p)).map(([name, value]) => (
+      [name, value === AXES[name as keyof Axes][0] ? null : value]
+    )));
+    // Under a look, a picked accent stays in the URL even when it's Blue, the default, since leaving it out shows the
+    // look's own accent. An unset one stays out.
+    next.accent = !p.accent || (look === 'lede' && p.accent === AXES.accent[0]) ? null : p.accent;
+    setParams(next);
+  }, [setParams, look]);
   return (
-    <Ctx.Provider value={{ prefs: toPrefs(axes), setPrefs }}>
-      {/* An accent not in the URL stays unset, so a look's own accent shows until one is picked. */}
-      <ThemeProvider className="app-root" surface="grouped" {...axes} accent={(presets as readonly string[]).includes(params.get('accent') ?? '') ? axes.accent : undefined} look={look}>
+    <Ctx.Provider value={{ prefs: toPrefs(axes, accent), setPrefs }}>
+      <ThemeProvider className="app-root" surface="grouped" {...axes} accent={picked} look={look}>
         {children}
       </ThemeProvider>
     </Ctx.Provider>

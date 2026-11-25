@@ -28,7 +28,7 @@ function Block({ id, item, title, summary, children }: { id: string; item: strin
 }
 
 export function Blocks() {
-  const [accent, setAccent] = React.useState<Preset>(useAppearance().prefs.accent);
+  const [accent, setAccent] = React.useState<Preset | undefined>(useAppearance().prefs.accent);
   return (
     <div className="ld-flow">
       <PageHeader title="Blocks" summary="The larger parts of a screen, page layouts among them, each one a registry item. Daybook, the demo app, is built from them." />

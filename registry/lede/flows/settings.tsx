@@ -60,7 +60,8 @@ export function SettingsFlow(props: SettingsFlowProps) {
 export interface AppearancePrefs {
   scheme: 'auto' | 'light' | 'dark';
   highContrast: boolean;
-  accent: Preset;
+  /** Unset when the theme's own accent shows, such as a look's: the picker then checks none. */
+  accent?: Preset;
   shape: 'soft' | 'crisp' | 'square';
   compact: boolean;
   solidGlass: boolean;
@@ -78,7 +79,7 @@ const cap = (s: string) => s[0].toUpperCase() + s.slice(1);
 
 /** Summary line for the Appearance row and header, such as "Automatic · Blue · Soft corners". */
 export function describeAppearance(p: AppearancePrefs) {
-  return [SCHEME_LABEL[p.scheme], cap(p.accent), `${SHAPE_LABEL[p.shape]} corners`, p.highContrast ? 'High contrast' : null]
+  return [SCHEME_LABEL[p.scheme], p.accent ? cap(p.accent) : 'Default accent', `${SHAPE_LABEL[p.shape]} corners`, p.highContrast ? 'High contrast' : null]
     .filter(Boolean)
     .join(' · ');
 }
