@@ -7,6 +7,7 @@ on:
     branches: [main]
     tags: ['v*']
 permissions:
+  actions: read
   contents: read
   checks: read
 # One queue per ref type, never cancelled: a tag run waits behind another tag run, and a main push can't replace a
@@ -25,6 +26,12 @@ jobs:
     # The secrets are the environment's. It admits main, v* tags and develop, whose deploy-preview.yml deploys the
     # preview Worker and checks the R2 keys by writing ci/credentials-check.
     environment: cloudflare
+    # What the production smoke test checks the live site against, set only when this run deployed it.
+    outputs:
+      deployed: ${{ steps.deploy.outputs.deployed }}
+      entry: ${{ steps.built.outputs.entry }}
+      registry: ${{ steps.built.outputs.registry }}
+      llms: ${{ steps.built.outputs.llms }}
     # Two credentials, each with only what its steps need. CLOUDFLARE_API_TOKEN deploys the Worker and uploads preview
     # versions, through wrangler, and needs no R2 access. R2_ACCESS_KEY_ID and R2_SECRET_ACCESS_KEY are an R2 API
     # token's keys, Object Read & Write on the lede-design bucket alone, which publish-r2.mjs uses for the registries.
@@ -131,12 +138,19 @@ jobs:
             [ "$status" -eq 3 ] || exit "$status"
             echo "::warning::r/$GITHUB_REF_NAME was already in R2 and was left as it was."
           }
+      - name: Record what this build serves
+        id: built
+        if: steps.plan.outputs.deploy == 'true'
+        run: bash smoke/build-facts.sh | tee -a "$GITHUB_OUTPUT"
       - name: Deploy
+        id: deploy
         if: steps.plan.outputs.deploy == 'true'
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        run: npx wrangler deploy --message "$GITHUB_REF_NAME"
+        run: |
+          npx wrangler deploy --message "$GITHUB_REF_NAME"
+          echo "deployed=true" >> "$GITHUB_OUTPUT"
 
       - name: Publish the next registry to R2
         if: steps.plan.outputs.publish == 'true' && github.ref_type == 'branch'
@@ -159,3 +173,68 @@ jobs:
             echo
             echo "${url:-Wrangler reported no preview URL.}"
           } >> "$GITHUB_STEP_SUMMARY"
+
+  # Reads production back once it serves the release, with the same smoke tests the preview passed before approval
+  # (smoke/), and compares screenshots of key pages with the ones the preview recorded for the released commit. A
+  # failure here doesn't undo the deploy: it says production differs from what was approved, and the run's
+  # smoke-results artifact holds the diffs. It needs no secrets, so "Re-run failed jobs" retries it alone.
+  smoke:
+    name: Smoke-test production
+    needs: deploy
+    if: needs.deploy.outputs.deployed == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      # The release is a merge of develop into main, so its second parent is the develop commit the preview showed.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with: { fetch-depth: 2, persist-credentials: false }
+      - name: Find the preview's screenshots of the released commit
+        id: baseline
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          develop=$(git rev-parse -q --verify 'HEAD^2' || true)
+          run=''
+          if [ -n "$develop" ]; then
+            for id in $(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/deploy-preview.yml/runs?branch=develop&head_sha=$develop" --jq '.workflow_runs[].id'); do
+              smoke=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$id/jobs" \
+                --jq '[.jobs[] | select(.name == "Smoke-test the preview")][0].conclusion // ""')
+              if [ "$smoke" = success ]; then run=$id; break; fi
+            done
+          fi
+          if [ -z "$run" ]; then
+            echo "::warning title=Nothing to compare::No passing preview smoke run of ${develop:0:7} (the release's develop commit) was found, so production is smoke-tested without comparing screenshots. A hotfix released straight from main has none."
+            exit 0
+          fi
+          echo "run=$run" >> "$GITHUB_OUTPUT"
+          echo "Comparing with the preview's screenshots from run $run, of ${develop::7}."
+      - if: steps.baseline.outputs.run
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: preview-screenshots
+          path: smoke-screenshots
+          run-id: ${{ steps.baseline.outputs.run }}
+          github-token: ${{ github.token }}
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - id: playwright
+        run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-chromium-${{ runner.os }}-${{ steps.playwright.outputs.version }}
+      - run: npx playwright install --with-deps chromium
+      - name: Smoke-test production
+        env:
+          SMOKE_URL: https://lede.cloudcompute.com
+          SMOKE_ENTRY: ${{ needs.deploy.outputs.entry }}
+          SMOKE_REGISTRY_SHA256: ${{ needs.deploy.outputs.registry }}
+          SMOKE_LLMS_SHA256: ${{ needs.deploy.outputs.llms }}
+          SMOKE_SCREENSHOTS: ${{ steps.baseline.outputs.run && 'compare' || '' }}
+        run: npx playwright test -c playwright.smoke.config.ts
+      - if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: smoke-results
+          path: test-results
+          retention-days: 30

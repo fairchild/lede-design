@@ -6,7 +6,8 @@ publishes the release's registry and the site, and the mirror, which copies the 
 branch alone doesn't change lede.cloudcompute.com.
 
 With the release app and the `release` environment set up (see [Setting up](#setting-up)), a release takes one click
-from Michael: *Approve and deploy* on the approval GitHub sends him when the release pull request passes CI. Claude or
+from Michael: *Approve and deploy* on the approval GitHub sends him when the release pull request passes CI and its
+commit's preview passes the smoke tests. Claude or
 anyone else starts it with *Prepare a release*. Without the setup, the same steps work by hand, and each workflow says
 in its run that it stopped.
 
@@ -14,9 +15,9 @@ in its run that it stopped.
 | --- | --- | --- |
 | 1. Prepare the release | Anyone: *Prepare a release* in Actions (Claude can run it), or by hand | A commit on `develop` bumps the version and names the release in the CHANGELOG |
 | 2. Release pull request | `release-pr.yml` | Opens `develop` → `main` |
-| 3. Approve | Michael, one click | `release-approve.yml` asks once `check` is green, and merges with a merge commit when he approves |
+| 3. Approve | Michael, one click | `release-approve.yml` asks once `check` is green and the preview's smoke test passed on the same commit, and merges with a merge commit when he approves |
 | 4. Tag | `release-tag.yml` | Waits for `check` on `main`'s new head, then tags `vX.Y.Z` as the release app |
-| 5. Deploy | `deploy.yml` | Waits for `check` on the tagged commit, publishes `r/vX.Y.Z` to R2, deploys the site |
+| 5. Deploy | `deploy.yml` | Waits for `check` on the tagged commit, publishes `r/vX.Y.Z` to R2, deploys the site, then smoke-tests it and compares its key pages with the preview's screenshots |
 | 6. Mirror | `mirror-registry.yml` | Waits for `r/vX.Y.Z` on the site, copies it to the `registry` branch |
 
 ## 1. Prepare the release
@@ -48,11 +49,13 @@ new `## Unreleased` before the release pull request, or in the next release.
 When `develop`'s version moves ahead of `main`'s, *Open the release pull request* opens `release: $NEW` from `develop`
 into `main`, with the release's CHANGELOG section as its body. Without the app, open it by hand with that title.
 
-This is the human gate. When CI passes on the pull request, *Approve the release* waits on the `release` environment:
+This is the human gate. When CI passes on the pull request and the preview of the same commit passes its smoke tests
+(the *Smoke-test the preview* job in `deploy-preview.yml`, which reads the deployed site back), *Approve the release*
+waits on the `release` environment. The two finish in either order, and whichever finishes last asks:
 GitHub emails Michael, and the run's page (linked from the pull request's checks) shows *Review deployments*. Tick
 `release` and press *Approve and deploy*, and the job merges the pull request with a merge commit as the release app.
-*Reject* leaves it open. A push to `develop` while the request waits replaces it with a new one once CI passes again,
-and the merge names the commit CI passed on, so an approval never releases a commit CI didn't see.
+*Reject* leaves it open. A push to `develop` while the request waits replaces it with a new one once CI and the smoke
+test pass again, and the merge names the commit they passed on, so an approval never releases a commit they didn't see.
 
 To merge by hand instead, use a merge commit, not a squash, so `develop` and `main` keep one history. If a squash
 slips through, *Tag the release* warns, and `main` needs merging back into `develop`.
@@ -113,10 +116,18 @@ says (`npm run design-system`).
   creates it, or Michael pushes it.
 - **"Tag it by hand" or "Open it by hand" in a run's notices.** The release app's variable or secret isn't set. Set
   it up as below, then run the workflow again from the Actions tab, or do that step by hand.
-- **No approval request came.** CI hasn't passed on the release pull request's latest commit, or the run of *Approve
-  the release* failed: "no required reviewer" means the `release` environment isn't set up, and the merge was refused.
+- **No approval request came.** CI or the preview's smoke test hasn't passed on the release pull request's latest
+  commit (the runs of *Approve the release* say which, in their notices), or a run of it failed: "no required reviewer"
+  means the `release` environment isn't set up, and the merge was refused. "The preview wasn't deployed" means *Deploy
+  develop to the preview site* skipped its deploy, so the smoke test never ran: give the `cloudflare` environment
+  `CLOUDFLARE_API_TOKEN` and let it admit `develop`, then re-run that workflow. A smoke failure names the page or file
+  in the run; once it's fixed on the site, *Re-run failed jobs* runs the smoke test alone, without deploying again.
 - **`develop` disappeared after a release.** The *Protect release branches* ruleset isn't active. Recreate `develop`
   from `main` and import the ruleset, as in step 6 below.
+- **Smoke-test production failed.** The site is deployed, but differs from what the preview showed or doesn't serve a
+  page or file. The run names what failed, and its `smoke-results` artifact holds each screenshot diff. A screenshot
+  difference after a Chromium or runner update, with no change to the site, clears on the next release; anything else
+  is a fix on `develop` and a patch release (or `npx wrangler rollback` to go back first).
 - **Approve the release failed at the merge.** `develop` moved after the request (a newer request follows when its CI
   passes), or a rule on `main` stops the app: add it to that ruleset's bypass list.
 - **Tag the release failed with "Resource not accessible" or a rule violation.** The app isn't installed on the repo,

@@ -129,6 +129,22 @@ for (const look of LOOKS) {
   }
 }
 
+// Under a look with no accent picked, the look's own accent shows, so the picker checks none and the summary names no
+// preset. Picking one checks it. Without a look, Blue is the accent that shows, and it's checked.
+test('brutal · no accent picked checks no preset', async ({ page, isMobile }) => {
+  test.skip(isMobile, 'The picker is the same at every viewport.');
+  await page.goto('/app/settings/appearance?look=brutal&chrome=0');
+  const radios = page.getByRole('group', { name: 'Accent' }).getByRole('radio');
+  await expect(radios.first()).toBeVisible();
+  for (const radio of await radios.all()) await expect(radio).not.toBeChecked();
+  await expect(page.getByText('Default accent')).toBeVisible();
+  await page.getByRole('radio', { name: 'Teal' }).check();
+  await expect(page).toHaveURL(/[?&]accent=teal(&|$)/);
+  await expect(page.getByRole('radio', { name: 'Teal' })).toBeChecked();
+  await page.goto('/app/settings/appearance?chrome=0');
+  await expect(page.getByRole('radio', { name: 'Blue' })).toBeChecked();
+});
+
 // Under a look, no accent in the URL shows the look's own. Picking one, Blue included, keeps it in the URL, so Blue
 // replaces the look's accent as any other preset does.
 test('brutal · picking Blue replaces the look\'s accent', async ({ page, isMobile }) => {

@@ -1,5 +1,28 @@
 # Changelog
 
+## 0.8.1
+
+A fix for the accent picker under a look, and the first release checked by smoke tests on the preview before approval
+and on production after the deploy. The registry for this release is
+`https://lede.cloudcompute.com/r/v0.8.1/{name}.json`.
+
+### Changed
+
+- **Releases wait for the preview to pass smoke tests.** Each deploy of `develop` to the preview site now reads the site
+  back with Playwright (`smoke/`): key pages render without errors, every registry item and `llms.txt` are served, and
+  the Worker's 404s and Markdown answers hold, against the build it just deployed. *Approve the release* asks only
+  once both CI and that smoke test have passed on the release's commit.
+- **Production is checked after each release.** Once Deploy has put a release live, it runs the same smoke tests on
+  lede.cloudcompute.com and compares screenshots of key pages with the ones the preview recorded for the released
+  commit, so a release that comes up broken or looking different fails its run.
+
+### Fixed
+
+- **The accent picker no longer checks Blue under a look with no accent picked.** That look's own accent is the one
+  showing, so the picker now checks none, and the Appearance summary says "Default accent". Picking a preset, Blue
+  included, checks it and replaces the look's accent as before. Without a look nothing changes: Blue is checked. For
+  this, `AccentPicker`'s `value` and `AppearancePrefs`' `accent` may be unset.
+
 ## 0.8.0
 
 Looks ship: a whole visual style over the same components, set with <ThemeProvider look>. Skeuomorphic, Neo-brutalist

@@ -1,18 +1,21 @@
 name: Approve the release
-# The one click in a release. When CI passes on the open `release: X.Y.Z` pull request (develop → main), this asks for
-# approval through the `release` environment, whose required reviewer is Michael: GitHub emails him and shows "Review
-# deployments" on this run. Approving merges the pull request with a merge commit, as the release app; Tag the release
-# then tags main and Deploy publishes. Rejecting, or a newer push to develop, leaves the pull request open.
+# The one click in a release. When CI passes on the open `release: X.Y.Z` pull request (develop → main) and the preview
+# of that same commit passes its smoke tests, this asks for approval through the `release` environment, whose required
+# reviewer is Michael: GitHub emails him and shows "Review deployments" on this run. Approving merges the pull request
+# with a merge commit, as the release app; Tag the release then tags main and Deploy publishes. Rejecting, or a newer
+# push to develop, leaves the pull request open.
 #
-# It runs from main's copy of this file whenever CI finishes on develop, and only acts on a passing pull request from
-# develop into main. The merge names the commit CI passed on, so a push after the approval request makes the merge fail
-# instead of releasing untested code; the new push's CI asks again.
+# It runs from main's copy of this file whenever CI or the preview deploy finishes on develop. The two finish in either
+# order, so each run checks both and only the one that finishes last asks. It only acts on a pull request from develop into main.
+# The merge names the commit both passed on, so a push after the approval request makes the merge fail instead of
+# releasing untested code; the new push's runs ask again.
 on:
   workflow_run:
-    workflows: [CI]
+    workflows: [CI, Deploy develop to the preview site]
     types: [completed]
     branches: [develop]
 permissions:
+  actions: read
   contents: read
   pull-requests: read
 defaults:
@@ -22,7 +25,6 @@ jobs:
   find:
     if: >-
       github.event.workflow_run.conclusion == 'success' &&
-      github.event.workflow_run.event == 'pull_request' &&
       github.event.workflow_run.head_branch == 'develop' &&
       github.event.workflow_run.head_repository.full_name == github.repository
     runs-on: ubuntu-latest
@@ -30,11 +32,13 @@ jobs:
       number: ${{ steps.pr.outputs.number }}
       title: ${{ steps.pr.outputs.title }}
     steps:
-      - name: Find the release pull request CI passed on
+      - name: Find the release pull request CI and the preview passed on
         id: pr
         env:
           GH_TOKEN: ${{ github.token }}
           SHA: ${{ github.event.workflow_run.head_sha }}
+          TRIGGER: ${{ github.event.workflow_run.id }}
+          PREVIEW_HOST: ${{ vars.PREVIEW_HOST }}
         run: |
           pr=$(gh pr list --repo "$GITHUB_REPOSITORY" --base main --head develop --state open \
             --json number,title,headRefOid --jq "[.[] | select(.headRefOid == \"$SHA\")][0] // empty")
@@ -44,14 +48,66 @@ jobs:
           fi
           number=$(jq -r .number <<< "$pr")
           title=$(jq -r .title <<< "$pr")
+
+          # The newest run of each at this commit, as `id status conclusion updated_at`, so a re-run that failed counts
+          # as failing. CI is the pull request's; the preview is develop's push, read back by deploy-preview.yml's smoke
+          # job, whose conclusion stands for the run's.
+          fields='"\(.id) \(.status) \(.conclusion // "none") \(.updated_at)"'
+          read -r ci_id ci_status ci_conclusion ci_at < <(gh api \
+            "repos/$GITHUB_REPOSITORY/actions/workflows/ci.yml/runs?event=pull_request&head_sha=$SHA" \
+            --jq "[.workflow_runs[] | select(.head_branch == \"develop\")][0] // empty | $fields") || true
+          if [ "${ci_conclusion:-}" != success ]; then
+            [ "${ci_conclusion:-none}" = none ] && ci_conclusion=${ci_status:-not started}
+            echo "::notice title=Waiting for CI::CI on #$number at ${SHA::7} is $ci_conclusion; a run that passes asks."
+            exit 0
+          fi
+          last=$ci_id
+          # A repo without PREVIEW_HOST deploys no preview, so CI alone gates the release.
+          if [ -z "$PREVIEW_HOST" ]; then
+            echo "::warning title=No preview::PREVIEW_HOST isn't set, so no smoke test gates this release."
+          else
+            read -r pv_id pv_status pv_conclusion pv_at < <(gh api \
+              "repos/$GITHUB_REPOSITORY/actions/workflows/deploy-preview.yml/runs?branch=develop&head_sha=$SHA" \
+              --jq ".workflow_runs[0] // empty | $fields") || true
+            smoke=none
+            if [ -n "${pv_id:-}" ]; then
+              smoke=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$pv_id/jobs" \
+                --jq '[.jobs[] | select(.name == "Smoke-test the preview")][0] // {} | .conclusion // .status // "none"')
+            fi
+            # A deploy that failed skips smoke too, so its own failure is reported as the preview's.
+            case ${pv_conclusion:-none} in failure|cancelled|timed_out) smoke=$pv_conclusion ;; esac
+            case $smoke in
+              success) ;;
+              skipped)
+                # deploy-preview.yml skips smoke when it deployed nothing: the cloudflare environment has no
+                # CLOUDFLARE_API_TOKEN, or doesn't admit develop. No later run of this commit will pass.
+                echo "::error title=The preview wasn't deployed::The preview at ${SHA::7} was skipped, so its smoke test never ran. Fix the deploy (docs/releasing.md, No approval request came) and re-run Deploy develop to the preview site."
+                exit 1 ;;
+              failure|cancelled|timed_out)
+                echo "::notice title=The preview failed::The preview at ${SHA::7} is $smoke. Re-run its failed jobs, or push a fix to develop; a run that passes asks."
+                exit 0 ;;
+              *)
+                echo "::notice title=Waiting for the preview::The preview's smoke test at ${SHA::7} is $smoke${pv_status:+ (run $pv_status)}; it asks once it passes."
+                exit 0 ;;
+            esac
+            # The two finish in either order, and both can see the other done. The one that finished last asks, so a
+            # merge already approved isn't cancelled by a second request for the same commit.
+            if [[ "$pv_at" > "$ci_at" ]]; then last=$pv_id; fi
+          fi
+          if [ "$last" != "$TRIGGER" ]; then
+            echo "::notice title=Asked by the other run::CI and the preview both passed at ${SHA::7}; the run that finished last asks."
+            exit 0
+          fi
+
           printf 'number=%s\ntitle=%s\n' "$number" "$title" >> "$GITHUB_OUTPUT"
           echo "### Approve to merge #$number, $title" >> "$GITHUB_STEP_SUMMARY"
   merge:
     needs: find
     if: needs.find.outputs.number
     runs-on: ubuntu-latest
-    # A newer passing commit on the same pull request replaces a request still waiting. The group is the job's, not the
-    # workflow's, because every CI run starts this workflow and most stop at `find`.
+    # A newer passing commit on the same pull request replaces a request still waiting, and so does a re-run of CI or
+    # the preview. The group is the job's, not the workflow's, because every CI and preview run starts this workflow and
+    # most stop at `find`.
     concurrency:
       group: release-approve-${{ needs.find.outputs.number }}
       cancel-in-progress: true
