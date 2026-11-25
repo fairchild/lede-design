@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## 0.8.1
+
+A fix for the accent picker under a look, and the first release checked by smoke tests on the preview before approval
+and on production after the deploy. The registry for this release is
+`https://lede.cloudcompute.com/r/v0.8.1/{name}.json`.
 
 ### Changed
 
