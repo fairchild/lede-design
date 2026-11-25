@@ -31,10 +31,12 @@ export function WelcomePage() {
   const navigate = useNavigate();
   const siteNavigate = useSiteNavigate();
   const { prefs, setPrefs } = useAppearance();
+  // Under a look with no accent picked, the flow starts on Blue, and Blue unchanged at Finish leaves the look's own.
+  const saved = prefs.accent ?? 'blue';
   const { profile, saveProfile } = useProfile();
   const { brief, onboarding: { draft, finished } } = useDemo();
   const data: OnboardingData = {
-    name: profile.name, email: profile.email, accent: prefs.accent, dailyBrief: brief.on, delivery: brief.delivery, ...draft?.answers,
+    name: profile.name, email: profile.email, accent: saved, dailyBrief: brief.on, delivery: brief.delivery, ...draft?.answers,
   };
 
   // A URL for a step the draft hasn't reached, or for no step, shows the furthest step there is and takes its URL.
@@ -81,7 +83,7 @@ export function WelcomePage() {
   const finish = (answers: OnboardingData) =>
     saveProfile({ ...profile, name: answers.name.trim(), email: answers.email.trim() }).then(
       () => {
-        setPrefs({ ...prefs, accent: answers.accent });
+        setPrefs({ ...prefs, accent: answers.accent === saved ? prefs.accent : answers.accent });
         dispatch({ type: 'brief', on: answers.dailyBrief, delivery: answers.delivery });
         dispatch({ type: 'onboarding/finish' });
       },
@@ -90,7 +92,7 @@ export function WelcomePage() {
   return (
     // The accent being picked shows on this page only, until Finish saves it. The saved one is the site's already, and
     // leaving it unset keeps a look's own accent.
-    <ThemeProvider accent={data.accent === prefs.accent ? undefined : data.accent} glass={prefs.solidGlass ? 'solid' : 'regular'}>
+    <ThemeProvider accent={data.accent === saved ? undefined : data.accent} glass={prefs.solidGlass ? 'solid' : 'regular'}>
       <main id="main" className="onboarding-main" tabIndex={-1}>
         {shown < DONE ? (
           <div className="docs-onboarding-cancel">

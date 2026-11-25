@@ -3,7 +3,8 @@ import { presets, type Preset } from '../theme-provider';
 import { cn } from '../cn';
 
 export interface AccentPickerProps {
-  value: Preset;
+  /** The checked preset. Leave it unset when no preset is the one showing, such as a look's own accent: none is checked. */
+  value?: Preset;
   onValueChange: (value: Preset) => void;
   /** Radio group name. Defaults to a generated id. */
   name?: string;

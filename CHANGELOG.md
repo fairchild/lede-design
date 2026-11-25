@@ -12,6 +12,13 @@
   lede.cloudcompute.com and compares screenshots of key pages with the ones the preview recorded for the released
   commit, so a release that comes up broken or looking different fails its run.
 
+### Fixed
+
+- **The accent picker no longer checks Blue under a look with no accent picked.** That look's own accent is the one
+  showing, so the picker now checks none, and the Appearance summary says "Default accent". Picking a preset, Blue
+  included, checks it and replaces the look's accent as before. Without a look nothing changes: Blue is checked. For
+  this, `AccentPicker`'s `value` and `AppearancePrefs`' `accent` may be unset.
+
 ## 0.8.0
 
 Looks ship: a whole visual style over the same components, set with <ThemeProvider look>. Skeuomorphic, Neo-brutalist
