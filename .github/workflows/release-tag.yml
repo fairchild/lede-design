@@ -99,3 +99,26 @@ jobs:
           gh api "repos/$GITHUB_REPOSITORY/git/refs" -f "ref=refs/tags/$TAG" -f "sha=$GITHUB_SHA" > /dev/null
           echo "### Tagged $TAG on ${GITHUB_SHA::7}" >> "$GITHUB_STEP_SUMMARY"
           echo "Deploy and the mirror run from the tag." >> "$GITHUB_STEP_SUMMARY"
+  # An approval request that waits on a commit main already has is stale: its release merged some other way, such as
+  # by hand. Cancel it, so the Actions tab and the reviewer's queue show only requests that still mean something.
+  tidy:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+      contents: read
+    steps:
+      - name: Cancel approval requests for commits main already has
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api "repos/$GITHUB_REPOSITORY/actions/workflows/release-approve.yml/runs?status=waiting&per_page=100" \
+            --jq '.workflow_runs[] | "\(.id) \(.head_sha)"' |
+          while read -r id sha; do
+            # A commit the compare call can't find (say, force-pushed away) is skipped, not fatal.
+            status=$(gh api "repos/$GITHUB_REPOSITORY/compare/$sha...$GITHUB_SHA" --jq .status) || continue
+            if [ "$status" = ahead ] || [ "$status" = identical ]; then
+              gh api -X POST "repos/$GITHUB_REPOSITORY/actions/runs/$id/cancel" > /dev/null
+              echo "Cancelled the approval request for ${sha::7}, which main already has." >> "$GITHUB_STEP_SUMMARY"
+            fi
+          done
