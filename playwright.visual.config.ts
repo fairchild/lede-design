@@ -11,7 +11,9 @@ const port = Number(process.env.PW_PORT || 4400);
 export default defineConfig({
   testDir: 'visual',
   fullyParallel: true,
-  reporter: process.env.CI ? [['github'], ['list'], ['json', { outputFile: 'visual-results.json' }]] : 'list',
+  // No `github` reporter: a difference is often intended, so the workflow raises one warning for all of them, not an
+  // error per screenshot.
+  reporter: process.env.CI ? [['list'], ['json', { outputFile: 'visual-results.json' }]] : 'list',
   // A missing baseline fails a comparison rather than being written, so a pull request never becomes its own baseline.
   updateSnapshots: mode === 'record' ? 'all' : 'none',
   snapshotPathTemplate: `${process.env.VISUAL_BASELINE_DIR || 'visual-baseline'}/{arg}{ext}`,

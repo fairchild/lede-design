@@ -73,19 +73,19 @@ jobs:
           name: visual-baseline
           path: visual-baseline
           retention-days: 90
-      # Without a baseline every comparison fails as missing, so the run only takes the screenshots.
+      # Without a baseline there's nothing to compare, so the run records into a throwaway folder and only keeps the
+      # screenshots.
       - name: Compare with develop
         id: compare
         if: github.event_name == 'pull_request'
         continue-on-error: true
         env:
-          VISUAL: compare
           HAS_BASELINE: ${{ steps.baseline.outputs.run != '' }}
         run: |
           if [ "$HAS_BASELINE" = true ]; then
-            npx playwright test -c playwright.visual.config.ts
+            VISUAL=compare npx playwright test -c playwright.visual.config.ts
           else
-            npx playwright test -c playwright.visual.config.ts || true
+            VISUAL=record VISUAL_BASELINE_DIR="$RUNNER_TEMP/unused" npx playwright test -c playwright.visual.config.ts
           fi
       - name: Summarize
         if: github.event_name == 'pull_request' && !cancelled()
