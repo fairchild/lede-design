@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+
+- *Tag the release* cancels approval requests still waiting on a commit `main` already has, such as one left behind
+  when a release merged by hand, so the reviewer only sees requests that still mean something.
+
 ## 0.8.1
 
 A fix for the accent picker under a look, and the first release checked by smoke tests on the preview before approval
