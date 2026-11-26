@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+
+- **The repo's settings are written down.** `docs/repo-settings.md` records what the branch rulesets, merge buttons,
+  environments and secrets are meant to be, with the steps for an admin, and `.github/rulesets/` gains importable
+  `develop`, `main` and `release-tags` rulesets. Pull requests get a template, and AGENTS.md says how a project thread
+  lands a change. Nothing in the registry changes.
+
 ## 0.8.1
 
 A fix for the accent picker under a look, and the first release checked by smoke tests on the preview before approval

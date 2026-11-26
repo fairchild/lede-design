@@ -56,3 +56,21 @@ picks what to run.
   it out of both. One more, `scripts/llms/`, keeps the Markdown generator's selector strings out of the CSS; it stays
   out of the script's lists, since its diffs change the built Markdown. So does `smoke/`, the deployed-site checks above,
   which CI doesn't run: a diff there runs everything.
+
+## Working from a project thread
+
+How the agent threads that do most of the work here land a change. CONTRIBUTING.md still holds the rules.
+- One branch per thread. Open the pull request into `develop`, as a draft, and fill in
+  `.github/pull_request_template.md`. Never push to `develop`, `main` or a tag; once `docs/repo-settings.md` is
+  applied, the rulesets refuse it.
+- Before opening the pull request, and again before marking it ready, run one round of code review on the diff against
+  `develop`, fix what's real, and write what it found and what could still be wrong under *Review*.
+- A visible change carries light and dark screenshots for each look (lede, skeuo, brutal, broadsheet) under
+  *Screenshots*. `tests/looks.spec.ts` lists the routes that show most of the components.
+- Merge when `check` passes; that's standing approval for pull requests into `develop`. Turn on auto-merge (squash)
+  where the repo allows it, rather than waiting on the result.
+- Parallel threads all add to `## Unreleased` in CHANGELOG.md. On a conflict there, keep both sides.
+- An item added to, renamed in or removed from `registry.json` changes the lists under *Choose the layer* in
+  `.claude/skills/lede-design-system/SKILL.md` too (a primitive is item 3); `tests/skill.spec.ts` checks them.
+- Changes to `.github/workflows/` or the release scripts are bundled into one thread per release cycle, not made ad
+  hoc while a release is in flight.
