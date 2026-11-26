@@ -33,6 +33,12 @@ picks what to run.
   the build it just made, and *Approve the release* waits for them to pass on the release's commit. The preview run
   also records screenshots of key pages (`SMOKE_SCREENSHOTS=record`), and `deploy.yml` runs the same tests on production
   after a release and compares its pages with them (`compare`).
+- `VISUAL=record npx playwright test -c playwright.visual.config.ts` — screenshots of each look in light and dark on
+  the routes in `visual/looks.spec.ts`, from the build in `dist/` (run `npm run build` first). `VISUAL=compare` compares
+  them with the recorded ones in `visual-baseline/`; every run also writes its own to `visual-screenshots/`. The
+  *Visual* workflow records on each push to develop and compares on each pull request into it, reporting differences
+  in the run's summary without failing (it isn't part of `check`). Screenshots differ between machines, so compare
+  only against a baseline recorded on the same one.
 - `npm run contrast` — the contrast gate alone; `npm run contrast -- --report` prints every pair.
 - `scripts/preview-pr.sh <N>` — builds pull request N and uploads it as the Worker Preview `pr-<N>` (`--dry-run`,
   `--comment`, `--delete`). `CONTRIBUTING.md` covers credentials.
@@ -66,7 +72,9 @@ How the agent threads that do most of the work here land a change. CONTRIBUTING.
 - Before opening the pull request, and again before marking it ready, run one round of code review on the diff against
   `develop`, fix what's real, and write what it found and what could still be wrong under *Review*.
 - A visible change carries light and dark screenshots for each look (lede, skeuo, brutal, broadsheet) under
-  *Screenshots*. `tests/looks.spec.ts` lists the routes that show most of the components.
+  *Screenshots*. The *Visual* run on the pull request takes them all (its `visual-screenshots` artifact) and lists the
+  ones that differ from develop in its summary. Read that list before marking the pull request ready: every
+  difference is intended, or it's a bug.
 - Merge when `check` passes; that's standing approval for pull requests into `develop`. Turn on auto-merge (squash)
   where the repo allows it, rather than waiting on the result.
 - Parallel threads all add to `## Unreleased` in CHANGELOG.md. On a conflict there, keep both sides.

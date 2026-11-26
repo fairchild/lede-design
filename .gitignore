@@ -19,3 +19,6 @@ dist-strict
 dist-design-system
 registry/lede/looks/*.tokens.css
 smoke-screenshots
+visual-screenshots
+visual-baseline
+visual-results.json
