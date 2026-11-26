@@ -58,7 +58,8 @@ GitHub emails Michael, and the run's page (linked from the pull request's checks
 test pass again, and the merge names the commit they passed on, so an approval never releases a commit they didn't see.
 
 To merge by hand instead, use a merge commit, not a squash, so `develop` and `main` keep one history. If a squash
-slips through, *Tag the release* warns, and `main` needs merging back into `develop`.
+slips through, *Tag the release* warns, and `main` needs merging back into `develop`. A request still waiting on a commit
+`main` already has is stale, and *Tag the release* cancels it on the next push to `main`.
 
 ## 3. The tag
 

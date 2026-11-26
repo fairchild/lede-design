@@ -4,6 +4,8 @@
 
 ### Changed
 
+- *Tag the release* cancels approval requests still waiting on a commit `main` already has, such as one left behind
+  when a release merged by hand, so the reviewer only sees requests that still mean something.
 - **The repo's settings are written down.** `docs/repo-settings.md` records what the branch rulesets, merge buttons,
   environments and secrets are meant to be, with the steps for an admin, and `.github/rulesets/` gains importable
   `develop`, `main` and `release-tags` rulesets. Pull requests get a template, and AGENTS.md says how a project thread
