@@ -4,6 +4,10 @@
 
 ### Changed
 
+- **Pull requests show how each look changed.** A new *Visual* workflow screenshots five pages under each look, in light
+  and dark, on every push to `develop`, and on each pull request into it compares the same screenshots of the pull
+  request's build, listing every difference in the run's summary with the before, after and diff images as an artifact.
+  It reports without failing. Nothing in the registry changes.
 - *Tag the release* cancels approval requests still waiting on a commit `main` already has, such as one left behind
   when a release merged by hand, so the reviewer only sees requests that still mean something.
 - **The repo's settings are written down.** `docs/repo-settings.md` records what the branch rulesets, merge buttons,

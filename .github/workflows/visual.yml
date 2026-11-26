@@ -1,0 +1,129 @@
+name: Visual
+# Screenshots of each look in light and dark (visual/looks.spec.ts). A push to develop records them as the baseline. A
+# pull request into develop takes the same screenshots of its build, keeps them all as the `visual-screenshots`
+# artifact for the pull request's *Screenshots*, and compares each with the baseline recorded on its base commit. A
+# difference is reported, with the before, after and diff images in `visual-diffs`, and doesn't fail the run: a visible
+# change is often the point. It isn't part of CI's `check`.
+on:
+  push:
+    branches: [develop]
+  pull_request:
+    branches: [develop]
+  workflow_dispatch:
+permissions:
+  actions: read
+  contents: read
+# A new push replaces a pull request's run. Each push to develop records its own baseline, so none is cancelled.
+concurrency:
+  group: visual-${{ github.event_name == 'pull_request' && github.ref || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+defaults:
+  run:
+    shell: bash
+jobs:
+  visual:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with: { persist-credentials: false }
+      # The baseline is the newest successful recording of the pull request's base commit, the develop commit its merge
+      # commit is built on, so a difference is this pull request's alone.
+      - name: Find develop's screenshots of the base commit
+        id: baseline
+        if: github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BASE: ${{ github.event.pull_request.base.sha }}
+        run: |
+          run=$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/visual.yml/runs?branch=develop&event=push&status=success&head_sha=$BASE" \
+            --jq '.workflow_runs[0].id // empty')
+          if [ -z "$run" ]; then
+            echo "::warning title=Nothing to compare::develop has no visual baseline for ${BASE::7}, so these screenshots are kept without comparing. Update the branch from develop once develop's Visual run has finished."
+            exit 0
+          fi
+          echo "run=$run" >> "$GITHUB_OUTPUT"
+          echo "Comparing with develop's screenshots from run $run, of ${BASE::7}."
+      - if: steps.baseline.outputs.run
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: visual-baseline
+          path: visual-baseline
+          run-id: ${{ steps.baseline.outputs.run }}
+          github-token: ${{ github.token }}
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      # The registry and the site; CI's build job typechecks.
+      - run: npm run registry && npx vite build
+      - id: playwright
+        run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-chromium-${{ runner.os }}-${{ steps.playwright.outputs.version }}
+      - run: npx playwright install --with-deps chromium
+      - name: Record the baseline
+        if: github.event_name != 'pull_request'
+        env:
+          VISUAL: record
+        run: npx playwright test -c playwright.visual.config.ts
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: github.event_name != 'pull_request'
+        with:
+          name: visual-baseline
+          path: visual-baseline
+          retention-days: 90
+      # Without a baseline every comparison fails as missing, so the run only takes the screenshots.
+      - name: Compare with develop
+        id: compare
+        if: github.event_name == 'pull_request'
+        continue-on-error: true
+        env:
+          VISUAL: compare
+          HAS_BASELINE: ${{ steps.baseline.outputs.run != '' }}
+        run: |
+          if [ "$HAS_BASELINE" = true ]; then
+            npx playwright test -c playwright.visual.config.ts
+          else
+            npx playwright test -c playwright.visual.config.ts || true
+          fi
+      - name: Summarize
+        if: github.event_name == 'pull_request' && !cancelled()
+        env:
+          HAS_BASELINE: ${{ steps.baseline.outputs.run != '' }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          total=$(find visual-screenshots -name '*.png' 2>/dev/null | wc -l)
+          changed=''
+          if [ "$HAS_BASELINE" = true ] && [ -f visual-results.json ]; then
+            changed=$(jq -r '.. | objects | select(has("specs")) | .specs[] | select(.ok == false) | .title' visual-results.json)
+          fi
+          n=$(grep -c . <<< "$changed" || true)
+          [ "$n" -gt 0 ] && echo "::warning title=Visual changes::$n of $total screenshots differ from develop. Check that each is intended: the before, after and diff are in the visual-diffs artifact."
+          {
+            echo "### Visual: $total screenshots"
+            echo
+            echo "Each is in the \`visual-screenshots\` artifact of [this run]($RUN_URL), named \`<route>--<look>--<scheme>.png\`."
+            echo
+            if [ "$HAS_BASELINE" != true ]; then
+              echo "No baseline for the base commit, so nothing was compared."
+            elif [ "$n" -eq 0 ]; then
+              echo "All match develop."
+            else
+              echo "**$n differ from develop.** The before, after and diff of each are in the \`visual-diffs\` artifact:"
+              echo
+              sed 's/^/- /' <<< "$changed"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: github.event_name == 'pull_request' && !cancelled()
+        with:
+          name: visual-screenshots
+          path: visual-screenshots
+          retention-days: 14
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: steps.compare.outcome == 'failure' && steps.baseline.outputs.run
+        with:
+          name: visual-diffs
+          path: test-results
+          retention-days: 14

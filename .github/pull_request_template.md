@@ -7,7 +7,8 @@
 ## Screenshots
 
 <!-- For a visible change: light and dark for each look (lede, skeuo, brutal, broadsheet), at `?look=<look>&chrome=0`.
-     Delete this section when nothing visible changes. -->
+     The Visual run's `visual-screenshots` artifact has them all; name the ones its summary lists as changed, and say
+     each is intended. Delete this section when nothing visible changes. -->
 
 | Look | Light | Dark |
 | --- | --- | --- |
