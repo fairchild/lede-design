@@ -182,8 +182,9 @@ runs no Deploy, and the tag ruleset can't name it.
    branch ruleset whose only rule is *Restrict deletions* on `develop` and `main`, so pushes and merges work as
    before, and the automatic delete skips both branches.
 
-The ruleset in `.github/rulesets/` is the record of that setting: change the file and import it again (or edit the
-ruleset to match) so the two don't drift.
+The rulesets in `.github/rulesets/` are the record of these settings: change a file and import it again (or edit the
+ruleset to match) so the two don't drift. [repo-settings.md](repo-settings.md) covers the rest of the repo's settings
+and the `develop` ruleset that requires a pull request and `check`, whose bypass list needs the app as well.
 
 ### Cloudflare credentials
 
