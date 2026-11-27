@@ -851,7 +851,6 @@
       },
       "registryDependencies": [
         "@lede/lede-theme",
-        "@lede/lede-utils",
         "@lede/data-table"
       ],
       "files": [
@@ -941,7 +940,6 @@
       },
       "registryDependencies": [
         "@lede/lede-theme",
-        "@lede/lede-utils",
         "@lede/disclosure",
         "@lede/list",
         "@lede/page-header",
@@ -1005,7 +1003,6 @@
       ],
       "registryDependencies": [
         "@lede/lede-theme",
-        "@lede/lede-utils",
         "@lede/accent-picker",
         "@lede/button",
         "@lede/form-section",
@@ -1041,7 +1038,6 @@
       ],
       "registryDependencies": [
         "@lede/lede-theme",
-        "@lede/lede-utils",
         "@lede/avatar",
         "@lede/button",
         "@lede/form-section",
@@ -1070,7 +1066,6 @@
       },
       "registryDependencies": [
         "@lede/lede-theme",
-        "@lede/lede-utils",
         "@lede/accent-picker",
         "@lede/button",
         "@lede/card",

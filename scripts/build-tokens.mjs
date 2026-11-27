@@ -14,12 +14,22 @@ const SELECTOR = {
   'dark-hc': '[data-theme="dark-hc"]',
 };
 const isAlias = (v) => typeof v === 'string' && /^\{.+\}$/.test(v);
-// Foundations lists colours by group, so a colour in a group color.groups doesn't name would drop out of it.
+// Foundations lists colors by group, so a color in a group color.groups doesn't name would drop out of it.
 const groups = new Set(t.color.groups.map((g) => g.id));
 for (const { name, group } of t.color.tokens) {
   if (!groups.has(group)) throw new Error(`tokens.json: ${name} has group ${JSON.stringify(group)}, which color.groups doesn't list`);
 }
 const css = (v) => (isAlias(v) ? `var(--${v.slice(1, -1)})` : v);
+// A themed value keyed by theme sets the first theme and overrides the others it names. A key that names no theme, such
+// as a typo, would drop its declaration without a word, so it stops the build.
+for (const fam of THEMED) {
+  for (const { name, value } of t[fam].tokens) {
+    if (typeof value === 'string') continue;
+    const unknown = Object.keys(value).filter((k) => !themes.includes(k));
+    if (unknown.length) throw new Error(`tokens.json: ${name} is keyed by ${unknown.map((k) => JSON.stringify(k)).join(', ')}, which color.themes doesn't list`);
+    if (value[first] == null) throw new Error(`tokens.json: ${name} has no value for ${first}, the first theme`);
+  }
+}
 
 const out = ['/* Lede tokens — GENERATED from tokens/tokens.json by scripts/build-tokens.mjs. Do not edit. */', ''];
 for (const theme of themes) {
@@ -86,12 +96,16 @@ for (const { options = [], tokens, emit } of families) {
       throw new Error(`tokens.json: ${name} has value ${JSON.stringify(value)}; it needs a string, or the keys [${options}] in that order`);
     }
     if (reducedMotion && typeof value !== 'string') throw new Error(`tokens.json: ${name} is keyed, so it can't take a reducedMotion value`);
+    // A keyed value is declared on :root, which would resolve a token it names once, at the top: see namesToken above.
+    if (typeof value !== 'string' && Object.values(value).some(namesToken)) {
+      throw new Error(`tokens.json: ${name} is keyed and names another token, which :root would resolve once; give each option a value`);
+    }
     if (emit === false) continue;
     if (namesToken(value)) {
       if (reducedMotion) throw new Error(`tokens.json: ${name} names another token, so it isn't declared and can't take a reducedMotion value`);
       continue;
     }
-    root.push(`  --${name}: ${typeof value === 'string' ? css(value) : value[options[0]]};`);
+    root.push(`  --${name}: ${css(typeof value === 'string' ? value : value[options[0]])};`);
     if (reducedMotion) reduced.push(`    --${name}: ${reducedMotion} !important;`);
   }
 }
@@ -106,7 +120,7 @@ if (reduced.length) out.push(`@media (prefers-reduced-motion: reduce) {\n  :root
 for (const [attribute, { names, options, keyed }] of axes) {
   if (!keyed.length) throw new Error(`tokens.json: ${attribute} has options but no keyed tokens in ${names.join(', ')}`);
   for (const option of options) {
-    out.push(`[data-theme][${attribute}="${option}"] {\n${keyed.map((tk) => `  --${tk.name}: ${tk.value[option]};`).join('\n')}\n}`, '');
+    out.push(`[data-theme][${attribute}="${option}"] {\n${keyed.map((tk) => `  --${tk.name}: ${css(tk.value[option])};`).join('\n')}\n}`, '');
   }
 }
 
@@ -169,7 +183,7 @@ const KNOWN = new Set([
 // Each token's own value, for the reset below: what `:root` declares, or `initial` for one that isn't declared, so a
 // read falls back to its default.
 const ROOT_VALUE = new Map([
-  ...families.flatMap((fam) => fam.tokens.map((tk) => [tk.name, typeof tk.value !== 'string' ? tk.value[fam.options[0]] : namesToken(tk.value) ? 'initial' : css(tk.value)])),
+  ...families.flatMap((fam) => fam.tokens.map((tk) => [tk.name, typeof tk.value !== 'string' ? css(tk.value[fam.options[0]]) : namesToken(tk.value) ? 'initial' : css(tk.value)])),
   ...Object.entries(t.type.families).map(([k, v]) => [`font-${k}`, v]),
 ]);
 // High contrast drops a look's colors, shadows and ground texture, the way Lede's -hc themes keep a plain ground.

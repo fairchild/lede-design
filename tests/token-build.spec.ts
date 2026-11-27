@@ -80,7 +80,7 @@ test('leaves a family marked emit: false out of the CSS', () => {
   for (const name of names) expect(shown.css).toContain(name);
 });
 
-test('fails a colour whose group color.groups does not list, so it cannot drop out of Foundations', () => {
+test('fails a color whose group color.groups does not list, so it cannot drop out of Foundations', () => {
   const { status, output } = build((tokens) => { tokens.color.tokens[0].group = 'unlisted'; });
   expect(status).toBe(1);
   expect(output).toContain(`${SOURCE.color.tokens[0].name} has group "unlisted", which color.groups doesn't list`);
@@ -137,4 +137,29 @@ test('fails a look that sets a token no family names, or a theme that isn\'t one
   const theme = build((t) => { t.looks.options.brutal.values.sepia = {}; });
   expect(theme.status).toBe(1);
   expect(theme.output).toContain("looks.brutal.values.sepia isn't one of all, light, dark, light-hc, dark-hc");
+});
+
+test('fails a themed value keyed by a theme that doesn’t exist, rather than dropping it', () => {
+  const { status, output } = build((tokens) => {
+    const primary = tokens.color.tokens.find((t: Json) => t.name === 'primary');
+    primary.value['dark-HC'] = primary.value['dark-hc'];
+    delete primary.value['dark-hc'];
+  });
+  expect(status).toBe(1);
+  expect(output).toContain('tokens.json: primary is keyed by "dark-HC", which color.themes doesn\'t list');
+});
+
+test('fails a themed value with no value for the first theme', () => {
+  const { status, output } = build((tokens) => { delete tokens.color.tokens.find((t: Json) => t.name === 'primary').value.light; });
+  expect(status).toBe(1);
+  expect(output).toContain('tokens.json: primary has no value for light, the first theme');
+});
+
+test('fails a keyed value that names another token, which :root would resolve once', () => {
+  const { status, output } = build((tokens) => {
+    const sm = tokens.size.tokens.find((t: Json) => t.name === 'size-control-sm');
+    sm.value = { regular: '{size-hit-min}', compact: '24px', touch: '{size-hit-min}' };
+  });
+  expect(status).toBe(1);
+  expect(output).toContain('tokens.json: size-control-sm is keyed and names another token, which :root would resolve once; give each option a value');
 });

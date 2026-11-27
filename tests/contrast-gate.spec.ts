@@ -1,4 +1,4 @@
-// The contrast gate, run on mutated copies of its inputs. Each test sets the colours and listings it reads, so a later
+// The contrast gate, run on mutated copies of its inputs. Each test sets the colors and listings it reads, so a later
 // change to a token can't break it. The cases here have to fail the gate; the data it trusts isn't tested.
 import { spawnSync } from 'node:child_process';
 import { appendFileSync, cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
@@ -34,13 +34,13 @@ test('passes on the repo as it stands', () => {
   expect(gate().status).toBe(0);
 });
 
-test('composites a translucent colour over its surface, and a stack of them in order', () => {
-  const colours = {
+test('composites a translucent color over its surface, and a stack of them in order', () => {
+  const colors = {
     'x-white': '#ffffff', 'x-fill': 'rgba(120, 120, 132, 0.14)', 'x-strong': 'rgba(120, 120, 132, 0.30)', 'x-line': 'rgba(60, 60, 67, 0.20)',
     'x-text': '#f4f4f6', 'x-glass': 'rgba(38, 38, 44, 0.62)', 'x-wash': 'rgba(120, 120, 132, 0.28)',
   };
   const { output } = gate((dir) => {
-    edit(dir, 'tokens/tokens.json', (json) => { json.color.tokens.push(...Object.entries(colours).map(([name, value]) => ({ name, value }))); });
+    edit(dir, 'tokens/tokens.json', (json) => { json.color.tokens.push(...Object.entries(colors).map(([name, value]) => ({ name, value }))); });
     edit(dir, 'tokens/contrast.json', (json) => {
       json.pairs.push({ role: 'exempt', colors: ['x-fill', 'x-strong', 'x-line'], on: ['x-white'] });
       json.pairs.push({ role: 'exempt', colors: ['x-text'], on: ['x-glass over any', 'x-wash over x-glass over any'] });
@@ -73,7 +73,7 @@ test('holds -hc text to 7:1 and every accent preset to the same floors as primar
   expect(output).toMatch(/light\/teal text: primary-foreground on primary: 2\.\d+:1, under 4\.5:1/);
 });
 
-test('fails a colour in no pair, from either source', () => {
+test('fails a color in no pair, from either source', () => {
   const token = gate((dir) => edit(dir, 'tokens/tokens.json', (json) => { json.color.tokens.push({ name: 'fill-new', value: '#123456', usage: '' }); }));
   expect(token.output).toContain('fill-new: in no pair');
   const mix = gate((dir) => appendFileSync(join(dir, 'registry/lede/lede.blocks.css'), '.x { background: Color-Mix(in srgb, var(--primary) 33%, transparent); }'));
@@ -82,7 +82,7 @@ test('fails a colour in no pair, from either source', () => {
   expect(unread.output).toContain('can\'t read');
 });
 
-test('fails a colour name declared twice, and a ratio that comes to NaN', () => {
+test('fails a color name declared twice, and a ratio that comes to NaN', () => {
   const twice = gate((dir) => appendFileSync(join(dir, 'registry/lede/lede.blocks.css'), '[data-theme="dark"] { --ld-primary-on-tint: #333333; }'));
   expect(twice.output).toContain('--ld-primary-on-tint: declared more than once');
   const nan = gate((dir) => {

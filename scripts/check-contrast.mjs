@@ -1,6 +1,6 @@
 // axe, as the tests run it, checks the text a page is showing at AA: its 7:1 rule is off by default, and it has no
 // non-text rule. This measures every pair in tokens/contrast.json, in every theme and accent, whatever is on screen.
-// Colours come from their sources, each colour token in tokens/tokens.json and each color-mix() in registry/, so a new
+// Colors come from their sources, each color token in tokens/tokens.json and each color-mix() in registry/, so a new
 // one fails here until a pair names it. Every pair meets its floor. `npm run contrast -- --report` prints every pair.
 import { readdirSync, readFileSync } from 'node:fs';
 
@@ -30,7 +30,7 @@ if (mixes.length !== sources.toLowerCase().split('color-mix(').length - 1) probl
 for (const name of named.keys()) if (sources.match(new RegExp(`--${name}\\s*:`, 'g')).length > 1) problems.push(`--${name}: declared more than once, and the script measures one`);
 
 // Each look in tokens.json's `looks` is measured too, over the same pairs, accents and themes. A look's value for a
-// colour or shadow replaces Lede's where the token build applies it: `all` in every theme, `light` and `dark` in their
+// color or shadow replaces Lede's where the token build applies it: `all` in every theme, `light` and `dark` in their
 // standard theme only, and `light-hc` or `dark-hc` in theirs, a theme's own over `all`. `look` is the one being measured.
 let look = null;
 const lookIds = [null, ...Object.keys(looks?.options ?? {})];
@@ -39,7 +39,7 @@ function lookValue(name, theme) {
   const values = looks.options[look].values;
   return values[theme]?.[name] ?? values.all?.[name];
 }
-/** Whether the look being measured sets a token in any theme. A token it sets is its own colour, not Lede's alias. */
+/** Whether the look being measured sets a token in any theme. A token it sets is its own color, not Lede's alias. */
 const lookSets = (name) => Boolean(look && Object.values(looks.options[look].values).some((values) => name in values));
 
 const aliasOf = (value) => (typeof value === 'string' && /^\{.+\}$/.test(value) ? value.slice(1, -1) : null);
@@ -106,14 +106,14 @@ const twins = fillRules.filter(({ declarations }) => edged(declarations))
   .flatMap(({ selectors }) => selectors.map((selector) => (selector.startsWith(HC) ? selector.slice(HC.length) : selector)));
 const fillers = new Set();
 for (const { selectors, declarations } of fillRules) {
-  const colours = declarations.filter(([property]) => /^background(-color|-image)?$/.test(property))
+  const colors = declarations.filter(([property]) => /^background(-color|-image)?$/.test(property))
     .flatMap(([, value]) => painted(value)).filter((name) => fills.has(tokens.has(name) ? canonical(name) : name));
-  if (!colours.length) continue;
+  if (!colors.length) continue;
   for (const selector of selectors) {
     if (selector.startsWith(HC)) continue;
     fillers.add(selector);
     if (edged(declarations) || spec.fills.notControls[selector] || twins.some((twin) => covers(twin, selector))) continue;
-    problems.push(`${selector}: paints ${colours[0]} with no --input edge in -hc. Draw one in a ${HC.trim()} twin, or list it in tokens/contrast.json's fills.notControls with a reason`);
+    problems.push(`${selector}: paints ${colors[0]} with no --input edge in -hc. Draw one in a ${HC.trim()} twin, or list it in tokens/contrast.json's fills.notControls with a reason`);
   }
 }
 for (const [selector, reason] of Object.entries(spec.fills.notControls)) {
@@ -134,10 +134,10 @@ function parse(value) {
   if (hex) return [...hex.slice(1, 4).map((part) => parseInt(part, 16)), hex[4] ? parseInt(hex[4], 16) / 255 : 1];
   const rgb = /^rgba?\((\d+), (\d+), (\d+)(?:, ([\d.]+))?\)$/.exec(value);
   if (rgb) return [+rgb[1], +rgb[2], +rgb[3], rgb[4] ? Math.round(rgb[4] * 255) / 255 : 1];
-  throw new Error(`tokens.json: can't read the colour ${value}`);
+  throw new Error(`tokens.json: can't read the color ${value}`);
 }
 
-/** A colour's [r, g, b, a] in a theme. `accent` stands in for primary, as ThemeProvider's does. */
+/** A color's [r, g, b, a] in a theme. `accent` stands in for primary, as ThemeProvider's does. */
 function paint(name, theme, accent) {
   if (named.has(name)) return paint(named.get(name), theme, accent);
   const mix = /^(\S+) (\d+)%(?: (\S+))?$/.exec(name);
@@ -148,7 +148,7 @@ function paint(name, theme, accent) {
     return [0, 1, 2].map((i) => (first[i] * first[3] * share + second[i] * second[3] * (1 - share)) / alpha).concat(alpha);
   }
   if (name === 'primary' && accent) return paint(accent, theme);
-  if (!tokens.has(name)) throw new Error(`tokens/contrast.json: no colour named ${name}`);
+  if (!tokens.has(name)) throw new Error(`tokens/contrast.json: no color named ${name}`);
   const value = tokens.get(name);
   const own = lookValue(name, theme) ?? (typeof value === 'string' ? value : value[theme] ?? value[themes[0]]);
   return aliasOf(own) ? paint(aliasOf(own), theme, accent) : parse(own);
@@ -174,7 +174,7 @@ function visibleLayers(surface, theme, accent) {
   return solid === -1 ? layers : layers.slice(0, solid + 1);
 }
 
-/** The ratio of a colour to the surface under it. Over `any`, the worst across every grey: see tokens/contrast.json. */
+/** The ratio of a color to the surface under it. Over `any`, the worst across every grey: see tokens/contrast.json. */
 function measure(name, layers, theme, accent, top = paint(name, theme, accent)) {
   const grounds = layers.at(-1) === 'any' ? greys : [[0, 0, 0, 1]];
   return Math.min(...grounds.map((ground) => {
@@ -184,7 +184,7 @@ function measure(name, layers, theme, accent, top = paint(name, theme, accent)) 
 }
 
 // The knob edge read. A pair with `edge` names a shadow token whose first shadow can be a solid edge, `0 0 0 1px
-// <colour>`. Its colour shows wherever the fill's does, so the pair takes the better of the fill and the edge.
+// <color>`. Its color shows wherever the fill's does, so the pair takes the better of the fill and the edge.
 const shadows = new Map(shadow.tokens.map((token) => [token.name, token.value]));
 function edgeOf(name, theme) {
   if (!shadows.has(name)) throw new Error(`tokens/contrast.json: no shadow named ${name}`);
@@ -206,7 +206,7 @@ const conventional = [...tokens.keys()]
   .map((name) => ({ role: 'text', colors: [name], on: [`${name.replace(/-foreground$/, '')} over @page`] }));
 const pairs = [...spec.pairs, ...conventional];
 
-// A pair can leave out -hc openly: an exempt pair there, for the same colours and surfaces, says so in the data.
+// A pair can leave out -hc openly: an exempt pair there, for the same colors and surfaces, says so in the data.
 const exemptInHc = ({ colors, on }) => pairs.some((other) => other.role === 'exempt' && other.in !== 'standard'
   && colors.every((name) => other.colors.includes(name)) && on.every((surface) => other.on.includes(surface)));
 
@@ -214,7 +214,7 @@ const results = new Map();
 for (look of lookIds) for (const pair of pairs) {
   if (!spec.floors[pair.role]) throw new Error(`tokens/contrast.json: no floor for the role ${pair.role}`);
   if (!look && pair.in && !['standard', 'hc'].includes(pair.in)) problems.push(`${pair.colors}: \`in\` is standard or hc, not ${pair.in}`);
-  if (!look && pair.in === 'standard' && pair.role !== 'exempt' && !exemptInHc(pair)) problems.push(`${pair.colors}: a pair that leaves out -hc needs an exempt -hc pair for the same colours and surfaces`);
+  if (!look && pair.in === 'standard' && pair.role !== 'exempt' && !exemptInHc(pair)) problems.push(`${pair.colors}: a pair that leaves out -hc needs an exempt -hc pair for the same colors and surfaces`);
   for (const theme of themes) {
     const hc = theme.endsWith('-hc');
     if (pair.in && pair.in !== (hc ? 'hc' : 'standard')) continue;
