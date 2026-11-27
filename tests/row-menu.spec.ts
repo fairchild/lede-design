@@ -241,3 +241,34 @@ test.describe('revealed actions in a narrow row', () => {
     expect(await slide(page, 'Swiped open')).toBe(0);
   });
 });
+
+test.describe('open rows', () => {
+  test('a row whose swipe is turned off while open closes, its next click is its own, and it stays closed after', async ({ page }) => {
+    await open(page, '/fixtures/list-row');
+    const region = page.getByRole('region', { name: 'Swipe turned off' });
+    const li = region.locator('.ld-row-wrap').filter({ hasText: 'Turned off' });
+    await expect(li).toHaveClass(/ld-row-open/);
+    await region.getByRole('button', { name: 'Turn the swipe off' }).click();
+    await expect(li).not.toHaveClass(/ld-row-open/);
+    await li.getByRole('button', { name: 'Turned off', exact: true }).click();
+    await expect(region.getByText('Clicks: 1')).toBeVisible();
+    await region.getByRole('button', { name: 'Turn the swipe on' }).click();
+    await expect(li.locator('.ld-row-action').first()).toBeAttached();
+    await expect(li).not.toHaveClass(/ld-row-open/);
+  });
+
+  test('a revealed action comes after the row’s own controls, and a disabled one says why', async ({ page }) => {
+    await open(page, '/fixtures/list-row');
+    const li = page.getByRole('region', { name: 'Swipe turned off' }).locator('.ld-row-wrap').filter({ hasText: 'With a reason' });
+    const archive = li.locator('.ld-row-action').first();
+    await expect(archive).toHaveAccessibleName('Archive');
+    await expect(archive).toHaveAccessibleDescription('Already archived');
+    await expect(archive).toHaveAttribute('title', 'Already archived');
+    // In document order, so in tab order, the ••• menu comes before the revealed actions.
+    expect(await li.evaluate((el) => {
+      const more = el.querySelector('.ld-row-more')!;
+      const action = el.querySelector('.ld-row-action')!;
+      return !!(more.compareDocumentPosition(action) & Node.DOCUMENT_POSITION_FOLLOWING);
+    })).toBe(true);
+  });
+});

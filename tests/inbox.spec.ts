@@ -321,6 +321,8 @@ test('archiving the open message while it is selected takes it out of the bar\'s
   if (isMobile) await page.goForward();
   await page.locator('.ld-message-actions').getByRole('button', { name: 'Archive' }).click();
   await expect(page).toHaveURL(/\/app\/inbox$/);
+  // In Select mode a row has no link, so focus lands on the next row's checkbox, not on the page's heading.
+  if (!isMobile) await expect(page.getByRole('checkbox', { name: /Launch date/ })).toBeFocused();
   await expect(page.getByRole('toolbar', { name: '1 message selected' })).toBeVisible();
   // The bar acts on what it counts: Delete takes the one message left in the selection.
   await page.getByRole('toolbar').getByRole('button', { name: 'Delete' }).click();

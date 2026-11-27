@@ -58,6 +58,25 @@ function Narrowed() {
   );
 }
 
+/** An open row whose swipe its parent turns off and on again, and an open row with a disabled action that gives its reason. */
+function SwipeOff() {
+  const [swipe, setSwipe] = React.useState(true);
+  const [clicks, setClicks] = React.useState(0);
+  const [open, setOpen] = React.useState(true);
+  return (
+    <section aria-label="Swipe turned off" className="docs-section">
+      <div style={{ width: 360 }}>
+        <ListGroup>
+          <ListRow title="Turned off" actions={TWO} actionsOpen={open} onActionsOpenChange={setOpen} swipe={swipe} onClick={() => setClicks((n) => n + 1)} />
+          <ListRow title="With a reason" actions={[{ label: 'Archive', disabled: true, disabledReason: 'Already archived' }, { label: 'Delete', tone: 'critical' }]} actionsOpen />
+        </ListGroup>
+      </div>
+      <p>Clicks: {clicks}</p>
+      <Button variant="gray" onClick={() => setSwipe((v) => !v)}>{swipe ? 'Turn the swipe off' : 'Turn the swipe on'}</Button>
+    </section>
+  );
+}
+
 /** Group headers whose summary is too long to sit beside the title on a phone, so it moves under it. */
 const HEADERS = [
   { title: 'Saturday', summary: 'The castle and old town, with fado at night.' },
@@ -85,6 +104,7 @@ export function ListRowFixtures() {
       ))}
       <Lengthened />
       <Narrowed />
+      <SwipeOff />
       <section aria-label="Group headers with long summaries" className="docs-section">
         {HEADERS.map((h) => (
           <ListGroup key={h.title} title={h.title} summary={h.summary}>

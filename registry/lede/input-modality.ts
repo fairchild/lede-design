@@ -6,13 +6,22 @@
  * pointer is coarse counts as touch, so a phone's cold load starts at the h1 too. A screen reached by touch keeps the
  * on-screen keyboard down, so it lands on its h1 and the field is one tap away.
  */
+const TEXT_ENTRY = 'textarea, [contenteditable]:not([contenteditable="false"]), '
+  + 'input:not([type=checkbox], [type=radio], [type=range], [type=button], [type=submit], [type=reset], [type=file], [type=color], [type=image])';
+
 let touch = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
 /** Whether the most recent input was a key press. Before any input it isn't. */
 let keyed = false;
 
 if (typeof document !== 'undefined') {
   document.addEventListener('pointerdown', (e) => { touch = e.pointerType === 'touch' || e.pointerType === 'pen'; keyed = false; }, true);
-  document.addEventListener('keydown', () => { touch = false; keyed = true; }, true);
+  // Typing into a text field reached by touch is an on-screen keyboard, Enter included, so it leaves the input as touch.
+  // A hardware keyboard typing there can't be told apart, and stays touch too. Tab, the arrow keys and Escape aren't on
+  // an on-screen keyboard, so they count as keys wherever they land, and so does any key on a control that takes no text.
+  document.addEventListener('keydown', (e) => {
+    if (touch && !/^(Tab|Arrow|Escape)/.test(e.key) && e.target instanceof Element && e.target.matches(TEXT_ENTRY)) return;
+    touch = false; keyed = true;
+  }, true);
 }
 
 export const lastInputWasTouch = () => touch;

@@ -82,3 +82,15 @@ test('every rule that reads a theme root from a descendant asks the nearest root
     .map(({ selector }) => `${sheet}: ${selector}`));
   expect(unguarded).toEqual([]);
 });
+
+test('a root provider that inherits follows its ancestor\'s theme when a script changes it', async ({ page }) => {
+  await page.goto('/fixtures/theme-nesting');
+  const section = page.getByRole('region', { name: 'Inherits from a script' });
+  const inner = section.locator('#fx-script-theme .ld-theme');
+  await expect(inner).toHaveAttribute('data-theme', 'light');
+  await section.getByRole('button', { name: 'Set the outer theme by script' }).click();
+  await expect(inner).toHaveAttribute('data-theme', 'dark-hc');
+  // A closer ancestor that gains a theme later takes over.
+  await section.getByRole('button', { name: 'Set a closer theme by script' }).click();
+  await expect(inner).toHaveAttribute('data-theme', 'dark');
+});
