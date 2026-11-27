@@ -112,9 +112,10 @@ async function fromBucket(request: Request, env: Env, key: string, kind: Kind): 
   return respond(request, object.body, headers, httpDate(headers.get('last-modified')));
 }
 
-// /r/<name>.json is the deployed build's own dist/r, the latest release once deploys come from tags. A missing file
-// comes back as something other than JSON, so the asset is fetched without the request's conditional headers, anything
-// that isn't JSON is a 404, and preconditions are evaluated here against the JSON's own ETag.
+// /r/<name>.json is the deployed build's own dist/r: on production the latest release, since only a release tag deploys
+// it, and on a preview the build it was made from. A missing file comes back as something other than JSON, so the asset
+// is fetched without the request's conditional headers, anything that isn't JSON is a 404, and preconditions are
+// evaluated here against the JSON's own ETag.
 async function fromAssets(request: Request, env: Env): Promise<Response> {
   const asset = await env.ASSETS.fetch(request.url, { method: request.method });
   if (!asset.headers.get('content-type')?.startsWith('application/json')) {

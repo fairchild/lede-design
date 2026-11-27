@@ -13,7 +13,7 @@
   /* Beyond tokens: a tinted Button is yellow, not a tint of the accent. A tint-color token would carry it. */
   :scope .ld-btn-tinted:not(.ld-btn-critical) { background-color: var(--secondary); color: var(--secondary-foreground); }
   :scope .ld-row-wrap + .ld-row-wrap::before { left: 0; }
-  /* The avatar is a loud chip. High contrast keeps Lede's own, whose colours its palette sets. */
+  /* The avatar is a loud chip. High contrast keeps Lede's own, whose colors its palette sets. */
   @container style(--ld-contrast: standard) {
     :scope .ld-avatar { box-shadow: 0 0 0 2px var(--border); background: var(--ring); color: #000000; }
   }

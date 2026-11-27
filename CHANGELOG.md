@@ -24,6 +24,10 @@
   as `type="email"` invalid with no message when the flow accepted it.
 - **AppearanceFlow names Mode and Corners once each**, and `describeAppearance()` lists Reduced transparency and
   Compact controls when they're on.
+- **The token build fails on a token shape it used to write wrongly**: a themed value keyed by a theme that doesn't
+  exist, or with no value for the first, and a keyed value that names another token.
+- **The daily-brief, onboarding, profile, settings and use-server-rows items no longer list `@lede/lede-utils`**, which
+  they don't import. It still installs with the components they use.
 - **DailyBriefFlow keeps cards that share a title apart.** ProfileFlow's `onSave` docs say a `value` that changed
   while the form was open is overwritten by the edits.
 
