@@ -11,7 +11,7 @@ export type { StatusListProps, StatusItem } from './status-list';
 export { MasterDetail, useStackedPanes } from './master-detail';
 export type { MasterDetailProps } from './master-detail';
 export { WorkbenchShell } from './workbench-shell';
-export type { WorkbenchShellProps, WorkbenchPanel } from './workbench-shell';
+export type { WorkbenchShellProps, WorkbenchPanel, WorkbenchRegion } from './workbench-shell';
 export { FormSection } from './form-section';
 export type { FormSectionProps } from './form-section';
 export { StepIndicator } from './step-indicator';

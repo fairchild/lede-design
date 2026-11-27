@@ -864,3 +864,67 @@ test.describe('narrow', () => {
     }
   });
 });
+
+test.describe('a parent that holds the shown panel and the open state', () => {
+  test.skip(({ isMobile }) => isMobile, 'One project is enough: these set their own windows.');
+  const changes = (page: Page) => page.getByText(/^Changes:/);
+
+  test('on a narrow screen, a button in a panel or in the top bar picks the panel, and the switcher reports its choice', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 800 });
+    await page.goto('/fixtures/workbench-controlled');
+    const switcher = page.getByRole('group', { name: 'Panel' });
+    await switcher.getByRole('radio', { name: 'Files' }).check();
+    await expect(landmark(page, 'Files')).toBeVisible();
+    await page.getByRole('button', { name: 'Open retry.ts' }).click();
+    await expect(landmark(page, 'Files')).toBeHidden();
+    await expect(switcher.getByRole('radio', { name: 'Content' })).toBeChecked();
+    await page.getByRole('button', { name: 'Ask the assistant' }).click();
+    await expect(landmark(page, 'Assistant')).toBeVisible();
+    await expect(switcher.getByRole('radio', { name: 'Assistant' })).toBeChecked();
+    await expect(changes(page)).toHaveText('Changes: panel start');
+  });
+
+  test('on a wide screen, the parent opens and collapses a panel, and its toggle reports what it asks for', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/fixtures/workbench-controlled');
+    await expect(landmark(page, 'Assistant')).toBeVisible();
+    await page.getByRole('button', { name: 'Toggle the assistant from main' }).click();
+    await expect(landmark(page, 'Assistant')).toHaveCount(0);
+    await expect(toggle(page, 'Assistant')).toHaveAttribute('aria-expanded', 'false');
+    await toggle(page, 'Assistant').click();
+    await expect(landmark(page, 'Assistant')).toBeVisible();
+    await toggle(page, 'Assistant').click();
+    await expect(landmark(page, 'Assistant')).toHaveCount(0);
+    await splitter(page, 'Assistant').focus();
+    await page.keyboard.press('ArrowLeft');
+    await expect(landmark(page, 'Assistant')).toBeVisible();
+    await expect(changes(page)).toHaveText('Changes: assistant open, assistant closed, assistant open');
+  });
+});
+
+test('with storageKey, a render that changes no layout writes nothing to storage', async ({ page, isMobile }) => {
+  test.skip(isMobile, 'One project is enough.');
+  await page.addInitScript(() => {
+    const set = Storage.prototype.setItem;
+    (window as unknown as { writes: number }).writes = 0;
+    Storage.prototype.setItem = function (key: string, value: string) {
+      if (key === 'lede:workbench') (window as unknown as { writes: number }).writes += 1;
+      return set.call(this, key, value);
+    };
+  });
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto(ROUTE);
+  await toggle(page, 'Files').click();
+  await toggle(page, 'Files').click();
+  const writes = () => page.evaluate(() => (window as unknown as { writes: number }).writes);
+  await expect.poll(writes).toBeGreaterThan(0);
+  const after = await writes();
+  // A narrower window re-renders the shell and draws the panels narrower, but asks for nothing new.
+  const frames = () => page.evaluate(() => new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done))));
+  await page.setViewportSize({ width: 1400, height: 900 });
+  await frames();
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await frames();
+  await frames();
+  expect(await writes()).toBe(after);
+});

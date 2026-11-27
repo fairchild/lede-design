@@ -6,7 +6,6 @@ import { focusLanding } from '../input-modality';
 import { useStackedPanes } from '../stacked-panes';
 
 type WorkbenchSide = 'start' | 'end';
-type WorkbenchRegion = WorkbenchSide | 'main';
 
 export interface WorkbenchPanel {
   /** Names the landmark, its top-bar toggle, its divider and its switcher option ("Files"). */
@@ -14,7 +13,17 @@ export interface WorkbenchPanel {
   content: React.ReactNode;
   /** Width in px, from 200 to 480. Default 280. */
   defaultWidth?: number;
+  /**
+   * Whether the panel is open beside main on a wide screen. Unset, the shell keeps it, open at first and then as its
+   * toggle and divider leave it, or as `storageKey` restores it. Set, it wins over both.
+   */
+  open?: boolean;
+  /** Called with the panel's next open state when its toggle, divider or a drag opens or collapses it. */
+  onOpenChange?: (open: boolean) => void;
 }
+
+/** A region of the shell: on a narrow screen, the one panel showing. */
+export type WorkbenchRegion = 'start' | 'main' | 'end';
 
 export interface WorkbenchShellProps {
   /** Product name, wordmark or a link out, at the start of the top bar. */
@@ -29,6 +38,13 @@ export interface WorkbenchShellProps {
   children: React.ReactNode;
   /** Names the center panel and its switcher option. Default `'Content'`. */
   mainLabel?: string;
+  /**
+   * The panel showing on a narrow screen, where one shows at a time. Unset, the shell keeps it: main at first, then
+   * what the switcher picks, and main again when a link in the start panel is followed or the skip link is used.
+   */
+  panel?: WorkbenchRegion;
+  /** Called with the next panel when the switcher, a followed link in the start panel or the skip link changes it. */
+  onPanelChange?: (panel: WorkbenchRegion) => void;
   /** One or two controls at the end of the top bar. */
   actions?: React.ReactNode;
   /**
@@ -221,12 +237,25 @@ export function WorkbenchShell(props: WorkbenchShellProps) {
     },
     held: null,
   }));
-  const { sides } = layout;
+  // An `open` prop wins over the shell's own collapsed state, here and wherever a layout is drawn.
+  const opened = { start: start.open, end: end.open };
+  const effective = (l: Layout): Layout => {
+    const side = (name: WorkbenchSide) => (opened[name] === undefined ? l.sides[name] : { ...l.sides[name], collapsed: !opened[name] });
+    return { ...l, sides: { start: side('start'), end: side('end') } };
+  };
+  // Kept as one object while nothing changes, as the storage effect below runs when it does.
+  const sides = React.useMemo(() => effective(layout).sides, [layout.sides, opened.start, opened.end]);
   const [room, setRoom] = React.useState(Infinity);
   const [dragging, setDragging] = React.useState(false);
   // False in the server's markup, whose narrow-screen CSS then hides the side panels, as the first render here does.
   const [mounted, setMounted] = React.useState(false);
-  const [active, setActive] = React.useState<WorkbenchRegion>('main');
+  const [innerActive, setInnerActive] = React.useState<WorkbenchRegion>('main');
+  const active = props.panel ?? innerActive;
+  const setActive = (region: WorkbenchRegion) => {
+    if (region === active) return;
+    if (props.panel === undefined) setInnerActive(region);
+    props.onPanelChange?.(region);
+  };
 
   const root = React.useRef<HTMLDivElement>(null);
   const heading = React.useRef<HTMLHeadingElement>(null);
@@ -274,7 +303,20 @@ export function WorkbenchShell(props: WorkbenchShellProps) {
     } catch { /* unavailable: the layout lasts for this visit */ }
   }, [props.storageKey, sides, layout.held, dragging]);
 
-  const drawn = draw(layout, room);
+  // A panel its parent opens or collapses on its own lets go of the held widths, as a toggle does. One it opens or
+  // collapses because the toggle or divider asked already has its layout, held widths included.
+  const was = React.useRef(opened);
+  React.useLayoutEffect(() => {
+    const own = (side: WorkbenchSide) =>
+      was.current[side] !== opened[side] && opened[side] !== undefined && opened[side] === layout.sides[side].collapsed;
+    if (own('start') || own('end')) setLayout((now) => ({ ...now, held: null }));
+    was.current = opened;
+  }, [opened.start, opened.end]);
+  // What a resize has already asked a collapsed panel's parent, so a drag asks once and each key press asks again.
+  const asked = React.useRef<Partial<Record<WorkbenchSide, boolean>>>({});
+  React.useLayoutEffect(() => { if (!dragging) asked.current = {}; });
+
+  const drawn = draw(effective(layout), room);
   const change = (next: (now: Layout) => Layout) => {
     touched.current = true;
     setLayout(next);
@@ -282,11 +324,16 @@ export function WorkbenchShell(props: WorkbenchShellProps) {
   // Worked out from `now`, so resizes batched into one render build on each other. In a squeezed window the width asked
   // for moves by the step taken, so it survives a wider window. Both panels are then held as drawn, or `fit()` would
   // rebalance the pair against this divider.
-  const resize = (side: WorkbenchSide, target: number) =>
+  // A resize opens a collapsed panel, as a drag or an arrow key away from the edge does.
+  const resize = (side: WorkbenchSide, target: number) => {
+    if (sides[side].collapsed && !asked.current[side]) {
+      asked.current[side] = true;
+      panels[side].onOpenChange?.(true);
+    }
     change((now) => {
-      const before = draw(now, room);
+      const before = draw(effective(now), room);
       const width = Math.round(clamp(target, MIN_WIDTH, widest(before, side, room)));
-      const asked = now.sides[side];
+      const asked = effective(now).sides[side];
       const squeeze = asked.collapsed ? 0 : clamp(asked.width, MIN_WIDTH, MAX_WIDTH) - before[side];
       const other = otherSide(side);
       return {
@@ -294,9 +341,13 @@ export function WorkbenchShell(props: WorkbenchShellProps) {
         held: { room, widths: before[other] ? { [side]: width, [other]: before[other] } : { [side]: width } },
       };
     });
-  const toggle = (side: WorkbenchSide) =>
+  };
+  const toggle = (side: WorkbenchSide) => {
+    const open = sides[side].collapsed;
     // A collapse or restore lets go of the held widths: they were drawn beside the other panel as it was.
-    change((now) => ({ held: null, sides: { ...now.sides, [side]: { ...now.sides[side], collapsed: !now.sides[side].collapsed } } }));
+    change((now) => ({ held: null, sides: { ...now.sides, [side]: { ...now.sides[side], collapsed: !open } } }));
+    panels[side].onOpenChange?.(open);
+  };
 
   const hidden = (region: WorkbenchRegion) => (stacked ? active !== region : region !== 'main' && sides[region].collapsed);
   const sized = (side: WorkbenchSide) => ({ '--ld-wb-width': `${drawn[side]}px` }) as React.CSSProperties;
@@ -347,7 +398,8 @@ export function WorkbenchShell(props: WorkbenchShellProps) {
             block
             label="Panel"
             options={[{ value: 'start', label: start.label }, { value: 'main', label: mainLabel }, { value: 'end', label: end.label }]}
-            value={active}
+            // The server's markup shows main alone on a narrow screen, so its switcher says so until the script runs.
+            value={mounted ? active : 'main'}
             onValueChange={(region) => setActive(region as WorkbenchRegion)}
           />
         </div>
