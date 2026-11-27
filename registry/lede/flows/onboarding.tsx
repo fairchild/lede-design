@@ -102,29 +102,42 @@ export function OnboardingFlow(props: OnboardingFlowProps) {
   const step = held ? 0 : (props.step ?? inner);
   const inputs = React.useRef<Partial<Record<keyof Errors, HTMLInputElement | null>>>({});
 
-  // Finish fires once until its save settles. A save without a promise counts as pending until the step changes. Each
-  // step change starts a new run, so a save that settles in an earlier one moves nothing.
+  // Finish fires once until its save settles, even when the step changes and comes back while it's on its way. A save
+  // without a promise counts as pending until the step changes. Each step change starts a new run, in the commit that
+  // makes it, so a save that settles in an earlier run moves nothing. The exception is a save that settles back on
+  // Review with the answers it carried unchanged: it counts as this run's.
   const [finish, setFinish] = React.useState<{ state: 'idle' | 'saving' } | { state: 'failed'; message: string; n: number }>({ state: 'idle' });
   const finishing = React.useRef(false);
   const mounted = React.useRef(true);
   React.useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
+  const inFlight = React.useRef(false);
+  const shown = React.useRef({ step, data });
+  React.useLayoutEffect(() => { shown.current = { step, data }; });
   const run = React.useRef(0);
-  React.useEffect(() => { run.current += 1; finishing.current = false; setFinish({ state: 'idle' }); }, [step]);
+  React.useLayoutEffect(() => {
+    run.current += 1;
+    finishing.current = inFlight.current;
+    setFinish({ state: inFlight.current ? 'saving' : 'idle' });
+  }, [step]);
   const saving = finish.state === 'saving';
   const complete = async (e: React.FormEvent) => {
     e.preventDefault();
     if (finishing.current) return;
     finishing.current = true;
     const pressed = run.current;
-    const current = () => mounted.current && run.current === pressed;
+    const sent = data;
+    const current = () => mounted.current
+      && (run.current === pressed || (shown.current.step === 2 && shown.current.data === sent));
     try {
       const saved = props.onComplete(data);
       if (!saved) { go(3); return; }
       setFinish({ state: 'saving' });
-      await saved;
+      inFlight.current = true;
+      try { await saved; } finally { inFlight.current = false; }
       if (current()) go(3);
+      else if (mounted.current) { finishing.current = false; setFinish({ state: 'idle' }); }
     } catch (error) {
-      if (!current()) return;
+      if (!current()) { if (mounted.current) { finishing.current = false; setFinish({ state: 'idle' }); } return; }
       finishing.current = false;
       setFinish((now) => ({ state: 'failed', message: (error instanceof Error && error.message.trim()) || RETRY, n: (now.state === 'failed' ? now.n : 0) + 1 }));
     }

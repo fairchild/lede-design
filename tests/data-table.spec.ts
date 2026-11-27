@@ -918,6 +918,24 @@ test.describe('DataTable', () => {
     });
   });
 
+  test('pages: a ticked page loses its "Select all" offer while the next page loads', async ({ page }) => {
+    await open(page, FIXTURES);
+    const section = page.locator('section[aria-labelledby="fx-held-pages"]');
+    const table = page.getByRole('table', { name: 'Held pages fixture' });
+    const answer = section.getByRole('button', { name: 'Answer waiting page requests' });
+    await answer.click();
+    await expect(table.locator('tbody tr')).toHaveCount(5);
+    await table.getByRole('checkbox', { name: /^Select all items/ }).click();
+    const offer = section.getByRole('button', { name: 'Select all 30 items' });
+    await expect(offer).toBeVisible();
+    await section.getByRole('button', { name: 'Next' }).click();
+    await expect(section.getByText('Page requests waiting: 1')).toBeVisible();
+    await expect(table).toHaveAttribute('aria-busy', 'true');
+    await expect(offer).toHaveCount(0);
+    await answer.click();
+    await expect(table).not.toHaveAttribute('aria-busy');
+  });
+
   test('cursor paging: reload rebuilds the loaded pages in order, each from the previous cursor', async ({ page }) => {
     await open(page, FIXTURES);
     const table = page.getByRole('table', { name: 'Cursor fixture' });

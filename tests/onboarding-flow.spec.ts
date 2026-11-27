@@ -59,20 +59,59 @@ test('a save that throws as Finish is pressed stays on Review with its reason, a
   await expect(slow(page).getByRole('heading', { level: 1, name: 'You’re all set, Ada' })).toBeVisible();
 });
 
-test('a save that settles after a controlled step moved on leaves the step where it is', async ({ page }) => {
-  const flow = page.getByRole('region', { name: 'Controlled finish' });
+const controlled = (page: Page) => page.getByRole('region', { name: 'Controlled finish' });
+
+/** Opens the fixture and takes the controlled flow to Review, with Finish pressed and its save pending. */
+async function controlledPending(page: Page) {
+  const flow = controlled(page);
   await page.goto('/fixtures/onboarding');
   await flow.getByRole('button', { name: 'Continue' }).click();
   await flow.getByRole('button', { name: 'Continue' }).click();
   await flow.getByRole('button', { name: 'Finish', exact: true }).press('Enter');
   await expect(flow.getByRole('button', { name: 'Finishing…' })).toBeVisible();
-  await flow.getByRole('button', { name: 'Show Preferences' }).click();
+  return flow;
+}
+
+test('a save that settles after a controlled step moved on leaves the step where it is', async ({ page }) => {
+  const flow = await controlledPending(page);
+  await flow.getByRole('button', { name: 'Show Preferences', exact: true }).click();
   await expect(flow.getByRole('heading', { level: 1, name: 'Make it yours' })).toBeVisible();
   await flow.getByRole('button', { name: 'Finish save' }).click();
+  await expect(flow.getByText('Saves settled: 1')).toBeVisible();
   await expect(flow.getByText('Step asked for: 1')).toBeVisible();
-  await page.waitForTimeout(300);
   await expect(flow.getByRole('heading', { level: 1, name: 'Make it yours' })).toBeVisible();
-  await expect(flow.getByText('Step asked for: 1')).toBeVisible();
+});
+
+test('back on Review while its save is on its way, Finish waits for that save, which finishes the flow', async ({ page }) => {
+  const flow = await controlledPending(page);
+  await flow.getByRole('button', { name: 'Show Preferences', exact: true }).click();
+  await expect(flow.getByRole('heading', { level: 1, name: 'Make it yours' })).toBeVisible();
+  await flow.getByRole('button', { name: 'Show Review' }).click();
+  const finishing = flow.getByRole('button', { name: 'Finishing…' });
+  await expect(finishing).toBeVisible();
+  await finishing.press('Enter');
+  await expect(flow.getByText('Saves asked for: 1')).toBeVisible();
+  // The answers on Review are the ones the save carries, so it counts.
+  await flow.getByRole('button', { name: 'Finish save' }).click();
+  await expect(flow.getByRole('heading', { level: 1, name: 'You’re all set, Grace' })).toBeVisible();
+  await expect(flow.getByText('Saves asked for: 1')).toBeVisible();
+});
+
+test('a save on its way with answers changed since leaves Review as it is, and Finish saves the new ones', async ({ page }) => {
+  const flow = await controlledPending(page);
+  await flow.getByRole('button', { name: 'Show Preferences', exact: true }).click();
+  await flow.getByRole('switch', { name: 'Send me a daily brief' }).click();
+  await flow.getByRole('button', { name: 'Show Review' }).click();
+  await expect(flow.getByRole('button', { name: 'Finishing…' })).toBeVisible();
+  await flow.getByRole('button', { name: 'Finish save' }).click();
+  await expect(flow.getByText('Saves settled: 1')).toBeVisible();
+  await expect(flow.getByText('Step asked for: 2')).toBeVisible();
+  const finish = flow.getByRole('button', { name: 'Finish', exact: true });
+  await expect(finish).toBeVisible();
+  await finish.press('Enter');
+  await expect(flow.getByText('Saves asked for: 2')).toBeVisible();
+  await flow.getByRole('button', { name: 'Finish save' }).click();
+  await expect(flow.getByRole('heading', { level: 1, name: 'You’re all set, Grace' })).toBeVisible();
 });
 
 test('a controlled step past Account waits for Continue, not for the keystroke that makes the account valid', async ({ page }) => {
