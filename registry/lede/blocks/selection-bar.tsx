@@ -2,6 +2,7 @@ import * as React from 'react';
 import { flushSync } from 'react-dom';
 import { GlassToolbar, GlassToolbarButton, GlassToolbarSeparator } from '../glass-bar';
 import type { ToneSubset } from '../tone';
+import { withLabels } from '../cn';
 
 export interface SelectionAction {
   label: string;
@@ -12,6 +13,34 @@ export interface SelectionAction {
 }
 /** A noun in both forms, so counts read correctly, as in "1 work item" and "3 work items". */
 export interface Noun { one: string; other: string; }
+/** SelectionBar's own words. Override any of them through `labels`; the rest stay English. */
+export interface SelectionBarLabels {
+  /**
+   * Names the bar and is announced. `counted` is the count with its noun, as in "3 work items", and `count` the number,
+   * the lower bound while the exact count is still arriving.
+   */
+  selected: (p: { counted: string; count: number }) => string;
+  /**
+   * The count the bar shows. `number` is the formatted number alone and `noun` its form for `count`; wrap the noun in
+   * `.ld-selection-noun` to hide it when narrow.
+   */
+  shown: (p: { number: string; noun: string; count: number }) => React.ReactNode;
+  /** Names the bar while the count is being worked out. */
+  counting: (noun: Noun) => string;
+  /** Shown in place of the count while it's being worked out. */
+  countingShort: string;
+  /** The button that clears the selection. */
+  done: string;
+}
+
+export const selectionBarLabels: SelectionBarLabels = {
+  selected: ({ counted }) => `${counted} selected`,
+  shown: ({ number, noun }) => <>{number} <span className="ld-selection-noun">{noun} </span>selected</>,
+  counting: (noun) => `Counting selected ${noun.other}`,
+  countingShort: 'Counting…',
+  done: 'Done',
+};
+
 export interface SelectionBarProps {
   /** How many items are selected. `{ atLeast }` while an exact count is still arriving. The bar appears above zero. */
   count: number | { atLeast: number };
@@ -26,6 +55,8 @@ export interface SelectionBarProps {
   locale?: string;
   /** The count is being worked out, as while a new view's total loads: the bar reads “Counting…” and announces nothing new. */
   counting?: boolean;
+  /** Words to use in place of the English defaults in `selectionBarLabels`. */
+  labels?: Partial<SelectionBarLabels>;
 }
 
 /** The number alone: "3", or "1,000+" for a lower bound. */
@@ -44,7 +75,8 @@ export function formatCount(count: number | { atLeast: number }, noun: Noun, loc
 export function SelectionBar(props: SelectionBarProps) {
   const n = typeof props.count === 'number' ? props.count : props.count.atLeast;
   const noun = props.count === 1 ? props.noun.one : props.noun.other;
-  const label = props.counting ? `Counting selected ${props.noun.other}` : `${formatCount(props.count, props.noun, props.locale)} selected`;
+  const l = withLabels(selectionBarLabels, props.labels);
+  const label = props.counting ? l.counting(props.noun) : l.selected({ counted: formatCount(props.count, props.noun, props.locale), count: n });
   // The status region says a count once it has held for a frame, so a count from the commit before a new view's load
   // is reported is never announced. While counting it's empty, so the real count is announced even when it's the same.
   const say = n > 0 ? label : '';
@@ -82,7 +114,7 @@ export function SelectionBar(props: SelectionBarProps) {
         <div ref={bar} className="ld-selection-bar" onFocus={enter} onKeyDown={escape}>
           <GlassToolbar aria-label={label}>
             <span className="ld-selection-count" aria-hidden="true">
-              {props.counting ? 'Counting…' : <>{formatNumber(props.count, props.locale)} <span className="ld-selection-noun">{noun} </span>selected</>}
+              {props.counting ? l.countingShort : l.shown({ number: formatNumber(props.count, props.locale), noun, count: n })}
             </span>
             <GlassToolbarSeparator />
             {props.actions.map((a) => (
@@ -91,7 +123,7 @@ export function SelectionBar(props: SelectionBarProps) {
               </GlassToolbarButton>
             ))}
             <GlassToolbarSeparator />
-            <GlassToolbarButton onClick={done}>Done</GlassToolbarButton>
+            <GlassToolbarButton onClick={done}>{l.done}</GlassToolbarButton>
           </GlassToolbar>
         </div>
       ) : null}

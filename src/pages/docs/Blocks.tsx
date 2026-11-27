@@ -32,6 +32,7 @@ export function Blocks() {
   return (
     <div className="ld-flow">
       <PageHeader title="Blocks" summary="The larger parts of a screen, page layouts among them, each one a registry item. Daybook, the demo app, is built from them." />
+      <p className="docs-intro">Blocks that say words of their own, such as a skip link or “Load more”, say them in English. Each takes a <code>labels</code> prop to replace any of them, and exports its defaults, such as <code>dataTableLabels</code>.</p>
       <Block id="b-shell" item="app-shell" title="AppShell" summary={<>A page layout: a skip link, one primary <code>{'<nav>'}</code> and a <code>{'<main>'}</code>, where the nav is a sidebar on wide screens and a floating GlassBar on narrow ones.<Live> This page is inside one.</Live></>}>
         <Button variant="tinted" href="/layouts#sidebar">See it in Layouts</Button>
       </Block>

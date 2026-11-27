@@ -1,6 +1,13 @@
 import * as React from 'react';
 import { presets, type Preset } from '../theme-provider';
-import { cn } from '../cn';
+import { cn, withLabels } from '../cn';
+
+/** Each preset's visible name. Override any of them through `labels`; the rest stay English. */
+export type AccentPickerLabels = Record<Preset, string>;
+
+export const accentPickerLabels: AccentPickerLabels = {
+  blue: 'Blue', indigo: 'Indigo', teal: 'Teal', green: 'Green', orange: 'Orange', pink: 'Pink', graphite: 'Graphite',
+};
 
 export interface AccentPickerProps {
   /** The checked preset. Leave it unset when no preset is the one showing, such as a look's own accent: none is checked. */
@@ -8,6 +15,8 @@ export interface AccentPickerProps {
   onValueChange: (value: Preset) => void;
   /** Radio group name. Defaults to a generated id. */
   name?: string;
+  /** Names to use in place of the English defaults in `accentPickerLabels`. */
+  labels?: Partial<AccentPickerLabels>;
   className?: string;
 }
 
@@ -17,6 +26,7 @@ export interface AccentPickerProps {
  */
 export function AccentPicker(props: AccentPickerProps) {
   const auto = React.useId();
+  const l = withLabels(accentPickerLabels, props.labels);
   return (
     <div className={cn('ld-accents', props.className)}>
       {presets.map((p) => (
@@ -30,7 +40,7 @@ export function AccentPicker(props: AccentPickerProps) {
             onChange={() => props.onValueChange(p)}
           />
           <span className="ld-accent-swatch" style={{ background: `var(--preset-${p})` }} aria-hidden="true" />
-          <span className="ld-accent-name">{p[0].toUpperCase() + p.slice(1)}</span>
+          <span className="ld-accent-name">{l[p]}</span>
         </label>
       ))}
     </div>

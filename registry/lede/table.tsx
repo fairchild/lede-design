@@ -417,13 +417,15 @@ export interface SortButtonProps extends Omit<React.ComponentProps<'button'>, 't
    * wins, so the button and `aria-sort` always agree. The nearest such HeaderCell counts, through portals too.
    */
   direction?: SortDirection | null;
+  /** The description of a sorted direction. Default "Sorted ascending" and "Sorted descending". */
+  describe?: (direction: SortDirection) => string;
 }
 /**
  * The `<button>` inside a sortable header. Its description carries the direction too, for screen readers that
  * ignore `aria-sort` changes (TalkBack), after any `aria-describedby` of yours. Pair it with a live announcement of
  * the new sort.
  */
-function SortButton({ direction: own, className, children, 'aria-describedby': describedBy, ...rest }: SortButtonProps) {
+function SortButton({ direction: own, describe, className, children, 'aria-describedby': describedBy, ...rest }: SortButtonProps) {
   const id = React.useId();
   const header = React.useContext(HeaderSort);
   const direction = header !== undefined ? header : own ?? null;
@@ -437,7 +439,7 @@ function SortButton({ direction: own, className, children, 'aria-describedby': d
           <path className="ld-table-sort-down" d="M3 9.5 6 12.5l3-3" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       </button>
-      {direction ? <span id={id} hidden>{`Sorted ${direction}`}</span> : null}
+      {direction ? <span id={id} hidden>{describe ? describe(direction) : `Sorted ${direction}`}</span> : null}
     </>
   );
 }

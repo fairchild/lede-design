@@ -3,7 +3,7 @@ import type { TableLabel } from '../table';
 import { Checkbox } from '../checkbox';
 import { ListRow, type RowAction } from '../list';
 import type { Noun } from './selection-bar';
-import type { Column, DataTableModel } from './use-data-table';
+import type { Column, DataTableLabels, DataTableModel } from './use-data-table';
 import { SKELETON_ROWS, cellContent } from './data-table-row';
 
 interface CardsProps<Row> {
@@ -13,6 +13,7 @@ interface CardsProps<Row> {
   rowHeader: string;
   noun: Noun;
   scope: string;
+  labels: DataTableLabels;
   rowHref?: (row: Row) => string;
   rowActions?: (row: Row) => RowAction[];
   swipe: boolean;
@@ -66,12 +67,12 @@ export function Cards<Row>(p: CardsProps<Row>) {
                 aria-disabled={sel.inert || undefined}
                 onChange={sel.togglePage}
               />
-              <span>{`Select all ${p.noun.other} ${p.scope}`}</span>
+              <span>{p.labels.selectAll({ noun: p.noun, scope: p.scope })}</span>
             </label>
           ) : null}
           {sortable.length ? (
             <label className="ld-dt-cardbar-sort">
-              <span>Sort</span>
+              <span>{p.labels.sort}</span>
               <select
                 className="ld-dt-select"
                 value={currentValue}
@@ -81,11 +82,11 @@ export function Cards<Row>(p: CardsProps<Row>) {
                   if (at > 0) model.sortBy(v.slice(0, at), v.slice(at + 1) as 'ascending' | 'descending');
                 }}
               >
-                {currentValue ? null : <option value="">Not sorted</option>}
-                {fixed != null ? <option value={currentValue} disabled>{`${fixed}, ${current!.direction}`}</option> : null}
+                {currentValue ? null : <option value="">{p.labels.notSorted}</option>}
+                {fixed != null ? <option value={currentValue} disabled>{p.labels.sortOption({ column: fixed, direction: current!.direction })}</option> : null}
                 {sortable.flatMap((h) => [
-                  <option key={`${h.column.id}:a`} value={`${h.column.id}:ascending`}>{`${h.column.label}, ascending`}</option>,
-                  <option key={`${h.column.id}:d`} value={`${h.column.id}:descending`}>{`${h.column.label}, descending`}</option>,
+                  <option key={`${h.column.id}:a`} value={`${h.column.id}:ascending`}>{p.labels.sortOption({ column: h.column.label, direction: 'ascending' })}</option>,
+                  <option key={`${h.column.id}:d`} value={`${h.column.id}:descending`}>{p.labels.sortOption({ column: h.column.label, direction: 'descending' })}</option>,
                 ])}
               </select>
             </label>
@@ -114,6 +115,7 @@ export function Cards<Row>(p: CardsProps<Row>) {
                 href={p.rowHref?.(r.original)}
                 rowActions={p.rowActions}
                 swipe={p.swipe}
+                labels={p.labels}
                 locale={p.locale}
               />
             ))}
@@ -136,6 +138,7 @@ interface CardProps<Row> {
   href: string | undefined;
   rowActions: ((row: Row) => RowAction[]) | undefined;
   swipe: boolean;
+  labels: DataTableLabels;
   locale: string | undefined;
 }
 
@@ -186,7 +189,7 @@ const Card = React.memo(function Card<Row>(p: CardProps<Row>) {
       control={
         p.selected !== undefined ? (
           <Checkbox
-            aria-label={`Select ${rowName}`}
+            aria-label={p.labels.selectRow(rowName)}
             checked={p.selected}
             aria-disabled={p.inert || undefined}
             onChange={(e) => p.toggle(p.id, e.currentTarget.checked, { range: (e.nativeEvent as MouseEvent).shiftKey })}
@@ -196,6 +199,7 @@ const Card = React.memo(function Card<Row>(p: CardProps<Row>) {
       actions={actions}
       actionsVisible
       actionsLabel={rowName}
+      moreLabel={p.labels.moreActions(rowName)}
       swipe={p.swipe}
     />
   );

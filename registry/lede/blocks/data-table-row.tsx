@@ -3,7 +3,7 @@ import { Menu } from '@base-ui/react/menu';
 import { Table } from '../table';
 import { Checkbox } from '../checkbox';
 import { useLinkComponent } from '../link';
-import { formatValue, type Column } from './use-data-table';
+import { formatValue, type Column, type DataTableLabels } from './use-data-table';
 
 /** Placeholder rows while the first page loads. */
 export const SKELETON_ROWS = 6;
@@ -32,6 +32,8 @@ interface DataRowProps<Row> {
   /** This row has actions: a row whose `rowActions` returns none keeps its empty cell and gets no •••. */
   hasActions: boolean;
   sticky: boolean;
+  /** Stable while the caller's `labels` is. */
+  labels: DataTableLabels;
   locale: string | undefined;
 }
 
@@ -52,7 +54,7 @@ export const DataRow = React.memo(function DataRow<Row>(p: DataRowProps<Row>) {
       {p.selected !== undefined ? (
         <Table.Cell className="ld-table-check" sticky={p.sticky}>
           <Checkbox
-            aria-label={`Select ${name}`}
+            aria-label={p.labels.selectRow(name)}
             checked={p.selected}
             aria-disabled={p.inert || undefined}
             onChange={(e) => p.toggle(id, e.currentTarget.checked, { range: (e.nativeEvent as MouseEvent).shiftKey })}
@@ -81,7 +83,7 @@ export const DataRow = React.memo(function DataRow<Row>(p: DataRowProps<Row>) {
       {p.menu ? (
         <Table.Cell className="ld-table-actions">
           {p.hasActions ? (
-            <Menu.Trigger handle={p.menu} payload={id} className="ld-table-more" aria-label={`More actions for ${name}`}>
+            <Menu.Trigger handle={p.menu} payload={id} className="ld-table-more" aria-label={p.labels.moreActions(name)}>
               <Dots />
             </Menu.Trigger>
           ) : null}
