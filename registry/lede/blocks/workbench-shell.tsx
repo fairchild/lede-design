@@ -25,6 +25,34 @@ export interface WorkbenchPanel {
 /** A region of the shell: on a narrow screen, the one panel showing. */
 export type WorkbenchRegion = 'start' | 'main' | 'end';
 
+/** WorkbenchShell's own words. Override any of them through `labels`; the rest stay English. */
+export interface WorkbenchShellLabels {
+  /** The skip link's text. */
+  skipToContent: string;
+  /** Names the narrow screen's panel switcher. */
+  switcher: string;
+  /** Names a panel's top-bar toggle and the `<main>` around the center panel, from the panel's `label`. */
+  panel: (label: string) => string;
+  /** Names a panel's divider. */
+  resize: (label: string) => string;
+  /** The divider's value while its panel is collapsed. */
+  collapsed: string;
+  /** The divider's value: the panel's drawn width in px. */
+  width: (px: number) => string;
+  /** Read in place of the center panel while another panel shows on a narrow screen. */
+  notShowing: (p: { label: string; switcher: string }) => string;
+}
+
+export const workbenchShellLabels: WorkbenchShellLabels = {
+  skipToContent: 'Skip to content',
+  switcher: 'Panel',
+  panel: (label) => `${label} panel`,
+  resize: (label) => `Resize ${label}`,
+  collapsed: 'Collapsed',
+  width: (px) => `${px} pixels wide`,
+  notShowing: ({ label, switcher }) => `${label} isn’t showing. Choose it under ${switcher}, at the top of the page.`,
+};
+
 export interface WorkbenchShellProps {
   /** Product name, wordmark or a link out, at the start of the top bar. */
   brand: React.ReactNode;
@@ -60,6 +88,8 @@ export interface WorkbenchShellProps {
    * where it is, for a shell that mounts inside a screen that already handles focus.
    */
   focusOnMount?: boolean;
+  /** Words to use in place of the English defaults in `workbenchShellLabels`. */
+  labels?: Partial<WorkbenchShellLabels>;
   className?: string;
 }
 
@@ -148,6 +178,7 @@ function PanelIcon({ side, open }: { side: WorkbenchSide; open: boolean }) {
 interface SplitterProps {
   side: WorkbenchSide;
   label: string;
+  labels: WorkbenchShellLabels;
   controls: string;
   /** The panel's drawn width. 0 while collapsed. */
   value: number;
@@ -163,7 +194,7 @@ interface SplitterProps {
  * lives in `<main>`, the one region that always stays, so it can bring a collapsed panel back. One pointer drags it at
  * a time: another finger on it does nothing, and only lifting the first one ends the drag.
  */
-function Splitter({ side, label, controls, value, max, collapsed, onResize, onToggle, onDragging }: SplitterProps) {
+function Splitter({ side, label, labels, controls, value, max, collapsed, onResize, onToggle, onDragging }: SplitterProps) {
   const grab = React.useRef<{ pointer: number; x: number; width: number; sign: number } | null>(null);
   // The keys and drags are physical: the panel drawn on the left grows rightward. The page's direction is read as each
   // key or drag starts, so a page that changes it later is followed.
@@ -174,12 +205,12 @@ function Splitter({ side, label, controls, value, max, collapsed, onResize, onTo
       tabIndex={0}
       className="ld-wb-sep"
       aria-orientation="vertical"
-      aria-label={`Resize ${label}`}
+      aria-label={labels.resize(label)}
       aria-controls={controls}
       aria-valuenow={value}
       aria-valuemin={collapsed ? 0 : MIN_WIDTH}
       aria-valuemax={max}
-      aria-valuetext={collapsed ? 'Collapsed' : `${value} pixels wide`}
+      aria-valuetext={collapsed ? labels.collapsed : labels.width(value)}
       onKeyDown={(event) => {
         // A key held with Alt, Control or Command is a shortcut, such as a browser's Back, and isn't for the divider.
         if (event.altKey || event.ctrlKey || event.metaKey) return;
@@ -225,6 +256,7 @@ function Splitter({ side, label, controls, value, max, collapsed, onResize, onTo
  */
 export function WorkbenchShell(props: WorkbenchShellProps) {
   const { start, end, mainLabel = 'Content', mainId = 'main', focusOnMount = true } = props;
+  const l = { ...workbenchShellLabels, ...props.labels };
   const id = React.useId();
   const ids = { start: `${id}start`, end: `${id}end` };
   const panels = { start, end };
@@ -356,7 +388,7 @@ export function WorkbenchShell(props: WorkbenchShellProps) {
       className="ld-wb-toggle"
       variant="plain"
       icon={<PanelIcon side={side} open={!sides[side].collapsed} />}
-      aria-label={`${panels[side].label} panel`}
+      aria-label={l.panel(panels[side].label)}
       aria-expanded={!sides[side].collapsed}
       aria-controls={ids[side]}
       onClick={() => toggle(side)}
@@ -366,6 +398,7 @@ export function WorkbenchShell(props: WorkbenchShellProps) {
     <Splitter
       side={side}
       label={panels[side].label}
+      labels={l}
       controls={ids[side]}
       value={drawn[side]}
       max={widest(drawn, side, room)}
@@ -389,14 +422,14 @@ export function WorkbenchShell(props: WorkbenchShellProps) {
           <div className="ld-wb-brand">{props.brand}</div>
           <h1 ref={heading} tabIndex={-1} className="ld-wb-title">{props.title}</h1>
           {/* After the `<h1>`, which takes focus on load, so the next Tab reaches it. It draws at the window's corner. */}
-          <a className="ld-skip" href={`#${mainId}`} onClick={() => setActive('main')}>Skip to content</a>
+          <a className="ld-skip" href={`#${mainId}`} onClick={() => setActive('main')}>{l.skipToContent}</a>
           {props.actions ? <div className="ld-wb-actions">{props.actions}</div> : null}
           {toggleButton('end')}
         </div>
         <div className="ld-wb-switch">
           <SegmentedControl
             block
-            label="Panel"
+            label={l.switcher}
             options={[{ value: 'start', label: start.label }, { value: 'main', label: mainLabel }, { value: 'end', label: end.label }]}
             // The server's markup shows main alone on a narrow screen, so its switcher says so until the script runs.
             value={mounted ? active : 'main'}
@@ -421,13 +454,13 @@ export function WorkbenchShell(props: WorkbenchShellProps) {
         <main
           id={mainId}
           className="ld-wb-main"
-          aria-label={`${mainLabel} panel`}
+          aria-label={l.panel(mainLabel)}
           tabIndex={-1}
           onFocus={(event) => { if (event.target === event.currentTarget) content.current?.focus(); }}
         >
           {splitter('start')}
           <section ref={content} className="ld-wb-content" aria-label={mainLabel} tabIndex={0} hidden={hidden('main')}>{props.children}</section>
-          {hidden('main') ? <p className="ld-sr-only">{mainLabel} isn’t showing. Choose it under Panel, at the top of the page.</p> : null}
+          {hidden('main') ? <p className="ld-sr-only">{l.notShowing({ label: mainLabel, switcher: l.switcher })}</p> : null}
           {splitter('end')}
         </main>
         <aside ref={aside} id={ids.end} className="ld-wb-panel" aria-label={end.label} tabIndex={0} hidden={hidden('end')} style={sized('end')}>

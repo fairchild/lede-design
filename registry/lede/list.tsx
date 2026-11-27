@@ -149,6 +149,8 @@ export interface ListRowProps {
   actionsVisible?: boolean;
   /** Names the row on its ••• button when `title` is not a plain string. */
   actionsLabel?: string;
+  /** Names the ••• button. Default "More actions for {the row's name}", or "More actions" without one. */
+  moreLabel?: string;
   /** Written to `data-row-id`, so a parent can find the row again, such as to move focus to it. */
   rowKey?: string;
   /** Controlled swipe reveal. */
@@ -393,7 +395,7 @@ export function ListRow(props: ListRowProps) {
             {props.trailing ? <span className="ld-row-trailing">{props.trailing}</span> : null}
             {actions.length ? (
               <Menu.Root>
-                <Menu.Trigger className="ld-row-more" aria-label={rowName ? `More actions for ${rowName}` : 'More actions'}>
+                <Menu.Trigger className="ld-row-more" aria-label={props.moreLabel ?? (rowName ? `More actions for ${rowName}` : 'More actions')}>
                   <Dots />
                 </Menu.Trigger>
                 <Menu.Portal>

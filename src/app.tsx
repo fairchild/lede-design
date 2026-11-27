@@ -157,6 +157,7 @@ const routes = () => createBrowserRouter(
         ...(FIXTURES ? [
           { path: 'fixtures/workbench-hydrate', lazy: load(() => import('@/pages/fixtures/WorkbenchHydrate'), 'WorkbenchHydrate'), handle: { title: 'Workbench hydration' } },
           { path: 'fixtures/workbench-controlled', lazy: load(() => import('@/pages/fixtures/WorkbenchControlled'), 'WorkbenchControlled'), handle: { title: 'Workbench, controlled' } },
+          { path: 'fixtures/labels', lazy: load(() => import('@/pages/fixtures/LabelsFixtures'), 'LabelsFixtures'), handle: { title: 'Labels fixtures' } },
           { path: 'fixtures/bare-table', lazy: load(() => import('@/pages/fixtures/BareTableFixture'), 'BareTableFixture'), handle: { title: 'A table without a shell' } },
         ] : []),
         {

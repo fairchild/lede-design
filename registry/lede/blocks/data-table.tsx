@@ -12,7 +12,7 @@ import { Cards } from './data-table-cards';
 import { Pager } from './data-table-pager';
 import { SelectionBar, formatCount, type SelectionAction, type Noun } from './selection-bar';
 import {
-  useDataTable, formatValue, useStableInput,
+  useDataTable, formatValue, useStableInput, dataTableLabels,
   type DataTableOptions, type Selection, type TableState, type Paging,
 } from './use-data-table';
 
@@ -62,6 +62,8 @@ export function DataTable<Row>(props: DataTableProps<Row>) {
   const model = useDataTable(props);
   const { noun, columns, rowHeader, rowActions, rowHref, paging, locale } = props;
   useStableInput(rowActions, 'rowActions', 'Wrap it in useCallback, or define it at module scope.');
+  useStableInput(props.labels, 'labels', 'Define them at module scope, or in useMemo.');
+  const l = React.useMemo(() => ({ ...dataTableLabels, ...props.labels }), [props.labels]);
   const state = props.state ?? NO_STATE;
   const total = props.total;
   const root = React.useRef<HTMLDivElement>(null);
@@ -162,23 +164,23 @@ export function DataTable<Row>(props: DataTableProps<Row>) {
   const errorOnly = hidden || (!!failure && failure.scope !== 'refresh' && rows.length === 0);
   const empty = rows.length === 0 && !showSkeleton && !errorOnly;
   // "page" only when the caller pages; loaded rows otherwise.
-  const scope = paging?.kind === 'pages' ? 'on this page' : 'shown';
+  const scope = l.scope(paging?.kind === 'pages');
 
   // The one-line takeaway: count first, then what is happening. Not a live region: sorts are announced on their
   // own, selection by SelectionBar and busy-ness by `aria-busy`, so this doesn't talk over them.
   const shown = hidden ? 0 : rows.length;
   const counted = hidden ? formatCount(0, noun, locale) : total == null || (typeof total === 'number' && total === shown)
     ? formatCount(shown, noun, locale)
-    : `${formatValue(shown, locale)} of ${formatCount(total, noun, locale)}`;
+    : l.ofTotal({ shown: formatValue(shown, locale), total: formatCount(total, noun, locale) });
   // Next and Previous land on this line, so it says which page it is.
   const countText = paging?.kind === 'pages' && paging.pageCount > 1
-    ? `Page ${formatValue(paging.page + 1, locale)} of ${formatValue(paging.pageCount, locale)} · ${counted}`
+    ? `${l.page({ page: formatValue(paging.page + 1, locale), count: formatValue(paging.pageCount, locale) })} · ${counted}`
     : counted;
   // A failed load has no count to give: the alert says what happened. The line stays as Try again's focus target,
   // empty until a retry is on its way.
-  const summary = errorOnly ? (updating ? `Loading ${noun.other}…` : '')
-    : showSkeleton ? `Loading ${noun.other}…` : updating ? `${countText} · Updating…` : countText;
-  const allMatching = typeof total === 'number' && !sel.counting ? formatCount(total, noun, locale) : `matching ${noun.other}`;
+  const summary = errorOnly ? (updating ? l.loading(noun) : '')
+    : showSkeleton ? l.loading(noun) : updating ? l.updating(countText) : countText;
+  const allMatching = typeof total === 'number' && !sel.counting ? formatCount(total, noun, locale) : l.matching(noun);
   const offerAll = selectable && !hidden && sel.canSelectAllMatching;
   const allSelected = selectable && sel.value.kind === 'all-matching';
   // Clearing takes the notice away with its button: focus goes to the summary line in the same task, as Done's does.
@@ -215,27 +217,27 @@ export function DataTable<Row>(props: DataTableProps<Row>) {
           <span role="status">
             {refreshFailed && !refreshing ? (
               <span>
-                {state.since
-                  ? <>Showing saved data from <time dateTime={state.since.toISOString()}>{state.since.toLocaleTimeString(locale, { hour: 'numeric', minute: '2-digit' })}</time>.</>
-                  : 'Showing saved data.'}
+                {l.savedData(state.since
+                  ? <time dateTime={state.since.toISOString()}>{state.since.toLocaleTimeString(locale, { hour: 'numeric', minute: '2-digit' })}</time>
+                  : null)}
               </span>
             ) : null}
           </span>
           {refreshFailed ? (
-            <Button variant="plain" className="ld-dt-btn" onClick={() => { flushSync(() => setRefreshing(true)); retry(failure.retry)(); }}>Refresh</Button>
+            <Button variant="plain" className="ld-dt-btn" onClick={() => { flushSync(() => setRefreshing(true)); retry(failure.retry)(); }}>{l.refresh}</Button>
           ) : null}
         </p>
         {/* One notice whose button changes, so "Select all N" keeps focus as it becomes "Clear selection". */}
         {offerAll || allSelected ? (
           <p className="ld-dt-notice">
             <span>
-              {offerAll ? (shown === 1 ? `The 1 ${noun.one} ${scope} is selected.` : `All ${formatCount(shown, noun, locale)} ${scope} are selected.`)
-                : sel.value.kind === 'all-matching' && sel.value.except.size === 0 ? `All ${allMatching} are selected.`
-                : sel.counting ? `Counting selected ${noun.other}…`
-                : `${formatCount(sel.count, noun, locale)} selected.`}
+              {offerAll ? l.pageSelected({ count: shown, counted: formatCount(shown, noun, locale), noun, scope })
+                : sel.value.kind === 'all-matching' && sel.value.except.size === 0 ? l.allSelected(allMatching)
+                : sel.counting ? l.countingSelected(noun)
+                : l.selected(formatCount(sel.count, noun, locale))}
             </span>
             <Button variant="plain" className="ld-dt-btn" onClick={offerAll ? sel.selectAllMatching : clearAll}>
-              {offerAll ? `Select all ${allMatching}` : 'Clear selection'}
+              {offerAll ? l.selectAllMatching(allMatching) : l.clearSelection}
             </Button>
           </p>
         ) : null}
@@ -244,17 +246,17 @@ export function DataTable<Row>(props: DataTableProps<Row>) {
       {failure && failure.scope !== 'refresh' ? (
         <div className="ld-dt-error" role="alert">
           <p className="ld-dt-error-text">
-            <strong>{failure.scope === 'more' ? `Couldn’t load more ${noun.other}.` : `Couldn’t load ${noun.other}.`}</strong>
+            <strong>{l.loadFailed({ noun, more: failure.scope === 'more' })}</strong>
             {failure.message ? ` ${failure.message}` : ''}
           </p>
-          <Button ref={tryAgain} variant="tinted" className="ld-dt-btn" onClick={retry(failure.retry)}>Try again</Button>
+          <Button ref={tryAgain} variant="tinted" className="ld-dt-btn" onClick={retry(failure.retry)}>{l.tryAgain}</Button>
         </div>
       ) : null}
 
       {errorOnly ? null : empty ? (
         props.emptyState ?? (
           <div className="ld-empty ld-dt-empty">
-            <p className="text-title-3 ld-empty-title">{`No ${noun.other}`}</p>
+            <p className="text-title-3 ld-empty-title">{l.empty(noun)}</p>
           </div>
         )
       ) : layout === 'cards' ? (
@@ -265,6 +267,7 @@ export function DataTable<Row>(props: DataTableProps<Row>) {
           rowHeader={rowHeader}
           noun={noun}
           scope={scope}
+          labels={l}
           rowHref={rowHref}
           rowActions={actionsFor}
           swipe={!!props.swipeActions}
@@ -283,7 +286,7 @@ export function DataTable<Row>(props: DataTableProps<Row>) {
               {selectable ? (
                 <Table.HeaderCell className="ld-table-check" sticky={sticky}>
                   <Checkbox
-                    aria-label={`Select all ${noun.other} ${scope}`}
+                    aria-label={l.selectAll({ noun, scope })}
                     checked={sel.page === 'all'}
                     indeterminate={sel.page === 'some'}
                     disabled={rows.length === 0}
@@ -295,7 +298,7 @@ export function DataTable<Row>(props: DataTableProps<Row>) {
               {model.headers.map((h, i) => (
                 <Table.HeaderCell key={h.column.id} sort={h.sort} align={h.column.align} sticky={sticky && i === 0}>
                   {h.sortable ? (
-                    <Table.SortButton direction={h.sort} onClick={() => model.sortBy(h.column.id)}>
+                    <Table.SortButton direction={h.sort} describe={l.sortedDescription} onClick={() => model.sortBy(h.column.id)}>
                       {h.column.header ?? h.column.label}
                     </Table.SortButton>
                   ) : (
@@ -305,7 +308,7 @@ export function DataTable<Row>(props: DataTableProps<Row>) {
               ))}
               {rowActions ? (
                 <Table.HeaderCell className="ld-table-actions">
-                  <span className="ld-sr-only">Actions</span>
+                  <span className="ld-sr-only">{l.actions}</span>
                 </Table.HeaderCell>
               ) : null}
             </Table.Row>
@@ -334,6 +337,7 @@ export function DataTable<Row>(props: DataTableProps<Row>) {
                     menu={rowActions ? menu : undefined}
                     hasActions={!!rowActions && rowActions(r.original).length > 0}
                     sticky={sticky}
+                    labels={l}
                     locale={locale}
                   />
                 ))}
@@ -359,7 +363,7 @@ export function DataTable<Row>(props: DataTableProps<Row>) {
       ) : null}
 
       {pager && !hidden && (rows.length > 0 || (pager.kind === 'pages' && pager.pageCount > 1)) ? (
-        <Pager paging={pager} noun={noun} busy={updating} shown={rows.length} locale={locale} />
+        <Pager paging={pager} noun={noun} labels={l} busy={updating} shown={rows.length} locale={locale} />
       ) : null}
 
       {selectable ? (
@@ -368,6 +372,7 @@ export function DataTable<Row>(props: DataTableProps<Row>) {
           counting={sel.counting}
           noun={noun}
           locale={locale}
+          labels={l.selectionBar}
           // Done returns focus to where it came into the bar from. When that control has gone, as a checkbox does when
           // the table becomes cards, focus that left with the bar goes to the summary line in the same task, before a
           // frame can show <body>. Focus that was never in the bar stays where it was.

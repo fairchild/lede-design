@@ -4,6 +4,14 @@ import { useLinkComponent } from '../link';
 import { cn } from '../cn';
 
 export interface ShellNavItem { value: string; label: string; href: string; icon?: React.ReactNode; }
+/** AppShell's own words. Override any of them through `labels`; the rest stay English. */
+export interface AppShellLabels {
+  /** The skip link's text. */
+  skipToContent: string;
+}
+
+export const appShellLabels: AppShellLabels = { skipToContent: 'Skip to content' };
+
 export interface AppShellProps {
   /** Product name or wordmark, shown at the top of the sidebar. */
   brand: React.ReactNode;
@@ -17,6 +25,8 @@ export interface AppShellProps {
   sidebarFooter?: React.ReactNode;
   /** The `<main>`'s id, which the skip link targets. Default `'main'`; give each shell its own when a page has two. */
   mainId?: string;
+  /** Words to use in place of the English defaults in `appShellLabels`. */
+  labels?: Partial<AppShellLabels>;
   children: React.ReactNode;
   className?: string;
 }
@@ -30,9 +40,10 @@ export function AppShell(props: AppShellProps) {
   const Link = useLinkComponent();
   const label = props.navLabel ?? 'Primary';
   const mainId = props.mainId ?? 'main';
+  const l = { ...appShellLabels, ...props.labels };
   return (
     <div className={cn('ld-shell', props.className)}>
-      <a className="ld-skip" href={`#${mainId}`}>Skip to content</a>
+      <a className="ld-skip" href={`#${mainId}`}>{l.skipToContent}</a>
       <nav className="ld-shell-sidebar" aria-label={label}>
         <div className="ld-shell-brand">{props.brand}</div>
         <ul className="ld-shell-nav">

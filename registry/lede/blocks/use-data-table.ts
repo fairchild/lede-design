@@ -2,13 +2,109 @@ import * as React from 'react';
 import { createSortedRowModel, rowSortingFeature, tableFeatures, useTable } from '@tanstack/react-table';
 import { announce } from '@react-aria/live-announcer';
 import type { ColumnWidth, SortDirection } from '../table';
-import type { Noun } from './selection-bar';
+import type { Noun, SelectionBarLabels } from './selection-bar';
 
 // ---------------------------------------------------------------------------------------------------------------
 // Public types. Lede's own: TanStack types never cross this boundary, so a TanStack major is absorbed in here.
 // ---------------------------------------------------------------------------------------------------------------
 
 export type { SortDirection };
+
+/**
+ * DataTable's own words. Override any of them through `labels`; the rest stay English. Counts arrive already
+ * formatted with their noun, as in "3 work items", from `noun` and `locale`.
+ */
+export interface DataTableLabels {
+  /** Which rows a page-wide selection covers: `paged` when the caller pages with Previous and Next. */
+  scope: (paged: boolean) => string;
+  /** Names the checkbox that selects every row shown. */
+  selectAll: (p: { noun: Noun; scope: string }) => string;
+  /** Names a row's checkbox, from its row header's text. */
+  selectRow: (name: string) => string;
+  /** Names a row's ••• menu button. */
+  moreActions: (name: string) => string;
+  /** Names the row actions' column. */
+  actions: string;
+  /** The card layout's sort menu, and its option while nothing is sorted. */
+  sort: string;
+  notSorted: string;
+  /** An option in the card layout's sort menu. */
+  sortOption: (p: { column: string; direction: SortDirection }) => string;
+  /** Announced after a sort. */
+  sorted: (p: { column: string; direction: SortDirection }) => string;
+  /** Describes a sorted column's header button. */
+  sortedDescription: (direction: SortDirection) => string;
+  /** The summary while some of the matching rows are shown: "20 of 112 work items". */
+  ofTotal: (p: { shown: string; total: string }) => string;
+  /** The page, in the summary and the pager. */
+  page: (p: { page: string; count: string }) => string;
+  /** The summary while rows are coming. */
+  loading: (noun: Noun) => string;
+  /** The summary while rows on screen are being refreshed. */
+  updating: (summary: string) => string;
+  /** After a failed refresh. `time` is a `<time>`, or `null` when `state.since` is unset. */
+  savedData: (time: React.ReactNode | null) => React.ReactNode;
+  refresh: string;
+  /** Every row shown is selected, and Select all could reach more. */
+  pageSelected: (p: { count: number; counted: string; noun: Noun; scope: string }) => string;
+  /** Stands in for the count of matching rows while it's unknown. */
+  matching: (noun: Noun) => string;
+  /** Every matching row is selected: `matching` is a count, or the `matching` label. */
+  allSelected: (matching: string) => string;
+  countingSelected: (noun: Noun) => string;
+  selected: (counted: string) => string;
+  selectAllMatching: (matching: string) => string;
+  clearSelection: string;
+  /** The alert's heading after a failed load. `more` when Load more failed. */
+  loadFailed: (p: { noun: Noun; more: boolean }) => string;
+  tryAgain: string;
+  /** The empty state's title, unless `emptyState` replaces it. */
+  empty: (noun: Noun) => string;
+  loadMore: string;
+  /** Load more's text while it loads. */
+  loadingMore: string;
+  /** Names the pager. */
+  pages: (noun: Noun) => string;
+  previous: string;
+  next: string;
+  /** The SelectionBar's words. */
+  selectionBar: Partial<SelectionBarLabels>;
+}
+
+export const dataTableLabels: DataTableLabels = {
+  scope: (paged) => (paged ? 'on this page' : 'shown'),
+  selectAll: ({ noun, scope }) => `Select all ${noun.other} ${scope}`,
+  selectRow: (name) => `Select ${name}`,
+  moreActions: (name) => `More actions for ${name}`,
+  actions: 'Actions',
+  sort: 'Sort',
+  notSorted: 'Not sorted',
+  sortOption: ({ column, direction }) => `${column}, ${direction}`,
+  sorted: ({ column, direction }) => `Sorted by ${column}, ${direction}`,
+  sortedDescription: (direction) => `Sorted ${direction}`,
+  ofTotal: ({ shown, total }) => `${shown} of ${total}`,
+  page: ({ page, count }) => `Page ${page} of ${count}`,
+  loading: (noun) => `Loading ${noun.other}…`,
+  updating: (summary) => `${summary} · Updating…`,
+  savedData: (time) => (time == null ? 'Showing saved data.' : React.createElement(React.Fragment, null, 'Showing saved data from ', time, '.')),
+  refresh: 'Refresh',
+  pageSelected: ({ count, counted, noun, scope }) => (count === 1 ? `The 1 ${noun.one} ${scope} is selected.` : `All ${counted} ${scope} are selected.`),
+  matching: (noun) => `matching ${noun.other}`,
+  allSelected: (matching) => `All ${matching} are selected.`,
+  countingSelected: (noun) => `Counting selected ${noun.other}…`,
+  selected: (counted) => `${counted} selected.`,
+  selectAllMatching: (matching) => `Select all ${matching}`,
+  clearSelection: 'Clear selection',
+  loadFailed: ({ noun, more }) => (more ? `Couldn’t load more ${noun.other}.` : `Couldn’t load ${noun.other}.`),
+  tryAgain: 'Try again',
+  empty: (noun) => `No ${noun.other}`,
+  loadMore: 'Load more',
+  loadingMore: 'Loading…',
+  pages: (noun) => `Pages of ${noun.other}`,
+  previous: 'Previous',
+  next: 'Next',
+  selectionBar: {},
+};
 export type SortItem = { columnId: string; direction: SortDirection };
 
 /** Everything a saved view stores. Later versions add optional keys; none is ever renamed or removed. */
@@ -146,7 +242,7 @@ export function useStableInput(value: unknown, name: string, fix: string) {
     s.changes += 1;
     if (s.changes >= 3 && !s.warned) {
       s.warned = true;
-      console.warn(`DataTable: \`${name}\` is a new ${typeof value === 'function' ? 'function' : 'array'} on every render, so every row re-renders. ${fix}`);
+      console.warn(`DataTable: \`${name}\` is a new ${typeof value === 'function' ? 'function' : Array.isArray(value) ? 'array' : 'object'} on every render, so every row re-renders. ${fix}`);
     }
   });
 }
@@ -197,6 +293,11 @@ export interface DataTableOptions<Row> {
   state?: TableState;
   /** A BCP 47 tag, such as `'en-US'`, for formatting and client-mode sorting. Default: the browser's locale. */
   locale?: string;
+  /**
+   * Words to use in place of the English defaults in `dataTableLabels`; `useDataTable` reads `sorted`. Keep the object
+   * stable, at module scope or in `useMemo`: rows are memoized against it. Development builds warn when it isn't.
+   */
+  labels?: Partial<DataTableLabels>;
 }
 
 export interface HeaderModel<Row> {
@@ -365,9 +466,11 @@ export function useDataTable<Row>(options: DataTableOptions<Row>): DataTableMode
   // Latest values for event handlers, written after commit (never during render).
   const viewRef = React.useRef(view);
   const onViewChangeRef = React.useRef(options.onViewChange);
+  const sortedRef = React.useRef(options.labels?.sorted);
   React.useLayoutEffect(() => {
     viewRef.current = view;
     onViewChangeRef.current = options.onViewChange;
+    sortedRef.current = options.labels?.sorted;
   });
   const sortBy = React.useCallback(
     (columnId: string, direction?: SortDirection) => {
@@ -382,7 +485,7 @@ export function useDataTable<Row>(options: DataTableOptions<Row>): DataTableMode
       onViewChangeRef.current?.(nextView, { type: 'sort', sort });
       // VoiceOver on macOS and TalkBack don't announce `aria-sort` changes, and this does. It clears after a second,
       // so the same sort twice is announced twice.
-      announce(`Sorted by ${col.label}, ${next}`, 'polite', 1000);
+      announce((sortedRef.current ?? dataTableLabels.sorted)({ column: col.label, direction: next }), 'polite', 1000);
     },
     [byId, canSort, options.view],
   );
