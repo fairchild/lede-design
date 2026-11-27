@@ -119,6 +119,27 @@ function ClientMoreFixture() {
   );
 }
 
+/** A refresh that fails at once, every time: Refresh puts the same saved-data notice back in the same task. */
+function FailingRefreshFixture() {
+  const [tries, setTries] = React.useState(0);
+  return (
+    <section aria-labelledby="fx-failing-refresh" className="docs-section">
+      <h2 id="fx-failing-refresh" className="text-title-3">A refresh that fails at once</h2>
+      <p data-testid="refresh-tries">{`Tries: ${tries}`}</p>
+      <DataTable
+        aria-label="Failing refresh fixture"
+        noun={noun}
+        columns={columns}
+        rows={ITEMS.slice(0, 2)}
+        getRowId={(r) => r.id}
+        rowHeader="n"
+        locale="en-US"
+        state={{ since: new Date(2026, 9, 31, 10, 42), failure: { scope: 'refresh', retry: () => setTries((n) => n + 1) } }}
+      />
+    </section>
+  );
+}
+
 /** A server that says there may be more and then has none: Load more adds no rows and leaves. */
 function NothingMoreFixture() {
   const [ended, setEnded] = React.useState(false);
@@ -207,6 +228,7 @@ function HeldFilterFixture() {
   const rows = useServerRows({ view, fetchRows: server.fetchRows, pageSize: 5 });
   // Restoring a saved view sets its filter and its selection together, in one handler.
   const restore = () => { setFilter('Even'); setSelection({ kind: 'ids', ids: new Set(['n2', 'n4']) }); };
+  const restoreAll = () => { setFilter('Even'); setSelection({ kind: 'all-matching', except: new Set(['n2']) }); };
   return (
     <section aria-labelledby="fx-held" className="docs-section">
       <h2 id="fx-held" className="text-title-3">A filter whose rows are held</h2>
@@ -215,6 +237,7 @@ function HeldFilterFixture() {
       <Button variant="gray" onClick={server.release}>Answer waiting requests</Button>
       <span>{`${waiting} waiting`}</span>
       <Button variant="gray" onClick={restore}>Restore a saved view</Button>
+      <Button variant="gray" onClick={restoreAll}>Restore a view with all matching selected</Button>
       <DataTable
         aria-label="Held filter fixture"
         noun={noun}
@@ -559,6 +582,7 @@ export function DataTableFixtures() {
       <CursorFixture />
       <ClientPagesFixture />
       <ClientMoreFixture />
+      <FailingRefreshFixture />
       <NothingMoreFixture />
       <PageSizeFixture />
       <CompareFixture />

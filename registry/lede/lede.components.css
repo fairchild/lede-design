@@ -639,12 +639,12 @@
 /* A <label> that pairs a Checkbox with its text: the box keeps its hit area, and a long label wraps in a column of its
    own beside it. */
 .ld-checkbox-field { display: flex; align-items: center; gap: var(--space-2); font-family: var(--font-sans); font-size: var(--text-body-size); line-height: var(--text-body-line-height); color: var(--foreground); cursor: pointer; }
-.ld-checkbox-field:has(:disabled) { cursor: default; }
+.ld-checkbox-field:has(:disabled, [aria-disabled="true"]) { cursor: default; }
 .ld-checkbox-label { min-width: 0; overflow-wrap: anywhere; }
 /* An error under a Checkbox's label starts under the box, which sits centered in its hit area. */
 .ld-field:has(> .ld-checkbox-field) > .ld-field-hint { padding-inline-start: calc((var(--ld-table-hit) - var(--size-icon)) / 2); }
 .ld-checkbox-input { position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
-.ld-checkbox-input:disabled { cursor: default; }
+.ld-checkbox-input:is(:disabled, [aria-disabled="true"]) { cursor: default; }
 .ld-checkbox-box {
   display: flex; align-items: center; justify-content: center; width: var(--size-icon); height: var(--size-icon); box-sizing: border-box;
   border: var(--stroke-control) solid var(--muted-foreground); border-radius: var(--radius-xs); background: var(--card); color: var(--primary-foreground);
@@ -660,7 +660,7 @@
 @container style(--ld-contrast: high) {
   [data-theme$="-hc"] .ld-checkbox-box { border-width: var(--stroke-ring); border-color: var(--foreground); }
 }
-.ld-checkbox-input:disabled + .ld-checkbox-box { background: var(--fill-control); border-color: var(--foreground-disabled); color: var(--foreground-disabled); }
+.ld-checkbox-input:is(:disabled, [aria-disabled="true"]) + .ld-checkbox-box { background: var(--fill-control); border-color: var(--foreground-disabled); color: var(--foreground-disabled); }
 @media (forced-colors: active) {
   .ld-checkbox-box { border-color: CanvasText; }
   .ld-checkbox-input:checked + .ld-checkbox-box, .ld-checkbox-input:indeterminate + .ld-checkbox-box { forced-color-adjust: none; background: Highlight; border-color: Highlight; color: HighlightText; }
@@ -874,8 +874,8 @@
   .ld-table-sort:active { color: Highlight; }
 
   .ld-checkbox-input:focus-visible + .ld-checkbox-box { outline-color: Highlight; }
-  .ld-checkbox-input:disabled + .ld-checkbox-box { border-color: GrayText; }
-  .ld-checkbox-input:checked:disabled + .ld-checkbox-box, .ld-checkbox-input:indeterminate:disabled + .ld-checkbox-box { background: GrayText; color: Canvas; }
+  .ld-checkbox-input:is(:disabled, [aria-disabled="true"]) + .ld-checkbox-box { border-color: GrayText; }
+  .ld-checkbox-input:is(:checked, :indeterminate):is(:disabled, [aria-disabled="true"]) + .ld-checkbox-box { background: GrayText; color: Canvas; }
 
   .ld-table-row[data-selected] > :first-child { border-inline-start: var(--stroke-marker) solid Highlight; padding-inline-start: calc(var(--space-4) - var(--stroke-marker)); }
   .ld-table-row[data-selected] > .ld-table-check { padding-inline-start: 0; }

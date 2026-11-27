@@ -21,9 +21,10 @@ export interface CheckboxProps extends Omit<React.InputHTMLAttributes<HTMLInputE
  *
  * `className`, `style` and `hidden` go on the wrapper `<span>` that holds the drawn box, so `hidden` hides the whole
  * checkbox. Every other attribute and `ref` go on the input: `id` for a `<label htmlFor>`, the form and ARIA
- * attributes and `data-*`.
+ * attributes and `data-*`. With `aria-disabled`, it looks disabled and ignores clicks and Space but keeps focus.
  */
-export function Checkbox({ indeterminate = false, className, style, hidden, ref, ...rest }: CheckboxProps) {
+export function Checkbox({ indeterminate = false, className, style, hidden, ref, onClick, ...rest }: CheckboxProps) {
+  const off = rest['aria-disabled'] === true || rest['aria-disabled'] === 'true';
   const inner = React.useRef<HTMLInputElement>(null);
   // On every render, since a native click clears the DOM state even while the prop stays true.
   React.useLayoutEffect(() => {
@@ -48,7 +49,13 @@ export function Checkbox({ indeterminate = false, className, style, hidden, ref,
   );
   return (
     <span className={cn('ld-checkbox', className)} style={style} hidden={hidden}>
-      <input ref={setRef} type="checkbox" className="ld-checkbox-input" {...rest} />
+      <input
+        ref={setRef}
+        type="checkbox"
+        className="ld-checkbox-input"
+        {...rest}
+        onClick={(e) => { if (off) e.preventDefault(); else onClick?.(e); }}
+      />
       {/* The check mark and dash are drawn in CSS: no extra nodes in a 500-row table. */}
       <span className="ld-checkbox-box" aria-hidden="true" />
     </span>

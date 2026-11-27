@@ -210,6 +210,8 @@ export interface SelectionModel {
   value: Selection;
   /** For SelectionBar. */
   count: Total;
+  /** An all-matching selection whose view's rows and total are still on their way: `count` is the last view's. */
+  counting: boolean;
   isSelected: (id: string) => boolean;
   /** `range` (Shift) selects every row between the last toggled row and this one. Stable identity. */
   toggle: (id: string, selected: boolean, options?: { range?: boolean }) => void;
@@ -218,7 +220,7 @@ export interface SelectionModel {
   togglePage: () => void;
   /** Every page row is selected and more rows match: offer "Select all N". */
   canSelectAllMatching: boolean;
-  /** The rows on screen are the last view's (`state.rows` is `'previous'`): render the checkboxes disabled. */
+  /** The rows on screen are the last view's (`state.rows` is `'previous'`): render the checkboxes `aria-disabled`. */
   inert: boolean;
   selectAllMatching: () => void;
   clear: () => void;
@@ -483,6 +485,7 @@ export function useDataTable<Row>(options: DataTableOptions<Row>): DataTableMode
     enabled: selectionMode === 'multiple',
     value: selection,
     count,
+    counting: inert && selection.kind === 'all-matching',
     isSelected: isRowSelected,
     toggle,
     page,

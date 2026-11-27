@@ -24,6 +24,8 @@ export interface SelectionBarProps {
   onClear: () => void;
   /** A BCP 47 tag, such as `'en-US'`, for the count. Default: the browser's locale. */
   locale?: string;
+  /** The count is being worked out, as while a new view's total loads: the bar reads “Counting…” and announces nothing new. */
+  counting?: boolean;
 }
 
 /** The number alone: "3", or "1,000+" for a lower bound. */
@@ -42,7 +44,16 @@ export function formatCount(count: number | { atLeast: number }, noun: Noun, loc
 export function SelectionBar(props: SelectionBarProps) {
   const n = typeof props.count === 'number' ? props.count : props.count.atLeast;
   const noun = props.count === 1 ? props.noun.one : props.noun.other;
-  const label = `${formatCount(props.count, props.noun, props.locale)} selected`;
+  const label = props.counting ? `Counting selected ${props.noun.other}` : `${formatCount(props.count, props.noun, props.locale)} selected`;
+  // The status region says a count once it has held for a frame, so a count from the commit before a new view's load
+  // is reported, or one while counting, is never announced.
+  const [said, setSaid] = React.useState('');
+  const say = n > 0 ? label : '';
+  React.useEffect(() => {
+    if (props.counting) return;
+    const frame = requestAnimationFrame(() => setSaid(say));
+    return () => cancelAnimationFrame(frame);
+  }, [say, props.counting]);
   const bar = React.useRef<HTMLDivElement>(null);
   // Where focus came into the bar from. Done returns focus there in the same task as the bar leaves, so no frame shows
   // it on <body>, unless `onClear` placed focus itself or took that control away.
@@ -66,11 +77,13 @@ export function SelectionBar(props: SelectionBarProps) {
   };
   return (
     <>
-      <p className="ld-sr-only" role="status" aria-live="polite">{n > 0 ? label : ''}</p>
+      <p className="ld-sr-only" role="status" aria-live="polite">{said}</p>
       {n > 0 ? (
         <div ref={bar} className="ld-selection-bar" onFocus={enter} onKeyDown={escape}>
           <GlassToolbar aria-label={label}>
-            <span className="ld-selection-count" aria-hidden="true">{formatNumber(props.count, props.locale)} <span className="ld-selection-noun">{noun} </span>selected</span>
+            <span className="ld-selection-count" aria-hidden="true">
+              {props.counting ? 'Counting…' : <>{formatNumber(props.count, props.locale)} <span className="ld-selection-noun">{noun} </span>selected</>}
+            </span>
             <GlassToolbarSeparator />
             {props.actions.map((a) => (
               <GlassToolbarButton key={a.label} icon={a.icon} onClick={a.onSelect} className={a.tone === 'critical' ? 'ld-bar-tool-critical' : undefined}>
