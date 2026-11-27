@@ -65,7 +65,7 @@ function SwipeOff() {
   const [open, setOpen] = React.useState(true);
   return (
     <section aria-label="Swipe turned off" className="docs-section">
-      <div style={{ width: 360 }}>
+      <div style={{ width: 288 }}>
         <ListGroup>
           <ListRow title="Turned off" actions={TWO} actionsOpen={open} onActionsOpenChange={setOpen} swipe={swipe} onClick={() => setClicks((n) => n + 1)} />
           <ListRow title="With a reason" actions={[{ label: 'Archive', disabled: true, disabledReason: 'Already archived' }, { label: 'Delete', tone: 'critical' }]} actionsOpen />
