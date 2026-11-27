@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { Button } from '../button';
 import { SegmentedControl } from '../segmented-control';
-import { cn } from '../cn';
+import { cn, withLabels } from '../cn';
 import { focusLanding } from '../input-modality';
 import { useStackedPanes } from '../stacked-panes';
 
@@ -256,7 +256,7 @@ function Splitter({ side, label, labels, controls, value, max, collapsed, onResi
  */
 export function WorkbenchShell(props: WorkbenchShellProps) {
   const { start, end, mainLabel = 'Content', mainId = 'main', focusOnMount = true } = props;
-  const l = { ...workbenchShellLabels, ...props.labels };
+  const l = withLabels(workbenchShellLabels, props.labels);
   const id = React.useId();
   const ids = { start: `${id}start`, end: `${id}end` };
   const panels = { start, end };

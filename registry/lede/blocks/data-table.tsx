@@ -5,7 +5,7 @@ import { Table, type TableLabel } from '../table';
 import { Checkbox } from '../checkbox';
 import { RowActionItems, type RowAction } from '../list';
 import { Button } from '../button';
-import { cn } from '../cn';
+import { cn, withLabels } from '../cn';
 import { ThemeScope } from '../theme-provider';
 import { DataRow, SKELETON_ROWS } from './data-table-row';
 import { Cards } from './data-table-cards';
@@ -63,7 +63,7 @@ export function DataTable<Row>(props: DataTableProps<Row>) {
   const { noun, columns, rowHeader, rowActions, rowHref, paging, locale } = props;
   useStableInput(rowActions, 'rowActions', 'Wrap it in useCallback, or define it at module scope.');
   useStableInput(props.labels, 'labels', 'Define them at module scope, or in useMemo.');
-  const l = React.useMemo(() => ({ ...dataTableLabels, ...props.labels }), [props.labels]);
+  const l = React.useMemo(() => withLabels(dataTableLabels, props.labels), [props.labels]);
   const state = props.state ?? NO_STATE;
   const total = props.total;
   const root = React.useRef<HTMLDivElement>(null);
@@ -171,7 +171,7 @@ export function DataTable<Row>(props: DataTableProps<Row>) {
   const shown = hidden ? 0 : rows.length;
   const counted = hidden ? formatCount(0, noun, locale) : total == null || (typeof total === 'number' && total === shown)
     ? formatCount(shown, noun, locale)
-    : l.ofTotal({ shown: formatValue(shown, locale), total: formatCount(total, noun, locale) });
+    : l.ofTotal({ shown: formatValue(shown, locale), total: formatCount(total, noun, locale), count: typeof total === 'number' ? total : total.atLeast });
   // Next and Previous land on this line, so it says which page it is.
   const countText = paging?.kind === 'pages' && paging.pageCount > 1
     ? `${l.page({ page: formatValue(paging.page + 1, locale), count: formatValue(paging.pageCount, locale) })} · ${counted}`
@@ -180,7 +180,8 @@ export function DataTable<Row>(props: DataTableProps<Row>) {
   // empty until a retry is on its way.
   const summary = errorOnly ? (updating ? l.loading(noun) : '')
     : showSkeleton ? l.loading(noun) : updating ? l.updating(countText) : countText;
-  const allMatching = typeof total === 'number' && !sel.counting ? formatCount(total, noun, locale) : l.matching(noun);
+  const matchingCount = typeof total === 'number' && !sel.counting ? total : undefined;
+  const allMatching = matchingCount !== undefined ? formatCount(matchingCount, noun, locale) : l.matching(noun);
   const offerAll = selectable && !hidden && sel.canSelectAllMatching;
   const allSelected = selectable && sel.value.kind === 'all-matching';
   // Clearing takes the notice away with its button: focus goes to the summary line in the same task, as Done's does.
@@ -232,12 +233,12 @@ export function DataTable<Row>(props: DataTableProps<Row>) {
           <p className="ld-dt-notice">
             <span>
               {offerAll ? l.pageSelected({ count: shown, counted: formatCount(shown, noun, locale), noun, scope })
-                : sel.value.kind === 'all-matching' && sel.value.except.size === 0 ? l.allSelected(allMatching)
+                : sel.value.kind === 'all-matching' && sel.value.except.size === 0 ? l.allSelected({ matching: allMatching, count: matchingCount })
                 : sel.counting ? l.countingSelected(noun)
-                : l.selected(formatCount(sel.count, noun, locale))}
+                : l.selected({ counted: formatCount(sel.count, noun, locale), count: typeof sel.count === 'number' ? sel.count : sel.count.atLeast })}
             </span>
             <Button variant="plain" className="ld-dt-btn" onClick={offerAll ? sel.selectAllMatching : clearAll}>
-              {offerAll ? l.selectAllMatching(allMatching) : l.clearSelection}
+              {offerAll ? l.selectAllMatching({ matching: allMatching, count: matchingCount }) : l.clearSelection}
             </Button>
           </p>
         ) : null}

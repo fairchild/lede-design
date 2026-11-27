@@ -4,11 +4,11 @@
 
 ### Added
 
-- **Blocks that say fixed words take a `labels` prop**, so a screen in another language can replace them: AppShell,
-  WorkbenchShell, StepIndicator, AccentPicker, SelectionBar and DataTable. Each takes a typed object of strings, and
-  functions for the ones built from a name or a count, and anything left out stays English. The English defaults are
-  exported, as `dataTableLabels` and the like. Table's `SortButton` takes `describe` and ListRow takes `moreLabel` for
-  the same reason.
+- **Blocks that say fixed words take a `labels` prop**, so a screen in another language can replace them, as in
+  DataTable, WorkbenchShell and StepIndicator ([all of them](https://lede.cloudcompute.com/blocks)). Each takes a typed
+  object of strings, with functions for the words built from a name or a count, and anything left out stays English.
+  The English defaults are exported, such as `dataTableLabels`. Table's `SortButton` takes `describe` and ListRow takes
+  `moreLabel` for the same reason.
 - **WorkbenchShell takes `panel` and `onPanelChange`**, for the panel showing on a narrow screen, and each panel takes
   `open` and `onOpenChange`, so a parent can show main from a tree of buttons, open the end panel from outside, and
   follow what the switcher, toggles and dividers do.

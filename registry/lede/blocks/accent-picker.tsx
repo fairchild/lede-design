@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { presets, type Preset } from '../theme-provider';
-import { cn } from '../cn';
+import { cn, withLabels } from '../cn';
 
 /** Each preset's visible name. Override any of them through `labels`; the rest stay English. */
 export type AccentPickerLabels = Record<Preset, string>;
@@ -26,7 +26,7 @@ export interface AccentPickerProps {
  */
 export function AccentPicker(props: AccentPickerProps) {
   const auto = React.useId();
-  const l = { ...accentPickerLabels, ...props.labels };
+  const l = withLabels(accentPickerLabels, props.labels);
   return (
     <div className={cn('ld-accents', props.className)}>
       {presets.map((p) => (

@@ -1,4 +1,4 @@
-import { cn } from '../cn';
+import { cn, withLabels } from '../cn';
 
 /** StepIndicator's own words. Override any of them through `labels`; the rest stay English. */
 export interface StepIndicatorLabels {
@@ -31,7 +31,7 @@ export interface StepIndicatorProps {
  * read only "Step 2 of 3 · Preferences", and the full list replaces it when there is room.
  */
 export function StepIndicator(props: StepIndicatorProps) {
-  const l = { ...stepIndicatorLabels, ...props.labels };
+  const l = withLabels(stepIndicatorLabels, props.labels);
   return (
     <div role="group" className={cn('ld-steps', props.className)} aria-label={l.group}>
       <p className="ld-steps-summary">

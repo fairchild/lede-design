@@ -44,7 +44,6 @@ const table: Partial<DataTableLabels> = {
   selectRow: (name) => `Sélectionner ${name}`,
   moreActions: (name) => `Plus d’actions pour ${name}`,
   actions: 'Actions de ligne',
-  sort: 'Trier',
   notSorted: 'Non trié',
   sortOption: ({ column, direction }) => `${column}, ${dir(direction)}`,
   sorted: ({ column, direction }) => `Trié par ${column}, ${dir(direction)}`,
@@ -52,8 +51,8 @@ const table: Partial<DataTableLabels> = {
   ofTotal: ({ shown, total }) => `${shown} sur ${total}`,
   page: ({ page, count }) => `Page ${page} sur ${count}`,
   pageSelected: ({ counted, scope }) => `Les ${counted} ${scope} sont sélectionnés.`,
-  selectAllMatching: (matching) => `Sélectionner les ${matching}`,
-  allSelected: (matching) => `Les ${matching} sont sélectionnés.`,
+  selectAllMatching: ({ matching }) => `Sélectionner les ${matching}`,
+  allSelected: ({ matching }) => `Les ${matching} sont sélectionnés.`,
   clearSelection: 'Effacer la sélection',
   loadFailed: ({ noun: n }) => `Impossible de charger les ${n.other}.`,
   tryAgain: 'Réessayer',
@@ -61,7 +60,13 @@ const table: Partial<DataTableLabels> = {
   pages: (n) => `Pages de ${n.other}`,
   previous: 'Précédente',
   next: 'Suivante',
-  selectionBar: { selected: (counted) => `${counted} sélectionnés`, shown: ({ count }) => `${count} sélectionnés`, done: 'Terminé' },
+  // An explicit `undefined` keeps the English default.
+  sort: undefined,
+  selectionBar: {
+    selected: ({ counted, count }) => `${counted} ${count === 1 ? 'sélectionné' : 'sélectionnés'}`,
+    shown: ({ number, count }) => `${number} ${count === 1 ? 'sélectionné' : 'sélectionnés'}`,
+    done: 'Terminé',
+  },
 };
 const actions = (r: Item): RowAction[] => [{ label: 'Ouvrir', onSelect: () => void r }];
 const failed: TableState = { failure: { scope: 'load', retry: () => {} } };

@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { GlassBar } from '../glass-bar';
 import { useLinkComponent } from '../link';
-import { cn } from '../cn';
+import { cn, withLabels } from '../cn';
 
 export interface ShellNavItem { value: string; label: string; href: string; icon?: React.ReactNode; }
 /** AppShell's own words. Override any of them through `labels`; the rest stay English. */
@@ -40,7 +40,7 @@ export function AppShell(props: AppShellProps) {
   const Link = useLinkComponent();
   const label = props.navLabel ?? 'Primary';
   const mainId = props.mainId ?? 'main';
-  const l = { ...appShellLabels, ...props.labels };
+  const l = withLabels(appShellLabels, props.labels);
   return (
     <div className={cn('ld-shell', props.className)}>
       <a className="ld-skip" href={`#${mainId}`}>{l.skipToContent}</a>

@@ -55,10 +55,10 @@ test.describe('labels', () => {
     await expect(sort).toHaveAccessibleDescription('Tri croissant');
 
     await section.getByRole('checkbox', { name: 'Sélectionner Fichier 2' }).check();
-    const bar = page.getByRole('toolbar', { name: '1 fichier sélectionnés' });
+    const bar = page.getByRole('toolbar', { name: '1 fichier sélectionné' });
     await expect(bar).toBeVisible();
     await expect(bar.getByRole('button', { name: 'Terminé' })).toBeVisible();
-    await expect(bar.locator('.ld-selection-count')).toHaveText('1 sélectionnés');
+    await expect(bar.locator('.ld-selection-count')).toHaveText('1 sélectionné');
 
     await section.getByRole('checkbox', { name: 'Tout sélectionner : fichiers sur cette page' }).check();
     await expect(section.getByText('Les 3 fichiers sur cette page sont sélectionnés.')).toBeVisible();
@@ -77,7 +77,8 @@ test.describe('labels', () => {
     await page.goto(ROUTE);
     const section = page.getByRole('region', { name: 'Cards' });
     await expect(section.getByRole('checkbox', { name: 'Tout sélectionner : fichiers affichés' })).toBeVisible();
-    const select = section.getByRole('combobox', { name: 'Trier' });
+    // `sort` is set to `undefined`, which keeps the English default.
+    const select = section.getByRole('combobox', { name: 'Sort' });
     await expect(select.locator('option')).toHaveText(['Non trié', 'Nom, croissant', 'Nom, décroissant', 'Taille, croissant', 'Taille, décroissant']);
     await expect(section.getByRole('checkbox', { name: 'Sélectionner Fichier 1' })).toBeVisible();
     await expect(section.getByRole('button', { name: 'Plus d’actions pour Fichier 1' })).toBeVisible();

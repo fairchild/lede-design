@@ -34,8 +34,8 @@ export interface DataTableLabels {
   sorted: (p: { column: string; direction: SortDirection }) => string;
   /** Describes a sorted column's header button. */
   sortedDescription: (direction: SortDirection) => string;
-  /** The summary while some of the matching rows are shown: "20 of 112 work items". */
-  ofTotal: (p: { shown: string; total: string }) => string;
+  /** The summary while some of the matching rows are shown: "20 of 112 work items". `count` is the total's number. */
+  ofTotal: (p: { shown: string; total: string; count: number }) => string;
   /** The page, in the summary and the pager. */
   page: (p: { page: string; count: string }) => string;
   /** The summary while rows are coming. */
@@ -49,11 +49,15 @@ export interface DataTableLabels {
   pageSelected: (p: { count: number; counted: string; noun: Noun; scope: string }) => string;
   /** Stands in for the count of matching rows while it's unknown. */
   matching: (noun: Noun) => string;
-  /** Every matching row is selected: `matching` is a count, or the `matching` label. */
-  allSelected: (matching: string) => string;
+  /** Every matching row is selected. `matching` is the count with its noun, or the `matching` label while `count` is unknown. */
+  allSelected: (p: { matching: string; count: number | undefined }) => string;
   countingSelected: (noun: Noun) => string;
-  selected: (counted: string) => string;
-  selectAllMatching: (matching: string) => string;
+  /**
+   * The notice above the table once some of the matching rows are selected: "3 work items selected.". The floating bar
+   * has words of its own, under `selectionBar`.
+   */
+  selected: (p: { counted: string; count: number }) => string;
+  selectAllMatching: (p: { matching: string; count: number | undefined }) => string;
   clearSelection: string;
   /** The alert's heading after a failed load. `more` when Load more failed. */
   loadFailed: (p: { noun: Noun; more: boolean }) => string;
@@ -67,7 +71,7 @@ export interface DataTableLabels {
   pages: (noun: Noun) => string;
   previous: string;
   next: string;
-  /** The SelectionBar's words. */
+  /** The floating SelectionBar's words, which name it and announce the count. */
   selectionBar: Partial<SelectionBarLabels>;
 }
 
@@ -90,10 +94,10 @@ export const dataTableLabels: DataTableLabels = {
   refresh: 'Refresh',
   pageSelected: ({ count, counted, noun, scope }) => (count === 1 ? `The 1 ${noun.one} ${scope} is selected.` : `All ${counted} ${scope} are selected.`),
   matching: (noun) => `matching ${noun.other}`,
-  allSelected: (matching) => `All ${matching} are selected.`,
+  allSelected: ({ matching }) => `All ${matching} are selected.`,
   countingSelected: (noun) => `Counting selected ${noun.other}…`,
-  selected: (counted) => `${counted} selected.`,
-  selectAllMatching: (matching) => `Select all ${matching}`,
+  selected: ({ counted }) => `${counted} selected.`,
+  selectAllMatching: ({ matching }) => `Select all ${matching}`,
   clearSelection: 'Clear selection',
   loadFailed: ({ noun, more }) => (more ? `Couldn’t load more ${noun.other}.` : `Couldn’t load ${noun.other}.`),
   tryAgain: 'Try again',
