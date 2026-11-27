@@ -142,7 +142,8 @@ for (const route of ROUTES) {
 // At triple the text size on a 320px phone, every route still fits its width: a word longer than the line breaks, and a
 // control's label wraps inside the control, where a word too long for it would otherwise spill past its edge. A native
 // select draws its chosen option on one line, and the work list's sort option “Due, ascending” is wider than the screen
-// at this size, so that one cut on `/app/work` is the one allowed.
+// at this size, so that one cut on `/app/work` is allowed, and so is the fixtures' “Bay, descending”, a card list sorted
+// from its first render.
 async function inspectAt300(page: Page, route: string) {
   const found = await page.evaluate(inspect, true);
   const spilled = await page.evaluate(() => [...document.querySelectorAll<HTMLElement>('.ld-btn, .ld-bar-tool, .ld-bar-item, .ld-accent, .ld-switch')].flatMap((control) => {
@@ -158,7 +159,8 @@ async function inspectAt300(page: Page, route: string) {
     }
     return out ? [`“${control.textContent?.trim().slice(0, 40)}” (${control.className}) spills past its edge`] : [];
   }));
-  return { ...found, truncated: found.truncated.filter((t) => !(route === '/app/work' && t.startsWith('“Due, ascending” (select)'))), spilled };
+  return { ...found, truncated: found.truncated.filter((t) => !((route === '/app/work' && t.startsWith('“Due, ascending” (select)'))
+    || (route === '/fixtures/data-table' && t.startsWith('“Bay, descending” (select)')))), spilled };
 }
 for (const route of ROUTES) {
   test(`${route} · at 300% text on a 320px phone, nothing scrolls sideways and nothing is cut off`, async ({ page, isMobile }) => {

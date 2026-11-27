@@ -572,6 +572,7 @@ test.describe('DataTable', () => {
     await pager.getByRole('button', { name: 'Previous' }).click();
     await expect(pager.getByText('Page 1 of 7')).toBeVisible();
     await expect(page.locator('.ld-dt-summary')).toBeFocused(); // the new page, from its summary line
+    await expect(page.locator('.ld-dt-summary')).toHaveText('Page 1 of 7 · 50 of 310 work items');
     expect(await rowHeaders(table)).toEqual(firstPage); // from the cache
     await pager.getByRole('button', { name: 'Previous' }).focus();
     await page.keyboard.press('Enter');
@@ -687,6 +688,23 @@ test.describe('DataTable', () => {
   });
 
   const FIXTURES = '/fixtures/data-table';
+
+  test('a card shows a field from its cell, leaves out an empty one, and its select names a sort it can’t offer', async ({ page }) => {
+    await open(page, FIXTURES);
+    const section = page.locator('section[aria-labelledby="fx-card-fields"]');
+    const cards = section.getByRole('list', { name: 'Card fields from cells' }).getByRole('listitem');
+    await expect(cards).toHaveCount(2);
+    const atlas = cards.filter({ hasText: 'Atlas' }).locator('.ld-row-subtitle');
+    await expect(atlas).toHaveText('Bay: S-1\u00a0·, Tag: New\u00a0·, Note: Ground floor');
+    await expect(atlas.locator('em')).toHaveText('New');
+    // No tag and no note: one field, with no dot after it.
+    const bestiary = cards.filter({ hasText: 'Bestiary' }).locator('.ld-row-subtitle');
+    await expect(bestiary).toHaveText('Bay: S-2');
+    await expect(bestiary.locator('[aria-hidden="true"]')).toHaveCount(0);
+    const sort = section.getByRole('combobox', { name: 'Sort' });
+    await expect(sort.locator('option:checked')).toHaveText('Bay, descending');
+    await expect(sort.locator('option:checked')).toHaveAttribute('disabled', '');
+  });
 
   test('a card field wider than its line wraps inside itself: nothing is cut off, and no line starts with a dot', async ({ page }) => {
     for (const width of [320, 390, 1280]) {
@@ -844,6 +862,13 @@ test.describe('DataTable', () => {
     const hookCall = (page: Page, call: string) => page.evaluate(`window.ledeHookProbe.${call}`);
     const probe = (page: Page) => page.getByTestId('hook-probe');
 
+    test('the hook: sortBy ignores a column that can\'t be sorted', async ({ page }) => {
+      await open(page, FIXTURES);
+      await hookCall(page, `model.sortBy('n', 'descending')`);
+      await page.evaluate(() => new Promise(requestAnimationFrame));
+      expect(await hookCall(page, 'model.view.sort.length')).toBe(0);
+    });
+
     test('the hook: a toggle ignored while rows are the last view\'s leaves the Shift range anchor alone', async ({ page }) => {
       await open(page, FIXTURES);
       await hookCall(page, `model.selection.toggle('n0', true)`);
@@ -916,6 +941,24 @@ test.describe('DataTable', () => {
       await expect(rowBox(page, 2)).toBeChecked();
       await expect(rowBox(page, 4)).toBeChecked();
     });
+  });
+
+  test('a sticky first cell that isn\'t the row header is still part of the row\'s link', async ({ page }) => {
+    await open(page, FIXTURES);
+    const table = page.getByRole('table', { name: 'Sticky cell fixture' });
+    const cell = table.getByRole('row').nth(1).getByRole('cell').first();
+    await cell.scrollIntoViewIfNeeded();
+    const box = (await cell.boundingBox())!;
+    const href = await page.evaluate(([x, y]) => document.elementFromPoint(x, y)?.closest('a')?.getAttribute('href') ?? null, [box.x + box.width / 2, box.y + box.height / 2]);
+    expect(href).toBe('#item-i0');
+  });
+
+  test('a page of one row offers "Select all" in the singular', async ({ page }) => {
+    await open(page, FIXTURES);
+    const section = page.locator('section[aria-labelledby="fx-one-row"]');
+    await section.getByRole('checkbox', { name: /^Select all records/ }).click();
+    await expect(section.getByText('The 1 record on this page is selected.')).toBeVisible();
+    await expect(section.getByRole('button', { name: 'Select all 4 records' })).toBeVisible();
   });
 
   test('pages: a ticked page loses its "Select all" offer while the next page loads', async ({ page }) => {
@@ -1385,7 +1428,7 @@ test('work page: after visiting the last page, archiving a row on the first page
     await expect(pager.getByText(`Page ${i} of 7`)).toBeVisible();
   }
   // Wait for the last page's rows: its response is what carries the total.
-  await expect(page.locator('.ld-dt-summary')).toHaveText('10 of 310 work items');
+  await expect(page.locator('.ld-dt-summary')).toHaveText('Page 7 of 7 · 10 of 310 work items');
   for (let i = 6; i >= 1; i--) {
     await pager.getByRole('button', { name: 'Previous' }).click();
     await expect(pager.getByText(`Page ${i} of 7`)).toBeVisible();
@@ -1430,7 +1473,7 @@ test.describe('a reader whose locale is en-GB', () => {
     await open(page, '/fixtures/data-table');
     const section = page.locator('section[aria-labelledby="fx-locale"]');
     const german = section.getByRole('table', { name: 'German fixture' });
-    await expect(section.locator('.ld-dt-summary').first()).toHaveText('2 of 1.234 words');
+    await expect(section.locator('.ld-dt-summary').first()).toHaveText('Page 1 of 1.200 · 2 of 1.234 words');
     await expect(german.locator('tbody tr').filter({ hasText: 'tee' })).toContainText('1.234,5');
     await expect(section.getByRole('navigation', { name: 'Pages of words' })).toContainText('Page 1 of 1.200');
     await german.getByRole('checkbox', { name: 'Select all words on this page' }).check();

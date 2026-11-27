@@ -21,6 +21,77 @@ const INVALID: Record<string, React.ReactNode> = {
   li: <>Totals <li>by quarter</li></>,
 };
 
+/** A table whose rows hold a button that closes it, as a controlled `open` from outside can. */
+function ClosedFromInside() {
+  const [open, setOpen] = React.useState(true);
+  return (
+    <section aria-label="Closed from inside" className="docs-section">
+      <Table.Root caption="Closing totals" collapsible={{ open, onOpenChange: setOpen }}>
+        <Table.Body>
+          <Table.Row>
+            <Table.RowHeader>Q3</Table.RowHeader>
+            <Table.Cell><Button variant="gray" onClick={() => setOpen(false)}>Close the table</Button></Table.Cell>
+          </Table.Row>
+        </Table.Body>
+      </Table.Root>
+    </section>
+  );
+}
+
+const LONG = 'A note long enough to be clipped in a narrow column, so that hovering it would show its full text';
+
+/** Smaller findings: a sort button inside a header that sorts, a row with its own title, a nested table, a narrow box. */
+function Findings() {
+  return (
+    <>
+      <section aria-label="Sort that disagrees" className="docs-section">
+        <p id="fx-sort-note">Sorting reloads the page.</p>
+        <Table.Root aria-label="Sorted table">
+          <Table.Head>
+            <Table.Row>
+              <Table.HeaderCell sort="descending"><Table.SortButton direction="ascending" aria-describedby="fx-sort-note">Name</Table.SortButton></Table.HeaderCell>
+            </Table.Row>
+          </Table.Head>
+          <Table.Body><Table.Row><Table.Cell>Ada</Table.Cell></Table.Row></Table.Body>
+        </Table.Root>
+      </section>
+      <section aria-label="Row titles" className="docs-section" style={{ maxWidth: 360 }}>
+        <Table.Root aria-label="Titled rows">
+          <Table.Columns widths={[120, 200]} />
+          <Table.Body>
+            <Table.Row title="The row’s own title">
+              <Table.RowHeader>Own</Table.RowHeader>
+              <Table.Cell truncate>{LONG}</Table.Cell>
+            </Table.Row>
+            <Table.Row>
+              <Table.RowHeader><Table.RowLink href="#linked">Linked</Table.RowLink></Table.RowHeader>
+              <Table.Cell truncate>{LONG}</Table.Cell>
+            </Table.Row>
+            <Table.Row>
+              <Table.RowHeader><label>Ticked <input type="checkbox" /></label></Table.RowHeader>
+              <Table.Cell truncate>{LONG}</Table.Cell>
+            </Table.Row>
+            <Table.Row>
+              <Table.RowHeader>Nested</Table.RowHeader>
+              <Table.Cell>
+                <Table.Root aria-label="Inner table">
+                  <Table.Body><Table.Row title="The inner row’s title"><Table.Cell>Inner</Table.Cell></Table.Row></Table.Body>
+                </Table.Root>
+              </Table.Cell>
+            </Table.Row>
+          </Table.Body>
+        </Table.Root>
+      </section>
+      <section aria-label="Narrow box" className="docs-section">
+        <Table.Root aria-label="Wide table" style={{ width: 200 }}>
+          <Table.Columns widths={[400]} />
+          <Table.Body><Table.Row><Table.Cell>Wide</Table.Cell></Table.Row></Table.Body>
+        </Table.Root>
+      </section>
+    </>
+  );
+}
+
 /**
  * Collapsible tables for the development warnings: one whose `open` the page passes, then stops passing, captions
  * with phrasing content, and with `?caption=` one of INVALID's.
@@ -45,6 +116,8 @@ export function TableFixtures() {
           {body}
         </Table.Root>
       </section>
+      <ClosedFromInside />
+      <Findings />
       {invalid ? (
         <section aria-label="Content a button can’t hold" className="docs-section">
           <Table.Root caption={invalid} collapsible>

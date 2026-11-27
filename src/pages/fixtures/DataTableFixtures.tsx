@@ -89,6 +89,49 @@ function ClientPagesFixture() {
   );
 }
 
+/** One row a page, selectable: the offer to select every matching row speaks of that one row in the singular. */
+function OneRowFixture() {
+  const [page, setPage] = React.useState(0);
+  const [selection, setSelection] = React.useState<Selection>({ kind: 'ids', ids: new Set() });
+  return (
+    <section aria-labelledby="fx-one-row" className="docs-section">
+      <h2 id="fx-one-row" className="text-title-3">One row a page</h2>
+      <DataTable
+        aria-label="One row fixture"
+        noun={{ one: 'record', other: 'records' }}
+        columns={columns}
+        rows={ITEMS.slice(page, page + 1)}
+        getRowId={(r) => r.id}
+        rowHeader="n"
+        total={4}
+        selectionMode="multiple"
+        selection={selection}
+        onSelectionChange={setSelection}
+        paging={{ kind: 'pages', page, pageCount: 4, onPageChange: setPage }}
+      />
+    </section>
+  );
+}
+
+/** A sticky first column that isn't the row header, in linked rows: that cell is part of the row's target too. */
+function StickyNotHeaderFixture() {
+  return (
+    <section aria-labelledby="fx-sticky-cell" className="docs-section">
+      <h2 id="fx-sticky-cell" className="text-title-3">Sticky cell before the row header</h2>
+      <DataTable
+        aria-label="Sticky cell fixture"
+        noun={noun}
+        columns={columns}
+        rows={ITEMS.slice(0, 2)}
+        getRowId={(r) => r.id}
+        rowHeader="rank"
+        rowHref={(r) => `#item-${r.id}`}
+        stickyFirstColumn
+      />
+    </section>
+  );
+}
+
 /** "Refresh in the background" holds a fetch open with this view's rows on screen, until "Finish fetching". */
 function ClientMoreFixture() {
   const [shown, setShown] = React.useState(3);
@@ -313,6 +356,41 @@ function LongFieldsFixture() {
           getRowId={(r) => r.id}
           rowHeader="id"
           selectionMode="multiple"
+          narrow="cards"
+        />
+      </div>
+    </section>
+  );
+}
+
+/**
+ * Cards whose fields come from `cell` alone, or from nothing on some rows, in a view sorted by a column that can't be
+ * sorted from the cards' select.
+ */
+type Shelf = { id: string; title: string; tag?: string; note?: string };
+const SHELVES: Shelf[] = [
+  { id: 'S-1', title: 'Atlas', tag: 'New', note: 'Ground floor' },
+  { id: 'S-2', title: 'Bestiary' },
+];
+const shelfColumns: Column<Shelf>[] = [
+  { id: 'title', label: 'Title', value: (r) => r.title, card: 'title', sortable: true },
+  { id: 'id', label: 'Bay', value: (r) => r.id, card: 1 },
+  { id: 'tag', label: 'Tag', cell: (r) => (r.tag ? <em>{r.tag}</em> : null), card: 2 },
+  { id: 'note', label: 'Note', value: (r) => r.note ?? null, card: 3 },
+];
+function CardFieldsFixture() {
+  return (
+    <section aria-labelledby="fx-card-fields" className="docs-section">
+      <h2 id="fx-card-fields" className="text-title-3">Card fields from cells</h2>
+      <div className="docs-narrow">
+        <DataTable
+          caption="Card fields from cells"
+          noun={{ one: 'shelf', other: 'shelves' }}
+          columns={shelfColumns}
+          rows={SHELVES}
+          getRowId={(r) => r.id}
+          rowHeader="id"
+          defaultView={{ sort: [{ columnId: 'id', direction: 'descending' }] }}
           narrow="cards"
         />
       </div>
@@ -611,6 +689,8 @@ export function DataTableFixtures() {
       <PageHeader title="Data table fixtures" summary="Edge cases for the automated tests." />
       <CursorFixture />
       <ClientPagesFixture />
+      <OneRowFixture />
+      <StickyNotHeaderFixture />
       <ClientMoreFixture />
       <FailingRefreshFixture />
       <NothingMoreFixture />
@@ -619,6 +699,7 @@ export function DataTableFixtures() {
       <HeldFilterFixture />
       <HeldPagesFixture />
       <LongFieldsFixture />
+      <CardFieldsFixture />
       <NarrowScrollFixture />
       <LocaleFixture />
       <RemovalFixture />

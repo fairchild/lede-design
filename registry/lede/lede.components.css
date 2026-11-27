@@ -732,8 +732,10 @@
 .ld-table-end { text-align: end; font-variant-numeric: tabular-nums; }
 .ld-table-center { text-align: center; }
 .ld-table-trunc { display: block; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; overflow-wrap: normal; }
-/* Full text while the cell has focus (hover shows it as a title, set when the text is actually clipped). */
-.ld-table-rowheader:focus-within .ld-table-trunc, .ld-table-td:focus-within .ld-table-trunc { white-space: normal; overflow-wrap: anywhere; }
+/* Full text while the cell has focus, and in every cell of a row with keyboard focus, so a keyboard reaches what hover
+   shows as a title (set when the text is actually clipped). A click on a row's checkbox leaves the row's height alone. */
+.ld-table-rowheader:focus-within .ld-table-trunc, .ld-table-td:focus-within .ld-table-trunc,
+.ld-table tr:has(:focus-visible) > :is(.ld-table-rowheader, .ld-table-td) .ld-table-trunc { white-space: normal; overflow-wrap: anywhere; }
 
 /* Selected rows: a tint for people who can see it, and the checkbox carries the state for everyone. */
 .ld-table-row[data-selected] > * { background-color: color-mix(in srgb, var(--primary) 10%, var(--card)); }

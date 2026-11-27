@@ -13,7 +13,7 @@ import { Pager } from './data-table-pager';
 import { SelectionBar, formatCount, type SelectionAction, type Noun } from './selection-bar';
 import {
   useDataTable, formatValue, useStableInput,
-  type DataTableOptions, type Selection, type TableState, type Total, type Paging,
+  type DataTableOptions, type Selection, type TableState, type Paging,
 } from './use-data-table';
 
 /** A bulk action in SelectionBar. It receives the selection, so uncontrolled tables can act on it too. */
@@ -36,7 +36,6 @@ export type DataTableProps<Row> = TableLabel &
     swipeActions?: boolean;
     /** Shown when there are no rows. Default: "No {noun.other}". */
     emptyState?: React.ReactNode;
-    total?: Total;
     /**
      * Below `narrowBelow`: `'cards'` renders a list of cards, and `'scroll'` keeps the table with a sticky first column.
      * With `'scroll'`, when any column has no `width`, columns fit their content (a `width` becomes a minimum) and wrap
@@ -168,9 +167,13 @@ export function DataTable<Row>(props: DataTableProps<Row>) {
   // The one-line takeaway: count first, then what is happening. Not a live region: sorts are announced on their
   // own, selection by SelectionBar and busy-ness by `aria-busy`, so this doesn't talk over them.
   const shown = hidden ? 0 : rows.length;
-  const countText = hidden ? formatCount(0, noun, locale) : total == null || (typeof total === 'number' && total === shown)
+  const counted = hidden ? formatCount(0, noun, locale) : total == null || (typeof total === 'number' && total === shown)
     ? formatCount(shown, noun, locale)
     : `${formatValue(shown, locale)} of ${formatCount(total, noun, locale)}`;
+  // Next and Previous land on this line, so it says which page it is.
+  const countText = paging?.kind === 'pages' && paging.pageCount > 1
+    ? `Page ${formatValue(paging.page + 1, locale)} of ${formatValue(paging.pageCount, locale)} · ${counted}`
+    : counted;
   // A failed load has no count to give: the alert says what happened. The line stays as Try again's focus target,
   // empty until a retry is on its way.
   const summary = errorOnly ? (updating ? `Loading ${noun.other}…` : '')
@@ -226,7 +229,7 @@ export function DataTable<Row>(props: DataTableProps<Row>) {
         {offerAll || allSelected ? (
           <p className="ld-dt-notice">
             <span>
-              {offerAll ? `All ${formatCount(shown, noun, locale)} ${scope} are selected.`
+              {offerAll ? (shown === 1 ? `The 1 ${noun.one} ${scope} is selected.` : `All ${formatCount(shown, noun, locale)} ${scope} are selected.`)
                 : sel.value.kind === 'all-matching' && sel.value.except.size === 0 ? `All ${allMatching} are selected.`
                 : sel.counting ? `Counting selected ${noun.other}…`
                 : `${formatCount(sel.count, noun, locale)} selected.`}

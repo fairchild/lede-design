@@ -2,7 +2,10 @@ import * as React from 'react';
 import { cn } from './cn';
 import { useLinkComponent } from './link';
 
-/** Exactly one way to name a table. An unlabeled table does not type-check. */
+/**
+ * Exactly one way to name a table. A table with none of the three does not type-check, but a `caption` of `null` does,
+ * and leaves the table unnamed.
+ */
 export type TableLabel =
   | { caption: React.ReactNode; 'aria-label'?: never; 'aria-labelledby'?: never }
   | { 'aria-label': string; caption?: never; 'aria-labelledby'?: never }
@@ -122,6 +125,12 @@ function Root(props: TableRootProps) {
   });
   const [innerOpen, setInnerOpen] = React.useState(collapsible?.defaultOpen ?? true);
   const open = collapsible ? collapsible.open ?? innerOpen : true;
+  // A close from outside, such as a controlled `open`, while focus is in the rows: focus goes to the caption's button
+  // rather than to the page.
+  React.useLayoutEffect(() => {
+    const focused = document.activeElement;
+    if (!open && focused && focused !== toggleRef.current && scrollRef.current?.querySelector('table')?.contains(focused)) toggleRef.current?.focus();
+  }, [open]);
   const toggle = () => {
     const next = !open;
     if (collapsible?.open === undefined) setInnerOpen(next);
@@ -132,13 +141,19 @@ function Root(props: TableRootProps) {
   // so people using a keyboard can scroll it. Otherwise it is not a scroll container at all, so the header sticks to
   // the page.
   const [overflowing, setOverflowing] = React.useState(false);
+  const remeasure = React.useRef<() => void>(() => undefined);
   React.useLayoutEffect(() => {
     const el = scrollRef.current;
     const table = el?.firstElementChild as HTMLElement | null | undefined;
     if (!el || !table) return undefined;
     // The one read: the table's own layout, which the first paint needs anyway. Nothing is written back to the
     // DOM here (a write would dirty 500 rows' styles and force a second layout).
-    const measure = () => setOverflowing(table.offsetWidth > el.clientWidth + 1);
+    // A box that has focus stays a focusable region until it loses it, so focus never falls to the page.
+    const measure = () => {
+      const over = table.offsetWidth > el.clientWidth + 1;
+      setOverflowing((was) => over || (was && document.activeElement === el));
+    };
+    remeasure.current = measure;
     measure();
     // Sticky columns whose width CSS can't know (no Table.Columns, or an auto-width column): measured after layout,
     // from the observer, so focus stays clear of them. Table.Columns' value, set on the table, takes precedence.
@@ -185,6 +200,7 @@ function Root(props: TableRootProps) {
       {...(overflowing ? { role: 'region', tabIndex: 0, ...name } : {})}
       onMouseMove={showFullText}
       onMouseLeave={clearFullText}
+      onBlur={(e) => { if (e.target === e.currentTarget) remeasure.current(); }}
     >
       <table
         {...rest}
@@ -219,9 +235,17 @@ function Root(props: TableRootProps) {
 /**
  * Full text of a clipped cell as a hover title. In a linked row the pointer is over the link's `::after`, so the cell
  * is found by position and the title goes on the row, whose title the browser shows for the link too.
- * At most one lookup per frame.
+ * At most one lookup per frame. Only titles set here are removed, and only on this table's own rows: a row's own
+ * `title` stays, and wins, and a nested table's rows are its own box's.
  */
 const hover = new WeakMap<Element, { x: number; y: number; frame: number }>();
+const titled = new WeakSet<HTMLTableRowElement>();
+/** This table's rows with a title: not a nested table's, which its own box looks after. */
+const ownRows = (root: Element) =>
+  [...root.querySelectorAll<HTMLTableRowElement>('tr[title]')].filter((r) => r.closest('.ld-table-scroll') === root);
+function untitle(row: HTMLTableRowElement) {
+  if (titled.delete(row)) row.removeAttribute('title');
+}
 function showFullText(e: React.MouseEvent) {
   const root = e.currentTarget;
   const h = hover.get(root) ?? { x: 0, y: 0, frame: 0 };
@@ -233,22 +257,22 @@ function showFullText(e: React.MouseEvent) {
     h.frame = 0;
     const { x, y } = h;
     const row = document.elementFromPoint(x, y)?.closest('tr');
-    if (!row) return;
+    if (!row || row.closest('.ld-table-scroll') !== root) { ownRows(root).forEach(untitle); return; }
     const cell = [...row.cells].find((c) => {
       const r = c.getBoundingClientRect();
       return x >= r.left && x < r.right;
     });
     const t = cell?.querySelector<HTMLElement>('.ld-table-trunc');
     const full = t && t.scrollWidth > t.clientWidth ? t.textContent ?? '' : '';
-    if (full) row.title = full;
-    else row.removeAttribute('title');
-    root.querySelectorAll('tr[title]').forEach((r) => { if (r !== row) r.removeAttribute('title'); });
+    if (full && (titled.has(row) || !row.hasAttribute('title'))) { row.title = full; titled.add(row); }
+    else if (!full) untitle(row);
+    ownRows(root).forEach((r) => { if (r !== row) untitle(r); });
   });
 }
 function clearFullText(e: React.MouseEvent) {
   const h = hover.get(e.currentTarget);
   if (h?.frame) { cancelAnimationFrame(h.frame); h.frame = 0; }
-  e.currentTarget.querySelectorAll('tr[title]').forEach((r) => r.removeAttribute('title'));
+  ownRows(e.currentTarget).forEach(untitle);
 }
 
 /** Width a column without a `width` keeps before the table scrolls. */
@@ -313,17 +337,18 @@ function Columns({ widths, sticky = 0 }: { widths: ReadonlyArray<ColumnWidth | n
   return <colgroup ref={ref}>{widths.map((_, i) => <col key={i} />)}</colgroup>;
 }
 
-function Caption({ className, ...rest }: React.HTMLAttributes<HTMLTableCaptionElement>) {
+/** @deprecated Name the table with Table.Root's `caption`, which also labels it and can collapse it. */
+function Caption({ className, ...rest }: React.ComponentProps<'caption'>) {
   return <caption className={cn('ld-table-caption', className)} {...rest} />;
 }
-function Head({ className, ...rest }: React.HTMLAttributes<HTMLTableSectionElement>) {
+function Head({ className, ...rest }: React.ComponentProps<'thead'>) {
   return <thead className={cn('ld-table-head', className)} {...rest} />;
 }
-function Body({ className, ...rest }: React.HTMLAttributes<HTMLTableSectionElement>) {
+function Body({ className, ...rest }: React.ComponentProps<'tbody'>) {
   return <tbody className={cn('ld-table-body', className)} {...rest} />;
 }
 
-export interface RowProps extends React.HTMLAttributes<HTMLTableRowElement> {
+export interface RowProps extends React.ComponentProps<'tr'> {
   /** Styling only. The row's checkbox carries the selection for assistive tech, since table rows take no `aria-selected`. */
   selected?: boolean;
 }
@@ -333,7 +358,11 @@ function Row({ selected, className, ...rest }: RowProps) {
 
 interface CellBase {
   align?: Align;
-  /** One line with an ellipsis; the full text stays in the DOM, shows on hover and wraps while the cell has focus. */
+  /**
+   * One line with an ellipsis; the full text stays in the DOM, shows on hover and wraps while the cell has focus, or
+   * anything in its row has keyboard focus. Truncate only in a row a keyboard can reach, through a RowLink or another control, or the full text shows
+   * on hover only.
+   */
   truncate?: boolean;
   /** Stays in view while the table scrolls sideways, with Table.Root's `stickyFirstColumn`. */
   sticky?: boolean;
@@ -343,12 +372,15 @@ const cellClass = (p: CellBase, base: string, className?: string) =>
 const inner = (truncate: boolean | undefined, children: React.ReactNode) =>
   truncate ? <span className="ld-table-trunc">{children}</span> : children;
 
-export interface HeaderCellProps extends CellBase, Omit<React.ThHTMLAttributes<HTMLTableCellElement>, 'align' | 'scope'> {
-  /** The column's current sort. `aria-sort` is written only on the sorted column. */
+export interface HeaderCellProps extends CellBase, Omit<React.ComponentProps<'th'>, 'align' | 'scope'> {
+  /** The column's current sort. `aria-sort` is written only on the sorted column, and a SortButton inside reads it. */
   sort?: SortDirection | null;
 }
+/** The enclosing HeaderCell's `sort`, or `undefined` outside one that sets it. */
+const HeaderSort = React.createContext<SortDirection | null | undefined>(undefined);
 function HeaderCell({ sort, align, truncate, sticky, className, children, ...rest }: HeaderCellProps) {
   return (
+    <HeaderSort.Provider value={sort}>
     <th
       scope="col"
       className={cellClass({ align, sticky }, 'ld-table-th', className)}
@@ -358,14 +390,15 @@ function HeaderCell({ sort, align, truncate, sticky, className, children, ...res
     >
       {inner(truncate, children)}
     </th>
+    </HeaderSort.Provider>
   );
 }
 
-export interface CellProps extends CellBase, Omit<React.TdHTMLAttributes<HTMLTableCellElement>, 'align'> {}
+export interface CellProps extends CellBase, Omit<React.ComponentProps<'td'>, 'align'> {}
 /** `<th scope="row">`: the cell that names its row. Exactly one per row. */
 function RowHeader({ align, truncate, sticky, className, children, ...rest }: CellProps) {
   return (
-    <th scope="row" className={cellClass({ align, sticky }, 'ld-table-rowheader', className)} {...(rest as React.ThHTMLAttributes<HTMLTableCellElement>)}>
+    <th scope="row" className={cellClass({ align, sticky }, 'ld-table-rowheader', className)} {...(rest as React.ComponentProps<'th'>)}>
       {inner(truncate, children)}
     </th>
   );
@@ -378,19 +411,26 @@ function Cell({ align, truncate, sticky, className, children, ...rest }: CellPro
   );
 }
 
-export interface SortButtonProps extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'type'> {
-  /** This column's sort, or `null` when another column, or none, is sorted. */
-  direction: SortDirection | null;
+export interface SortButtonProps extends Omit<React.ComponentProps<'button'>, 'type'> {
+  /**
+   * This column's sort, or `null` when another column, or none, is sorted. Inside a HeaderCell that sets `sort`, that
+   * wins, so the button and `aria-sort` always agree. The nearest such HeaderCell counts, through portals too.
+   */
+  direction?: SortDirection | null;
 }
 /**
  * The `<button>` inside a sortable header. Its description carries the direction too, for screen readers that
- * ignore `aria-sort` changes (TalkBack). Pair it with a live announcement of the new sort.
+ * ignore `aria-sort` changes (TalkBack), after any `aria-describedby` of yours. Pair it with a live announcement of
+ * the new sort.
  */
-function SortButton({ direction, className, children, ...rest }: SortButtonProps) {
+function SortButton({ direction: own, className, children, 'aria-describedby': describedBy, ...rest }: SortButtonProps) {
   const id = React.useId();
+  const header = React.useContext(HeaderSort);
+  const direction = header !== undefined ? header : own ?? null;
+  const description = [describedBy, direction ? id : undefined].filter(Boolean).join(' ') || undefined;
   return (
     <>
-      <button type="button" className={cn('ld-table-sort', className)} aria-describedby={direction ? id : undefined} {...rest}>
+      <button type="button" className={cn('ld-table-sort', className)} {...rest} aria-describedby={description}>
         <span className="ld-table-sort-label">{children}</span>
         <svg className="ld-table-sort-icon" viewBox="0 0 12 16" fill="none" aria-hidden="true">
           <path className="ld-table-sort-up" d="M3 6.5 6 3.5l3 3" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" />
@@ -402,7 +442,7 @@ function SortButton({ direction, className, children, ...rest }: SortButtonProps
   );
 }
 
-export interface RowLinkProps extends Omit<React.AnchorHTMLAttributes<HTMLAnchorElement>, 'href'> {
+export interface RowLinkProps extends Omit<React.ComponentProps<'a'>, 'href'> {
   href: string;
 }
 /**

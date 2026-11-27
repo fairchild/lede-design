@@ -4,6 +4,22 @@
 
 ### Fixed
 
+- **DataTable's summary line names the page when it pages**: “Page 2 of 6 · 5 of 30 work items”. Next and Previous
+  land there, so each page now reads differently.
+- **DataTable's `sortBy` ignores a column that can't be sorted**, rather than announcing a sort the rows don't show.
+- **A one-row page reads “The 1 work item on this page is selected.”**, not “All 1 work item … are selected.”
+- **A sticky first column that isn't the row header stays part of a linked row's target.**
+- **A Table.SortButton inside a HeaderCell that sets `sort` reads that sort**, so its “Sorted …” description and the
+  header's `aria-sort` always agree, and the description now follows an `aria-describedby` of yours, not replaces it.
+  `direction` is optional there.
+- **Table's hover titles leave a row's own `title` alone**, and no longer reach the rows of a table nested in a cell.
+- **A truncated Table cell shows its full text while anything in its row has keyboard focus**, as well as while the
+  cell itself has focus, so a keyboard on a row's link reads every clipped cell in that row.
+- **A Table scroll box keeps focus when it stops overflowing**: it stays a focusable region until focus leaves it.
+- **A collapsible Table closed from outside while focus is in its rows** moves focus to the caption's button.
+- **DataTable's cards show a field that has only a `cell`**, and leave out a field whose `cell` returns `null`, `''` or
+  `false`, dot and all. That cell sits inside the card's link or button, so it holds phrasing content only.
+  A view sorted by a column the cards' sort select doesn't offer reads as that sort, not “Not sorted”.
 - **OnboardingFlow's Finish starts one save at a time, even when a controlled step leaves Review and comes back while
   it's on its way.** Back on Review it reads “Finishing…” until that save settles, and the save finishes the flow if the
   answers on Review are still the ones it carries. A save that settles on another step, or with answers changed since,
@@ -36,6 +52,7 @@
 
 ### Deprecated
 
+- **`Table.Caption`.** Name a table with Table.Root's `caption`, which labels it and can collapse it.
 - `useDataTable`'s `noun` option. The hook never read it, so it's optional now, and 0.10.0 removes it. `DataTable`
   still requires `noun`, so an options object typed `DataTableOptions` and spread into `DataTable` adds `noun` itself.
 

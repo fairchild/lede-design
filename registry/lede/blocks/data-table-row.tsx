@@ -43,9 +43,10 @@ export const DataRow = React.memo(function DataRow<Row>(p: DataRowProps<Row>) {
   const Link = useLinkComponent();
   const { id, original, columns } = p;
   const name = p.text(original);
-  // A sticky row-header cell is positioned, which would confine the link's `::after` to that cell. A twin link, out of
-  // the tab order and hidden from assistive tech, then covers the rest of the row, so the whole row stays one target.
-  const needsTwin = !!p.href && p.sticky && columns[0]?.id === p.rowHeader;
+  // A sticky first cell is positioned. When it's the row header, it confines the link's `::after` to itself, and when
+  // it isn't, it sits above that `::after`. A twin link, out of the tab order and hidden from assistive tech, then
+  // covers the rest of the row, or that cell, so the whole row stays one target.
+  const twinAt = !p.href || !p.sticky ? -1 : columns[0]?.id === p.rowHeader ? 1 : 0;
   return (
     <Table.Row selected={p.selected} data-row-id={id}>
       {p.selected !== undefined ? (
@@ -72,7 +73,7 @@ export const DataRow = React.memo(function DataRow<Row>(p: DataRowProps<Row>) {
         }
         return (
           <Table.Cell key={c.id} align={c.align} truncate={c.truncate} sticky={sticky}>
-            {needsTwin && i === 1 ? <Link href={p.href!} className="ld-table-twin" tabIndex={-1} aria-hidden="true" /> : null}
+            {i === twinAt ? <Link href={p.href!} className="ld-table-twin" tabIndex={-1} aria-hidden="true" /> : null}
             {content}
           </Table.Cell>
         );

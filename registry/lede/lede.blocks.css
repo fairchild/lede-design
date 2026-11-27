@@ -385,7 +385,6 @@ button.ld-back { background: none; border: 0; font-family: inherit; font-weight:
 /* DataTable */
 .ld-dt { display: grid; gap: var(--space-3); min-width: 0; font-family: var(--font-sans); }
 .ld-dt-top { display: grid; gap: var(--space-2); }
-.ld-dt-top:empty { display: none; }
 .ld-dt-summary { margin: 0; font-size: var(--text-subheadline-size); line-height: var(--text-subheadline-line-height); color: var(--muted-foreground); outline: none; }
 .ld-dt-summary:focus-visible { outline: var(--stroke-ring) solid var(--ring); outline-offset: var(--stroke-ring-offset); }
 .ld-dt-notice {

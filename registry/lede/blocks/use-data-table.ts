@@ -114,7 +114,9 @@ export type Column<Row> = {
    * leaves each row a unique name. When a `'title'` column leads, give the row header a numbered slot, so the card
    * shows the name its checkbox and menu carry. 1, 2 and 3 make the line under the title: each field keeps to one line,
    * and one wider than the card wraps inside itself. `'status'` sits beside the text, where a long status narrows it,
-   * or under the text in a card narrower than 440px.
+   * or under the text in a card narrower than 440px. A numbered field shows its `value`'s text, or its `cell` when it
+   * has none, and is left out when that returns `null`, `''` or `false`. It sits inside the card's link or button, so a
+   * `cell` shown there holds text and phrasing elements, with nothing interactive.
    */
   card?: 'title' | 'status' | 1 | 2 | 3;
 };
@@ -176,6 +178,10 @@ export interface DataTableOptions<Row> {
   selectionMode?: 'none' | 'multiple';
   selection?: Selection;
   onSelectionChange?: (selection: Selection) => void;
+  /**
+   * Rows matching the view across all pages: a number, or `{ atLeast }` while counting. Drives "N of M" and "Select
+   * all M".
+   */
   total?: Total;
   /**
    * Paging, rendered by DataTable. The hook reads its page, so rows that leave with a page change stay selected: pass it
@@ -232,7 +238,10 @@ export interface DataTableModel<Row> {
   /** Visible rows, in display order. */
   rows: RowModel<Row>[];
   rowHeader: Column<Row>;
-  /** Sort by a column. Without a direction it toggles (ascending first). Announces the new sort politely. */
+  /**
+   * Sort by a column. Without a direction it toggles (ascending first). Announces the new sort politely. Does nothing
+   * for a column that can't be sorted: not `sortable`, or in client mode without `value` or `compare`.
+   */
   sortBy: (columnId: string, direction?: SortDirection) => void;
   selection: SelectionModel;
   /** A column's value as display text: the row header's names checkboxes and menus. */
@@ -363,7 +372,8 @@ export function useDataTable<Row>(options: DataTableOptions<Row>): DataTableMode
   const sortBy = React.useCallback(
     (columnId: string, direction?: SortDirection) => {
       const col = byId.get(columnId);
-      if (!col) return;
+      // Only a column the table can sort: anything else would announce a sort the rows don't show.
+      if (!col || !canSort(col)) return;
       const current = viewRef.current.sort.find((s) => s.columnId === columnId)?.direction;
       const next: SortDirection = direction ?? (current === 'ascending' ? 'descending' : 'ascending');
       const sort: SortItem[] = [{ columnId, direction: next }];
@@ -374,7 +384,7 @@ export function useDataTable<Row>(options: DataTableOptions<Row>): DataTableMode
       // so the same sort twice is announced twice.
       announce(`Sorted by ${col.label}, ${next}`, 'polite', 1000);
     },
-    [byId, options.view],
+    [byId, canSort, options.view],
   );
   const headers = React.useMemo<HeaderModel<Row>[]>(
     () =>
