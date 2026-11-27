@@ -156,6 +156,7 @@ const routes = () => createBrowserRouter(
         { path: 'layouts/workbench', element: <WorkbenchExample />, handle: { title: 'Three panels with top bar' } },
         ...(FIXTURES ? [
           { path: 'fixtures/workbench-hydrate', lazy: load(() => import('@/pages/fixtures/WorkbenchHydrate'), 'WorkbenchHydrate'), handle: { title: 'Workbench hydration' } },
+          { path: 'fixtures/workbench-controlled', lazy: load(() => import('@/pages/fixtures/WorkbenchControlled'), 'WorkbenchControlled'), handle: { title: 'Workbench, controlled' } },
           { path: 'fixtures/bare-table', lazy: load(() => import('@/pages/fixtures/BareTableFixture'), 'BareTableFixture'), handle: { title: 'A table without a shell' } },
         ] : []),
         {

@@ -4,6 +4,9 @@
 
 ### Added
 
+- **WorkbenchShell takes `panel` and `onPanelChange`**, for the panel showing on a narrow screen, and each panel takes
+  `open` and `onOpenChange`, so a parent can show main from a tree of buttons, open the end panel from outside, and
+  follow what the switcher, toggles and dividers do.
 - **AppShell and WorkbenchShell take a `mainId`**, for the `<main>` their skip link targets, so a page can hold two.
   **WorkbenchShell's `focusOnMount={false}`** leaves focus where it is when the shell mounts.
 - **FormSection's `group={false}`** is for a section that holds one control already named as a group, such as a
