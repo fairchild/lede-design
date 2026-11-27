@@ -46,8 +46,11 @@ export function Cards<Row>(p: CardsProps<Row>) {
       : p.label['aria-labelledby'] ? { 'aria-labelledby': p.label['aria-labelledby'] } : { 'aria-label': p.label['aria-label'] };
   const sortable = model.headers.filter((h) => h.sortable);
   const current = model.view.sort[0];
-  // Only a sort the select can show; a sort on a non-sortable column reads as "Not sorted".
-  const currentValue = current && sortable.some((h) => h.column.id === current.columnId) ? `${current.columnId}:${current.direction}` : '';
+  const currentValue = current ? `${current.columnId}:${current.direction}` : '';
+  // A sort on a column the select doesn't offer, such as one a saved view or the server chose, still reads as itself.
+  const fixed = current && !sortable.some((h) => h.column.id === current.columnId)
+    ? model.headers.find((h) => h.column.id === current.columnId)?.column.label ?? current.columnId
+    : undefined;
   return (
     <div className="ld-dt-cards">
       {'caption' in p.label && p.label.caption != null ? <p id={id} className="ld-table-caption">{p.label.caption}</p> : null}
@@ -79,6 +82,7 @@ export function Cards<Row>(p: CardsProps<Row>) {
                 }}
               >
                 {currentValue ? null : <option value="">Not sorted</option>}
+                {fixed != null ? <option value={currentValue} disabled>{`${fixed}, ${current!.direction}`}</option> : null}
                 {sortable.flatMap((h) => [
                   <option key={`${h.column.id}:a`} value={`${h.column.id}:ascending`}>{`${h.column.label}, ascending`}</option>,
                   <option key={`${h.column.id}:d`} value={`${h.column.id}:descending`}>{`${h.column.label}, descending`}</option>,
@@ -144,22 +148,27 @@ const Card = React.memo(function Card<Row>(p: CardProps<Row>) {
   // Nothing in the card takes focus: the title is where focus lands on it, as after Load more, as the table's row
   // header is.
   const bare = !p.href && p.selected === undefined && !actions?.length;
+  // A field's text, or its `cell` where it has no text. One whose cell returns `null`, `''` or `false` is left out, dot
+  // and all.
+  const shown = p.fields
+    .map((f) => ({ f, content: p.text(row, f.id) || (f.cell ? f.cell(row) : null) }))
+    .filter(({ content }) => content != null && content !== '' && content !== false);
   return (
     <ListRow
       rowKey={p.id}
       className={p.selected ? 'ld-dt-card-selected' : undefined}
       title={bare ? <span className="ld-dt-card-title" tabIndex={-1}>{title}</span> : title}
       subtitle={
-        p.fields.length ? (
+        shown.length ? (
           <>
-            {p.fields.map((f, i) => (
+            {shown.map(({ f, content }, i) => (
               <React.Fragment key={f.id}>
                 {i > 0 ? ' ' : null}
                 {/* Every field but the last ends with its dot, so a line never starts with one. */}
                 <span className="ld-dt-card-field">
                   <span className="ld-sr-only">{`${f.label}: `}</span>
-                  {p.text(row, f.id)}
-                  {i < p.fields.length - 1 ? (
+                  {content}
+                  {i < shown.length - 1 ? (
                     <>
                       <span aria-hidden="true">{'\u00a0·'}</span>
                       <span className="ld-sr-only">, </span>
