@@ -20,15 +20,18 @@ export interface OnboardingData {
   delivery: 'morning' | 'evening';
 }
 export interface OnboardingFlowProps {
-  /** Product name used in copy. */
-  productName: string;
+  /**
+   * Names the product on the done step when the person turned the brief off: "{productName} is ready when you are."
+   * Without it, that line reads "Everything is ready when you are."
+   */
+  productName?: string;
   /** Controlled step, from 0 to 3, where 3 is done, such as one read from the URL. Uncontrolled when omitted. */
   step?: number;
   onStepChange?: (step: number) => void;
   /** Called with each accent as it's chosen, so the page can preview it. */
   onAccentPreview?: (accent: Preset) => void;
   /**
-   * Saves the answers when the person presses Finish. Return the save's promise: Review stays up, with Finish pending,
+   * Saves the answers, the name and email trimmed, when the person presses Finish. Return the save's promise: Review stays up, with Finish pending,
    * until it settles. It resolves to the done step, and a rejection or a throw stays on Review with an inline error
    * that shows the message when it's an `Error` with one, or asks the person to try again. A save that settles after
    * the step changed, such as by the browser's Back, moves nothing. A callback that returns nothing asks for the done
@@ -41,7 +44,7 @@ export interface OnboardingFlowProps {
   /** The answers the flow starts from, read once on mount. */
   defaultValue?: Partial<OnboardingData>;
   /**
-   * Called with all the answers after each change. It isn't called on mount. To keep the answers, such as across a
+   * Called with all the answers after each change, the name and email trimmed. It isn't called on mount. To keep the answers, such as across a
    * reload, store them and pass them back as `defaultValue`.
    */
   onValueChange?: (value: OnboardingData) => void;
@@ -60,6 +63,9 @@ const STEPS = ['Account', 'Preferences', 'Review'];
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const RETRY = 'Your answers weren’t saved. They’re still here, so try again.';
 type Errors = { name?: string; email?: string };
+
+/** The answers as they're handed over: the name and email without the spaces around them, as they were checked. */
+const trimmed = (data: OnboardingData): OnboardingData => ({ ...data, name: data.name.trim(), email: data.email.trim() });
 
 function validate(data: OnboardingData): Errors {
   const errors: Errors = {};
@@ -91,7 +97,7 @@ export function OnboardingFlow(props: OnboardingFlowProps) {
   const set = <K extends keyof OnboardingData>(k: K, v: OnboardingData[K]) => {
     const next = { ...data, [k]: v };
     setData(next);
-    props.onValueChange?.(next);
+    props.onValueChange?.(trimmed(next));
     if (k !== 'name' && k !== 'email') return;
     const f = k as keyof Errors;
     const found = validate(next);
@@ -129,7 +135,7 @@ export function OnboardingFlow(props: OnboardingFlowProps) {
     const current = () => mounted.current
       && (run.current === pressed || (shown.current.step === 2 && shown.current.data === sent));
     try {
-      const saved = props.onComplete(data);
+      const saved = props.onComplete(trimmed(data));
       if (!saved) { go(3); return; }
       setFinish({ state: 'saving' });
       inFlight.current = true;
@@ -167,7 +173,7 @@ export function OnboardingFlow(props: OnboardingFlowProps) {
       <div ref={root} className="ld-flow ld-flow-narrow">
         <PageHeader
           title={<span id={titleId}>{`You’re all set, ${data.name.trim().split(' ')[0]}`}</span>}
-          summary={<span id={`${ids}-summary`}>{data.dailyBrief ? `Your first brief arrives tomorrow ${data.delivery}.` : `${props.productName} is ready when you are.`}</span>}
+          summary={<span id={`${ids}-summary`}>{data.dailyBrief ? `Your first brief arrives tomorrow ${data.delivery}.` : (props.productName ? `${props.productName} is ready when you are.` : 'Everything is ready when you are.')}</span>}
         />
         <div className="ld-flow-actions">
           <Button variant="filled" size="lg" href={props.doneHref} aria-describedby={`${titleId} ${ids}-summary`}>Get started</Button>
@@ -229,19 +235,20 @@ export function OnboardingFlow(props: OnboardingFlowProps) {
       ) : (
         <form key="s2" aria-labelledby={titleId} aria-busy={saving || undefined} onSubmit={complete}>
           <PageHeader title={<span id={titleId}>Review</span>} summary="Check everything, then finish." />
+          <div className="ld-flow-stack">
           <ListGroup title="Account" headingLevel={2}>
             <ListRow title="Name" value={data.name} onClick={() => { if (!saving) go(0, 'name'); }} />
             <ListRow title="Email" value={data.email} onClick={() => { if (!saving) go(0, 'email'); }} />
           </ListGroup>
-          <div style={{ height: 'var(--space-6)' }} />
           <ListGroup title="Preferences" headingLevel={2}>
             <ListRow title="Accent" value={data.accent[0].toUpperCase() + data.accent.slice(1)} onClick={() => { if (!saving) go(1, 'accent'); }} />
             <ListRow title="Daily brief" value={data.dailyBrief ? `On, ${data.delivery}` : 'Off'} onClick={() => { if (!saving) go(1, 'brief'); }} />
           </ListGroup>
           {finish.state === 'failed' ? <p key={finish.n} className="ld-flow-error" role="alert">{finish.message}</p> : null}
-          <div className="ld-flow-actions" style={{ marginTop: 'var(--space-6)' }}>
+          <div className="ld-flow-actions">
             <Button variant="plain" disabled={saving} onClick={() => go(1)}>Back</Button>
             <Button variant="filled" size="lg" type="submit">{saving ? 'Finishing…' : 'Finish'}</Button>
+          </div>
           </div>
         </form>
       )}

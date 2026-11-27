@@ -1,3 +1,5 @@
+import * as React from 'react';
+import { createRoot } from 'react-dom/client';
 import { Button } from '@lede/button';
 import { Card } from '@lede/card';
 import { PageHeader } from '@lede/blocks/page-header';
@@ -18,10 +20,35 @@ function Probes({ id, title }: { id: string; title: string }) {
 
 const SLOW = { 'duration-standard': '2s', 'easing-spring': 'ease-in' };
 
+/**
+ * A root ThemeProvider with `scheme="inherit"`, in a React root of its own under an element whose `data-theme` a plain
+ * script changes, with nothing in React re-rendering.
+ */
+function InheritsFromScript() {
+  const host = React.useRef<HTMLDivElement>(null);
+  React.useEffect(() => {
+    const root = createRoot(host.current!);
+    root.render(<ThemeProvider scheme="inherit" contrast="inherit"><p>Inside the separate root</p></ThemeProvider>);
+    return () => queueMicrotask(() => root.unmount());
+  }, []);
+  return (
+    <section aria-label="Inherits from a script" className="docs-section">
+      <div id="fx-script-theme" data-theme="light">
+        <div id="fx-script-closer">
+          <div ref={host} />
+        </div>
+      </div>
+      <button type="button" onClick={() => document.getElementById('fx-script-theme')!.setAttribute('data-theme', 'dark-hc')}>Set the outer theme by script</button>
+      <button type="button" onClick={() => document.getElementById('fx-script-closer')!.setAttribute('data-theme', 'dark')}>Set a closer theme by script</button>
+    </section>
+  );
+}
+
 export function ThemeNestingFixtures() {
   return (
     <div className="ld-flow">
       <PageHeader title="Theme nesting fixtures" summary="Providers inside providers, for the automated tests. Each probe follows its nearest ThemeProvider." />
+      <InheritsFromScript />
       <ThemeProvider scheme="light" contrast="standard" surface="grouped">
         <Probes id="reference" title="Light on its own" />
       </ThemeProvider>

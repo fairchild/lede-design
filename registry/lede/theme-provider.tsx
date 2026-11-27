@@ -18,7 +18,11 @@ export interface ThemeProviderProps extends useRender.ComponentProps<'div'> {
    * ancestor's when no provider is above.
    */
   contrast?: 'auto' | 'inherit' | 'standard' | 'high';
-  /** A preset name, or any hex color, for which `--primary-foreground` is picked for you. Unset inherits the nearest provider's. */
+  /**
+   * A preset name, or a hex color (`#rgb`, `#rgba`, `#rrggbb` or `#rrggbbaa`), for which `--primary-foreground` is
+   * picked for you, from the color's opaque value. Another CSS color gets no pick: pass `accentForeground` with it.
+   * Unset inherits the nearest provider's.
+   */
   accent?: Preset | (string & {});
   /** Text color on primary fills, for a custom accent when the automatic pick is wrong. Inherited along with `accent`. */
   accentForeground?: string;
@@ -50,15 +54,19 @@ export interface ThemeProviderProps extends useRender.ComponentProps<'div'> {
   look?: 'lede' | (string & {});
   /** The wrapper's background. Default `'none'`. */
   surface?: 'none' | 'base' | 'grouped';
-  /** Token values by name, such as `{ radius: '18px' }`, set on the wrapper and carried into its portals. */
+  /**
+   * Token values by name, such as `{ radius: '18px' }`, set on the wrapper and carried into its portals. A nested
+   * provider sets Lede's tokens again for its subtree, so pass the same `tokens` to it to keep them there.
+   */
   tokens?: Record<string, string>;
 }
 
 function hexToRgb(c: string): number[] | null {
-  const m = /^#?([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(c.trim());
+  const m = /^#?([0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/i.exec(c.trim());
   if (!m) return null;
+  // Alpha is dropped: the pick is for the color itself.
   let s = m[1];
-  if (s.length === 3) s = s[0] + s[0] + s[1] + s[1] + s[2] + s[2];
+  if (s.length <= 4) s = s[0] + s[0] + s[1] + s[1] + s[2] + s[2];
   return [0, 2, 4].map((i) => parseInt(s.slice(i, i + 2), 16) / 255);
 }
 function luminance([r, g, b]: number[]) {
@@ -148,6 +156,17 @@ export function ThemeProvider(props: ThemeProviderProps) {
     const id = el?.getAttribute('data-theme') ?? 'light';
     if (id !== outer) setOuter(id);
   });
+  // The ancestor's theme can change with nothing here re-rendering, such as a page script toggling it, setting it after
+  // this mounts or removing it, so any `data-theme` change on the page looks up the nearest one again.
+  const inherits = !nearest && (scheme === 'inherit' || contrast === 'inherit');
+  React.useEffect(() => {
+    if (!inherits || typeof MutationObserver === 'undefined') return undefined;
+    const read = () => setOuter(ref.current?.parentElement?.closest('[data-theme]')?.getAttribute('data-theme') ?? 'light');
+    const observer = new MutationObserver(read);
+    observer.observe(document.documentElement, { subtree: true, attributes: true, attributeFilter: ['data-theme'] });
+    read();
+    return () => observer.disconnect();
+  }, [inherits]);
   const parentTheme = nearest?.props['data-theme'] ?? outer;
   const prefersDark = useMedia('(prefers-color-scheme: dark)');
   const prefersMore = useMedia('(prefers-contrast: more)');

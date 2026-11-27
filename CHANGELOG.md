@@ -4,6 +4,22 @@
 
 ### Fixed
 
+- **Archiving the open message in InboxFlow's Select mode keeps the reader's place**: focus lands on the next row's
+  checkbox, not on the page's heading.
+- **An empty InboxFlow says so once**: the header has no “All read · 0 messages” above “No messages”.
+- **InboxFlow names an open message with an id of its own**, so a message id with a space no longer breaks the name.
+  It also keeps the scroll places of the latest 50 opens, not every one.
+- **OnboardingFlow hands over the name and email trimmed**, to `onComplete` and `onValueChange`, as it checked them.
+  `productName` is optional.
+- **A ListRow whose swipe is turned off while its actions are open closes**, so its next click is its own and it stays
+  closed when the swipe returns. A disabled swipe action gives its `disabledReason` as its description, and revealed actions come after the
+  row's own controls in tab order.
+- **A root ThemeProvider that inherits its scheme or contrast follows its ancestor's `data-theme`** when a script
+  sets, changes or removes it, not only on its next render.
+- **ThemeProvider's `accent` takes 4- and 8-digit hex**, and picks the foreground from the opaque color. Its docs now
+  say a nested provider sets Lede's tokens again, so `tokens` stop there.
+- **Typing Enter in a field on a touch screen's keyboard leaves the input as touch**, so the next landing shows no
+  focus ring.
 - **DataTable's summary line names the page when it pages**: “Page 2 of 6 · 5 of 30 work items”. Next and Previous
   land there, so each page now reads differently.
 - **DataTable's `sortBy` ignores a column that can't be sorted**, rather than announcing a sort the rows don't show.

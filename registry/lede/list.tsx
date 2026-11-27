@@ -205,10 +205,12 @@ export function ListRow(props: ListRowProps) {
   const labels = actions.map((a) => a.label).join('\n');
   const [innerOpen, setInnerOpen] = React.useState(false);
   const wantsOpen = props.actionsOpen ?? innerOpen;
-  const open = wantsOpen && full > 0;
+  // Only a row that can swipe opens: a controlled `actionsOpen` on a row whose swipe is off draws nothing open.
+  const open = swipeable && wantsOpen && full > 0;
   const setOpen = (v: boolean) => { if (props.actionsOpen === undefined) setInnerOpen(v); props.onActionsOpenChange?.(v); };
-  // A row whose actions stop fitting closes, as a tap away would, so it doesn't reopen when they fit again.
-  React.useEffect(() => { if (full === 0 && wantsOpen) setOpen(false); }, [full, wantsOpen]);
+  // A row whose actions stop fitting, or whose swipe is turned off, closes, as a tap away would, so it doesn't reopen
+  // when they fit or the swipe returns.
+  React.useEffect(() => { if ((!swipeable || full === 0) && wantsOpen) setOpen(false); }, [swipeable, full, wantsOpen]);
   const [dx, setDx] = React.useState<number | null>(null);
   const g = React.useRef({ active: false, base: 0, acc: 0, moved: false });
   const actionsRef = React.useRef<HTMLDivElement>(null);
@@ -364,6 +366,7 @@ export function ListRow(props: ListRowProps) {
   const slide = (children: React.ReactNode) => (hasDetails ? <div className="ld-row-slide">{children}</div> : children);
 
   return (
+    // `ld-row-open` has no rule of its own: it marks a row whose actions are open, for styles and tests to read.
     <li
       className={cn(
         'ld-row-wrap', hasDetails && 'ld-row-has-details', !!(props.leading || props.control) && 'ld-row-lead', open && 'ld-row-open',
@@ -375,21 +378,6 @@ export function ListRow(props: ListRowProps) {
     >
       {slide(
         <>
-          {swipeable ? (
-            <div ref={actionsRef} className="ld-row-actions" aria-hidden={!open}>
-              {actions.map((a, i) => (
-                <button
-                  key={i}
-                  type="button"
-                  disabled={a.disabled}
-                  className={cn('ld-row-action', a.tone === 'critical' && 'ld-row-action-critical', a.tone === 'neutral' && 'ld-row-action-neutral')}
-                  onClick={() => { setOpen(false); act(() => a.onSelect?.()); }}
-                >
-                  {a.label}
-                </button>
-              ))}
-            </div>
-          ) : null}
           <div
             className={cn('ld-row', dx != null && 'ld-row-dragging')}
             {...(swipeable ? pointerMove : {})}
@@ -421,6 +409,23 @@ export function ListRow(props: ListRowProps) {
             ) : null}
             {showChevron ? <Chevron /> : null}
           </div>
+          {/* After the row, as it's drawn: revealed, the actions come after the row's own controls in tab order. */}
+          {swipeable ? (
+            <div ref={actionsRef} className="ld-row-actions" aria-hidden={!open}>
+              {actions.map((a, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  disabled={a.disabled}
+                  title={a.disabled ? a.disabledReason : undefined}
+                  className={cn('ld-row-action', a.tone === 'critical' && 'ld-row-action-critical', a.tone === 'neutral' && 'ld-row-action-neutral')}
+                  onClick={() => { setOpen(false); act(() => a.onSelect?.()); }}
+                >
+                  {a.label}
+                </button>
+              ))}
+            </div>
+          ) : null}
         </>,
       )}
       {hasDetails ? (

@@ -108,7 +108,8 @@ export function InboxFlow(props: InboxFlowProps) {
     heading?.focus({ preventScroll: true });
     heading?.scrollIntoView({ block: 'nearest' });
   };
-  const rowLink = (id: string) => headingRef.current?.closest('.ld-md-list')?.querySelector<HTMLElement>(`[data-row-id="${CSS.escape(id)}"] .ld-row-primary`);
+  // A row's link, or in Select mode, where the row has no link, its checkbox.
+  const rowLink = (id: string) => headingRef.current?.closest('.ld-md-list')?.querySelector<HTMLElement>(`[data-row-id="${CSS.escape(id)}"] :is(.ld-row-target, .ld-checkbox-input)`);
   const toRow = (row: HTMLElement) => {
     row.focus({ preventScroll: true });
     row.scrollIntoView({ block: 'nearest' });
@@ -132,7 +133,7 @@ export function InboxFlow(props: InboxFlowProps) {
       const at = document.activeElement;
       if (held !== undefined && at !== held && at !== document.body) return false;
       const back = headingRef.current?.closest('.ld-md-list')?.querySelectorAll<HTMLElement>('[data-row-id]') ?? [];
-      const row = [...back].find((r) => !order.includes(r.dataset.rowId!))?.querySelector<HTMLElement>('.ld-row-primary');
+      const row = [...back].find((r) => !order.includes(r.dataset.rowId!))?.querySelector<HTMLElement>(':is(.ld-row-target, .ld-checkbox-input)');
       if (row) toRow(row); else if (button.isConnected) { held = at; return true; } else toHeading();
       return false;
     };
@@ -162,7 +163,7 @@ export function InboxFlow(props: InboxFlowProps) {
     if (!closed || props.selectedId || !document.hasFocus()) return;
     const active = document.activeElement as HTMLElement | null;
     if (active && active !== document.body && active.checkVisibility()) return;
-    const row = headingRef.current?.closest('.ld-md-list')?.querySelector<HTMLElement>(`[data-row-id="${CSS.escape(closed)}"] .ld-row-primary`);
+    const row = rowLink(closed);
     row?.focus({ preventScroll: true });
     row?.scrollIntoView({ block: 'nearest' });
   }, [props.selectedId]);
@@ -185,7 +186,8 @@ export function InboxFlow(props: InboxFlowProps) {
     <>
       <PageHeader
         title="Inbox"
-        summary={unread ? `${num(unread)} unread of ${num(props.messages.length)}` : `All read · ${formatCount(props.messages.length, MESSAGE, props.locale)}`}
+        // An empty inbox says so below, once.
+        summary={!props.messages.length ? undefined : unread ? `${num(unread)} unread of ${num(props.messages.length)}` : `All read · ${formatCount(props.messages.length, MESSAGE, props.locale)}`}
         // An open message or a not-found detail takes focus with its own title, in either layout.
         focusOnMount={!selected && !missing}
         headingRef={headingRef}
@@ -378,13 +380,24 @@ type MessageDetailProps = Pick<InboxFlowProps, 'listHref' | 'onArchive' | 'onDel
   backRef: React.Ref<HTMLAnchorElement>;
 };
 
-/** Where each open was left, side by side. Outside the flow, because going elsewhere in the app unmounts it. */
+/**
+ * Where each open was left, side by side. Outside the flow, because going elsewhere in the app unmounts it. It keeps
+ * the latest SCROLL_PLACES, dropping the oldest, so a long session doesn't grow it without end.
+ */
 const scrollTops = new Map<string, number>();
+const SCROLL_PLACES = 50;
+function keepPlace(place: string, top: number) {
+  scrollTops.delete(place);
+  scrollTops.set(place, top);
+  if (scrollTops.size > SCROLL_PLACES) scrollTops.delete(scrollTops.keys().next().value!);
+}
 const historyEntry = () => (globalThis as { navigation?: { currentEntry?: { id: string } | null } }).navigation?.currentEntry?.id;
 
 /** The open message. It is keyed by message, so its place and open replies don't carry over to the next one. */
 function MessageDetail({ message: m, href, backRef, listHref, onArchive, onDelete, onReply, locale }: MessageDetailProps) {
   const { Title, ref: titleRef, stacked } = useDetailTitle();
+  // From React, not the message's id, which may hold a space and would split `aria-labelledby`.
+  const titleId = React.useId();
 
   // Side by side, the text scrolls inside the pane. Only then is it a named, focusable region, so keyboards can scroll it.
   const bodyRef = React.useRef<HTMLDivElement>(null);
@@ -417,7 +430,7 @@ function MessageDetail({ message: m, href, backRef, listHref, onArchive, onDelet
     return `${key}|${occurrence}`;
   };
   return (
-    <article className="ld-message" aria-labelledby={`msg-${m.id}`}>
+    <article className="ld-message" aria-labelledby={titleId}>
       <div className="ld-message-bar">
         <BackToList href={listHref} backRef={backRef} />
         <div className="ld-message-actions">
@@ -427,13 +440,13 @@ function MessageDetail({ message: m, href, backRef, listHref, onArchive, onDelet
         </div>
       </div>
       <header className="ld-message-header">
-        <Title ref={titleRef} tabIndex={-1} id={`msg-${m.id}`} className="text-title-2 ld-message-title">{m.subject}</Title>
+        <Title ref={titleRef} tabIndex={-1} id={titleId} className="text-title-2 ld-message-title">{m.subject}</Title>
         <p className="ld-message-meta">
           {replies.length ? `${formatCount(conversation.length, MESSAGE, locale)} · ${formatCount(people, PERSON, locale)} · last from ` : 'From '}
           <strong>{m.from}</strong> · <time dateTime={m.datetime}>{m.date}</time>
         </p>
       </header>
-      <div ref={bodyRef} className="ld-message-body" onScroll={(e) => scrollTops.set(place, e.currentTarget.scrollTop)} {...(scrolls ? { role: 'region', tabIndex: 0, 'aria-label': 'Message text' } : {})}>
+      <div ref={bodyRef} className="ld-message-body" onScroll={(e) => keepPlace(place, e.currentTarget.scrollTop)} {...(scrolls ? { role: 'region', tabIndex: 0, 'aria-label': 'Message text' } : {})}>
         {replies.length ? (
           <section className="ld-thread" aria-label="Messages, newest first">
             {conversation.map((c, i) => (

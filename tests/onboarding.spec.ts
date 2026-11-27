@@ -245,3 +245,10 @@ test('Finish saves the accent with the profile and the brief, and Back from the 
   await expect(page).toHaveURL(/\/app\/welcome\/done$/);
   await expect(heading(page, 'You’re all set, Ada')).toBeVisible();
 });
+
+test('the answers handed over carry the name and email trimmed, as they were checked', async ({ page }) => {
+  await replay(page);
+  await page.getByLabel('Name').fill('  Ada Lovelace ');
+  await page.getByLabel('Email').fill(' ada@example.com  ');
+  await expect.poll(async () => (await draft(page))?.answers).toMatchObject({ name: 'Ada Lovelace', email: 'ada@example.com' });
+});
