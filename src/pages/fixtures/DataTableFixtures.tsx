@@ -89,11 +89,21 @@ function ClientPagesFixture() {
   );
 }
 
+/** "Refresh in the background" holds a fetch open with this view's rows on screen, until "Finish fetching". */
 function ClientMoreFixture() {
   const [shown, setShown] = React.useState(3);
+  const [fetching, setFetching] = React.useState(false);
+  const [more, setMore] = React.useState(false);
+  const loadMore = () => { if (fetching) setMore(true); else setShown((n) => n + 3); };
+  const finish = () => {
+    setFetching(false);
+    if (more) { setMore(false); setShown((n) => n + 3); }
+  };
   return (
     <section aria-labelledby="fx-client-more" className="docs-section">
       <h2 id="fx-client-more" className="text-title-3">Client load more</h2>
+      <Button variant="gray" onClick={() => setFetching(true)}>Refresh in the background</Button>
+      <Button variant="gray" onClick={finish}>Finish fetching</Button>
       <DataTable
         aria-label="Client load more fixture"
         noun={noun}
@@ -102,7 +112,8 @@ function ClientMoreFixture() {
         getRowId={(r) => r.id}
         rowHeader="n"
         total={ITEMS.length}
-        paging={{ kind: 'load-more', hasMore: shown < ITEMS.length, onLoadMore: () => setShown((n) => n + 3) }}
+        state={{ fetching }}
+        paging={{ kind: 'load-more', hasMore: shown < ITEMS.length, onLoadMore: loadMore }}
       />
     </section>
   );
@@ -529,7 +540,7 @@ const probeRows = NUMS.slice(0, 6);
 function HookProbe() {
   const [rows, setRows] = React.useState<TableState['rows']>('current');
   const model = useDataTable({
-    columns: numColumns, rows: probeRows, getRowId: (r) => r.id, rowHeader: 'n', noun,
+    columns: numColumns, rows: probeRows, getRowId: (r) => r.id, rowHeader: 'n',
     selectionMode: 'multiple', state: { rows },
   });
   React.useEffect(() => { (window as unknown as ProbeWindow).ledeHookProbe = { model, setRows }; });

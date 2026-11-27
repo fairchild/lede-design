@@ -514,7 +514,9 @@
   -webkit-tap-highlight-color: transparent;
 }
 /* The trigger's ring and pressed fill follow the card's corners. An open panel continues below, so its bottom stays square. */
-.ld-disc-head[data-panel-open] { border-end-start-radius: 0; border-end-end-radius: 0; }
+/* The head's bottom corners stay square while the panel closes below it, and round once it has gone. */
+.ld-disc-head[data-panel-open],
+.ld-disc:has(> .ld-disc-panel[data-ending-style]) > .ld-disc-heading > .ld-disc-head { border-end-start-radius: 0; border-end-end-radius: 0; }
 .ld-disc-head:focus-visible { outline: var(--stroke-ring) solid var(--ring); outline-offset: calc(-1 * var(--stroke-ring)); }
 .ld-disc-head:active { background: var(--fill-control); }
 /* The text has what's left of the heading beside its chevron, and only a word too long for that breaks. */
@@ -553,8 +555,11 @@
 .ld-disc .ld-list-body .ld-row { background: var(--muted); }
 
 /* GlassBar — `<nav><ul>` of links with `aria-current`. GlassToolbar — Base UI Toolbar. */
+/* A bar's corner is its items' capsule plus its inset, so they stay concentric, and square items keep a square bar. */
 .ld-bar {
-  display: inline-flex; align-items: center; gap: var(--space-0_5); padding: var(--space-1); border-radius: var(--radius-capsule);
+  display: inline-flex; align-items: center; gap: var(--space-0_5); padding: var(--space-1);
+  border-radius: calc(var(--radius-capsule) + var(--space-1));
+  border-radius: calc(var(--radius-capsule) + var(--space-1) * sign(var(--radius-capsule)));
   font-family: var(--font-sans); color: var(--foreground); box-sizing: border-box;
 }
 .ld-bar-bottom, .ld-bar-top { position: fixed; left: 50%; transform: translateX(-50%); z-index: var(--z-glass-bar); }
@@ -588,12 +593,15 @@
   min-width: var(--size-hit-min); min-height: var(--size-hit-min); padding: 0 var(--space-3);
   font-size: var(--text-subheadline-size); line-height: var(--text-subheadline-line-height); font-weight: var(--weight-medium); cursor: pointer;
   /* A one-line tool is a capsule. A wrapped label keeps one line's curve, concentric with the toolbar's ends below. */
-  border-radius: min(var(--radius-capsule), calc(max(var(--size-hit-min), var(--text-subheadline-line-height)) / 2));
+  border-radius: var(--ld-bar-tool-radius);
 }
-/* GlassToolbar wraps its parts when they don't fit on one line. One line is a capsule; more keep its ends' curve. */
+/* GlassToolbar wraps its parts when they don't fit on one line. One line is a capsule; more keep its ends' curve. Its
+   corner is a tool's plus the inset, so they stay concentric in every shape, and square tools keep a square bar. */
+.ld-bar-tools, .ld-bar-tool { --ld-bar-tool-radius: min(var(--radius-capsule), calc(max(var(--size-hit-min), var(--text-subheadline-line-height)) / 2)); }
 .ld-bar-tools {
   flex-wrap: wrap; justify-content: center;
-  border-radius: calc(max(var(--size-hit-min), var(--text-subheadline-line-height)) / 2 + var(--space-1));
+  border-radius: calc(var(--ld-bar-tool-radius) + var(--space-1));
+  border-radius: calc(var(--ld-bar-tool-radius) + var(--space-1) * sign(var(--ld-bar-tool-radius)));
 }
 .ld-bar-tool-icon { padding: 0; }
 .ld-bar-tool svg { width: var(--size-icon); height: var(--size-icon); }

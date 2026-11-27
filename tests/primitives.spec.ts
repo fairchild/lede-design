@@ -121,3 +121,26 @@ test('Checkbox runs the cleanup a React 19 ref callback returns', async ({ page 
   await expect(region.getByRole('checkbox')).toHaveCount(0);
   await expect(region.getByText('Ref cleanups: 1')).toBeVisible();
 });
+
+// A tool's corner plus the toolbar's inset is the toolbar's corner, so they are concentric. Square tools keep a square bar.
+for (const [shape, look] of [['soft', ''], ['crisp', ''], ['square', ''], ['soft', 'skeuo'], ['soft', 'brutal']] as const) {
+  test(`GlassToolbar's and GlassBar's corners are concentric with their items' in the ${shape} shape${look ? ` under the ${look} look` : ''}`, async ({ page }) => {
+    const params = new URLSearchParams();
+    if (shape !== 'soft') params.set('shape', shape);
+    if (look) params.set('look', look);
+    await page.goto(`/components?${params}`);
+    const bar = page.getByRole('toolbar', { name: 'Photo tools' });
+    const px = (v: string) => parseFloat(v);
+    const { barRadius, inset } = await bar.evaluate((el) => {
+      const s = getComputedStyle(el);
+      return { barRadius: s.borderTopLeftRadius, inset: s.paddingTop };
+    });
+    const toolRadius = await bar.getByRole('button', { name: 'Select' }).evaluate((el) => getComputedStyle(el).borderTopLeftRadius);
+    expect(px(barRadius)).toBeCloseTo(px(toolRadius) === 0 ? 0 : px(toolRadius) + px(inset), 1);
+    // GlassBar beside it follows the same rule with its places.
+    const places = page.locator('[aria-label="Example sections"]');
+    const placeRadius = await places.locator('.ld-bar-item').first().evaluate((el) => getComputedStyle(el).borderTopLeftRadius);
+    const placesRadius = await places.evaluate((el) => getComputedStyle(el).borderTopLeftRadius);
+    if (px(placeRadius) < 100) expect(px(placesRadius)).toBeCloseTo(px(placeRadius) === 0 ? 0 : px(placeRadius) + px(inset), 1);
+  });
+}

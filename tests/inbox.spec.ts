@@ -55,6 +55,24 @@ test('two replies from one sender in one minute keep their own state', async ({ 
   await expect(replies.last()).toHaveAttribute('aria-expanded', 'false');
 });
 
+test('a new reply with the sender and time of earlier ones leaves their states where they were', async ({ page }) => {
+  await page.goto(FIXTURE);
+  await page.getByRole('button', { name: 'Load older messages' }).click();
+  // Newest first: "Adding last year’s agenda", then "Starting a thread", both Mei's at one minute.
+  const replies = thread(page).getByRole('button', { name: /Mei Lindqvist/ });
+  await expect(replies).toHaveCount(2);
+  await replies.last().click();
+  await expect(replies.first()).toHaveAttribute('aria-expanded', 'false');
+  await expect(replies.last()).toHaveAttribute('aria-expanded', 'true');
+  await page.getByRole('button', { name: 'Add a reply in the same minute' }).click();
+  await expect(replies).toHaveCount(3);
+  await expect(replies.nth(0)).toHaveAttribute('aria-expanded', 'true');
+  await expect(replies.nth(0)).toContainText('Mei Lindqvist');
+  await expect(replies.nth(1)).toHaveAttribute('aria-expanded', 'false');
+  await expect(replies.nth(1)).toContainText('Adding last year’s agenda.');
+  await expect(replies.nth(2)).toHaveAttribute('aria-expanded', 'true');
+});
+
 test('a new reply opens, and the rest of the thread stays as it was', async ({ page }) => {
   await page.goto(FIXTURE);
   const latest = thread(page).getByRole('button', { name: /notifications@/ });
