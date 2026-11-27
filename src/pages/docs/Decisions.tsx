@@ -150,6 +150,13 @@ const GROUPS: Group[] = [
         ],
       },
       {
+        title: 'Groups are named once',
+        summary: <>Fields are named by their FormSection’s <code>legend</code>, and a control that is a group, such as SegmentedControl or AccentPicker, by its own <code>label</code>.</>,
+        why: 'A group inside a group of the same name is read twice. A section that holds one such control is a plain container, so its legend shows and the control alone says the name.',
+        cost: <>That section takes <code>group={'{false}'}</code> and the same name twice, once as <code>legend</code> and once as <code>label</code>, and its description reaches the control through <code>descriptionId</code>.</>,
+        heldBy: [<><Path to="tests/flow-findings.spec.ts" /> checks that Mode, Corners and Accent are each one named group, and that Accent is read with its description.</>],
+      },
+      {
         title: 'Announcements',
         summary: 'InboxFlow’s notices and DataTable’s sort announcements go into a live region that was on the page before the message arrived.',
         why: 'Screen readers announce a change to a live region they already know about, so a region that arrives with its text can go unheard.',

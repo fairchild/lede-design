@@ -7,8 +7,8 @@ export function AccentSetting() {
   const [accent, setAccent] = useState<Preset>('blue');
   return (
     <ThemeProvider accent={accent}>
-      <FormSection legend="Accent">
-        <AccentPicker value={accent} onValueChange={setAccent} />
+      <FormSection legend="Accent" group={false}>
+        <AccentPicker label="Accent" value={accent} onValueChange={setAccent} />
       </FormSection>
     </ThemeProvider>
   );

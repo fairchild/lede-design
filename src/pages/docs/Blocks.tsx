@@ -58,7 +58,7 @@ export function Blocks() {
         </FormSection></Live>
       </Block>
       <Block id="b-accent" item="accent-picker" title="AccentPicker" summary="Native radio inputs for ThemeProvider’s accent presets, each with a swatch and a visible name, so color never carries the choice alone.">
-        <Live><FormSection legend="Accent"><AccentPicker value={accent} onValueChange={setAccent} /></FormSection></Live>
+        <Live><FormSection legend="Accent" group={false}><AccentPicker label="Accent" value={accent} onValueChange={setAccent} /></FormSection></Live>
       </Block>
       <Block id="b-steps" item="step-indicator" title="StepIndicator" summary={<>An <code>{'<ol>'}</code> of steps that marks the current one with <code>aria-current="step"</code>. Narrow screens show only its summary, such as “Step 2 of 3 · Preferences”.</>}>
         <Live><div className="docs-demo"><StepIndicator steps={['Account', 'Preferences', 'Review']} current={1} /></div></Live>

@@ -93,6 +93,7 @@ export function describeAppearance(p: AppearancePrefs) {
 /** Hero flow, level 2: appearance. Each change applies as it's made, with no Save, and the header states the result. */
 export function AppearanceFlow({ value, onValueChange, back }: AppearanceFlowProps) {
   const set = <K extends keyof AppearancePrefs>(k: K, v: AppearancePrefs[K]) => onValueChange({ ...value, [k]: v });
+  const accentHint = React.useId();
   return (
     <div className="ld-flow ld-flow-narrow">
       <PageHeader title="Appearance" summary={describeAppearance(value)} back={back} />
@@ -113,8 +114,8 @@ export function AppearanceFlow({ value, onValueChange, back }: AppearanceFlowPro
           onValueChange={(v) => set('scheme', v as AppearancePrefs['scheme'])}
         />
       </FormSection>
-      <FormSection legend="Accent" description="Used for buttons, links, selection and focus.">
-        <AccentPicker value={value.accent} onValueChange={(v) => set('accent', v)} />
+      <FormSection legend="Accent" group={false} description="Used for buttons, links, selection and focus." descriptionId={accentHint}>
+        <AccentPicker label="Accent" aria-describedby={accentHint} value={value.accent} onValueChange={(v) => set('accent', v)} />
       </FormSection>
       <FormSection legend="Corners" group={false}>
         <SegmentedControl

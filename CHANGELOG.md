@@ -4,6 +4,10 @@
 
 ### Added
 
+- **AccentPicker takes a `label`**, which makes it its own named group, as SegmentedControl's does, and FormSection
+  takes a `descriptionId` for the control in a `group={false}` section to read. Lede names a group once: fields by
+  their FormSection's `legend`, and a control that is a group by its own `label`. The appearance and onboarding flows
+  name Accent that way.
 - **Blocks that say fixed words take a `labels` prop**, so a screen in another language can replace them, as in
   DataTable, WorkbenchShell and StepIndicator ([all of them](https://lede.cloudcompute.com/blocks)). Each takes a typed
   object of strings, with functions for the words built from a name or a count, and anything left out stays English.
