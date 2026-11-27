@@ -15,21 +15,24 @@ export interface AppShellProps {
   navLabel?: string;
   /** Extra sidebar content under the nav, on wide screens only, such as a footer link. */
   sidebarFooter?: React.ReactNode;
+  /** The `<main>`'s id, which the skip link targets. Default `'main'`; give each shell its own when a page has two. */
+  mainId?: string;
   children: React.ReactNode;
   className?: string;
 }
 
 /**
- * Page layout: a skip link, a `<nav>` and `<main id="main">`. Wide screens get a sidebar, and narrow screens get the
+ * Page layout: a skip link, a `<nav>` and a `<main>`, `id="main"` unless `mainId` says otherwise. Wide screens get a sidebar, and narrow screens get the
  * same places in a bottom GlassBar. CSS shows only one of the two navs at a time, so assistive tech meets exactly one
  * "Primary" landmark.
  */
 export function AppShell(props: AppShellProps) {
   const Link = useLinkComponent();
   const label = props.navLabel ?? 'Primary';
+  const mainId = props.mainId ?? 'main';
   return (
     <div className={cn('ld-shell', props.className)}>
-      <a className="ld-skip" href="#main">Skip to content</a>
+      <a className="ld-skip" href={`#${mainId}`}>Skip to content</a>
       <nav className="ld-shell-sidebar" aria-label={label}>
         <div className="ld-shell-brand">{props.brand}</div>
         <ul className="ld-shell-nav">
@@ -44,7 +47,7 @@ export function AppShell(props: AppShellProps) {
         </ul>
         {props.sidebarFooter ? <div className="ld-shell-footer">{props.sidebarFooter}</div> : null}
       </nav>
-      <main id="main" className="ld-shell-main" tabIndex={-1} aria-label={props.nav.find((it) => it.value === props.current)?.label}>
+      <main id={mainId} className="ld-shell-main" tabIndex={-1} aria-label={props.nav.find((it) => it.value === props.current)?.label}>
         {props.children}
       </main>
       <div className="ld-shell-tabbar">

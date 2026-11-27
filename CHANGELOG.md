@@ -2,7 +2,30 @@
 
 ## Unreleased
 
+### Added
+
+- **AppShell and WorkbenchShell take a `mainId`**, for the `<main>` their skip link targets, so a page can hold two.
+  **WorkbenchShell's `focusOnMount={false}`** leaves focus where it is when the shell mounts.
+- **FormSection's `group={false}`** is for a section that holds one control already named as a group, such as a
+  SegmentedControl: its legend shows, and the control alone announces it.
+- **`useStackedPanes()` moves to `@lede/lede-utils`**, so WorkbenchShell no longer installs MasterDetail.
+  `@lede/blocks/master-detail` still exports it.
+
 ### Fixed
+
+- **WorkbenchShell's server markup shows main alone on a narrow screen**, as the first render after it does, rather
+  than every panel side by side until the script runs.
+- **WorkbenchShell's dividers follow the page's direction**: in a right-to-left page the start panel is on the right,
+  its arrow keys and drag move it the way they point, and its toggle's icon is mirrored. A key held with Alt, Control
+  or Command is left to the browser.
+- **MasterDetail's detail scrolls on its own when it's taller than the window**, so it stays in view and its end can
+  be reached without first scrolling to the end of the list.
+- **Enter in a TextField inside a `<form noValidate>`, a Base UI Form's included, no longer runs the browser's checks**, which marked a field such
+  as `type="email"` invalid with no message when the flow accepted it.
+- **AppearanceFlow names Mode and Corners once each**, and `describeAppearance()` lists Reduced transparency and
+  Compact controls when they're on.
+- **DailyBriefFlow keeps cards that share a title apart.** ProfileFlow's `onSave` docs say a `value` that changed
+  while the form was open is overwritten by the edits.
 
 - **Archiving the open message in InboxFlow's Select mode keeps the reader's place**: focus lands on the next row's
   checkbox, not on the page's heading.
@@ -12,8 +35,8 @@
 - **OnboardingFlow hands over the name and email trimmed**, to `onComplete` and `onValueChange`, as it checked them.
   `productName` is optional.
 - **A ListRow whose swipe is turned off while its actions are open closes**, so its next click is its own and it stays
-  closed when the swipe returns. A disabled swipe action gives its `disabledReason` as its description, and revealed actions come after the
-  row's own controls in tab order.
+  closed when the swipe returns. A disabled swipe action gives its `disabledReason` as its description, and revealed
+  actions come after the row's own controls in tab order.
 - **A root ThemeProvider that inherits its scheme or contrast follows its ancestor's `data-theme`** when a script
   sets, changes or removes it, not only on its next render.
 - **ThemeProvider's `accent` takes 4- and 8-digit hex**, and picks the foreground from the opaque color. Its docs now

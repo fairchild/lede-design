@@ -148,6 +148,22 @@ test('Validation stays inline, says how to fix it, and keeps what was typed', as
   await expect(page.getByRole('region', { name: 'Details' }).getByText('hana@example.org', { exact: true })).toBeVisible();
 });
 
+test('Enter leaves a field the flow accepts valid, though the browser\'s own check would reject it', async ({ page }) => {
+  await openEditor(page);
+  const name = page.getByLabel('Name');
+  const email = page.getByLabel('Email');
+  await name.fill('   ');
+  // Two dots in a row: the flow's check accepts it, and type="email"'s doesn't.
+  await email.fill('hana@example..org');
+  await email.press('Enter');
+  await expect(name).toBeFocused();
+  await expect(name).toHaveAttribute('aria-invalid', 'true');
+  // The save's own focus move comes after any check the key ran, so a frame later is enough to see one.
+  await page.evaluate(() => new Promise((done) => setTimeout(done, 50)));
+  await expect(email).not.toHaveAttribute('aria-invalid', 'true');
+  await expect(email).not.toHaveAttribute('data-invalid');
+});
+
 test('Cancel drops the edits, says nothing was saved, and returns focus', async ({ page }) => {
   await openEditor(page);
   await page.getByLabel('Role').fill('Someone else');

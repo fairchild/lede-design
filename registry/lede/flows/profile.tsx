@@ -26,6 +26,8 @@ export interface ProfileFlowProps {
    * Saves the edits. A returned promise keeps the form read-only until it settles. If it rejects, the edits stay and
    * an inline error shows the rejection's message when it's an `Error` with one, or asks the person to try again.
    * Throw an `Error` worded for the person: a fetch failure's own message, such as "Failed to fetch", shows as it is.
+   * It's called with every field as the form holds it, so a `value` that changed while the form was open, such as from
+   * another tab, is overwritten by the edits.
    */
   onSave: (next: Profile) => void | Promise<void>;
   /** Back link, such as `{ href: '/settings', label: 'Settings' }`. */

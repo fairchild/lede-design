@@ -3,7 +3,7 @@ import { Button } from '../button';
 import { SegmentedControl } from '../segmented-control';
 import { cn } from '../cn';
 import { focusLanding } from '../input-modality';
-import { useStackedPanes } from './master-detail';
+import { useStackedPanes } from '../stacked-panes';
 
 type WorkbenchSide = 'start' | 'end';
 type WorkbenchRegion = WorkbenchSide | 'main';
@@ -37,6 +37,13 @@ export interface WorkbenchShellProps {
    * the key changes. Tabs don't sync: each saves its own changes, and the last to save wins.
    */
   storageKey?: string;
+  /** The `<main>`'s id, which the skip link targets. Default `'main'`; give each shell its own when a page has two. */
+  mainId?: string;
+  /**
+   * Moves focus to the `<h1>` on mount, as a route change to this screen should. Default `true`. `false` leaves focus
+   * where it is, for a shell that mounts inside a screen that already handles focus.
+   */
+  focusOnMount?: boolean;
   className?: string;
 }
 
@@ -141,8 +148,10 @@ interface SplitterProps {
  * a time: another finger on it does nothing, and only lifting the first one ends the drag.
  */
 function Splitter({ side, label, controls, value, max, collapsed, onResize, onToggle, onDragging }: SplitterProps) {
-  const grab = React.useRef<{ pointer: number; x: number; width: number } | null>(null);
-  const [grow, shrink] = side === 'start' ? ['ArrowRight', 'ArrowLeft'] : ['ArrowLeft', 'ArrowRight'];
+  const grab = React.useRef<{ pointer: number; x: number; width: number; sign: number } | null>(null);
+  // The keys and drags are physical: the panel drawn on the left grows rightward. The page's direction is read as each
+  // key or drag starts, so a page that changes it later is followed.
+  const onLeft = (el: Element) => (side === 'start') !== (getComputedStyle(el).direction === 'rtl');
   return (
     <div
       role="separator"
@@ -156,6 +165,9 @@ function Splitter({ side, label, controls, value, max, collapsed, onResize, onTo
       aria-valuemax={max}
       aria-valuetext={collapsed ? 'Collapsed' : `${value} pixels wide`}
       onKeyDown={(event) => {
+        // A key held with Alt, Control or Command is a shortcut, such as a browser's Back, and isn't for the divider.
+        if (event.altKey || event.ctrlKey || event.metaKey) return;
+        const [grow, shrink] = onLeft(event.currentTarget) ? ['ArrowRight', 'ArrowLeft'] : ['ArrowLeft', 'ArrowRight'];
         if (event.key === 'Enter' || (event.key === grow && collapsed)) onToggle();
         else if (event.key === 'Home') onResize(MIN_WIDTH);
         else if (event.key === 'End') onResize(max);
@@ -167,13 +179,13 @@ function Splitter({ side, label, controls, value, max, collapsed, onResize, onTo
       onPointerDown={(event) => {
         if (event.button !== 0 || grab.current) return;
         event.currentTarget.setPointerCapture(event.pointerId);
-        grab.current = { pointer: event.pointerId, x: event.clientX, width: value };
+        grab.current = { pointer: event.pointerId, x: event.clientX, width: value, sign: onLeft(event.currentTarget) ? 1 : -1 };
         onDragging(true);
       }}
       onPointerMove={(event) => {
         if (grab.current?.pointer !== event.pointerId) return;
         const moved = event.clientX - grab.current.x;
-        const width = grab.current.width + (side === 'start' ? moved : -moved);
+        const width = grab.current.width + grab.current.sign * moved;
         if (!collapsed || width >= MIN_WIDTH) onResize(width);
       }}
       onLostPointerCapture={(event) => {
@@ -192,10 +204,11 @@ function Splitter({ side, label, controls, value, max, collapsed, onResize, onTo
  * time, chosen with a SegmentedControl, and the rest are `display: none`. Router-agnostic: links in the panels are the
  * caller's.
  *
- * Left-to-right only: the start panel is on the left, and the dividers' keys and drags are physical.
+ * The start panel is on the left, or on the right in a right-to-left page, and the dividers' arrow keys and drags follow
+ * where each panel is drawn. The server's markup shows main alone on a narrow screen, as the first render after it does.
  */
 export function WorkbenchShell(props: WorkbenchShellProps) {
-  const { start, end, mainLabel = 'Content' } = props;
+  const { start, end, mainLabel = 'Content', mainId = 'main', focusOnMount = true } = props;
   const id = React.useId();
   const ids = { start: `${id}start`, end: `${id}end` };
   const panels = { start, end };
@@ -211,6 +224,8 @@ export function WorkbenchShell(props: WorkbenchShellProps) {
   const { sides } = layout;
   const [room, setRoom] = React.useState(Infinity);
   const [dragging, setDragging] = React.useState(false);
+  // False in the server's markup, whose narrow-screen CSS then hides the side panels, as the first render here does.
+  const [mounted, setMounted] = React.useState(false);
   const [active, setActive] = React.useState<WorkbenchRegion>('main');
 
   const root = React.useRef<HTMLDivElement>(null);
@@ -228,6 +243,7 @@ export function WorkbenchShell(props: WorkbenchShellProps) {
     const el = root.current!;
     const measure = () => setRoom(el.clientWidth - MIN_MAIN);
     measure();
+    setMounted(true);
     const observer = new ResizeObserver(measure);
     observer.observe(el);
     return () => observer.disconnect();
@@ -236,7 +252,7 @@ export function WorkbenchShell(props: WorkbenchShellProps) {
   // In the commit that mounts it, so a route change never paints a frame with focus on `<body>`.
   React.useLayoutEffect(() => {
     // Only when this document already has focus: never pull focus into an embedded frame or a background tab.
-    if (document.hasFocus()) focusLanding(heading.current);
+    if (focusOnMount && document.hasFocus()) focusLanding(heading.current);
   }, []);
 
   // Whatever hid the focused element, focus lands in the panel on show instead of falling back to the document. The
@@ -313,6 +329,7 @@ export function WorkbenchShell(props: WorkbenchShellProps) {
     <div
       ref={root}
       className={cn('ld-wb', props.className)}
+      data-mounted={mounted || undefined}
       onBlur={(event) => { lost.current = !event.relatedTarget && !event.target.getClientRects().length; }}
     >
       <header className="ld-wb-bar">
@@ -321,7 +338,7 @@ export function WorkbenchShell(props: WorkbenchShellProps) {
           <div className="ld-wb-brand">{props.brand}</div>
           <h1 ref={heading} tabIndex={-1} className="ld-wb-title">{props.title}</h1>
           {/* After the `<h1>`, which takes focus on load, so the next Tab reaches it. It draws at the window's corner. */}
-          <a className="ld-skip" href="#main" onClick={() => setActive('main')}>Skip to content</a>
+          <a className="ld-skip" href={`#${mainId}`} onClick={() => setActive('main')}>Skip to content</a>
           {props.actions ? <div className="ld-wb-actions">{props.actions}</div> : null}
           {toggleButton('end')}
         </div>
@@ -350,7 +367,7 @@ export function WorkbenchShell(props: WorkbenchShellProps) {
         </nav>
         {/* The skip link lands on `<main>`, and focus goes on to the content, past the start divider. */}
         <main
-          id="main"
+          id={mainId}
           className="ld-wb-main"
           aria-label={`${mainLabel} panel`}
           tabIndex={-1}

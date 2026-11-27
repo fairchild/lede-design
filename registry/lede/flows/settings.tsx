@@ -77,9 +77,15 @@ const SCHEME_LABEL = { auto: 'Automatic', light: 'Light', dark: 'Dark' } as cons
 const SHAPE_LABEL = { soft: 'Soft', crisp: 'Crisp', square: 'Square' } as const;
 const cap = (s: string) => s[0].toUpperCase() + s.slice(1);
 
-/** Summary line for the Appearance row and header, such as "Automatic · Blue · Soft corners". */
+/**
+ * Summary line for the Appearance row and header, such as "Automatic · Blue · Soft corners", followed by each setting
+ * under Accessibility that's turned on.
+ */
 export function describeAppearance(p: AppearancePrefs) {
-  return [SCHEME_LABEL[p.scheme], p.accent ? cap(p.accent) : 'Default accent', `${SHAPE_LABEL[p.shape]} corners`, p.highContrast ? 'High contrast' : null]
+  return [
+    SCHEME_LABEL[p.scheme], p.accent ? cap(p.accent) : 'Default accent', `${SHAPE_LABEL[p.shape]} corners`,
+    p.highContrast ? 'High contrast' : null, p.solidGlass ? 'Reduced transparency' : null, p.compact ? 'Compact controls' : null,
+  ]
     .filter(Boolean)
     .join(' · ');
 }
@@ -98,7 +104,7 @@ export function AppearanceFlow({ value, onValueChange, back }: AppearanceFlowPro
           <Switch label="Sync" defaultChecked />
         </Card>
       </FormSection>
-      <FormSection legend="Mode">
+      <FormSection legend="Mode" group={false}>
         <SegmentedControl
           label="Mode"
           block
@@ -110,7 +116,7 @@ export function AppearanceFlow({ value, onValueChange, back }: AppearanceFlowPro
       <FormSection legend="Accent" description="Used for buttons, links, selection and focus.">
         <AccentPicker value={value.accent} onValueChange={(v) => set('accent', v)} />
       </FormSection>
-      <FormSection legend="Corners">
+      <FormSection legend="Corners" group={false}>
         <SegmentedControl
           label="Corners"
           block

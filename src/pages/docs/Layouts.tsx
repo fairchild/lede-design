@@ -37,9 +37,9 @@ export const LAYOUTS: Layout[] = [
     purpose: 'A top bar over three panels that fill the window, as in a code editor. Pick it when people keep several things in view while they work: what they can open, what they have open and what helps them with it.',
     regions: [
       ['<header>', <>The top bar holds the screen’s <code>{'<h1>'}</code>, its actions and a toggle for each side panel.</>],
-      ['<nav>', 'The start panel, on the left, for what can be opened. It resizes and collapses, and scrolls on its own. The layout is left-to-right only.'],
+      ['<nav>', 'The start panel, on the left, for what can be opened. It resizes and collapses, and scrolls on its own. In a right-to-left page it’s on the right.'],
       ['<main>', 'The center panel keeps a usable width whatever the side panels do, and scrolls on its own. The page itself never scrolls.'],
-      ['<aside>', 'The end panel, on the right, for what supports the work. It resizes and collapses, and scrolls on its own.'],
+      ['<aside>', 'The end panel, on the right, for what supports the work. It resizes and collapses, and scrolls on its own. In a right-to-left page it’s on the left.'],
       ['role="separator"', 'Each divider is a window splitter: drag it, or focus it and use the arrow keys, Home and End. Enter collapses and restores its panel.'],
       ['<fieldset> below 1100px at the default text size', <>One panel shows at a time, chosen with a segmented control, and following a link in the start panel shows the center panel. The toggles and dividers leave, and the hidden panels are <code>display: none</code>.</>],
     ],

@@ -131,6 +131,12 @@ button.ld-back { background: none; border: 0; font-family: inherit; font-weight:
     margin: calc(-1 * var(--space-2)); padding: var(--space-2);
   }
   .ld-md[data-sticky-list] .ld-md-detail { position: static; }
+  /* A detail taller than the window keeps its place and scrolls on its own, as the sticky list does. */
+  .ld-md[data-detail-tall] .ld-md-detail {
+    max-height: calc(100dvh - 2 * var(--space-8)); box-sizing: border-box; overflow-y: auto; overscroll-behavior: contain;
+    margin: calc(-1 * var(--space-2)); padding: var(--space-2);
+  }
+  .ld-md[data-detail-tall] .ld-md-detail:focus-visible { outline: var(--stroke-ring) solid var(--ring); outline-offset: calc(-1 * var(--stroke-ring)); }
 }
 
 /* WorkbenchShell: a top bar over three panels that fill the window. Each panel scrolls alone; the page doesn't.
@@ -152,6 +158,9 @@ button.ld-back { background: none; border: 0; font-family: inherit; font-weight:
    width, on a line of its own when it doesn't fit beside the brand. */
 @media (width < 20em) { .ld-wb-title { flex-basis: auto; } }
 .ld-wb-toggle { display: none; }
+/* In a right-to-left page each toggle's panel is drawn on the other side, and so is its icon's filled half. By the
+   attribute, since the build rewrites :dir() as a list of languages. */
+[dir="rtl"] .ld-wb-toggle svg { transform: scaleX(-1); }
 .ld-wb-body { flex: 1; min-height: 0; display: flex; }
 .ld-wb-panel, .ld-wb-content { flex: 1; min-width: 0; box-sizing: border-box; padding: var(--space-4); overflow: auto; overscroll-behavior: contain; }
 .ld-wb-panel:focus-visible, .ld-wb-content:focus-visible { outline: var(--stroke-ring) solid var(--ring); outline-offset: calc(-1 * var(--stroke-ring)); }
@@ -161,6 +170,8 @@ button.ld-back { background: none; border: 0; font-family: inherit; font-weight:
 /* Narrow, with a side panel showing: the landmark stays, so a page always has its one `<main>`, and gives up its width. */
 .ld-wb-main:has(> .ld-wb-content[hidden]) { flex: none; }
 .ld-wb-sep { display: none; }
+/* The server's markup, before the script picks a panel, shows main alone on a narrow screen. */
+@media (width < 68.75em) { .ld-wb:not([data-mounted]) .ld-wb-panel { display: none; } }
 @media (width >= 68.75em) {
   .ld-wb-toggle { display: inline-flex; }
   .ld-wb-switch { display: none; }
@@ -189,7 +200,7 @@ button.ld-back { background: none; border: 0; font-family: inherit; font-weight:
 
 /* FormSection */
 .ld-form-section { margin: 0 0 var(--space-6); padding: 0; border: 0; min-width: 0; }
-.ld-form-legend { padding: 0 var(--space-4); margin-bottom: var(--space-1_5); font-size: var(--text-footnote-size); line-height: var(--text-footnote-line-height); color: var(--muted-foreground); font-family: var(--font-ui, var(--font-sans)); text-transform: var(--case-label); letter-spacing: var(--tracking-label); }
+.ld-form-legend { padding: 0 var(--space-4); margin: 0 0 var(--space-1_5); font-size: var(--text-footnote-size); line-height: var(--text-footnote-line-height); color: var(--muted-foreground); font-family: var(--font-ui, var(--font-sans)); text-transform: var(--case-label); letter-spacing: var(--tracking-label); }
 .ld-form-description { margin: 0 0 var(--space-2); padding: 0 var(--space-4); font-size: var(--text-footnote-size); line-height: var(--text-footnote-line-height); color: var(--muted-foreground); }
 .ld-form-body { display: grid; gap: var(--space-4); padding: var(--space-4); border-radius: var(--radius-lg); background: var(--card); box-shadow: var(--edge-surface); }
 @container style(--ld-contrast: high) {

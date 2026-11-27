@@ -21,3 +21,26 @@ test('with stickyList, the list pane stays in view and scrolls on its own beside
   await list.getByRole('button', { name: 'Item 40' }).focus();
   await expect(list.getByRole('button', { name: 'Item 40' })).toBeInViewport();
 });
+
+// Without stickyList the detail stays in view, and one taller than the window scrolls on its own, so its end is in
+// reach without first scrolling the whole list, and an item picked far down the list still shows its detail.
+test('a detail taller than the window stays in view and scrolls on its own, so its end can be reached', async ({ page, isMobile }) => {
+  test.skip(isMobile, 'The panes sit side by side on a wide screen only.');
+  await page.setViewportSize({ width: 1280, height: 400 });
+  await page.goto('/fixtures/master-detail?tall');
+  const list = page.getByRole('region', { name: 'Items', exact: true });
+  const detail = page.getByRole('region', { name: 'Item', exact: true });
+  await expect(detail.getByRole('heading', { name: 'Item 1' })).toBeVisible();
+  const inView = async () => { const b = (await detail.boundingBox())!; return b.y >= -8 && b.y + b.height <= 400 + 8; };
+  expect(await inView()).toBe(true);
+  expect(await detail.evaluate((el) => el.scrollHeight > el.clientHeight)).toBe(true);
+  await list.getByRole('button', { name: 'Item 30' }).click();
+  await expect(detail.getByRole('heading', { name: 'Item 30' })).toBeInViewport();
+  expect(await inView()).toBe(true);
+
+  // A keyboard reaches it and scrolls it to its end.
+  await detail.focus();
+  await page.keyboard.press('End');
+  await expect.poll(() => detail.evaluate((el) => Math.ceil(el.scrollTop + el.clientHeight) >= el.scrollHeight)).toBe(true);
+  await expect(detail.getByText(/A long detail\./)).toBeInViewport();
+});

@@ -31,6 +31,13 @@ export interface DailyBriefFlowProps {
  */
 export function DailyBriefFlow(props: DailyBriefFlowProps) {
   const glance = React.useId();
+  // Cards have no id, so each is keyed by its title and how many cards before it share that title.
+  const seen = new Map<string, number>();
+  const cardKey = (title: string) => {
+    const n = seen.get(title) ?? 0;
+    seen.set(title, n + 1);
+    return `${n}:${title}`;
+  };
   return (
     <div className="ld-flow">
       <PageHeader title={props.title} summary={props.summary} actions={props.actions} />
@@ -38,7 +45,7 @@ export function DailyBriefFlow(props: DailyBriefFlowProps) {
         <h2 id={glance} className="ld-sr-only">At a glance</h2>
         <ul className="ld-summary-grid">
           {props.cards.map((c) => (
-            <li key={c.title}><SummaryCard {...c} headingLevel={3} /></li>
+            <li key={cardKey(c.title)}><SummaryCard {...c} headingLevel={3} /></li>
           ))}
         </ul>
       </section>

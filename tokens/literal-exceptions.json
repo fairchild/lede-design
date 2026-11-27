@@ -55,6 +55,11 @@
     "functions": ["rotate"]
   },
   {
+    "reason": "A mirror turns a glyph to face the other way, as a panel icon does in a right-to-left page. It is a direction and has no size.",
+    "values": ["-1"],
+    "functions": ["scaleX"]
+  },
+  {
     "reason": "A border-radius of 999px keeps a shape round in every shape setting, square included, as status dots and the step mark are. A shape that follows the setting uses radius-capsule.",
     "values": ["999px"],
     "properties": [

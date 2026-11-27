@@ -67,10 +67,13 @@ const ITEMS = [
  * the navigation; `tests/focus-table.ts` and `tests/list-focus.spec.ts` drive it.
  */
 export function MasterDetailFixtures() {
-  // `?long` fills both panes past the window, with `stickyList`, for tests/master-detail.spec.ts.
-  const long = new URLSearchParams(window.location.search).has('long');
-  const items = long ? Array.from({ length: 40 }, (_, n) => ({ id: `l${n}`, title: `Item ${n + 1}`, body: 'A long detail. '.repeat(400) })) : ITEMS;
-  const [openId, setOpenId] = React.useState<string | null>(long ? 'l0' : null);
+  // `?long` fills both panes past the window, with `stickyList`, and `?tall` does without it, for
+  // tests/master-detail.spec.ts.
+  const query = new URLSearchParams(window.location.search);
+  const tall = query.has('tall');
+  const long = query.has('long');
+  const items = long || tall ? Array.from({ length: 40 }, (_, n) => ({ id: `l${n}`, title: `Item ${n + 1}`, body: 'A long detail. '.repeat(long ? 400 : 100) })) : ITEMS;
+  const [openId, setOpenId] = React.useState<string | null>(long || tall ? 'l0' : null);
   const open = items.find((i) => i.id === openId);
   return (
     <MasterDetail
