@@ -25,7 +25,10 @@ export interface InboxMessage {
   body: string[];
   /** The passage this message replies to, shown above its body. */
   quote?: { from: string; text: string };
-  /** The earlier messages of a conversation, oldest first. `from`, `preview`, `date` and `body` above are the latest. */
+  /**
+   * The earlier messages of a conversation, oldest first. `from`, `preview`, `date` and `body` above are the latest.
+   * Each one's `from`, `datetime` and `preview` name it, so they stay the same when the latest moves in here.
+   */
   thread?: InboxReply[];
 }
 /** An earlier message in a conversation. */

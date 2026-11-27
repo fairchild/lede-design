@@ -44,10 +44,11 @@ test('while the panel closes, the trigger keeps square bottom corners, and round
   const during = await head.evaluate((el) => new Promise<string[]>((done) => {
     const panel = el.closest('.ld-disc')!.querySelector('.ld-disc-panel')!;
     const seen: string[] = [];
+    let frames = 0;
     const frame = () => {
       if (panel.hasAttribute('data-ending-style')) seen.push(getComputedStyle(el).borderBottomLeftRadius);
       if (seen.length > 0 && !panel.hasAttribute('data-ending-style')) return done(seen);
-      if (seen.length > 30) return done(seen);
+      if (++frames > 60) return done(seen);
       requestAnimationFrame(frame);
     };
     (el as HTMLElement).click();
