@@ -86,6 +86,7 @@ export function OnboardingFlow(props: OnboardingFlowProps) {
   const go = (n: number, asked?: Ask) => { setAsk(asked); if (props.step === undefined) setInner(n); props.onStepChange?.(n); };
   const ids = React.useId();
   const titleId = `${ids}-title`;
+  const accentHint = `${ids}-accent-hint`;
   const root = React.useRef<HTMLDivElement>(null);
   const [data, setData] = React.useState<OnboardingData>({
     name: '', email: '', accent: 'blue', dailyBrief: true, delivery: 'morning', ...props.defaultValue,
@@ -212,8 +213,8 @@ export function OnboardingFlow(props: OnboardingFlowProps) {
       ) : step === 1 ? (
         <form key="s1" aria-labelledby={titleId} onSubmit={(e) => { e.preventDefault(); go(2); }}>
           <PageHeader title={<span id={titleId}>Make it yours</span>} summary="You can change these any time in Settings." />
-          <FormSection legend="Accent" description="Used for buttons, links, selection and focus.">
-            <AccentPicker value={data.accent} onValueChange={(v) => { set('accent', v); props.onAccentPreview?.(v); }} />
+          <FormSection legend="Accent" group={false} description="Used for buttons, links, selection and focus." descriptionId={accentHint}>
+            <AccentPicker label="Accent" aria-describedby={accentHint} value={data.accent} onValueChange={(v) => { set('accent', v); props.onAccentPreview?.(v); }} />
           </FormSection>
           <FormSection legend="Daily brief">
             <Switch label="Send me a daily brief" checked={data.dailyBrief} onCheckedChange={(v) => set('dailyBrief', v)} />

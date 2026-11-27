@@ -11,6 +11,21 @@ test('Appearance names Mode and Corners once each, not as a group inside a group
   }
 });
 
+// #68: a control that is a group is named by its own label, and a section holding only it shows the name once.
+for (const [where, route] of [['Appearance', '/app/settings/appearance'], ['Onboarding', '/app/welcome']] as const) {
+  test(`${where} names Accent once, with its description, as AccentPicker's own group`, async ({ page }) => {
+    await page.goto(route);
+    // The demo fills in the account step, so Continue reaches the step with Accent.
+    if (where === 'Onboarding') await page.getByRole('button', { name: 'Continue' }).click();
+    const group = page.getByRole('group', { name: 'Accent', exact: true });
+    await expect(group).toHaveCount(1);
+    await expect(group.getByRole('radio')).toHaveCount(7);
+    await expect(group).toHaveAccessibleDescription('Used for buttons, links, selection and focus.');
+    await expect(page.locator('fieldset.ld-form-section').filter({ has: group })).toHaveCount(0);
+    await expect(page.getByText('Accent', { exact: true }).first()).toBeVisible();
+  });
+}
+
 test('the appearance summary lists the accessibility settings that are on', ({ isMobile }) => {
   test.skip(isMobile, 'No page: one project is enough.');
   const base = { scheme: 'auto', highContrast: false, accent: 'blue', shape: 'soft', compact: false, solidGlass: false } as const;

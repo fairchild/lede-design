@@ -262,7 +262,7 @@ button.ld-back { background: none; border: 0; font-family: inherit; font-weight:
 }
 
 /* AccentPicker */
-.ld-accents { display: grid; grid-template-columns: repeat(auto-fill, minmax(var(--layout-swatch-min-width), 1fr)); gap: var(--space-2); }
+.ld-accents { margin: 0; border: 0; padding: 0; min-width: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(var(--layout-swatch-min-width), 1fr)); gap: var(--space-2); }
 .ld-accent { position: relative; display: grid; justify-items: center; gap: var(--space-1_5); padding: var(--space-2); border-radius: var(--radius-md); cursor: pointer; }
 .ld-accent-input { position: absolute; inset: 0; margin: 0; opacity: 0; cursor: inherit; }
 /* Checked, a ring at the focus ring's offset and width; at rest the same ring is transparent. Focus draws 1px outside it. */
