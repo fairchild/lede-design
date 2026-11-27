@@ -311,3 +311,57 @@ test('the current file keeps a focus ring', async ({ page, isMobile }) => {
   expect(outline.width).toBe('2px');
   expect(outline.color).not.toBe('rgba(0, 0, 0, 0)');
 });
+
+/** Swipes up by `distance` px at (x, y) with raw touch events, the way a finger moves content. */
+async function swipeUp(page: Page, x: number, y: number, distance: number) {
+  const cdp = await page.context().newCDPSession(page);
+  const touch = (type: 'touchStart' | 'touchMove' | 'touchEnd', dy: number) =>
+    cdp.send('Input.dispatchTouchEvent', { type, touchPoints: type === 'touchEnd' ? [] : [{ x, y: y - dy }] });
+  await touch('touchStart', 0);
+  for (let step = 1; step <= 10; step++) await touch('touchMove', (distance * step) / 10);
+  await touch('touchEnd', distance);
+  await cdp.detach();
+}
+
+/** Whether this browser scrolls a plain overflowing box from a synthesized touch swipe, outside Lede's CSS. */
+async function touchScrolls(page: Page) {
+  await page.setContent('<div id="probe" style="height:200px;overflow:auto"><div style="height:2000px"></div></div>');
+  const box = (await page.locator('#probe').boundingBox())!;
+  await swipeUp(page, box.x + box.width / 2, box.y + box.height / 2, 120);
+  return (await page.locator('#probe').evaluate((el) => el.scrollTop)) > 0;
+}
+
+test('a panel scrolls by touch, and in a preview frame hands its scroll on to the page once it reaches its end', async ({ page, isMobile }) => {
+  test.skip(!isMobile, 'Touch scrolling needs a touch screen, which only the phone project has.');
+  if (!(await touchScrolls(page))) {
+    // In CI a skip here would leave touch scrolling untested without anyone noticing.
+    if (process.env.CI) throw new Error('Raw touch events no longer scroll a plain box in this browser.');
+    test.skip(true, 'This browser doesn’t scroll from raw touch events, so this run has no touch-scroll coverage.');
+  }
+  await page.setViewportSize({ width: 1280, height: 300 });
+  await page.goto('/layouts/workbench');
+  const files = page.locator('.ld-wb-panel').first();
+  await expect(files).toBeVisible();
+  expect(await files.evaluate((el) => el.scrollHeight > el.clientHeight), 'the Files panel overflows').toBe(true);
+  expect(await files.evaluate((el) => el.scrollTop)).toBe(0);
+  const box = (await files.boundingBox())!;
+  await swipeUp(page, box.x + box.width / 2, box.y + box.height / 2, 120);
+  await expect.poll(() => files.evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
+  // In the docs' preview frame, a panel at its end passes the swipe to the page around the frame.
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto('/layouts');
+  const frame = await openPreview(page, 'Three panels with top bar');
+  const panel = frame.locator('.ld-wb-panel').first();
+  await panel.evaluate((el) => {
+    el.append(Object.assign(document.createElement('div'), { style: 'height: 2000px' }));
+    el.scrollTop = el.scrollHeight;
+  });
+  expect(await panel.evaluate((el) => el.scrollHeight > el.clientHeight && el.scrollTop > 0), 'the panel overflows and sits at its end').toBe(true);
+  // Bounding boxes inside the frame are in the page's coordinates, so the swipe lands on the panel's middle.
+  const panelBox = (await panel.boundingBox())!;
+  const top = Math.max(panelBox.y, 0);
+  const y = top + Math.min(panelBox.height, page.viewportSize()!.height - top) / 2;
+  const before = await page.evaluate(() => window.scrollY);
+  await swipeUp(page, panelBox.x + panelBox.width / 2, y, 200);
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(before);
+});

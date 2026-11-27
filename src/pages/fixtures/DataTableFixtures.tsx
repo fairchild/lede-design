@@ -178,8 +178,8 @@ function CompareFixture() {
 }
 
 /**
- * A server that holds every answer until "Answer waiting requests" is pressed, so a test can act inside the window
- * where a new filter's rows are on their way and the last view's rows are still on screen.
+ * A server that holds every answer until its fixture's answer button is pressed, so a test can act inside the window
+ * where new rows (a new filter's, or the next page's) are on their way and the last view's rows are still on screen.
  */
 type Num = { id: string; n: number };
 const NUMS: Num[] = Array.from({ length: 30 }, (_, n) => ({ id: `n${n}`, n }));
@@ -251,6 +251,36 @@ function HeldFilterFixture() {
         selection={selection}
         onSelectionChange={setSelection}
         bulkActions={[{ label: 'Archive', onSelect: () => undefined }]}
+        {...rows}
+      />
+    </section>
+  );
+}
+
+/** Pages of five from the held server: Next leaves page 1's rows on screen until "Answer waiting page requests". */
+function HeldPagesFixture() {
+  const [server] = React.useState(heldServer);
+  const waiting = React.useSyncExternalStore(server.subscribe, server.waiting, server.waiting);
+  const [selection, setSelection] = React.useState<Selection>({ kind: 'ids', ids: new Set() });
+  const view = React.useMemo<TableView>(() => ({ sort: [] }), []);
+  const rows = useServerRows({ view, fetchRows: server.fetchRows, pageSize: 5, mode: 'pages' });
+  return (
+    <section aria-labelledby="fx-held-pages" className="docs-section">
+      <h2 id="fx-held-pages" className="text-title-3">Pages whose rows are held</h2>
+      <Button variant="gray" onClick={server.release}>Answer waiting page requests</Button>
+      <span>{`Page requests waiting: ${waiting}`}</span>
+      <DataTable
+        aria-label="Held pages fixture"
+        noun={noun}
+        columns={numColumns}
+        getRowId={(r) => r.id}
+        rowHeader="n"
+        processing="server"
+        view={view}
+        onViewChange={() => undefined}
+        selectionMode="multiple"
+        selection={selection}
+        onSelectionChange={setSelection}
         {...rows}
       />
     </section>
@@ -587,6 +617,7 @@ export function DataTableFixtures() {
       <PageSizeFixture />
       <CompareFixture />
       <HeldFilterFixture />
+      <HeldPagesFixture />
       <LongFieldsFixture />
       <NarrowScrollFixture />
       <LocaleFixture />

@@ -333,6 +333,36 @@ test.describe('wide', () => {
     expect(await value(right)).toBe(480);
   });
 
+  test('widths left by steps in a squeezed window survive a reload, a window a pixel wider moves them by a pixel, and a collapse lets go of them', async ({ page }) => {
+    const left = splitter(page, 'Files');
+    const right = splitter(page, 'Assistant');
+    await left.focus();
+    await page.keyboard.press('End');
+    await right.focus();
+    await page.keyboard.press('End');
+    await page.setViewportSize({ width: 1100, height: 800 });
+    await expect.poll(() => value(left)).toBe(350);
+    await left.focus();
+    for (let step = 0; step < 5; step++) await page.keyboard.press('ArrowLeft');
+    expect(await value(left)).toBe(270);
+    expect(await value(right)).toBe(350);
+    await page.reload();
+    await expect(left).toBeVisible();
+    await expect.poll(() => value(left)).toBe(270);
+    expect(await value(right)).toBe(350);
+    expect(await width(landmark(page, 'Files'))).toBe(270);
+    // A window a pixel wider grows the panels by at most a pixel, rather than refitting them from the widths asked for.
+    await page.setViewportSize({ width: 1101, height: 800 });
+    await expect.poll(() => value(left)).toBe(271);
+    expect(await value(right)).toBe(351);
+    await page.setViewportSize({ width: 1100, height: 800 });
+    await expect.poll(() => value(left)).toBe(270);
+    expect(await value(right)).toBe(350);
+    // Collapsing Files lets go of the held widths, so Assistant takes the width asked for.
+    await toggle(page, 'Files').click();
+    await expect.poll(() => value(right)).toBe(480);
+  });
+
   test('saved widths opened in a smaller window squeeze to fit, and the other panel holds still', async ({ page }) => {
     await page.evaluate((key) => localStorage.setItem(key, JSON.stringify({ start: { width: 480, collapsed: false }, end: { width: 480, collapsed: false } })), KEY);
     await page.setViewportSize({ width: 1100, height: 800 });

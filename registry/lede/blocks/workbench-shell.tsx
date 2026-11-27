@@ -32,7 +32,8 @@ export interface WorkbenchShellProps {
   /** One or two controls at the end of the top bar. */
   actions?: React.ReactNode;
   /**
-   * Remembers the widths asked for and the collapsed state under this `localStorage` key. Read on mount and whenever
+   * Remembers the widths asked for, the collapsed state and the widths drawn after the last resize under this
+   * `localStorage` key. Read on mount and whenever
    * the key changes. Tabs don't sync: each saves its own changes, and the last to save wins.
    */
   storageKey?: string;
@@ -41,7 +42,10 @@ export interface WorkbenchShellProps {
 
 type Widths = Record<WorkbenchSide, number>;
 type Sides = Record<WorkbenchSide, { width: number; collapsed: boolean }>;
-/** The widths asked for, which are kept and saved, and the drawn widths a resize holds still in a window as wide as the one it was made in. */
+/**
+ * The widths asked for, and the drawn widths a resize holds still in a window no wider than the one it was made in.
+ * Both are saved.
+ */
 interface Layout { sides: Sides; held: { room: number; widths: Partial<Widths> } | null }
 
 const MIN_WIDTH = 200;
@@ -52,8 +56,10 @@ const STEP = 16;
 const clamp = (n: number, min: number, max: number) => Math.max(min, Math.min(n, max));
 const otherSide = (side: WorkbenchSide): WorkbenchSide => (side === 'start' ? 'end' : 'start');
 
-function restore(key: string, sides: Sides): Sides {
-  let saved: Partial<Sides> | null = null;
+const finite = (n: unknown): n is number => Number.isFinite(n);
+
+function restore(key: string, sides: Sides): Layout {
+  let saved: (Partial<Sides> & { held?: { room?: unknown; widths?: Partial<Record<WorkbenchSide, unknown>> } }) | null = null;
   try {
     saved = JSON.parse(localStorage.getItem(key) ?? 'null');
   } catch { /* unreadable or unavailable: keep the defaults */ }
@@ -61,7 +67,11 @@ function restore(key: string, sides: Sides): Sides {
     const { width, collapsed } = saved?.[name] ?? {};
     return { width: Number.isFinite(width) ? (width as number) : sides[name].width, collapsed: collapsed === true };
   };
-  return { start: side('start'), end: side('end') };
+  const { room, widths } = saved?.held ?? {};
+  const hold: Partial<Widths> = {};
+  for (const name of ['start', 'end'] as const) if (finite(widths?.[name])) hold[name] = clamp(widths[name], MIN_WIDTH, MAX_WIDTH);
+  const held = finite(room) && room > 0 && Object.keys(hold).length ? { room, widths: hold } : null;
+  return { sides: { start: side('start'), end: side('end') }, held };
 }
 
 /** The widths to draw: those asked for, each giving up its share when main needs the room back. */
@@ -73,11 +83,25 @@ function fit(want: Widths, room: number): Widths {
   return { start, end: want.end && Math.max(floor.end, room - start) };
 }
 
-/** The widths drawn: those asked for, held where a resize in this window left them, then fitted to the room. */
+/**
+ * The widths drawn: those asked for, held where a resize left them, then fitted to the room. In a window no wider than
+ * the one the resize was made in, the held widths cap those asked for. In a wider one, each panel grows from its held
+ * width toward the width asked for, sharing the extra room by how far each has to go, so a 1px wider window moves
+ * nothing by more than a pixel.
+ */
 function draw({ sides, held }: Layout, room: number): Widths {
-  const hold = held?.room === room ? held.widths : {};
-  const wanted = (side: WorkbenchSide) => (sides[side].collapsed ? 0 : Math.min(clamp(sides[side].width, MIN_WIDTH, MAX_WIDTH), hold[side] ?? Infinity));
-  return fit({ start: wanted('start'), end: wanted('end') }, room);
+  const want = (side: WorkbenchSide) => (sides[side].collapsed ? 0 : clamp(sides[side].width, MIN_WIDTH, MAX_WIDTH));
+  const wanted = { start: want('start'), end: want('end') };
+  if (!held) return fit(wanted, room);
+  const from = (side: WorkbenchSide) => (wanted[side] ? Math.min(wanted[side], held.widths[side] ?? Infinity) : 0);
+  const base = { start: from('start'), end: from('end') };
+  if (room <= held.room) return fit(base, room);
+  const gap = (side: WorkbenchSide) => wanted[side] - base[side];
+  const total = gap('start') + gap('end');
+  const extra = room - held.room;
+  if (extra >= total) return fit(wanted, room);
+  const start = base.start + Math.round((gap('start') * extra) / total);
+  return fit({ start, end: base.end + Math.round((gap('end') * extra) / total) }, room);
 }
 
 const widest = (drawn: Widths, side: WorkbenchSide, room: number) => clamp(room - drawn[otherSide(side)], MIN_WIDTH, MAX_WIDTH);
@@ -197,7 +221,7 @@ export function WorkbenchShell(props: WorkbenchShellProps) {
 
   // After the first render, which has to match a server's, and before the first paint.
   React.useLayoutEffect(() => {
-    if (props.storageKey) setLayout((now) => ({ sides: restore(props.storageKey!, now.sides), held: null }));
+    if (props.storageKey) setLayout((now) => restore(props.storageKey!, now.sides));
   }, [props.storageKey]);
 
   React.useLayoutEffect(() => {
@@ -230,9 +254,9 @@ export function WorkbenchShell(props: WorkbenchShellProps) {
   React.useEffect(() => {
     if (!props.storageKey || dragging || !touched.current) return;
     try {
-      localStorage.setItem(props.storageKey, JSON.stringify(sides));
+      localStorage.setItem(props.storageKey, JSON.stringify(layout.held ? { ...sides, held: layout.held } : sides));
     } catch { /* unavailable: the layout lasts for this visit */ }
-  }, [props.storageKey, sides, dragging]);
+  }, [props.storageKey, sides, layout.held, dragging]);
 
   const drawn = draw(layout, room);
   const change = (next: (now: Layout) => Layout) => {
@@ -255,7 +279,8 @@ export function WorkbenchShell(props: WorkbenchShellProps) {
       };
     });
   const toggle = (side: WorkbenchSide) =>
-    change((now) => ({ ...now, sides: { ...now.sides, [side]: { ...now.sides[side], collapsed: !now.sides[side].collapsed } } }));
+    // A collapse or restore lets go of the held widths: they were drawn beside the other panel as it was.
+    change((now) => ({ held: null, sides: { ...now.sides, [side]: { ...now.sides[side], collapsed: !now.sides[side].collapsed } } }));
 
   const hidden = (region: WorkbenchRegion) => (stacked ? active !== region : region !== 'main' && sides[region].collapsed);
   const sized = (side: WorkbenchSide) => ({ '--ld-wb-width': `${drawn[side]}px` }) as React.CSSProperties;

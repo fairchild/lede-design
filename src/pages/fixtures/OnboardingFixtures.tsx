@@ -29,17 +29,30 @@ function SlowFinish() {
   );
 }
 
-/** A controlled flow whose step can change while its save is pending, as the browser's Back can change it. */
+/**
+ * A controlled flow whose step can change while its save is pending, as the browser's Back can change it. "Saves
+ * settled" counts up once a settled save's callbacks have all run.
+ */
 function ControlledFinish() {
   const [step, setStep] = React.useState(0);
+  const [asked, setAsked] = React.useState(0);
+  const [settled, setSettled] = React.useState(0);
   const settle = React.useRef<() => void>(null);
-  const onComplete = (_: OnboardingData) => new Promise<void>((resolve) => { settle.current = resolve; });
+  const onComplete = (_: OnboardingData) => {
+    setAsked((n) => n + 1);
+    return new Promise<void>((resolve) => {
+      settle.current = () => { settle.current = null; resolve(); setTimeout(() => setSettled((n) => n + 1)); };
+    });
+  };
   return (
     <section aria-label="Controlled finish" className="docs-section">
       <div className="docs-demo">
         <Button onClick={() => settle.current?.()}>Finish save</Button>
         <Button onClick={() => setStep(1)}>Show Preferences</Button>
+        <Button onClick={() => setStep(2)}>Show Review</Button>
         <p className="docs-notice">Step asked for: {step}</p>
+        <p className="docs-notice">Saves asked for: {asked}</p>
+        <p className="docs-notice">Saves settled: {settled}</p>
       </div>
       <OnboardingFlow productName="Daybook" step={step} onStepChange={setStep} onComplete={onComplete} doneHref="#" defaultValue={{ name: 'Grace Hopper', email: 'grace@example.com' }} />
     </section>

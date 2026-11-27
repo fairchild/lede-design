@@ -4,6 +4,14 @@
 
 ### Fixed
 
+- **OnboardingFlow's Finish starts one save at a time, even when a controlled step leaves Review and comes back while
+  it's on its way.** Back on Review it reads “Finishing…” until that save settles, and the save finishes the flow if the
+  answers on Review are still the ones it carries. A save that settles on another step, or with answers changed since,
+  still moves nothing, and a step change now starts its new run in the commit that makes it.
+- **WorkbenchShell keeps the widths a person left in a squeezed window.** After stepping a divider in a window too
+  narrow for both panels' widths, a reload in the same window, or a window a pixel wider, used to refit both panels from
+  the widths asked for. `storageKey` now saves those widths with the room they were made in, a wider window grows
+  each panel from them toward the width asked for, and collapsing or restoring a panel lets go of them.
 - **A DataTable checkbox keeps focus while a new view loads.** The rows' and the page's checkboxes are `aria-disabled`
   there, and no longer `disabled`, so focus stays put and Space does nothing until the rows arrive. Checkbox takes
   `aria-disabled` this way anywhere: it looks disabled, keeps focus, runs neither `onClick` nor `onChange`, and still
