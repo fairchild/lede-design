@@ -22,10 +22,11 @@ export type TextFieldProps =
 
 /**
  * Base UI Field: a real `<label>` and a real `<input>` or `<textarea>`, with the hint and error wired up for assistive
- * tech.
+ * tech. In a `<form noValidate>`, a Base UI Form's included, Enter submits without running the field's own checks, so a
+ * `type="email"` field never turns invalid with no message to say why. A Base UI Form still runs them on submit.
  */
 export function TextField(props: TextFieldProps) {
-  const { label, hint, error, size, rows, className, ...control } = props;
+  const { label, hint, error, size, rows, className, onKeyDown, ...control } = props;
   return (
     <Field.Root invalid={!!error} className={cn('ld-field', size === 'lg' && 'ld-field-lg', className)}>
       <Field.Label className="ld-field-label">{label}</Field.Label>
@@ -33,6 +34,11 @@ export function TextField(props: TextFieldProps) {
         className="ld-field-input"
         render={rows ? <textarea rows={rows} /> : undefined}
         {...(control as React.ComponentProps<typeof Field.Control>)}
+        onKeyDown={(event: React.KeyboardEvent<HTMLInputElement> & { preventBaseUIHandler?: () => void }) => {
+          // Field validates natively on Enter, which a form that turned that off didn't ask for.
+          if (event.key === 'Enter' && event.currentTarget.form?.noValidate) event.preventBaseUIHandler?.();
+          (onKeyDown as React.KeyboardEventHandler<HTMLElement> | undefined)?.(event);
+        }}
       />
       {error ? (
         <Field.Error match className="ld-field-hint">{error}</Field.Error>

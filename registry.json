@@ -121,7 +121,7 @@
       "name": "lede-utils",
       "type": "registry:lib",
       "title": "Lede utils",
-      "description": "`cn()`, LinkProvider (route Lede's anchors through your router), the tone types (`Tone`, `StatusTone` and `ToneSubset`) and the input helpers `focusLanding()` and `lastInputWasTouch()`.",
+      "description": "`cn()`, LinkProvider (route Lede's anchors through your router), the tone types (`Tone`, `StatusTone` and `ToneSubset`), the input helpers `focusLanding()` and `lastInputWasTouch()`, and `useStackedPanes()`, true while MasterDetail and WorkbenchShell show one pane at a time.",
       "meta": {
         "stability": "stable"
       },
@@ -145,6 +145,11 @@
           "path": "registry/lede/input-modality.ts",
           "type": "registry:lib",
           "target": "components/lede/input-modality.ts"
+        },
+        {
+          "path": "registry/lede/stacked-panes.ts",
+          "type": "registry:lib",
+          "target": "components/lede/stacked-panes.ts"
         }
       ]
     },
@@ -769,7 +774,6 @@
         "@lede/lede-theme",
         "@lede/lede-utils",
         "@lede/button",
-        "@lede/master-detail",
         "@lede/segmented-control"
       ],
       "files": [

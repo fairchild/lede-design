@@ -2,6 +2,9 @@ import { test, expect, type Browser, type Locator, type Page } from '@playwright
 import { withAppearance } from './appearance';
 import AxeBuilder from '@axe-core/playwright';
 import { renderToString } from 'react-dom/server';
+import { createElement as h } from 'react';
+import { WorkbenchShell } from '../registry/lede/blocks/workbench-shell';
+import { AppShell } from '../registry/lede/blocks/app-shell';
 import { HYDRATE_KEY, hydrateSample, type HydrateWindow } from '../src/pages/fixtures/WorkbenchHydrate';
 
 const ROUTE = '/layouts/workbench';
@@ -171,6 +174,17 @@ test.describe('wide', () => {
     expect(await width(landmark(page, 'Assistant'))).toBe(await value(right));
     await page.keyboard.press('ArrowRight');
     await expect.poll(() => value(right)).toBe(rightStart);
+  });
+
+  test('a key held with Alt, Control or Command is left to the browser, and the divider stays put', async ({ page }) => {
+    const left = splitter(page, 'Files');
+    const start = await value(left);
+    await left.focus();
+    for (const key of ['Alt+ArrowRight', 'Control+ArrowRight', 'Meta+ArrowRight', 'Alt+Enter', 'Control+End']) await page.keyboard.press(key);
+    expect(await value(left)).toBe(start);
+    await expect(toggle(page, 'Files')).toHaveAttribute('aria-expanded', 'true');
+    await page.keyboard.press('ArrowRight');
+    await expect.poll(() => value(left)).toBeGreaterThan(start);
   });
 
   test('Home and End go to the limits and stop there', async ({ page }) => {
@@ -562,6 +576,62 @@ test('with storageKey, server-rendered markup hydrates and then takes the stored
   await expect(toggle(page, 'Files')).toHaveAttribute('aria-expanded', 'true');
   expect(await width(landmark(page, 'Files'))).toBe(300);
   expect(problems).toEqual([]);
+});
+
+test('right to left, the start panel is on the right, and its divider\'s arrow keys and drag follow it', async ({ page, isMobile }) => {
+  test.skip(isMobile, 'Three columns need a wide window.');
+  // Once the document is parsed and before its module scripts run, so the shell mounts into a right-to-left page.
+  await page.addInitScript(() => document.addEventListener('readystatechange', () => { document.documentElement.dir = 'rtl'; }, { once: true }));
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto(ROUTE);
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+  const files = landmark(page, 'Files');
+  expect((await box(files)).x).toBeGreaterThan((await box(page.getByRole('main'))).x);
+  const left = splitter(page, 'Files');
+  const start = await value(left);
+  await left.focus();
+  await page.keyboard.press('ArrowLeft');
+  await expect.poll(() => value(left)).toBe(start + 16);
+  await page.keyboard.press('ArrowRight');
+  await expect.poll(() => value(left)).toBe(start);
+  await drag(page, left, -40);
+  await expect.poll(() => width(files)).toBeCloseTo(start + 40, 0);
+  // The toggle's icon fills the side its panel is drawn on.
+  expect(await toggle(page, 'Files').locator('svg').evaluate((el) => getComputedStyle(el).transform)).toBe('matrix(-1, 0, 0, 1, 0, 0)');
+  // A page that changes its direction after the shell mounts is followed too.
+  await page.evaluate(() => { document.documentElement.dir = 'ltr'; });
+  const now = await value(left);
+  await left.focus();
+  await page.keyboard.press('ArrowRight');
+  await expect.poll(() => value(left)).toBe(now + 16);
+});
+
+test('server markup on a narrow screen shows main alone, as the first render after it does', async ({ page, isMobile }) => {
+  test.skip(isMobile, 'One project is enough: this sets its own narrow window.');
+  await page.setViewportSize({ width: 390, height: 800 });
+  await page.goto('/fixtures/workbench-hydrate');
+  const markup = renderToString(hydrateSample);
+  expect(markup).not.toContain('data-mounted');
+  // The markup alone, with the page's CSS and no script to hydrate it.
+  await page.evaluate((html) => { const host = document.createElement('div'); host.id = 'fx-server'; host.innerHTML = html; document.body.append(host); }, markup);
+  const server = page.locator('#fx-server');
+  await expect(server.getByRole('main')).toBeVisible();
+  await expect(server.locator('nav.ld-wb-panel')).toBeHidden();
+  await expect(server.locator('aside.ld-wb-panel')).toBeHidden();
+});
+
+test('each shell takes its own main id, and its skip link follows it', ({ isMobile }) => {
+  test.skip(isMobile, 'Server rendering: one project is enough.');
+  const panel = { label: 'Files', content: null };
+  const shells = [
+    renderToString(h(WorkbenchShell, { brand: 'B', title: 'T', start: panel, end: { ...panel, label: 'Help' }, mainId: 'work', children: null })),
+    renderToString(h(AppShell, { brand: 'B', nav: [{ value: 'a', label: 'A', href: '/a' }], current: 'a', mainId: 'work', children: null })),
+  ];
+  for (const html of shells) {
+    expect(html).toContain('href="#work"');
+    expect(html).toMatch(/<main[^>]* id="work"/);
+    expect(html).not.toContain('"#main"');
+  }
 });
 
 async function coarseContext(browser: Browser, baseURL: string | undefined) {
