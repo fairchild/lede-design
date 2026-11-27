@@ -20,6 +20,8 @@ const older: InboxReply[] = [
   { ...earlier, preview: 'Starting a thread for the offsite.', body: ['Starting a thread for the offsite.'] },
   { ...earlier, preview: 'Adding last year’s agenda.', body: ['Adding last year’s agenda.'] },
 ];
+/** A new reply from the earlier sender at the same minute as their two, told apart by its text. */
+const sameMinute = { ...earlier, preview: 'And the venue shortlist.', quote: undefined, body: ['And the venue shortlist.'] };
 const newer = { from: 'Ari Chen', preview: 'One more thing on the roadmap.', date: '11:02', datetime: '2026-10-31T11:02', quote: undefined, body: ['One more thing on the roadmap.'] };
 const ignore = () => {};
 /** How long `?undo=later` takes to put a message back. */
@@ -52,6 +54,7 @@ export function InboxFixtures() {
       <p className="ld-preview-card">
         <Button variant="gray" size="sm" onClick={() => changeThread((m) => ({ ...m, thread: [...older, ...m.thread!] }))}>Load older messages</Button>
         <Button variant="gray" size="sm" onClick={() => changeThread((m) => ({ ...m, ...newer, thread: [...m.thread!, m] }))}>Add a new reply</Button>
+        <Button variant="gray" size="sm" onClick={() => changeThread((m) => ({ ...m, ...sameMinute, thread: [...m.thread!, m] }))}>Add a reply in the same minute</Button>
       </p>
     </>
   );

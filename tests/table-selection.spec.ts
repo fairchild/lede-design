@@ -17,7 +17,7 @@ function selectionModel(selection: Selection, total?: Total, onSelectionChange?:
   let model: SelectionModel | undefined;
   const Probe = () => {
     model = useDataTable({
-      columns, rows, getRowId: (r) => r.id, rowHeader: 'id', noun: { one: 'row', other: 'rows' },
+      columns, rows, getRowId: (r) => r.id, rowHeader: 'id',
       selectionMode: 'multiple', selection, total, onSelectionChange,
     }).selection;
     return null;

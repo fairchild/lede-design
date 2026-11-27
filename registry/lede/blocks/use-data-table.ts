@@ -163,7 +163,8 @@ export interface DataTableOptions<Row> {
   getRowId: (row: Row) => string;
   /** The column whose cells are `<th scope="row">`. */
   rowHeader: string;
-  noun: Noun;
+  /** @deprecated `useDataTable` doesn't read it; `DataTable` takes `noun` itself. Removed in 0.10.0. */
+  noun?: Noun;
   /** Controlled view. */
   view?: TableView;
   /** Uncontrolled starting view. */
@@ -177,7 +178,8 @@ export interface DataTableOptions<Row> {
   total?: Total;
   /**
    * Paging, rendered by DataTable. The hook reads its page, so rows that leave with a page change stay selected: pass it
-   * to `useDataTable` too when you render your own pager.
+   * to `useDataTable` too when you render your own pager. In client mode a sort orders only the `rows` given, so a
+   * paged list that sorts as a whole sorts on the server, with `processing="server"`.
    */
   paging?: Paging;
   /**

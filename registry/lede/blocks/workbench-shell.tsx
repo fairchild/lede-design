@@ -82,10 +82,11 @@ function draw({ sides, held }: Layout, room: number): Widths {
 
 const widest = (drawn: Widths, side: WorkbenchSide, room: number) => clamp(room - drawn[otherSide(side)], MIN_WIDTH, MAX_WIDTH);
 
-/** A click that follows a link in this tab: its `target` is unset or `_self`, and no modifier key is held. */
+/** A click that follows a link in this tab: its `target` is unset or `_self`, it doesn't download, and no modifier key is held. */
 function followsHere(event: React.MouseEvent) {
   const link = (event.target as Element).closest('a');
-  return !!link && (!link.target || link.target === '_self') && !(event.metaKey || event.ctrlKey || event.shiftKey || event.altKey);
+  return !!link && (!link.target || link.target === '_self') && !link.hasAttribute('download')
+    && !(event.metaKey || event.ctrlKey || event.shiftKey || event.altKey);
 }
 
 function PanelIcon({ side, open }: { side: WorkbenchSide; open: boolean }) {

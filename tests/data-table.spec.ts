@@ -415,6 +415,23 @@ test.describe('DataTable', () => {
     await expect(serverTable(page).locator('tbody tr:nth-child(51) [data-row-link]')).toBeFocused();
   });
 
+  test('load more: a background refresh leaves it usable, and a press during one waits for its own rows', async ({ page }) => {
+    await open(page, '/fixtures/data-table');
+    const section = page.locator('section[aria-labelledby="fx-client-more"]');
+    const table = page.getByRole('table', { name: 'Client load more fixture' });
+    await expect(table.locator('tbody tr')).toHaveCount(3);
+    await section.getByRole('button', { name: 'Refresh in the background' }).click();
+    await expect(section.getByText(/Updating…/)).toBeVisible();
+    const more = section.getByRole('button', { name: 'Load more' });
+    await expect(more).not.toHaveAttribute('aria-disabled');
+    await more.click();
+    const loading = section.getByRole('button', { name: 'Loading…' });
+    await expect(loading).toHaveAttribute('aria-disabled', 'true');
+    await section.getByRole('button', { name: 'Finish fetching' }).click();
+    await expect(table.locator('tbody tr')).toHaveCount(6);
+    await expect(more).not.toHaveAttribute('aria-disabled');
+  });
+
   test('load more: focus that falls to <body> while the page loads still lands on the first new row', async ({ page }) => {
     // A click on blank text drops focus to <body>. Load more is still there, so the landing waits for the rows.
     await open(page);

@@ -25,7 +25,10 @@ export interface InboxMessage {
   body: string[];
   /** The passage this message replies to, shown above its body. */
   quote?: { from: string; text: string };
-  /** The earlier messages of a conversation, oldest first. `from`, `preview`, `date` and `body` above are the latest. */
+  /**
+   * The earlier messages of a conversation, oldest first. `from`, `preview`, `date` and `body` above are the latest.
+   * Each one's `from`, `datetime` and `preview` name it, so they stay the same when the latest moves in here.
+   */
   thread?: InboxReply[];
 }
 /** An earlier message in a conversation. */
@@ -404,10 +407,11 @@ function MessageDetail({ message: m, href, backRef, listHref, onArchive, onDelet
   const replies = m.thread ?? [];
   const conversation = [m, ...[...replies].reverse()];
   const people = new Set(conversation.map((c) => c.from)).size;
-  // Replies have no id. The count separates two from one sender in one minute; newest first, older history can't shift it.
+  // Replies have no id, so sender, time and preview name one. The count separates exact repeats; newest first, older
+  // history can't shift it, and a new reply shifts only replies identical to it.
   const seen = new Map<string, number>();
   const keyFor = (c: InboxReply) => {
-    const key = `${c.datetime}|${c.from}`;
+    const key = `${c.datetime}|${c.from}|${c.preview}`;
     const occurrence = seen.get(key) ?? 0;
     seen.set(key, occurrence + 1);
     return `${key}|${occurrence}`;

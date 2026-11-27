@@ -2,8 +2,29 @@
 
 ## Unreleased
 
+### Fixed
+
+- **A download link in WorkbenchShell's left panel leaves that panel showing.** On a narrow screen, a click on a link
+  there shows main only when the page follows it in this tab, and a link with `download` no longer counts.
+- **Load more stays usable during a background refresh.** It reads “Loading…” and is `aria-disabled` only while a
+  fetch it asked for is on its way.
+- **GlassToolbar's and GlassBar's corners are concentric with their items' in every shape.** In `square`, and under
+  a look whose capsules are rounded rectangles or square, a bar's corner is its items' plus its inset, and square items
+  keep a square bar.
+- **A Disclosure's trigger keeps square bottom corners until its panel has closed.** Its focus ring and pressed fill
+  rounded as the panel started to close.
+- **A new reply in InboxFlow leaves the other replies open or closed as they were**, including replies with the same
+  sender and time, told apart by their preview.
+
+### Deprecated
+
+- `useDataTable`'s `noun` option. The hook never read it, so it's optional now, and 0.10.0 removes it. `DataTable`
+  still requires `noun`, so an options object typed `DataTableOptions` and spread into `DataTable` adds `noun` itself.
+
 ### Changed
 
+- `paging`'s reference says that in client mode a sort orders only the rows given, so a paged list sorts on the
+  server.
 - **Pull requests show how each look changed.** A new *Visual* workflow screenshots five pages under each look, in light
   and dark, on every push to `develop`, and on each pull request into it compares the same screenshots of the pull
   request's build, listing every difference in the run's summary with the before, after and diff images as an artifact.

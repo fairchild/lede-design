@@ -695,6 +695,24 @@ test.describe('narrow', () => {
     await expect(landmark(page, 'Files')).toBeVisible();
   });
 
+  test('a download link downloads in place, so the left panel stays showing', async ({ page }) => {
+    await option(page, 'Files').check();
+    const url = page.url();
+    await landmark(page, 'Files').evaluate((panel) => {
+      const a = document.createElement('a');
+      a.href = 'data:text/plain,hello';
+      a.download = 'hello.txt';
+      a.textContent = 'Download hello.txt';
+      panel.append(a);
+    });
+    const download = page.waitForEvent('download');
+    await landmark(page, 'Files').getByRole('link', { name: 'Download hello.txt' }).click();
+    expect((await download).suggestedFilename()).toBe('hello.txt');
+    expect(page.url()).toBe(url);
+    await expect(option(page, 'Files')).toBeChecked();
+    await expect(landmark(page, 'Files')).toBeVisible();
+  });
+
   test('main is never empty: with a side panel showing it says where its content went', async ({ page }) => {
     const note = page.getByRole('main').getByText('Editor isn’t showing');
     await expect(note).toHaveCount(0);

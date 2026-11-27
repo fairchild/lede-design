@@ -10,7 +10,7 @@ import { ThemeScope } from '../theme-provider';
 import { DataRow, SKELETON_ROWS } from './data-table-row';
 import { Cards } from './data-table-cards';
 import { Pager } from './data-table-pager';
-import { SelectionBar, formatCount, type SelectionAction } from './selection-bar';
+import { SelectionBar, formatCount, type SelectionAction, type Noun } from './selection-bar';
 import {
   useDataTable, formatValue, useStableInput,
   type DataTableOptions, type Selection, type TableState, type Total, type Paging,
@@ -20,7 +20,9 @@ import {
 export type BulkAction = Omit<SelectionAction, 'onSelect'> & { onSelect: (selection: Selection) => void };
 
 export type DataTableProps<Row> = TableLabel &
-  DataTableOptions<Row> & {
+  Omit<DataTableOptions<Row>, 'noun'> & {
+    /** What a row is, singular and plural, for counts, the empty state and checkbox names. */
+    noun: Noun;
     bulkActions?: BulkAction[];
     /** Each row's link. Rendered in the row-header cell and stretched over the row. */
     rowHref?: (row: Row) => string;
@@ -342,7 +344,7 @@ export function DataTable<Row>(props: DataTableProps<Row>) {
       ) : null}
 
       {pager && !hidden && (rows.length > 0 || (pager.kind === 'pages' && pager.pageCount > 1)) ? (
-        <Pager paging={pager} noun={noun} busy={updating} locale={locale} />
+        <Pager paging={pager} noun={noun} busy={updating} shown={rows.length} locale={locale} />
       ) : null}
 
       {selectable ? (
