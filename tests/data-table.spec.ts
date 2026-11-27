@@ -273,6 +273,25 @@ test.describe('DataTable', () => {
       .toEqual([{ text: 'Showing saved data from 10:42 AM.', before: true, rendered: true }]);
   });
 
+  test('a refresh that fails again at once is announced again, after a frame with the notice empty', async ({ page }) => {
+    await listen(page);
+    await open(page, '/fixtures/data-table');
+    const section = page.locator('section[aria-labelledby="fx-failing-refresh"]');
+    const notice = section.locator('.ld-dt-notice').first();
+    await expect(notice.getByRole('status')).toHaveText('Showing saved data from 10:42 AM.');
+    const saidBefore = (await spoken(page)).filter((s) => s.text.startsWith('Showing saved data')).length;
+    for (const n of [1, 2]) {
+      await notice.getByRole('button', { name: 'Refresh' }).click();
+      await expect(section.getByTestId('refresh-tries')).toHaveText(`Tries: ${n}`);
+      await expect(notice.getByRole('status')).toHaveText('Showing saved data from 10:42 AM.');
+    }
+    const said = (await spoken(page)).filter((s) => s.text.startsWith('Showing saved data'));
+    expect(said.slice(saidBefore)).toEqual([
+      { text: 'Showing saved data from 10:42 AM.', before: true, rendered: true },
+      { text: 'Showing saved data from 10:42 AM.', before: true, rendered: true },
+    ]);
+  });
+
   test('guide: a table\'s selection bar stays with its own example, not over the next ones', async ({ page }) => {
     await open(page);
     const client = page.locator('section[aria-labelledby="dt-client"]');
@@ -759,6 +778,37 @@ test.describe('DataTable', () => {
       await rowBox(page, 1).click({ force: true });
       await settle(page);
       await expect(bar(page)).toHaveCount(0);
+    });
+
+    test('a focused checkbox keeps focus while the filter loads, ignores Space, and works once the rows arrive', async ({ page }) => {
+      await loaded(page);
+      await rowBox(page, 2).focus();
+      // A click from script leaves focus where it is, as a filter changed by a debounced search does.
+      await section(page).getByRole('radio', { name: 'Even' }).evaluate((radio: HTMLElement) => radio.click());
+      await expect(section(page).getByText('1 waiting')).toBeVisible();
+      await expect(rowBox(page, 2)).toHaveAttribute('aria-disabled', 'true');
+      await expect(rowBox(page, 2)).toBeFocused();
+      await page.keyboard.press('Space');
+      await expect(rowBox(page, 2)).not.toBeChecked();
+      await answer(page).evaluate((button: HTMLElement) => button.click());
+      await expect(section(page).getByText('5 of 15 items')).toBeVisible();
+      await expect(rowBox(page, 2)).toBeFocused();
+      await expect(rowBox(page, 2)).not.toHaveAttribute('aria-disabled');
+      await page.keyboard.press('Space');
+      await expect(rowBox(page, 2)).toBeChecked();
+    });
+
+    test('restoring an all-matching selection under a new filter announces no count until that filter’s total arrives', async ({ page }) => {
+      await loaded(page);
+      const said = section(page).locator('p.ld-sr-only[role="status"]');
+      await section(page).getByRole('button', { name: 'Restore a view with all matching selected' }).click();
+      await expect(section(page).getByText('1 waiting')).toBeVisible();
+      await expect(section(page).getByRole('toolbar', { name: 'Counting selected items' })).toBeVisible();
+      await expect(said).toHaveText('');
+      await expect(section(page).getByText(/29/)).toHaveCount(0);
+      await settle(page);
+      await expect(section(page).getByRole('toolbar', { name: '14 items selected' })).toBeVisible();
+      await expect(said).toHaveText('14 items selected');
     });
 
     test('ticking the page while the filter loads does nothing, and offers no "Select all"', async ({ page }) => {

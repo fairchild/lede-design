@@ -128,6 +128,14 @@ export function DataTable<Row>(props: DataTableProps<Row>) {
   // commits only what `retry` sets synchronously: one that sets its state after an `await` still lands on an empty
   // summary, so a retry sets its loading state before it awaits.
   const retry = (fn: () => void) => () => { flushSync(fn); summaryRef.current?.focus(); };
+  // Refresh empties the saved-data notice for a painted frame, so a retry that fails at once adds its text again and
+  // screen readers hear it again.
+  const [refreshing, setRefreshing] = React.useState(false);
+  React.useEffect(() => {
+    if (!refreshing) return;
+    let frame = requestAnimationFrame(() => { frame = requestAnimationFrame(() => setRefreshing(false)); });
+    return () => cancelAnimationFrame(frame);
+  }, [refreshing]);
   const pager = useLanding(root, summaryRef, paging, state.rows ?? 'current');
   const place = JSON.stringify([model.view, paging?.kind === 'pages' ? paging.page : null]);
   const { onFocus: keptFocus, note, forget } = useKeptPlace(root, summaryRef, rows, place, state.rows === 'previous');
@@ -167,7 +175,7 @@ export function DataTable<Row>(props: DataTableProps<Row>) {
   // empty until a retry is on its way.
   const summary = errorOnly ? (updating ? `Loading ${noun.other}…` : '')
     : showSkeleton ? `Loading ${noun.other}…` : updating ? `${countText} · Updating…` : countText;
-  const allMatching = typeof total === 'number' ? formatCount(total, noun, locale) : `matching ${noun.other}`;
+  const allMatching = typeof total === 'number' && !sel.counting ? formatCount(total, noun, locale) : `matching ${noun.other}`;
   const offerAll = selectable && !hidden && sel.canSelectAllMatching;
   const allSelected = selectable && sel.value.kind === 'all-matching';
   // Clearing takes the notice away with its button: focus goes to the summary line in the same task, as Done's does.
@@ -200,9 +208,9 @@ export function DataTable<Row>(props: DataTableProps<Row>) {
       <div className="ld-dt-top">
         <p ref={summaryRef} tabIndex={-1} className="ld-dt-summary">{summary}</p>
         {/* The status region is always here, empty and unpainted until a refresh fails, so its text is announced. */}
-        <p className="ld-dt-notice">
+        <p className="ld-dt-notice" data-refreshing={refreshing || undefined}>
           <span role="status">
-            {refreshFailed ? (
+            {refreshFailed && !refreshing ? (
               <span>
                 {state.since
                   ? <>Showing saved data from <time dateTime={state.since.toISOString()}>{state.since.toLocaleTimeString(locale, { hour: 'numeric', minute: '2-digit' })}</time>.</>
@@ -210,7 +218,9 @@ export function DataTable<Row>(props: DataTableProps<Row>) {
               </span>
             ) : null}
           </span>
-          {refreshFailed ? <Button variant="plain" className="ld-dt-btn" onClick={retry(failure.retry)}>Refresh</Button> : null}
+          {refreshFailed ? (
+            <Button variant="plain" className="ld-dt-btn" onClick={() => { flushSync(() => setRefreshing(true)); retry(failure.retry)(); }}>Refresh</Button>
+          ) : null}
         </p>
         {/* One notice whose button changes, so "Select all N" keeps focus as it becomes "Clear selection". */}
         {offerAll || allSelected ? (
@@ -218,6 +228,7 @@ export function DataTable<Row>(props: DataTableProps<Row>) {
             <span>
               {offerAll ? `All ${formatCount(shown, noun, locale)} ${scope} are selected.`
                 : sel.value.kind === 'all-matching' && sel.value.except.size === 0 ? `All ${allMatching} are selected.`
+                : sel.counting ? `Counting selected ${noun.other}…`
                 : `${formatCount(sel.count, noun, locale)} selected.`}
             </span>
             <Button variant="plain" className="ld-dt-btn" onClick={offerAll ? sel.selectAllMatching : clearAll}>
@@ -272,7 +283,8 @@ export function DataTable<Row>(props: DataTableProps<Row>) {
                     aria-label={`Select all ${noun.other} ${scope}`}
                     checked={sel.page === 'all'}
                     indeterminate={sel.page === 'some'}
-                    disabled={rows.length === 0 || sel.inert}
+                    disabled={rows.length === 0}
+                    aria-disabled={sel.inert || undefined}
                     onChange={sel.togglePage}
                   />
                 </Table.HeaderCell>
@@ -350,6 +362,7 @@ export function DataTable<Row>(props: DataTableProps<Row>) {
       {selectable ? (
         <SelectionBar
           count={sel.count}
+          counting={sel.counting}
           noun={noun}
           locale={locale}
           // Done returns focus to where it came into the bar from. When that control has gone, as a checkbox does when

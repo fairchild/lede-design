@@ -64,6 +64,19 @@ function CheckboxRef() {
   );
 }
 
+/** Checkboxes under `aria-disabled`, controlled and not, that count every change they're told of. */
+function CheckboxAriaDisabled() {
+  const [on, setOn] = React.useState(false);
+  const [changes, setChanges] = React.useState(0);
+  return (
+    <section aria-label="Checkbox aria-disabled" className="docs-section">
+      <label><Checkbox aria-disabled checked={on} onChange={(e) => { setOn(e.currentTarget.checked); setChanges((n) => n + 1); }} /> Controlled</label>
+      <label><Checkbox aria-disabled defaultChecked={false} onChange={() => setChanges((n) => n + 1)} /> Uncontrolled</label>
+      <p>Changes: {changes}</p>
+    </section>
+  );
+}
+
 /** Primitives and small blocks in the states their specs drive. Not linked from the navigation. */
 export function PrimitivesFixtures() {
   // Open on mount, the inner layer renders before the PageHeader, so its layout effect runs first in the same commit.
@@ -97,6 +110,7 @@ export function PrimitivesFixtures() {
       </section>
       {innerFirst ? null : <InnerLayer />}
       <CheckboxRef />
+      <CheckboxAriaDisabled />
     </div>
   );
 }

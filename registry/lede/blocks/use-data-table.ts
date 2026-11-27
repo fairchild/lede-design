@@ -46,7 +46,8 @@ export type Selection =
  * What the table is showing and doing, as independent parts: whose rows, whether more are coming, what failed and
  * when the rows were fetched. Every field is optional: `{}` is a table showing its own, settled rows.
  * - `rows`: whose rows are on screen. `'current'`, the default, are this view's. `'previous'` are the last view's, kept
- *   while this one loads so the layout doesn't jump. `'none'` means nothing is on screen yet: until rows or a failure
+ *   while this one loads so the layout doesn't jump. Set it in the same render as the view change, so no count from the
+ *   last view is announced. `'none'` means nothing is on screen yet: until rows or a failure
  *   arrive, the table shows its loading skeleton, never its empty state.
  * - `fetching`: rows are on the way. With current rows the table shows "Updating…" and stays usable. Otherwise it is
  *   `aria-busy`. useServerRows reports it from the first render, before its first fetch starts.
@@ -210,6 +211,8 @@ export interface SelectionModel {
   value: Selection;
   /** For SelectionBar. */
   count: Total;
+  /** An all-matching selection whose view's rows and total are still on their way: `count` is the last view's. */
+  counting: boolean;
   isSelected: (id: string) => boolean;
   /** `range` (Shift) selects every row between the last toggled row and this one. Stable identity. */
   toggle: (id: string, selected: boolean, options?: { range?: boolean }) => void;
@@ -218,7 +221,7 @@ export interface SelectionModel {
   togglePage: () => void;
   /** Every page row is selected and more rows match: offer "Select all N". */
   canSelectAllMatching: boolean;
-  /** The rows on screen are the last view's (`state.rows` is `'previous'`): render the checkboxes disabled. */
+  /** The rows on screen are the last view's (`state.rows` is `'previous'`): render the checkboxes `aria-disabled`. */
   inert: boolean;
   selectAllMatching: () => void;
   clear: () => void;
@@ -483,6 +486,7 @@ export function useDataTable<Row>(options: DataTableOptions<Row>): DataTableMode
     enabled: selectionMode === 'multiple',
     value: selection,
     count,
+    counting: inert && selection.kind === 'all-matching',
     isSelected: isRowSelected,
     toggle,
     page,

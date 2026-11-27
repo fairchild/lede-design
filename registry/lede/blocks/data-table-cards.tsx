@@ -59,7 +59,8 @@ export function Cards<Row>(p: CardsProps<Row>) {
               <Checkbox
                 checked={sel.page === 'all'}
                 indeterminate={sel.page === 'some'}
-                disabled={model.rows.length === 0 || sel.inert}
+                disabled={model.rows.length === 0}
+                aria-disabled={sel.inert || undefined}
                 onChange={sel.togglePage}
               />
               <span>{`Select all ${p.noun.other} ${p.scope}`}</span>
@@ -178,7 +179,7 @@ const Card = React.memo(function Card<Row>(p: CardProps<Row>) {
           <Checkbox
             aria-label={`Select ${rowName}`}
             checked={p.selected}
-            disabled={p.inert}
+            aria-disabled={p.inert || undefined}
             onChange={(e) => p.toggle(p.id, e.currentTarget.checked, { range: (e.nativeEvent as MouseEvent).shiftKey })}
           />
         ) : undefined

@@ -23,7 +23,7 @@ interface DataRowProps<Row> {
   text: (row: Row, columnId?: string) => string;
   /** `undefined` when the table has no selection. */
   selected: boolean | undefined;
-  /** The rows on screen are the last view's: the checkbox is disabled. */
+  /** The rows on screen are the last view’s: the checkbox is `aria-disabled`, so it keeps focus. */
   inert: boolean;
   toggle: (id: string, on: boolean, o?: { range?: boolean }) => void;
   href: string | undefined;
@@ -53,7 +53,7 @@ export const DataRow = React.memo(function DataRow<Row>(p: DataRowProps<Row>) {
           <Checkbox
             aria-label={`Select ${name}`}
             checked={p.selected}
-            disabled={p.inert}
+            aria-disabled={p.inert || undefined}
             onChange={(e) => p.toggle(id, e.currentTarget.checked, { range: (e.nativeEvent as MouseEvent).shiftKey })}
           />
         </Table.Cell>

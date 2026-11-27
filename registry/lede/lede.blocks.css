@@ -396,7 +396,8 @@ button.ld-back { background: none; border: 0; font-family: inherit; font-weight:
   [data-theme$="-hc"] .ld-dt-notice { box-shadow: inset 0 0 0 1px var(--input); }
 }
 .ld-dt-notice .ld-btn-plain { color: var(--ld-primary-on-tint); }
-.ld-dt-notice:has(> [role="status"]:empty) { position: absolute; padding: 0; border: 0; background: none; box-shadow: none; }
+/* While Refresh empties it for a frame, the notice keeps its place and look. */
+.ld-dt-notice:not([data-refreshing]):has(> [role="status"]:empty) { position: absolute; padding: 0; border: 0; background: none; box-shadow: none; }
 .ld-dt-btn { min-height: var(--ld-table-hit); }
 .ld-dt-error {
   display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-3);

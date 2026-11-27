@@ -230,7 +230,7 @@
    ".ld-checkbox-box": "A box drawn by its own border, muted-foreground and foreground in -hc.",
    ".ld-btn:is(.ld-btn-filled, .ld-btn-tinted, .ld-btn-gray):is(:disabled, [aria-disabled=\"true\"])": "Disabled: WCAG 1.4.11 exempts it, and its foreground-disabled label shows the state.",
    ".ld-row-action:disabled": "Disabled: WCAG 1.4.11 exempts it, and its foreground-disabled label shows the state.",
-   ".ld-checkbox-input:disabled + .ld-checkbox-box": "Disabled: WCAG 1.4.11 exempts it, and its foreground-disabled label shows the state."
+   ".ld-checkbox-input:is(:disabled, [aria-disabled=\"true\"]) + .ld-checkbox-box": "Disabled: WCAG 1.4.11 exempts it, and its foreground-disabled label shows the state."
   }
  }
 }
