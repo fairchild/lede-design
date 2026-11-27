@@ -134,10 +134,7 @@ export function LabelsFixtures() {
     <main id="main" tabIndex={-1}>
       <h1>Labels</h1>
       <StepIndicator steps={['Compte', 'Préférences', 'Fin']} current={1} labels={steps} />
-      <fieldset>
-        <legend>Couleur</legend>
-        <AccentPicker value={accent} onValueChange={setAccent} labels={accents} />
-      </fieldset>
+      <AccentPicker label="Couleur" value={accent} onValueChange={setAccent} labels={accents} />
       <Tables />
     </main>
   );

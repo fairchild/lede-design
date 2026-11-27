@@ -22,7 +22,8 @@ for (const [where, route] of [['Appearance', '/app/settings/appearance'], ['Onbo
     await expect(group.getByRole('radio')).toHaveCount(7);
     await expect(group).toHaveAccessibleDescription('Used for buttons, links, selection and focus.');
     await expect(page.locator('fieldset.ld-form-section').filter({ has: group })).toHaveCount(0);
-    await expect(page.getByText('Accent', { exact: true }).first()).toBeVisible();
+    // The visible name is the section's legend, apart from the group's own, which only screen readers get.
+    await expect(page.locator('.ld-form-legend', { hasText: /^Accent$/ })).toBeVisible();
   });
 }
 
