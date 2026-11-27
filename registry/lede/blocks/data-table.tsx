@@ -208,7 +208,7 @@ export function DataTable<Row>(props: DataTableProps<Row>) {
       <div className="ld-dt-top">
         <p ref={summaryRef} tabIndex={-1} className="ld-dt-summary">{summary}</p>
         {/* The status region is always here, empty and unpainted until a refresh fails, so its text is announced. */}
-        <p className="ld-dt-notice">
+        <p className="ld-dt-notice" data-refreshing={refreshing || undefined}>
           <span role="status">
             {refreshFailed && !refreshing ? (
               <span>

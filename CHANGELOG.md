@@ -6,11 +6,12 @@
 
 - **A DataTable checkbox keeps focus while a new view loads.** The rows' and the page's checkboxes are `aria-disabled`
   there, and no longer `disabled`, so focus stays put and Space does nothing until the rows arrive. Checkbox takes
-  `aria-disabled` this way anywhere: it looks disabled and ignores clicks and Space, and keeps focus.
+  `aria-disabled` this way anywhere: it looks disabled, keeps focus, runs neither `onClick` nor `onChange`, and still
+  submits with its form.
 - **A restored view with “all matching” selected announces no count from the view before.** While that view's rows
   are on their way, the selection bar reads “Counting…”, its live region says nothing new, and the notice under the
   table says “Counting selected items…”. SelectionBar takes `counting` for this, and its live region now says a count
-  once it has held for a frame.
+  once it has held for a frame, and is empty while counting.
 - **A refresh that fails again at once is announced again.** Refresh empties the saved-data notice for a painted frame
   before the retry's result, so screen readers hear the notice that comes back.
 - **A download link in WorkbenchShell's left panel leaves that panel showing.** On a narrow screen, a click on a link

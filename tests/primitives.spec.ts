@@ -144,3 +144,20 @@ for (const [shape, look] of [['soft', ''], ['crisp', ''], ['square', ''], ['soft
     if (px(placeRadius) < 100) expect(px(placesRadius)).toBeCloseTo(px(placeRadius) === 0 ? 0 : px(placeRadius) + px(inset), 1);
   });
 }
+
+test('A Checkbox under aria-disabled keeps focus and ignores clicks, label clicks and Space, and runs no onChange', async ({ page }) => {
+  await open(page);
+  const region = page.getByRole('region', { name: 'Checkbox aria-disabled' });
+  for (const name of ['Controlled', 'Uncontrolled']) {
+    const box = region.getByRole('checkbox', { name, exact: true });
+    await expect(box).toHaveAttribute('aria-disabled', 'true');
+    // Playwright waits for an aria-disabled control to be enabled, so the clicks are forced.
+    await box.click({ force: true });
+    await region.getByText(name, { exact: true }).click({ force: true });
+    await box.focus();
+    await page.keyboard.press('Space');
+    await expect(box).toBeFocused();
+    await expect(box).not.toBeChecked();
+  }
+  await expect(region.getByText('Changes: 0')).toBeVisible();
+});

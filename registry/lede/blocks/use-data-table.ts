@@ -46,7 +46,8 @@ export type Selection =
  * What the table is showing and doing, as independent parts: whose rows, whether more are coming, what failed and
  * when the rows were fetched. Every field is optional: `{}` is a table showing its own, settled rows.
  * - `rows`: whose rows are on screen. `'current'`, the default, are this view's. `'previous'` are the last view's, kept
- *   while this one loads so the layout doesn't jump. `'none'` means nothing is on screen yet: until rows or a failure
+ *   while this one loads so the layout doesn't jump. Set it in the same render as the view change, so no count from the
+ *   last view is announced. `'none'` means nothing is on screen yet: until rows or a failure
  *   arrive, the table shows its loading skeleton, never its empty state.
  * - `fetching`: rows are on the way. With current rows the table shows "Updating…" and stays usable. Otherwise it is
  *   `aria-busy`. useServerRows reports it from the first render, before its first fetch starts.

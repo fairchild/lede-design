@@ -46,11 +46,11 @@ export function SelectionBar(props: SelectionBarProps) {
   const noun = props.count === 1 ? props.noun.one : props.noun.other;
   const label = props.counting ? `Counting selected ${props.noun.other}` : `${formatCount(props.count, props.noun, props.locale)} selected`;
   // The status region says a count once it has held for a frame, so a count from the commit before a new view's load
-  // is reported, or one while counting, is never announced.
-  const [said, setSaid] = React.useState('');
+  // is reported is never announced. While counting it's empty, so the real count is announced even when it's the same.
   const say = n > 0 ? label : '';
+  const [said, setSaid] = React.useState(say);
   React.useEffect(() => {
-    if (props.counting) return;
+    if (props.counting) { setSaid(''); return; }
     const frame = requestAnimationFrame(() => setSaid(say));
     return () => cancelAnimationFrame(frame);
   }, [say, props.counting]);
