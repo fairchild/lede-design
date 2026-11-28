@@ -2,8 +2,7 @@ name: Deploy develop to the preview site
 # Each push to develop builds the site and deploys it as its own Worker, on the custom domain the repo variable
 # PREVIEW_HOST names (lede-preview.cloudcompute.com today), so the next release can be read before it ships. Without
 # the variable the job doesn't run. Production, r/next and the release registries are deploy.yml's alone: the Worker's
-# code only reads the bucket, and the one write here is a credentials check to ci/credentials-check, which no route
-# serves.
+# code only reads the bucket, and this workflow holds no R2 keys.
 on:
   push:
     branches: [develop]
@@ -22,9 +21,10 @@ jobs:
     # A job-level skip, so a repo without the variable never asks the environment for its secrets.
     if: vars.PREVIEW_HOST != '' && github.ref == 'refs/heads/develop'
     runs-on: ubuntu-latest
-    # The same token and account as production. The environment has to admit develop as well as main and v* tags.
+    # Its own environment, admitting only develop, with a Cloudflare token of its own and no R2 keys, so nothing pushed to
+    # develop can publish a registry or touch production's credentials (docs/repo-settings.md).
     environment:
-      name: cloudflare
+      name: preview
       url: https://${{ vars.PREVIEW_HOST }}
     # What smoke checks the live site against. `deployed` stays empty when the token is missing, so smoke is skipped
     # and Approve the release, which needs smoke to have passed, doesn't count a run that deployed nothing.
@@ -50,18 +50,6 @@ jobs:
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         if: steps.credentials.outputs.ready == 'true'
         with: { node-version: 22, cache: npm }
-      # deploy.yml publishes the registries with the R2 token's keys only at a release or a main push. Writing one small
-      # object with them here, through the same script, finds a missing, expired or misscoped token on develop first.
-      - name: Check the R2 keys can write the bucket
-        if: steps.credentials.outputs.ready == 'true'
-        env:
-          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
-          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        run: |
-          check=$(mktemp -d)
-          echo "develop ${GITHUB_SHA::7}, run $GITHUB_RUN_ID" > "$check/check.txt"
-          node scripts/publish-r2.mjs "$check" ci/credentials-check --remote
       - if: steps.credentials.outputs.ready == 'true'
         run: npm ci
       - if: steps.credentials.outputs.ready == 'true'

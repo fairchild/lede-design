@@ -120,8 +120,9 @@ says (`npm run design-system`).
 - **No approval request came.** CI or the preview's smoke test hasn't passed on the release pull request's latest
   commit (the runs of *Approve the release* say which, in their notices), or a run of it failed: "no required reviewer"
   means the `release` environment isn't set up, and the merge was refused. "The preview wasn't deployed" means *Deploy
-  develop to the preview site* skipped its deploy, so the smoke test never ran: give the `cloudflare` environment
-  `CLOUDFLARE_API_TOKEN` and let it admit `develop`, then re-run that workflow. A smoke failure names the page or file
+  develop to the preview site* skipped its deploy, so the smoke test never ran: give the `preview` environment
+  `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` and let it admit `develop` ([repo-settings.md](repo-settings.md)),
+  then re-run that workflow. A smoke failure names the page or file
   in the run; once it's fixed on the site, *Re-run failed jobs* runs the smoke test alone, without deploying again.
 - **`develop` disappeared after a release.** The *Protect release branches* ruleset isn't active. Recreate `develop`
   from `main` and import the ruleset, as in step 6 below.
@@ -193,7 +194,7 @@ need:
 
 | Secret | What it is | Used for |
 | --- | --- | --- |
-| `CLOUDFLARE_API_TOKEN` | An API token with *Account → Workers Scripts: Edit* (and *Zone → Workers Routes: Edit* on the preview host's zone, for `deploy-preview.yml`). No R2 permission. | Deploying the Worker and uploading preview versions, through wrangler |
+| `CLOUDFLARE_API_TOKEN` | An API token with *Account → Workers Scripts: Edit*. No R2 permission. The `preview` environment has one of its own, with *Zone → Workers Routes: Edit* on the preview host's zone too. | Deploying the Worker and uploading preview versions, through wrangler |
 | `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY` | An R2 API token with *Object Read & Write* on the `lede-design` bucket only | Publishing `r/vX.Y.Z` and `r/next`, through R2's S3 API, in `scripts/publish-r2.mjs` |
 | `CLOUDFLARE_ACCOUNT_ID` | The account's ID | Both; it also names the R2 endpoint |
 
@@ -208,8 +209,8 @@ gh secret set R2_SECRET_ACCESS_KEY --repo fairchild/lede-design --env cloudflare
 
 Each command asks for the value, so it stays out of the shell's history.
 
-Each push to `develop` checks the keys: `deploy-preview.yml` writes one small object, `ci/credentials-check`, with
-them, so a missing or misscoped R2 token fails the preview, well before a release needs it.
+Each push to `main` uses the keys first, to publish `r/next`, so a missing or misscoped R2 token fails that run, the
+release pull request's merge. `develop` never holds them.
 
 Wrangler doesn't need R2 access to deploy a Worker that binds the bucket: it checks whether a bound bucket exists, and
 when the token can't look it says so and deploys anyway. If a deploy ever fails on the `BUCKET` binding, add *Workers
