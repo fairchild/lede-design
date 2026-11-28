@@ -23,6 +23,9 @@ defaults:
 jobs:
   prepare:
     runs-on: ubuntu-latest
+    # The release app's key lives in this environment, which admits only main and develop, so a workflow on any other
+    # branch can't read it (docs/repo-settings.md).
+    environment: release-app
     steps:
       - name: Check for the release app
         env:

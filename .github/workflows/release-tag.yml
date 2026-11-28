@@ -23,6 +23,9 @@ jobs:
   tag:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    # The release app's key lives in this environment, which admits only main and develop, so a workflow on any other
+    # branch can't read it (docs/repo-settings.md).
+    environment: release-app
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with: { fetch-depth: 2, persist-credentials: false }

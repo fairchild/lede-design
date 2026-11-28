@@ -23,8 +23,7 @@ defaults:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    # The secrets are the environment's. It admits main, v* tags and develop, whose deploy-preview.yml deploys the
-    # preview Worker and checks the R2 keys by writing ci/credentials-check.
+    # The secrets are the environment's, which admits only main and v* tags. The preview deploys from `preview`.
     environment: cloudflare
     # What the production smoke test checks the live site against, set only when this run deployed it.
     outputs:

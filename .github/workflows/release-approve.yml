@@ -111,7 +111,8 @@ jobs:
     concurrency:
       group: release-approve-${{ needs.find.outputs.number }}
       cancel-in-progress: true
-    # The approval: the environment's required reviewer approves this job before it starts.
+    # The approval: the environment's required reviewer approves this job before it starts. `release` holds its own copy
+    # of the release app's key and admits only main, which this workflow_run job runs on.
     environment:
       name: release
       url: ${{ github.server_url }}/${{ github.repository }}/pull/${{ needs.find.outputs.number }}

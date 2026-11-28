@@ -20,88 +20,67 @@ aren't readable without admin, so those rows are what the workflows expect, not 
 | `v*` tags | Ruleset *release tags*: restrict creation, update and deletion. | Unchanged (`release-tags.json`). Admins and the release app bypass. |
 | `check` | Required by context name only. | Pinned to GitHub Actions (`integration_id` 15368), so no other app's status named `check` can satisfy it. |
 | Merge buttons | Merge, squash and rebase allowed. Auto-merge off. *Update branch* off. Head branches deleted after merge. | Rebase off. Auto-merge on, so a thread can enable it and the pull request merges when `check` passes, without the thread polling. *Always suggest updating pull request branches* on. Keep deleting head branches; the rulesets keep `develop` and `main`. |
-| `RELEASE_APP_PRIVATE_KEY` | A repository secret (the workflows read it as `secrets.`, with no environment). Every workflow on every branch can read it, including one a feature branch adds. | In an environment that admits only `main` and `develop`. Needs a workflow change, see *Release app key* below. |
-| `cloudflare` environment | Admits `main`, `v*` tags and `develop` (`deploy-preview.yml` needs it). Holds the production Worker token and the R2 keys that write `r/v*`. | Production keys admit only `main` and `v*` tags. The preview gets an environment of its own, see *Preview credentials* below. |
+| `RELEASE_APP_PRIVATE_KEY` | A repository secret (the workflows read it as `secrets.`, with no environment). Every workflow on every branch can read it, including one a feature branch adds. | In `release-app`, which admits only `main` and `develop`, and in `release`. The jobs that read it name `release-app`; see *Release app key* below. |
+| `cloudflare` environment | Admits `main`, `v*` tags and `develop` (`deploy-preview.yml` needs it). Holds the production Worker token and the R2 keys that write `r/v*`. | Admits only `main` and `v*` tags. The preview deploys from `preview`, see *Preview credentials* below. |
 | `release` environment | Required reviewer `fairchild`. | Deployment branches limited to `main` (*Approve the release* runs from `main`'s copy, as a `workflow_run`). |
 | Stale branches | `docs/fork-approval`, `integration/test`, `integrations`, `integrations-chat`, `integrations-chat-plain`: none merged into `develop`, none with an open pull request, last commits 2026-11-09 to 2026-11-16. | Deleted, once Bertram confirms nothing on them is wanted. |
 
 ## Steps for an admin
 
-### 1. Rulesets
+`scripts/repo-settings.sh` makes every change below with `gh`, signed in as an admin, and each step can run again:
 
-In *Settings → Rules → Rulesets*:
+1. Import `.github/rulesets/develop.json` (*Settings → Rules → Rulesets → New ruleset → Import a ruleset*), or
+   `gh api -X POST repos/fairchild/lede-design/rulesets --input .github/rulesets/develop.json`.
+2. `scripts/repo-settings.sh before`. It updates the `main` ruleset from `main.json` and keeps its bypass list, puts the
+   release app on the `develop` ruleset's bypass list, sets the merge buttons, creates or updates the `release`,
+   `release-app` and `preview` environments with their deployment branches, asks for the two secrets, and sets the
+   Actions and code security settings below.
+3. Once the workflows that name `release-app` and `preview` are on `develop` (and, for the release workflows that run
+   from `main`, on `main` after the next release), `scripts/repo-settings.sh after`. It deletes the repository copy of
+   the release app's key and limits `cloudflare` to `main` and `v*` tags.
+4. `scripts/repo-settings.sh check` prints what's set.
 
-1. *New ruleset → Import a ruleset*, pick `.github/rulesets/develop.json`. Before saving, under *Bypass list* add the
-   release app (*Add bypass → Apps*, `lede-release`) with *Always allow*. Save. Leave *Protect release branches* as it
-   is; it still keeps `develop` and `main` from being deleted.
-2. Open the ruleset *main*. Under *Require a pull request before merging → Allowed merge methods*, untick *Squash* and
-   *Rebase*, leaving *Merge*. Under *Require status checks to pass*, open `check` and set its source to *GitHub
-   Actions*. Keep the bypass list as it is. Save.
-3. Nothing changes on *release tags*.
+What each setting is, for doing it by hand:
 
-To check: a push straight to `develop` from a clone is refused with `GH013`, and a pull request into `develop` whose
-`check` failed shows *Merging is blocked*.
+- **Rulesets.** `develop` as `develop.json`, with the release app (*Add bypass → Apps*, `lede-release`, *Always
+  allow*) on its bypass list, because *Prepare a release* commits to `develop`. `main` as `main.json`: *Allowed merge
+  methods* only *Merge*, and `check`'s source *GitHub Actions*. *Protect release branches* and *release tags* stay as
+  they are.
+- **Merge buttons** (*Settings → General → Pull Requests*): rebase off; auto-merge and *Always suggest updating pull
+  request branches* on; merge commits, squash and *Automatically delete head branches* on.
+- **Environments** (*Settings → Environments*, *Deployment branches and tags → Selected branches and tags*):
+  `release` admits `main` and keeps its reviewer; `release-app` admits `main` and `develop`, with no reviewer;
+  `preview` admits `develop`; `cloudflare` admits `main` and the tag rule `v*`.
+- **Actions** (*Settings → Actions → General*): approval for all external contributors' fork pull requests; *Workflow
+  permissions* read-only, and *Allow GitHub Actions to create and approve pull requests* off. The release app opens and
+  merges the release pull request, so the workflows' own token never needs to.
+- **Code security** (*Settings → Code security*): *Secret scanning* with *Push protection*, *Dependabot alerts* and
+  *Private vulnerability reporting* (`SECURITY.md` asks for reports). All are free on a public repository.
 
-### 2. Merge buttons
+To check the rulesets: a push straight to `develop` from a clone is refused with `GH013`, and a pull request into
+`develop` whose `check` failed shows *Merging is blocked*.
 
-In *Settings → General → Pull Requests*: untick *Allow rebase merging*, tick *Allow auto-merge* and *Always suggest
-updating pull request branches*. Keep *Allow merge commits*, *Allow squash merging* and *Automatically delete head
-branches* on. Or, with `gh` signed in as an admin:
-
-```bash
-gh api -X PATCH repos/fairchild/lede-design \
-  -F allow_rebase_merge=false -F allow_auto_merge=true -F allow_update_branch=true
-```
-
-### 3. Environments
-
-In *Settings → Environments*:
-
-- `release`: under *Deployment branches and tags*, choose *Selected branches and tags* and add `main`.
-- `cloudflare`: under *Deployment branches and tags*, check the list is exactly `main`, `develop` and the tag rule
-  `v*`. Remove anything else. (Removing `develop` waits for *Preview credentials* below.)
-
-### 4. Actions
-
-In *Settings → Actions → General*:
-
-- *Fork pull request workflows from outside collaborators*: *Require approval for all external contributors*.
-- *Workflow permissions*: *Read repository contents and packages permissions*, and untick *Allow GitHub Actions to
-  create and approve pull requests*. The release app opens and merges the release pull request, so the workflows'
-  own token never needs to.
-
-### 5. Code security
-
-In *Settings → Code security*: turn on *Secret scanning* with *Push protection*, *Dependabot alerts* and *Private
-vulnerability reporting* (`SECURITY.md` asks for reports). All are free on a public repository.
-
-## Changes that need a workflow change too
-
-These wait for the release thread, which owns the release workflows, so the two don't edit the same files at once.
+## Secrets and environments
 
 ### Release app key
 
 `RELEASE_APP_PRIVATE_KEY` can tag releases and merge into `main`, past both rulesets. As a repository secret, any
-workflow can read it, so a branch that adds a workflow file gets it on its first push. The fix:
+workflow can read it, so a branch that adds a workflow file would get it on its first push. So it lives in two
+environments instead:
 
-1. Create an environment `release-app` with *Deployment branches and tags* set to `main` and `develop`, and no
-   reviewer.
-2. Move the secret: `gh secret set RELEASE_APP_PRIVATE_KEY --repo fairchild/lede-design --env release-app`, then
-   delete the repository secret.
-3. Give each job that reads it `environment: release-app`: `release-pr.yml` (runs on `develop`), `release-tag.yml` and
-   `prepare-release.yml` (`main`). *Approve the release*'s merge job already runs in `release`; give that environment
-   the secret too, or split the merge into a second job.
+- `release-app`, which admits only `main` and `develop`. *Prepare a release*, *Open the release pull request* (on
+  `develop`) and *Tag the release* (on `main`) name it.
+- `release`, which admits only `main` and holds the approval. *Approve the release*'s merge job runs in it, as a
+  `workflow_run` from `main`'s copy of the file.
 
-A workflow on any other branch then reads an empty value, and says the release app isn't set up.
+A workflow on any other branch reads an empty value, and says the release app isn't set up. Until `after` deletes the
+repository secret, a job in either environment still falls back to it, so the move breaks nothing while it's under
+way.
 
 ### Preview credentials
 
-`deploy-preview.yml` runs on every push to `develop` with the production Worker token and R2 keys that can overwrite
-any published release in `r/`. It uses the R2 keys for one write, `ci/credentials-check`, to catch a broken key before
-a release. A main push already publishes `r/next` with the same keys, so the check can move there.
-
-1. Create an environment `preview` that admits only `develop`, with its own `CLOUDFLARE_API_TOKEN` and
-   `CLOUDFLARE_ACCOUNT_ID`. A Cloudflare token can't be limited to one Worker, so this one has the same Worker rights;
-   what it lacks is the R2 keys.
-2. Point `deploy-preview.yml` at `preview` and drop its R2 step.
-3. Take `develop` off the `cloudflare` environment's deployment branches.
+`deploy-preview.yml` deploys from `preview`, which admits only `develop` and holds a Cloudflare token of its own
+(*Workers Scripts: Edit*, *Workers Routes: Edit* on the preview host's zone) and the account ID, and no R2 keys. A
+Cloudflare token can't be limited to one Worker, so the preview's has the same Worker rights as production's; what
+develop no longer holds is anything that can overwrite a published registry in `r/`. A broken R2 key now shows at the
+next push to `main`, when Deploy publishes `r/next` with it.
